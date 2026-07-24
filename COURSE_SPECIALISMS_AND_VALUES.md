@@ -10,57 +10,71 @@ apply.
 > gathered via web search July 2026. Course websites change and marketing
 > language is aspirational — treat this as a *starting map*, and verify anything
 > decision-critical directly with the course (and the BPS Alternative Handbook
-> trainee feedback). Links are listed at the end.
+> trainee feedback). 
 >
 > **On "specialism":** almost every course teaches CBT + systemic and *touches*
-> neuropsychology. Where a course is called out below for neuropsychology,
-> social justice, psychodynamic work, etc., it means that theme is a
-> **distinctive strength or explicit emphasis**, not merely present.
+> neuropsychology. Where a course is called out for neuropsychology, social
+> justice, psychodynamic work, etc., it means that theme is a **distinctive
+> strength or explicit emphasis**, not merely present.
+
+> ### ⚠️ Methodology note (v2 — normalised re-sweep, 24 Jul 2026)
+> The first pass used **inconsistent per-course search queries** — some were
+> seeded with hints like "neuropsychology" or "social justice", others weren't —
+> which produced **false-negatives**. The clearest example: Southampton was
+> tagged as *not* neuropsychology-focused when it in fact offers **dual
+> neuropsychology accreditation**. Every course has since been re-checked with
+> the **same standardised specialism + accreditation query**. Corrections
+> include Bangor (**DBT**), Cardiff / UEL / Lancaster / Leeds / Liverpool /
+> Staffordshire / Southampton (**neuropsychology**), Edinburgh / Hull / Liverpool
+> / Lancaster (**CAT**), and Oxford / UEA / Hertfordshire (**accreditations**).
+> **A missing tag is weak evidence, not proof, that a course lacks a
+> specialism** — some course sites simply don't surface it.
 
 ---
 
 ## Tag summary (quick scan)
 
 Legend — models: **CBT**, **Sys** (systemic/family), **Psy** (psychodynamic),
-**CAT** (cognitive analytic), **Neuro** (neuropsychology emphasis).
-Accreditation extras: **BABCP** (CBT accreditation pathway), **AFT** (family
-therapy foundation). Values flags: **SJ** (social justice / anti-racism /
-power), **Comm** (community/critical-community psychology), **EbE** (strong
-experts-by-experience involvement).
+**CAT** (cognitive analytic), **Neuro** (neuropsychology emphasis), **DBT**,
+**IPT** (interpersonal). Accreditation extras: **BABCP** (CBT accreditation
+pathway), **AFT** (family therapy foundation). Values flags: **SJ** (social
+justice / anti-racism / power), **Comm** (community/critical-community
+psychology), **EbE** (strong experts-by-experience involvement), **EDI** (EDI
+foregrounded as a strength).
 
 | Course | Models emphasised | Accred. extras | Values flags | Signature note |
 |---|---|---|---|---|
-| Bangor (N. Wales) | CBT, Sys | — | — | Small, personal; bilingual Welsh, rural; UK's first DClinPsy |
-| Bath | CBT, Sys | BABCP L2, AFT | EbE | Broad placements incl. neuro; NHS-values selection |
-| Belfast (QUB) | CBT (broad) | — | — | Scientist-practitioner; only NI course |
+| Bangor (N. Wales) | CBT, Sys, **DBT** | Systemic Foundation | — | **Major DBT centre** (director chairs World DBT Assoc.); bilingual Welsh; UK's first |
+| Bath | CBT, Sys, Neuro | BABCP L2, AFT | EbE | Broad placements incl. neuro/DBT; NHS-values selection |
+| Belfast (QUB) | CBT (broad) | — | — | Only NI course; commended for trainee research |
 | Birmingham | CBT + choose Yr2 (Psy/Sys/behav.) | — | — | Yr2 model specialisation; health-inequalities framing |
-| Cardiff (S. Wales) | CBT, Sys | — | EbE | Welsh services focus; leadership & resilience |
-| Coventry & Warwick | CBT (broad), Neuro | — | SJ(aspiring) | ⚠️ No 2026 intake (aiming 2027); trauma-informed, leadership |
-| East Anglia (UEA) | CBT, Sys, Neuro | — | EbE | Behavioural **sleep medicine** specialism; innovative curriculum |
-| East London (UEL) | Critical / pluralistic | — | **SJ, Comm** | Strongly critical & community; widening access |
-| Edinburgh | CBT, IPT | — | — | Long-established; NHS Scotland employment; IPT unusual |
-| Essex (Tavistock) | **Psy**, Sys | — | — | Psychodynamic strength via Tavistock; 3rd-yr Tavistock placement |
+| Cardiff (S. Wales) | CBT, Sys, **Neuro** | — | EbE | Explicit CBT+systemic+**neuro** competencies; Welsh focus |
+| Coventry & Warwick | CBT, Neuro | — | SJ(aspiring) | ⚠️ **No 2026 intake** (aiming 2027); trauma-informed |
+| East Anglia (UEA) | CBT, Sys, Neuro | **BABCP-secondary**, Mental Health Law | EbE | Behavioural **sleep medicine**; 1 of 3 for MH Law training |
+| East London (UEL) | Critical, CBT, Sys, **Neuro**, Comm | — | **SJ, Comm** | Critical/community ethos; well-rated neuro teaching |
+| Edinburgh | CBT, IPT, **CAT** | — | — | Electives: ACT/IPT/CAT/Schema; CAMHS/older/forensic pathways |
+| Essex (Tavistock) | **Psy**, Sys, Neuro | — | — | Psychodynamic via Tavistock; specialist neuro/forensic modules |
 | Exeter | **CBT**, **CAT**, Sys, Neuro | BABCP L1, CAT Found. | EDI | Pluralistic PBL; CAT foundation is rare |
-| Glasgow | CBT (dominant) | — | EbE (CUSP) | Older-adult & child specialist routes; NHS Scotland |
-| Hertfordshire | Social-constructionist | — | **SJ, Comm** | Anti-oppressive, cultural humility; adult-learning model |
-| Hull | Generic + broad | — | — | **Fast-track from undergrad** (integrated 6-yr); Hull+York |
+| Glasgow | CBT (dominant) | APL route | EbE (CUSP) | Older-adult & child specialist routes; NHS Scotland |
+| Hertfordshire | CBT, Psy, Sys, **CAT**, Comm | BABCP L1, AFT(in prog.) | **SJ, Comm** | Social-constructionist; Yr3 neuro/forensic; adult-learning |
+| Hull | CBT, **CAT** | — | — | **Fast-track from undergrad** (Hull+York); CAT on team |
 | King's College (IoPPN) | **CBT**, Neuro, family, mindfulness | — | EDI | Research powerhouse; health psychology strength |
-| Lancaster | Broad / person-centred | — | **EbE** (public participation core) | Strong publication culture; NW placements |
-| Leeds | Generic | — | **SJ, Comm** | Social/developmental context; outreach to minoritised communities |
-| Leicester | Broad | — | **SJ** (power, whiteness) | Explicit power/social-justice/whiteness reputation |
-| Liverpool | Broad (structured PPD) | — | EbE | Mersey Care partnership; strong pastoral/mentor support |
+| Lancaster | CBT, **Neuro**, **CAT**, Sys | — | **EbE** | **Neuro + CAT as core** (unusual); narrative; publication culture |
+| Leeds | CBT, Sys, Psy, **Neuro** | — | **SJ, Comm** | **Dedicated neuro fellow**; ACT/CFT/EMDR taught; outreach |
+| Leicester | CBT, **Psy**, Sys, Comm | AFT equivalence | **SJ, Comm** (power, whiteness) | Four core models incl. community; social-justice reputation |
+| Liverpool | CBT, **CAT**, Sys, **Neuro** | CBT **or** CAT pathway | EbE | **Integrated CBT/CAT pathway**; strong neuro (Walton Centre) |
 | Manchester | **CBT**, Psy-interpersonal, Sys, Neuro | — | — | Critical evaluation of models; research-intensive |
 | Newcastle | CBT, Sys, Neuro | — | EbE | 'Discovery' learning; neuro & systemic pathways |
-| North Thames (UCL) | Broad (competency model) | — | — | Largest UK course; research-heavy; diverse London services |
-| Oxford | **CBT**, Sys | — | — | Blend of clinical science & art; CBT heritage |
-| Plymouth | Broad, psychotherapy focus | — | SJ (anti-racism selection) | Research–practice integration; SW placements |
-| Royal Holloway | CBT | BABCP pathway | EbE | Adult-learner model; lived-experience embedded |
-| Salomons (CCCU) | **Diverse models** (EMDR/Sys/Psy options) | — | EbE, (SJ aspired) | Yr3 specialist options; large, cultural-sensitivity focus |
-| Sheffield | Broad (4 themes) | — | — | Yorkshire & Humber; themed curriculum |
-| Southampton | CBT, community | — | **SJ, Comm, EbE** | Anti-racist, critical-community; EDI leaders |
-| Staffordshire | Broad, reflective | — | Comm (society & wellbeing) | Society-impact strand; Shropshire/Staffs |
-| Surrey | **CBT**, **Sys**, Neuro | BABCP L2, AFT | — | Triple accreditation strength; neuro toward BPS register |
-| Teesside | CBT, CAT, Psy, Sys, **Neuro** | (toward QiCN) | — | Very broad models; neurodiversity & brain injury |
+| North Thames (UCL) | CBT, Sys, Neuro (competency model) | — | — | Largest UK course; research-heavy; diverse London services |
+| Oxford | **CBT**, Sys | **BABCP L2** | — | Grads auto-eligible BABCP; CBT heritage; research-led |
+| Plymouth | CBT, Psy (psychotherapy focus) | — | SJ (anti-racism selection) | Research–practice integration; SW placements |
+| Royal Holloway | CBT, Sys, Neuro | BABCP pathway, AFT-pilot | EbE | CBT + systemic pathways; neuro expertise; adult-learner |
+| Salomons (CCCU) | CBT, Sys, **Psy**, Neuro (EMDR option) | AFT | EbE, (SJ aspired) | Yr3 EMDR/systemic/psychoanalytic options; neuro provision on-site |
+| Sheffield | CBT, Sys | — | — | Neuro placements (not a distinct pathway); PEARLS research |
+| Southampton | CBT, **Neuro**, Sys, Comm | Neuro/CBT/Sys dual-accred | **SJ, Comm, EbE** | **Neuro strength** + anti-racist/critical-community; EDI leaders |
+| Staffordshire | CBT, **Neuro** | Bristol neuro-diploma route | Comm | **Neuro accreditation route** (~6/cohort via Bristol); society-impact |
+| Surrey | **CBT**, **Sys**, Neuro | BABCP L2, AFT, BPS-Neuro | — | Triple accreditation; neuro toward BPS register |
+| Teesside | CBT, **CAT**, Psy, Sys, **Neuro** | toward QiCN | — | Very broad models; neurodiversity & brain injury |
 | Trent (Lincoln/Notts) | CBT (broad) | — | **EbE** | Commended service-user involvement; multi-trust |
 
 ---
@@ -68,229 +82,218 @@ experts-by-experience involvement).
 ## Course-by-course detail
 
 ### Bangor — North Wales Clinical Psychology Programme
-- **Models:** CBT, systemic; broad clinical experiences taught by national leads.
-- **Values/ethos:** Small, personal, "friendly/approachable"; integrity and
-  making a positive difference; family-friendly reputation.
-- **Distinctive:** UK's **first** DClinPsy; **bilingual** (Welsh) and often
-  rural/community practice — good for cultural/linguistic breadth.
+- **Models:** CBT, systemic, and a notable **DBT** strand — programme director
+  Prof Michaela Swales chairs the World DBT Association. Systemic Foundations
+  led by a clinical director who is also a systemic psychotherapist.
+- **Values/ethos:** Small, personal, "friendly/approachable"; integrity;
+  family-friendly.
+- **Distinctive:** UK's **first** DClinPsy; **bilingual** (Welsh), often rural.
 
 ### Bath
-- **Models:** CBT and systemic as primary taught models.
+- **Models:** CBT and systemic primary; broad placements incl. neuropsychology,
+  psychosis, eating disorders, DBT.
 - **Accreditation extras:** **BABCP Level 2** and **AFT Foundation**.
 - **Values/ethos:** NHS-Constitution values; reflective scientist-practitioner;
-  strong EDI; people with personal experience (PPE) shape the programme.
-- **Distinctive:** Large, varied placement portfolio incl. **neuropsychology**,
-  psychosis, eating disorders, health psychology, DBT.
+  strong EDI; people-with-personal-experience shape the programme.
 
 ### Belfast — Queen's University Belfast
-- **Models:** Broad, CBT-informed; reflective scientist-practitioner ethos.
-- **Values/ethos:** Integrating theory, evidence base and service-user
-  positions; critically self-reflective practice; personal/cultural awareness.
-- **Distinctive:** The **only** course in Northern Ireland.
+- **Models:** Broad, CBT-informed; reflective scientist-practitioner.
+- **Values/ethos:** Theory + evidence + service-user positions; critically
+  self-reflective practice.
+- **Distinctive:** **Only** course in Northern Ireland; commended for trainee
+  research output.
 
 ### Birmingham
 - **Models:** CBT core; **choose a second approach in Year 2** (psychodynamic,
   systemic or behavioural).
-- **Values/ethos:** Inclusivity & leadership; tackling health inequalities and
-  privilege; scientist-practitioner (running since 1967).
-- **Distinctive:** Year-2 model specialisation; West Midlands placements.
+- **Values/ethos:** Inclusivity & leadership; health inequalities & privilege;
+  scientist-practitioner (since 1967, 500+ alumni).
 
 ### Cardiff — South Wales
-- **Models:** CBT and systemic; service-user & carer involvement research.
-- **Values/ethos:** Respect for difference/diversity; leadership, resilience and
-  self-care; special emphasis on services in Wales.
-- **Distinctive:** Trainees employed by Cardiff & Vale UHB; 3rd-year
-  specialisation.
+- **Models:** Explicit emphasis on developing **CBT, systemic and
+  neuropsychology** competencies; service-user & carer research.
+- **Values/ethos:** Respect for difference/diversity; leadership, resilience,
+  self-care; special emphasis on Welsh services.
 
 ### Coventry & Warwick
-- **Models:** Broad; **clinical neuropsychology** and severe/enduring mental
-  health teaching; trauma-informed care, public health, clinical leadership.
-- **Values/ethos:** Reflective practitioner; collaborative group ethos; EDI
-  (with acknowledged aspiration to embed it further).
-- **⚠️ Important:** **Not recruiting for 2026 intake** (intending 2027).
+- **Models:** Broad; **clinical neuropsychology** and severe/enduring MH
+  teaching; trauma-informed care, leadership.
+- **Values/ethos:** Reflective practitioner; collaborative; EDI (aspiring).
+- **⚠️ Important:** **Not recruiting for 2026** (intending 2027).
 
 ### East Anglia (UEA)
 - **Models:** CBT, systemic, **neuropsychology**, leadership, research.
-- **Values/ethos:** High-calibre reflective clinicians; strong experts-by-
-  experience ethos; innovative curriculum, international dimension.
-- **Distinctive:** **Behavioural Sleep Medicine** specialism (Prof Broomfield) —
-  unusual nationally.
+- **Accreditation extras:** Gained **secondary BABCP** accreditation (2022);
+  one of **three providers nationally** for formal Mental Health Law training.
+- **Distinctive:** **Behavioural Sleep Medicine** specialism; innovative,
+  research-informed curriculum.
 
 ### East London (UEL)
-- **Models:** Critical / pluralistic ("numerous approaches"), critical stance.
-- **Values/ethos:** **Social justice and community psychology** are central;
-  beneficence, autonomy, social justice; commended for widening access &
-  valuing diversity.
-- **Distinctive:** One of the most explicitly critical/community-oriented
-  courses — strong fit if that's your value base.
+- **Models:** Critical/pluralistic, with well-rated depth in **CBT, systemic and
+  neuropsychology** (trainees rated neuro time highly).
+- **Values/ethos:** **Social justice and community psychology** central;
+  commended for critical stance and widening access.
 
 ### Edinburgh
-- **Models:** CBT and **interpersonal therapy (IPT)** among others.
-- **Values/ethos:** Applying psychological skills, knowledge and *values* to
-  clinical problems; advanced competencies incl. consultation, service dev.
-- **Distinctive:** Very long-established (1959); employed via NHS Scotland
-  boards; IPT emphasis is relatively uncommon.
+- **Models:** CBT and **IPT**, plus advanced-practice electives in **ACT, IPT,
+  CAT and Schema Therapy**.
+- **Distinctive:** Aligned pathways for **CAMHS, older adult and forensic**;
+  long-established (1959); NHS Scotland employment.
 
 ### Essex — Tavistock
 - **Models:** **Psychodynamic strength** (Tavistock & Portman input) plus
-  systemic.
-- **Values/ethos:** Training as collaborative enterprise; flexibility,
-  leadership, reflective practice; inter-professional learning.
-- **Distinctive:** Possible **3rd-year placement at the Tavistock** — strongest
-  psychodynamic lean of the mainstream courses.
+  systemic; specialist modules in **neuropsychology, forensic, physical health,
+  specialist CBT**.
+- **Distinctive:** Possible **3rd-year Tavistock placement**; small cohorts.
 
 ### Exeter
 - **Models:** **CBT, CAT and systemic** (three major approaches); neuro & mood
   disorders expertise.
 - **Accreditation extras:** CBT **Level 1**, Systemic Practice, or a **CAT
-  Foundation** qualification — the CAT foundation is **rare** among UK courses.
-- **Values/ethos:** Pluralistic, problem-based learning; EDI core with
-  anti-racism & disability working groups.
+  Foundation** — the CAT foundation is **rare**.
+- **Values/ethos:** Pluralistic PBL; EDI core with anti-racism & disability
+  working groups.
 
 ### Glasgow
 - **Models:** CBT dominant, with substantial other-approach teaching.
-- **Values/ethos:** Service-user/carer involvement via **CUSP**.
-- **Distinctive:** **Specialist routes** for older adults and children; wide
-  rural–urban geography; NHS Scotland employment.
+- **Distinctive:** **Specialist routes** for older adults & children;
+  **Accreditation of Prior Learning** route; service-user body **CUSP**; NHS
+  Scotland.
 
 ### Hertfordshire
-- **Models:** **Social-constructionist** framing; anti-oppressive practice.
-- **Values/ethos:** **Social justice, anti-racism, cultural humility,
-  inclusion**; adult-learning model treating trainees as mature learners.
-- **Distinctive:** Among the most explicitly socio-politically framed courses.
+- **Models:** **Social-constructionist** framing; across years covers CBT,
+  personal construct, **psychodynamic, systemic, constructionist and CAT**; Yr3
+  specialist placements incl. **neuropsychology & forensic**.
+- **Accreditation extras:** **BABCP Level 1** for the CBT pathway; working toward
+  **AFT** foundation for systemic.
+- **Values/ethos:** **Social justice, anti-racism, cultural humility**;
+  adult-learning model.
 
 ### Hull
-- **Models:** Broad/generic training.
-- **Distinctive:** **Fast-track / integrated pathway** — a six-year integrated
-  programme (with York) that can accept applicants **directly from undergrad**.
-  Unusual route into the profession.
+- **Models:** Broad/generic; **CAT** expertise on the team.
+- **Distinctive:** **Fast-track / integrated** six-year pathway (with York) that
+  can accept applicants **directly from undergrad**.
 
 ### King's College London — IoPPN
-- **Models:** **CBT main modality**; strengths in family therapy,
-  mindfulness-based interventions, **neuropsychology**, clinical health
-  psychology.
-- **Values/ethos:** Reflective scientist-practitioner; strong theory–research–
-  practice integration; equality/inclusion/diversity.
-- **Distinctive:** World-leading research environment (IoPPN) — strong for
-  research-oriented applicants.
+- **Models:** **CBT main**; strengths in family therapy, mindfulness,
+  **neuropsychology**, clinical health psychology.
+- **Distinctive:** World-leading research environment (IoPPN).
 
 ### Lancaster
-- **Models:** Broad, person-centred.
-- **Values/ethos:** **Public participation a core value**; balancing individual,
-  professional and NHS needs.
-- **Distinctive:** Strong publication culture; innovative placements across NW
-  England.
+- **Models:** **CBT, neuropsychology, CAT and systemic as core approaches**
+  (neuro + CAT core is unusual), plus narrative therapy.
+- **Values/ethos:** **Public participation a core value** (good-practice example
+  in BPS guidance); strong publication culture.
 
 ### Leeds
-- **Models:** Deliberately **generic** core training.
+- **Models:** Generic core, but with a **dedicated Clinical Neuropsychology
+  teaching fellow**; placements incl. neuro/forensic/health; ACT, CFT,
+  psychodynamic, EMDR taught.
 - **Values/ethos:** Collaboration & outreach with **minoritised communities**;
-  emphasis on social/developmental context of distress.
-- **Distinctive:** Explicit EDI outreach to widen access & address barriers.
+  social/developmental context of distress.
 
 ### Leicester
-- **Models:** Broad; adults/older adults, forensic and health psychology
-  placements.
-- **Values/ethos:** **Excellent reputation for foregrounding power, social
-  justice and whiteness**; culture of inquiry and creativity.
-- **Distinctive:** One of the strongest explicit social-justice reputations.
+- **Models:** **Four core models — CBT, psychodynamic, systemic, community
+  psychology.**
+- **Accreditation extras:** Systemic module carries **AFT equivalence**; a BABCP
+  CBT pathway is being explored.
+- **Values/ethos:** Strong reputation for **power, social justice and
+  whiteness**.
 
 ### Liverpool
-- **Models:** Broad; structured Personal & Professional Development.
-- **Values/ethos:** Strong pastoral scaffolding — Academic Advisor + NHS Mentor
-  + PPD groups.
-- **Distinctive:** Partnership with Mersey Care; trainees employed by the Trust.
+- **Models:** **CBT, CAT and systemic** competencies, with **neuropsychology a
+  key element**; option to apply for an **integrated CBT *or* CAT pathway**.
+- **Distinctive:** Rich specialist placements (Walton Centre neurology, Ashworth
+  high-secure, addictions); strong pastoral support; Mersey Care partnership.
 
 ### Manchester
 - **Models:** **CBT in-depth**, plus **psychodynamic-interpersonal**, systemic,
   **neuropsychology**, leadership.
-- **Values/ethos:** Self-motivating reflective practitioner; **critical
-  evaluation of all models** emphasised.
-- **Distinctive:** Strong research links (Division of Psychology & Mental
-  Health).
+- **Values/ethos:** **Critical evaluation of all models**; research-intensive.
 
 ### Newcastle
 - **Models:** CBT, systemic, **neuropsychology** pathways.
-- **Values/ethos:** Evidence-based/empirical ethos; **'discovery' learning**;
-  trainees as active agents; Experts by Experience in recruitment.
-- **Distinctive:** One of the longest-established (50+ years).
+- **Values/ethos:** **'Discovery' learning**; trainees as active agents; Experts
+  by Experience in recruitment. 50+ years established.
 
 ### North Thames — UCL
-- **Models:** Broad range under a **competency-based** model.
-- **Values/ethos:** Train "thinking psychologists"; research-strong.
-- **Distinctive:** **Largest** UK course; research specialties span addiction,
-  psychopharmacology, neuropsychology, dementia, eating disorders, psychosis;
-  diverse London services (fast-paced/intense per trainee feedback).
+- **Models:** Broad range under a **competency-based** model; research
+  specialties span neuropsychology, dementia, addiction, psychosis, eating
+  disorders.
+- **Distinctive:** **Largest** UK course; research-heavy; diverse London
+  services (fast-paced per trainee feedback).
 
 ### Oxford
-- **Models:** **CBT** and **systemic/family** as main approaches.
-- **Values/ethos:** Clinical *art + science*; scientist- and reflective-
-  practitioner; lifespan/context emphasis.
-- **Distinctive:** Strong CBT heritage; core BPS placement strategy + trainee-
-  led specialisations.
+- **Models:** **CBT** and **systemic/family**; neuro/neuroscience among staff
+  research.
+- **Accreditation extras:** **BABCP Level 2** — graduates from 2018 onward are
+  **automatically eligible** for BABCP practitioner accreditation.
+- **Values/ethos:** Clinical *art + science*; research-led.
 
 ### Plymouth
 - **Models:** Broad; strong **psychotherapy & reflective-practice** focus.
 - **Values/ethos:** Equality/inclusivity; **anti-racism and service-user
   involvement** in selection.
-- **Distinctive:** Tight research–clinical integration; Cornwall/Devon
-  placements; welcomes mature & diverse applicants.
+- **Distinctive:** Cornwall/Devon placements; welcomes mature & diverse
+  applicants.
 
 ### Royal Holloway (North Thames)
-- **Models:** CBT; **BABCP pathway** available.
-- **Values/ethos:** Quality of everyone's experience valued; zero tolerance for
-  harassment/racism; lived experience embedded throughout.
-- **Distinctive:** Adult-learner model; part of the North Thames group.
+- **Models:** CBT with an established **BABCP CBT pathway** (200 taught hours)
+  **and a systemic pathway**; team expertise incl. **neuropsychology**.
+- **Accreditation extras:** BABCP pathway; **piloting AFT foundation** in
+  systemic.
+- **Values/ethos:** Lived experience embedded; adult-learner model; zero
+  tolerance for harassment/racism.
 
 ### Salomons — Canterbury Christ Church
 - **Models:** **Deliberate diversity of models**; Year-3 specialist options
-  (**EMDR, systemic or psychoanalytic**), plus neuropsychology & leadership.
-- **Values/ethos:** NHS values embedded from selection onward; Experts by
-  Experience across all aspects; cultural-sensitivity/"Thinking Space" reflective
-  groups. *(Some trainee feedback felt social-justice commitments weren't always
-  fully met — worth probing.)*
-- **Distinctive:** One of the largest & longest-established; broad model
-  exposure.
+  (**EMDR, systemic or psychoanalytic**); related **neuropsychology** & CBT
+  postgrad provision on site.
+- **Accreditation extras:** **AFT** accreditation.
+- **Values/ethos:** NHS values from selection onward; Experts by Experience
+  throughout; cultural-sensitivity "Thinking Space" groups. *(Some trainee
+  feedback felt social-justice commitments weren't always fully met.)*
 
 ### Sheffield
-- **Models:** Broad; curriculum built on four themes (models/evidence; research;
-  clinical; professional/ethical).
-- **Distinctive:** Yorkshire & Humber commissioned; day-release + mini-block
-  structure; some Year-3 choice of specialism.
+- **Models:** Broad; four-theme curriculum. Neuropsychology appears as
+  **placement experience across all years** rather than a distinct model
+  pathway.
+- **Distinctive:** Strong research links (PEARLS lab); Yorkshire & Humber.
 
 ### Southampton
-- **Models:** CBT plus **critical-community psychology**, recovery/wellbeing.
+- **Models:** CBT, **neuropsychology** and systemic, plus **critical-community
+  psychology**, recovery/wellbeing.
+- **Accreditation extras:** Opportunity for **dual accreditation in
+  Neuropsychology, CBT or Systemic Therapy**.
 - **Values/ethos:** **Anti-racist, anti-discriminatory**; nationally recognised
-  **EDI leaders**; strong Experts-by-Experience integration.
-- **Distinctive:** Explicit systemic-discrimination framing; research-strong per
-  Alternative Handbook.
+  **EDI leaders**; strong Experts-by-Experience.
+- **Distinctive:** Unusual pairing of a **strong neuropsychology strand** with a
+  strong social-justice/community ethos; Top-10 nationally (BPS Alt Handbook
+  2025).
 
 ### Staffordshire
-- **Models:** Broad; strong reflective-practice emphasis.
-- **Values/ethos:** **Impact of society on wellbeing** a running strand; wider
-  health/social/economic context.
-- **Distinctive:** Commended for NHS-stakeholder & service-user regard;
-  Shropshire/Staffs trusts.
+- **Models:** Broad, reflective; a **neuropsychology accreditation route** run in
+  conjunction with the **University of Bristol** (limited, ~6 trainees/cohort).
+- **Values/ethos:** **Impact of society on wellbeing** a running strand.
+- **Distinctive:** Shropshire/Staffs trusts; commended for stakeholder regard.
 
 ### Surrey
 - **Models:** **CBT and systemic** core; **neuropsychology** strength.
 - **Accreditation extras:** **BABCP Level 2** *and* **AFT Foundation**, plus
   neuro components toward the **BPS Specialist Register** — a strong
   triple-accreditation profile.
-- **Distinctive:** Year-3 six-month specialist placement.
 
 ### Teesside
-- **Models:** **Very broad** — CBT, **CAT**, psychodynamic, systemic, and a
-  clear **neuropsychology** strand.
-- **Values/ethos:** Innovative/contemporary; scientist- & reflective-
-  practitioner; indirect/organisational work encouraged.
-- **Distinctive:** Neuropsychology teaching toward **QiCN**; covers
-  neurodiversity & acquired brain injury; TEWV partnership.
+- **Models:** **Very broad** — CBT, **CAT**, psychodynamic, systemic, and a clear
+  **neuropsychology** strand.
+- **Accreditation extras:** Neuropsychology teaching toward **QiCN**.
+- **Distinctive:** Neurodiversity & acquired brain injury; TEWV partnership.
 
 ### Trent — Lincoln & Nottingham
 - **Models:** Broad range incl. CBT.
-- **Values/ethos:** Scientist- & reflective-practitioner; **commended by BPS for
-  depth of service-user & carer involvement**.
-- **Distinctive:** Multi-trust collaboration across Notts/Lincs/Derbyshire.
+- **Values/ethos:** **Commended by BPS for depth of service-user & carer
+  involvement**.
+- **Distinctive:** Multi-trust across Notts/Lincs/Derbyshire.
 
 ---
 
@@ -298,19 +301,17 @@ experts-by-experience involvement).
 
 These themes can become **filters / colour-coding** on the eventual scatter plot
 and league tables, e.g.:
-- Filter to courses with a **neuropsychology** emphasis, or a **social-justice**
+- Filter to courses with a **neuropsychology** emphasis, a **social-justice**
   ethos, or **extra accreditations** (BABCP/AFT/CAT).
 - Colour points by dominant model family (CBT-led vs. pluralistic vs.
   psychodynamic-leaning).
 
-A machine-readable version of these tags is in `data/course-tags.json` for that
-purpose.
+A machine-readable version of these tags is in `data/course-tags.json`.
 
 ## Caveats
-- Marketing vs. reality: website ethos statements are aspirational. Cross-check
-  against the **BPS Alternative Handbook** trainee feedback (which you already
-  have) before weighting heavily.
-- "Neuropsychology" appears everywhere; only distinctive strengths are tagged.
+- **Marketing vs. reality:** website ethos statements are aspirational.
+  Cross-check against the **BPS Alternative Handbook** trainee feedback.
+- **Absence ≠ absence:** even after the normalised re-sweep, a missing tag means
+  "not surfaced", not "definitely absent". Confirm on the course site.
 - Coventry & Warwick is **not recruiting for 2026**.
-- Course details (esp. accreditation pathways) change year to year — confirm on
-  the course site before applying.
+- Accreditation pathways change year to year — confirm before applying.
