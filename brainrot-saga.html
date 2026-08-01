@@ -496,35 +496,35 @@ const LEVELS = [
   '........','.L....L.','........','...LL...','...LL...','........','.L....L.','........']},
 /* 9 */{name:'Hourglass', moves:22, colors:5, goals:[{k:'jelly'}], grid:[
   '.........','.........','#.......#','##11111##','###111###','##11111##','#.......#','.........','.........']},
-/*10 */{name:'Six Vibes', moves:22, colors:6, goals:[{k:'score', t:16000}], stars:[16000,24000,34000], grid:[
+/*10 */{name:'Six Vibes', moves:24, colors:6, goals:[{k:'score', t:16000}], stars:[16000,24000,34000], grid:[
   '........','........','........','........','........','........','........','........']},
 
-/*11 */{name:'Brain Delivery', moves:30, colors:5, goals:[{k:'drop', n:2}], grid:[
+/*11 */{name:'Brain Delivery', moves:32, colors:5, goals:[{k:'drop', n:2}], grid:[
   '........','........','........','........','........','........','........','vvvvvvvv']},
 /*12 */{name:'Boxed Fog', moves:26, colors:5, goals:[{k:'jelly'},{k:'crates'}], grid:[
   '.........','.x.....x.','..11111..','..1x.x1..','..11111..','.x.....x.','.........','.........'], jelly:[
   '.........','.........','..11111..','..11111..','..11111..','.........','.........','.........']},
-/*13 */{name:'Pillar Posting', moves:26, colors:5, goals:[{k:'jelly'}], grid:[
+/*13 */{name:'Pillar Posting', moves:32, colors:5, goals:[{k:'jelly'}], grid:[
   '.........','2#2#2#2#2','.........','2#2#2#2#2','.........','2#2#2#2#2','.........','.........']},
 /*14 */{name:'Funnel Vision', moves:34, colors:5, goals:[{k:'drop', n:3},{k:'crates'}], grid:[
   '.........','.........','..x...x..','.........','.##...##.','.........','..x...x..','..vvvvv..']},
 /*15 */{name:'Total Fog', moves:26, colors:5, goals:[{k:'jelly'}], grid:[
   '........','.111111.','.111111.','.111111.','.111111.','.111111.','.111111.','........']},
 
-/*16 */{name:'Chained Up', moves:26, colors:5, goals:[{k:'jelly'}], grid:[
+/*16 */{name:'Chained Up', moves:28, colors:5, goals:[{k:'jelly'}], grid:[
   '.........','..L1L1L..','..1...1..','..L...L..','..1...1..','..L1L1L..','.........','.........']},
 /*17 */{name:'Triple Threat', moves:26, colors:6, goals:[{k:'collect', type:1, n:14},{k:'collect', type:3, n:14},{k:'collect', type:5, n:14}], grid:[
   '.........','.........','.........','.........','.........','.........','.........','.........']},
-/*18 */{name:'Bottleneck', moves:36, colors:5, goals:[{k:'drop', n:3}], grid:[
+/*18 */{name:'Bottleneck', moves:36, colors:5, goals:[{k:'drop', n:2}], grid:[
   '.........','.........','.........','##.....##','###...###','###...###','###...###','###v.v###']},
 /*19 */{name:'Fort Cringe', moves:28, colors:5, goals:[{k:'jelly'},{k:'crates'}], grid:[
   '.........','.XX...XX.','.X11111X.','..11111..','.X11111X.','.XX...XX.','.........','.........']},
-/*20 */{name:'X Marks It', moves:24, colors:6, goals:[{k:'score', t:22000}], stars:[22000,32000,45000], grid:[
+/*20 */{name:'X Marks It', moves:26, colors:5, goals:[{k:'score', t:12000}], stars:[12000,20000,30000], grid:[
   '#.......#','.#.....#.','..#...#..','...#.#...','....#....','...#.#...','..#...#..','.#.....#.','#.......#']},
 
-/*21 */{name:'Corner Delulu', moves:28, colors:5, goals:[{k:'jelly'}], grid:[
+/*21 */{name:'Corner Delulu', moves:32, colors:5, goals:[{k:'jelly'}], grid:[
   '22.....22','22.....22','..L...L..','.........','....L....','.........','..L...L..','22.....22','22.....22']},
-/*22 */{name:'Brain Drain', moves:38, colors:5, goals:[{k:'drop', n:4}], grid:[
+/*22 */{name:'Brain Drain', moves:42, colors:5, goals:[{k:'drop', n:3}], grid:[
   '........','........','.x....x.','........','..#..#..','........','.x....x.','vv.vv.vv']},
 /*23 */{name:'Crate Expectations', moves:26, colors:6, goals:[{k:'crates'}], grid:[
   '.........','.X.X.X.X.','.........','X.X...X.X','.........','.X.X.X.X.','.........','.........']},
@@ -533,16 +533,16 @@ const LEVELS = [
 /*25 */{name:'Mixed Signals', moves:28, colors:5, goals:[{k:'jelly'},{k:'collect', type:3, n:18}], grid:[
   '.........','.11...11.','.1L...L1.','.........','....2....','.1L...L1.','.11...11.','.........']},
 
-/*26 */{name:'Seven Deadly Vibes', moves:30, colors:7, goals:[{k:'score', t:26000}], stars:[26000,38000,52000], grid:[
+/*26 */{name:'Seven Deadly Vibes', moves:32, colors:7, goals:[{k:'score', t:14000}], stars:[14000,22000,32000], grid:[
   '.........','.........','..#...#..','.........','.........','.........','..#...#..','.........','.........']},
-/*27 */{name:'Chain Delivery', moves:36, colors:5, goals:[{k:'drop', n:3},{k:'crates'}], grid:[
-  '.........','.........','.LLL.LLL.','.........','..x...x..','.........','.LLL.LLL.','.........','..vvvvv..']},
+/*27 */{name:'Chain Delivery', moves:36, colors:5, goals:[{k:'drop', n:2},{k:'crates'}], grid:[
+  '.........','.........','.LLL.LLL.','.........','..x...x..','.........','.LLL.LLL.','.........','vvvvvvvvv']},
 /*28 */{name:'Peak Fog', moves:34, colors:5, goals:[{k:'jelly'}], grid:[
   '........','.222222.','.222222.','.222222.','.222222.','.222222.','.222222.','........']},
 /*29 */{name:'Small Brain', moves:18, colors:6, goals:[{k:'collect', type:0, n:12},{k:'collect', type:5, n:12}], grid:[
   '.......','.......','.......','.......','.......','.......','.......']},
-/*30 */{name:'Final Boss: Ohio', moves:42, colors:6, goals:[{k:'jelly'},{k:'crates'},{k:'drop', n:2}], grid:[
-  '..X...X..','.2.....2.','.2.LLL.2.','..2...2..','X.......X','..2...2..','.2.LLL.2.','.2.....2.','..vvvvv..']},
+/*30 */{name:'Final Boss: Ohio', moves:45, colors:6, goals:[{k:'jelly'},{k:'crates'},{k:'drop', n:2}], grid:[
+  '..X...X..','.2.....2.','.2.LLL.2.','..2...2..','X.......X','..2...2..','.2.LLL.2.','.2.....2.','vvvvvvvvv']},
 ];
 
 /* Endless levels past the hand-built set. Deterministic per index. */
@@ -576,17 +576,16 @@ function generateLevel(id){
   else if(kind==='crates')  goals.push({k:'crates'});
   else if(kind==='collect') goals.push({k:'collect', type:Math.floor(R()*colors), n:18+Math.floor(R()*14)});
   else if(kind==='drop')    goals.push({k:'drop', n:nDrop});
-  else                      goals.push({k:'score', t:14000 + id*900});
+  else                      goals.push({k:'score', t:10000 + (id-LEVELS.length)*500});
   const moves = 22 + Math.floor(R()*12) + (kind==='drop' ? 8 : 0);
   return {
     name: 'Endless '+(id-LEVELS.length),
     moves, colors, goals, grid:g,
-    stars: kind==='score' ? [14000+id*900, 20000+id*1300, 28000+id*1800] : null,
+    stars: kind==='score' ? (t=> [t, Math.round(t*1.9), Math.round(t*3)])(10000 + (id-LEVELS.length)*500) : null,
     generated:true
   };
 }
 
-const levelCount = ()=> 999;                     /* the scroll is infinite */
 function getLevel(id){                            /* id is 1-based */
   const base = LEVELS[id-1] ? JSON.parse(JSON.stringify(LEVELS[id-1])) : generateLevel(id);
   base.id = id;
@@ -719,9 +718,9 @@ const G = {
   score:0, moves:0, busy:true, over:false,
   goals:[], prog:null,
   dropsLeft:0, dropsActive:0,
-  tileSeq:1, cascade:0, activated:null, fx:[],
+  tileSeq:1, activated:null, fx:[],
   sel:null, boosterMode:null, swapPick:null,
-  hintTimer:0, hintEls:[], idleAt:0,
+  hintEls:[], idleAt:0,
   stats:null
 };
 
@@ -754,7 +753,7 @@ function buildBoard(lv){
   G.H = lv.grid.length;
   G.W = lv.grid[0].length;
   G.cells = []; G.tiles = new Array(G.W*G.H).fill(null);
-  G.score = 0; G.moves = lv.moves; G.over = false; G.cascade = 0;
+  G.score = 0; G.moves = lv.moves; G.over = false;
   G.token = (G.token || 0) + 1;      /* invalidates async work from the last board */
   G.tileSeq = 1; G.sel = null; G.boosterMode = null; G.swapPick = null;
   G.stats = {best:0, specials:0, cleared:0};
@@ -796,10 +795,10 @@ function buildBoard(lv){
   while(!findAnyMove() && guard++ < 60) shuffleTypes(true);
 
   G.prog = {collect:{}, jelly:countJelly(), crates:countCrates(), drops:0};
-  G.dropsLeft = 0; G.dropsActive = 0;
+  G.dropsLeft = 0; G.dropsActive = 0; G.dropsNeed = 0;
   for(const g of lv.goals){
     if(g.k === 'collect') G.prog.collect[g.type] = 0;
-    if(g.k === 'drop') G.dropsLeft = g.n;
+    if(g.k === 'drop'){ G.dropsLeft = g.n; G.dropsNeed = g.n; }
   }
   layoutBoard();
   paintTerrain();
@@ -932,16 +931,24 @@ function paintTerrain(){
 function countJelly(){ return G.cells.reduce((a,k)=> a + k.jelly, 0); }
 function countCrates(){ return G.cells.reduce((a,k)=> a + k.blocker, 0); }
 
-/* which cells can actually deliver an ingredient to an exit */
+/* Which cells can actually deliver an ingredient to an exit. Chained tiles
+   count as walls: a brain dropped behind one is parked until it breaks, so
+   we simply never spawn one there. Recomputed on every clear, so the route
+   reopens the moment the chain or crate goes. */
 function computeReach(){
   const reach = new Array(G.W*G.H).fill(false);
+  const open = (r,c)=>{
+    if(!playable(r,c)) return false;
+    const t = tileAt(r,c);
+    return !(t && t.lock);
+  };
   for(let r=G.H-1;r>=0;r--) for(let c=0;c<G.W;c++){
-    if(!playable(r,c)) continue;
+    if(!open(r,c)) continue;
     const k = cellAt(r,c);
     if(k.exit){ reach[idx(r,c)] = true; continue; }
     let ok = false;
     for(const dc of [0,-1,1]){
-      if(inB(r+1,c+dc) && playable(r+1,c+dc) && reach[idx(r+1,c+dc)]) ok = true;
+      if(inB(r+1,c+dc) && open(r+1,c+dc) && reach[idx(r+1,c+dc)]) ok = true;
     }
     reach[idx(r,c)] = ok;
   }
@@ -1286,9 +1293,10 @@ function findFaller(r, c){
 }
 
 function pickSpawn(r, c){
-  /* keep up to two brains falling at once so a level never stalls waiting on one */
+  /* several brains fall at once, but never more than the level still needs */
+  const wanted = Math.min(3, G.dropsNeed - G.prog.drops);
   if(G.dropsLeft > 0 && G.reach[idx(r,c)] &&
-     G.dropsActive < 2 && Math.random() < 0.35){
+     G.dropsActive < wanted && Math.random() < 0.35){
     G.dropsLeft--; G.dropsActive++;
     return {coll:true, type:0};
   }
