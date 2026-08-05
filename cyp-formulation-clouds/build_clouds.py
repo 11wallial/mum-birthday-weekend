@@ -228,6 +228,13 @@ def build_body():
                                              color="46687F")], align="left")))
         parts.append(shape(label + " rule", card_x + 0.86, row_y + 0.245,
                            card_w - 1.08, 0.014, fill="AFC9DA", z=11 + j))
+        # an empty, invisibly-bordered box sitting on the rule -- click it
+        # and type; the rule underneath still shows through as the baseline
+        parts.append(shape(label + " field", card_x + 0.86, row_y - 0.03,
+                           card_w - 1.08, 0.30, anchor="b",
+                           insets=(0.04, 0, 0.04, 0.02), z=13 + j,
+                           content=para([run("", size=12, color="3A4451")],
+                                        align="left")))
 
     parts.append(shape("Divider", M, 1.58, 15.70, 0.03, fill="E1EBF4", z=3))
 
