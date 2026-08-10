@@ -1,4 +1,23 @@
 {
+ "Exeter": {
+  "respondents": 57,
+  "none": 11,
+  "pct": 19.3,
+  "quals": {
+   "Masters (MSc)": 31,
+   "Post Graduate Certificate/Diploma": 12,
+   "None": 11,
+   "Masters (MA)": 6,
+   "Masters (MSc) - with placement year": 5,
+   "Diploma": 3,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 49,
+   "No, I completed a non-BPS accredited": 8
+  }
+ },
  "East_London": {
   "respondents": 58,
   "none": 11,
@@ -16,6 +35,25 @@
    "Yes, I completed a BPS accredited": 50,
    "No, I completed a non-BPS accredited": 7,
    "No, I did not complete an": 1
+  }
+ },
+ "Glasgow": {
+  "respondents": 37,
+  "none": 6,
+  "pct": 16.2,
+  "quals": {
+   "Masters (MSc)": 20,
+   "None": 6,
+   "Masters (MSc) - with placement year": 5,
+   "Post Graduate Certificate/Diploma": 5,
+   "Other": 3,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Masters (MA)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 28,
+   "No, I completed a non-BPS accredited": 9
   }
  },
  "Edinburgh": {
@@ -107,6 +145,24 @@
    "No, I did not complete an": 1
   }
  },
+ "Herfordshire": {
+  "respondents": 41,
+  "none": 7,
+  "pct": 17.1,
+  "quals": {
+   "Masters (MSc)": 28,
+   "Post Graduate Certificate/Diploma": 9,
+   "None": 7,
+   "Diploma": 2,
+   "Masters (MA)": 2,
+   "Masters (MSc) - with placement year": 2,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 36,
+   "No, I completed a non-BPS accredited": 5
+  }
+ },
  "Bath": {
   "respondents": 41,
   "none": 7,
@@ -123,6 +179,19 @@
    "Yes, I completed a BPS accredited": 34,
    "No, I completed a non-BPS accredited": 6,
    "No, I did not complete an": 1
+  }
+ },
+ "Hull": {
+  "respondents": 28,
+  "none": 24,
+  "pct": 85.7,
+  "quals": {
+   "None": 24,
+   "Masters (MSc)": 2,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 28
   }
  },
  "Cardiff": {
