@@ -1,0 +1,483 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DClinPsy Compass</title>
+<style>
+:root{
+  --g0:#0a0d12; --g1:#11151c; --g2:#171c25; --g3:#1f2632; --line:#232b37; --line2:#1a212b;
+  --tx:#eef2f7; --tx2:#b3bdca; --tx3:#8b96a6; --tx4:#6b7686;
+  --ac:#6aa9ff; --ac2:#3d8ae8; --acg:rgba(106,169,255,.14);
+  --warm:#e8a martian;
+  --hot:#d95d54; --vio:#8f74e0; --grn:#37a878;
+  --bar1:#6aa9ff; --bar2:#e2a03f; --bar1t:#7db4ff; --bar2t:#e8ae55;
+  --r:10px; --glow:rgba(106,169,255,.09);
+}
+:root{--warm:#e2a03f}
+:root[data-theme="light"]{
+  --g0:#f7f8fa; --g1:#ffffff; --g2:#f2f4f7; --g3:#e9edf2; --line:#dde3ea; --line2:#e9edf2;
+  --tx:#0d1218; --tx2:#414d5c; --tx3:#5c6878; --tx4:#798593;
+  --ac:#2f7fe0; --ac2:#1e6ac9; --acg:rgba(47,127,224,.10);
+  --hot:#c2453c; --vio:#6d4fd0; --grn:#1a8a5c;
+  --bar1:#2f7fe0; --bar2:#b8791f; --bar1t:#1c5fb0; --bar2t:#8a5a12; --glow:rgba(47,127,224,.07);
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --g0:#f7f8fa; --g1:#ffffff; --g2:#f2f4f7; --g3:#e9edf2; --line:#dde3ea; --line2:#e9edf2;
+  --tx:#0d1218; --tx2:#414d5c; --tx3:#5c6878; --tx4:#798593;
+  --ac:#2f7fe0; --ac2:#1e6ac9; --acg:rgba(47,127,224,.10);
+  --hot:#c2453c; --vio:#6d4fd0; --grn:#1a8a5c;
+  --bar1:#2f7fe0; --bar2:#b8791f; --bar1t:#1c5fb0; --bar2t:#8a5a12; --glow:rgba(47,127,224,.07);
+}}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}
+body{background:var(--g0);color:var(--tx);overflow-x:hidden;
+  background-image:radial-gradient(1200px 620px at 78% -8%,var(--glow),transparent 62%);background-attachment:fixed;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select{font:inherit;color:inherit;background:none;border:none}
+button{cursor:pointer}
+.n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3);font-weight:600}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px;border-radius:4px}
+::selection{background:var(--ac);color:#fff}
+
+/* ─── top bar ─── */
+.top{position:sticky;top:0;z-index:70;height:52px;display:flex;align-items:center;gap:14px;
+  padding:0 clamp(14px,2.5vw,22px);background:color-mix(in srgb,var(--g0) 82%,transparent);
+  backdrop-filter:blur(20px) saturate(1.6);border-bottom:1px solid var(--line2)}
+.brand{display:flex;align-items:baseline;gap:9px;margin-right:auto;min-width:0}
+.brand b{font-size:15px;font-weight:640;letter-spacing:-.02em;white-space:nowrap}
+.brand span{font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb{height:32px;padding:0 11px;border-radius:8px;font-size:12.5px;color:var(--tx2);
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.tb:hover{background:var(--g2);color:var(--tx)}
+.tb.on{background:var(--acg);color:var(--ac)}
+.cta{height:38px;padding:0 16px;border-radius:9px;font-size:13px;font-weight:600;letter-spacing:-.01em;
+  background:var(--ac);color:#fff;display:inline-flex;align-items:center;gap:7px;transition:.16s;
+  box-shadow:0 1px 2px rgba(0,0,0,.2),0 4px 14px color-mix(in srgb,var(--ac) 28%,transparent)}
+.cta:hover{background:var(--ac2);transform:translateY(-1px)}
+.cta.done{background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);box-shadow:none}
+.cta.done:hover{transform:none;background:color-mix(in srgb,var(--grn) 22%,transparent)}
+
+/* ─── shell ─── */
+.shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+  height:calc(100vh - 52px);height:calc(100dvh - 52px)}
+.rail{overflow-y:auto;border-right:1px solid var(--line2);padding-bottom:150px;scrollbar-width:thin}
+.stage{overflow-y:auto;padding-bottom:150px;background:linear-gradient(180deg,var(--g1),color-mix(in srgb,var(--g1) 88%,var(--g0)));scrollbar-width:thin}
+.rail::-webkit-scrollbar,.stage::-webkit-scrollbar{width:8px}
+.rail::-webkit-scrollbar-thumb,.stage::-webkit-scrollbar-thumb{background:var(--g3);border-radius:6px}
+
+/* ─── controls ─── */
+.ctrl{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--g0) 92%,transparent);
+  backdrop-filter:blur(14px);padding:14px clamp(14px,2.5vw,22px) 11px;border-bottom:1px solid var(--line2)}
+.find{display:flex;align-items:center;gap:9px;height:38px;padding:0 12px;background:var(--g2);
+  border:1px solid var(--line);border-radius:9px;transition:.15s}
+.find:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
+.find input{flex:1;min-width:0;font-size:13.5px}
+.find input::placeholder{color:var(--tx4)}
+.sortrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pill{height:28px;padding:0 11px;border-radius:7px;font-size:12px;color:var(--tx3);
+  border:1px solid transparent;transition:.15s;white-space:nowrap}
+.pill:hover{color:var(--tx);background:var(--g2)}
+.pill[aria-pressed="true"]{color:var(--tx);background:var(--g2);border-color:var(--line);font-weight:600}
+.cnt{margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap}
+
+/* ─── rows ─── */
+.rows{padding:6px 0}
+.row{display:grid;grid-template-columns:26px 62px minmax(0,1fr) 92px 92px 30px;gap:12px;align-items:center;
+  width:100%;padding:11px clamp(14px,2.5vw,22px);text-align:left;position:relative;transition:background .14s;
+  border-bottom:1px solid var(--line2);opacity:0;animation:rin .42s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes rin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.row:hover{background:var(--g2)}
+.row.sel{background:var(--acg)}
+.row.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--ac)}
+.row.inf .mk{box-shadow:0 0 0 2px var(--grn)}
+.row.inf .nm>b::after{content:"IN YOUR FOUR";font-size:8.5px;letter-spacing:.09em;font-weight:700;color:var(--grn);
+  background:color-mix(in srgb,var(--grn) 15%,transparent);padding:2px 5px;border-radius:4px;margin-left:8px;vertical-align:1px}
+.rk{font-size:11px;color:var(--tx3);text-align:right;font-weight:600}
+.row.sel .rk{color:var(--ac)}
+.mk{width:62px;height:30px;border-radius:5px;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none}
+.mk.dk{background:#0e1116}
+.mk img{width:100%;height:100%;object-fit:contain;padding:3px}
+.mk .mono{font-size:11px;font-weight:700;color:#2a3442;font-family:Georgia,serif}
+.nm{min-width:0}
+.nm>b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.nm>i{display:block;font-style:normal;font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mline{display:none;text-decoration:none;font-size:11.5px;color:var(--tx3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mline b{display:inline;font-weight:700;letter-spacing:-.01em;font-size:12px}
+.mline b.c{color:var(--bar1t)} .mline b.q{color:var(--bar2t)}
+.mt{display:flex;flex-direction:column;gap:4px}
+.mt .v{font-size:13px;font-weight:650;letter-spacing:-.02em;line-height:1}
+.mt .t{height:2px;background:var(--g3);border-radius:2px;overflow:hidden}
+.mt .t i{display:block;height:100%;border-radius:2px;width:0;animation:gw .8s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes gw{to{width:var(--w)}}
+.mt.c .v{color:var(--bar1t)} .mt.c .t i{background:var(--bar1)}
+.mt.q .v{color:var(--bar2t)} .mt.q .t i{background:var(--bar2)}
+.mt .v small{font-size:9.5px;color:var(--tx4);font-weight:500;margin-left:3px;letter-spacing:0}
+.na{font-size:11px;color:var(--tx4)}
+.gate{width:6px;height:6px;border-radius:50%;flex:none;margin:0 auto}
+.g-academic{background:var(--hot);box-shadow:0 0 0 3px color-mix(in srgb,var(--hot) 18%,transparent)}
+.g-test{background:var(--vio);box-shadow:0 0 0 3px color-mix(in srgb,var(--vio) 18%,transparent)}
+.g-review{background:var(--grn);box-shadow:0 0 0 3px color-mix(in srgb,var(--grn) 18%,transparent)}
+.g-none{background:var(--tx4)}
+.add{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--tx4);
+  font-size:15px;transition:.15s;border:1px solid transparent}
+.add:hover{background:var(--g3);color:var(--tx)}
+.add.in{background:var(--ac);color:#fff}
+
+/* ─── stage ─── */
+.stg{padding:26px clamp(18px,3vw,34px) 40px;animation:sin .34s cubic-bezier(.22,1,.36,1)}
+@keyframes sin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.shead{display:flex;align-items:flex-start;gap:15px;margin-bottom:22px}
+.shead .mk{width:96px;height:46px;border-radius:7px}
+.shead h2{font-size:clamp(22px,2.6vw,31px);font-weight:660;letter-spacing:-.035em;line-height:1.05;margin-bottom:4px}
+.shead .sub{font-size:12.5px;color:var(--tx3)}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,3vw,34px);margin:26px 0 4px;
+  padding-bottom:24px;border-bottom:1px solid var(--line2)}
+.big .k{font-size:clamp(34px,5vw,52px);font-weight:660;letter-spacing:-.045em;line-height:.92}
+.big .c .k{color:var(--bar1)} .big .q .k{color:var(--bar2)}
+.big .d{font-size:12px;color:var(--tx2);margin-top:7px;line-height:1.45;max-width:24ch}
+.big .e{font-size:11px;color:var(--tx4);margin-top:5px}
+.spark{margin-top:16px;max-width:230px}
+.spk{display:flex;gap:10px;align-items:flex-end;height:40px}
+.spk .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px}
+.spk .b i{display:block;background:color-mix(in srgb,var(--bar1) 34%,transparent);border-radius:3px;
+  height:0;animation:sg .7s cubic-bezier(.22,1,.36,1) forwards}
+.spk .b.hi i{background:var(--bar1)}
+@keyframes sg{to{height:var(--h)}}
+.spk .b em{font-style:normal;font-size:10.5px;font-weight:640;color:var(--tx2);text-align:center}
+.spkx{display:flex;gap:10px;margin-top:5px}
+.spkx span{flex:1;text-align:center;font-size:9.5px;color:var(--tx4);letter-spacing:.05em}
+.sec{margin-top:26px}
+.sec>.lab{margin-bottom:10px;display:block}
+.gline{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.gtag{font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:5px}
+.gtag.g-academic{background:color-mix(in srgb,var(--hot) 16%,transparent);color:var(--hot);box-shadow:none}
+.gtag.g-test{background:color-mix(in srgb,var(--vio) 16%,transparent);color:var(--vio);box-shadow:none}
+.gtag.g-review{background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);box-shadow:none}
+.gtag.g-none{background:var(--g3);color:var(--tx3);box-shadow:none}
+.sec h4{font-size:14.5px;font-weight:620;letter-spacing:-.015em;margin-bottom:6px}
+.sec p{font-size:13px;color:var(--tx2);line-height:1.62;max-width:62ch}
+.warnline{font-size:12px;color:var(--hot);margin-top:9px;display:flex;gap:7px;align-items:flex-start}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tg{font-size:11.5px;padding:4px 9px;border-radius:6px;background:var(--g2);color:var(--tx2);border:1px solid var(--line2)}
+.tg.lead{border-color:var(--ac);color:var(--ac)}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{font-size:13px;color:var(--tx2);line-height:1.55;padding-left:16px;position:relative;max-width:62ch}
+ul.pts li::before{content:"";position:absolute;left:1px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--tx4)}
+.empty{display:grid;place-items:center;height:100%;min-height:340px;padding:30px;text-align:center}
+.empty p{font-size:13px;color:var(--tx3);max-width:34ch;line-height:1.6}
+.empty .big2{font-size:19px;font-weight:620;letter-spacing:-.02em;color:var(--tx2);margin-bottom:8px}
+
+/* ─── slot dock ─── */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:80;background:color-mix(in srgb,var(--g1) 92%,transparent);
+  backdrop-filter:blur(22px) saturate(1.5);border-top:1px solid var(--line)}
+.dockin{max-width:1500px;margin:0 auto;padding:11px clamp(14px,2.5vw,22px);display:flex;gap:clamp(10px,2vw,22px);align-items:center}
+.slots{display:flex;gap:7px;flex:1;min-width:0}
+.slot{flex:1;min-width:0;height:52px;border-radius:9px;border:1px dashed var(--line);display:flex;align-items:center;
+  gap:8px;padding:0 9px;transition:.18s;position:relative;overflow:hidden}
+.slot.f{border-style:solid;border-color:var(--line);background:var(--g2)}
+.slot .mk{width:40px;height:22px;border-radius:4px}
+.slot .si{min-width:0;flex:1}
+.slot .si b{display:block;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .si i{font-style:normal;font-size:10px;color:var(--tx3)}
+.slot .x{width:18px;height:18px;border-radius:5px;color:var(--tx4);font-size:12px;display:grid;place-items:center;flex:none}
+.slot .x:hover{background:var(--g3);color:var(--hot)}
+.slot .ph{font-size:11px;color:var(--tx3);padding-left:4px;display:flex;align-items:center;gap:7px}
+.slot .ph b{width:20px;height:20px;border-radius:6px;background:var(--g2);display:grid;place-items:center;
+  font-size:10px;font-weight:700;color:var(--tx4)}
+.dockhint{font-size:11px;color:var(--tx3);white-space:nowrap;padding-left:clamp(12px,2vw,22px);border-left:1px solid var(--line)}
+.odds{display:flex;gap:clamp(14px,2vw,26px);align-items:center;flex:none;padding-left:clamp(12px,2vw,22px);
+  border-left:1px solid var(--line)}
+.od{min-width:70px}
+.od .k{font-size:27px;font-weight:660;letter-spacing:-.04em;line-height:1}
+.od .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);margin-top:3px;font-weight:700}
+.od.i .k{color:var(--grn)} .od.o .k{color:var(--ac)}
+.od .k.dim{color:var(--tx4)!important}
+.strength{display:flex;flex-direction:column;gap:4px;width:132px;flex:none}
+.strength input{width:100%;accent-color:var(--ac);cursor:pointer}
+.strength .sl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--tx3)}
+.dockmore{font-size:11px;color:var(--tx3);border-bottom:1px dotted var(--tx4);padding-bottom:1px}
+
+/* ─── modal ─── */
+.scrim{position:fixed;inset:0;background:rgba(4,6,9,.62);backdrop-filter:blur(3px);z-index:90;
+  opacity:0;pointer-events:none;transition:opacity .22s}
+.scrim.on{opacity:1;pointer-events:auto}
+.modal{position:fixed;z-index:95;left:50%;top:50%;transform:translate(-50%,-46%) scale(.97);opacity:0;
+  pointer-events:none;width:min(680px,calc(100vw - 28px));max-height:min(84vh,720px);overflow-y:auto;
+  background:var(--g1);border:1px solid var(--line);border-radius:16px;padding:26px;transition:.24s cubic-bezier(.22,1,.36,1)}
+.modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal h3{font-size:20px;font-weight:640;letter-spacing:-.028em;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--tx2);line-height:1.65;margin-bottom:12px;max-width:62ch}
+.modal .lab{display:block;margin:20px 0 9px}
+.mrow{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13px}
+.mrow:last-child{border:none}
+.mrow .mk2{color:var(--tx3)}
+.mrow .mv{font-weight:620;text-align:right}
+.closeb{position:absolute;right:16px;top:16px;width:30px;height:30px;border-radius:8px;color:var(--tx3);display:grid;place-items:center}
+.closeb:hover{background:var(--g2);color:var(--tx)}
+
+/* ─── mobile ─── */
+.mobback{display:none}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;height:auto}
+  .rail{border-right:none;padding-bottom:0}
+  .stage{position:fixed;inset:0;top:0;z-index:85;transform:translateX(100%);transition:transform .28s cubic-bezier(.22,1,.36,1);
+    visibility:hidden;padding-bottom:150px}
+  .stage.on{transform:none;visibility:visible}
+  .mobback{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tx2);padding:8px 0;margin-bottom:6px}
+  .row{grid-template-columns:46px minmax(0,1fr) 12px;gap:11px;padding:10px clamp(12px,3vw,18px);align-items:center}
+  .row .rk,.row .mt,.row .na{display:none}
+  .row .mline{display:block}
+  .mk{width:100%;height:26px}
+  .nm>b{font-size:13.5px}
+  .row.inf .nm>b::after{content:"✓";background:none;padding:0;margin-left:6px;font-size:12px}
+  .brand span{display:none}
+  .sortrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-14px;padding-right:14px}
+  .sortrow::-webkit-scrollbar{display:none}
+  .cnt{display:none}
+  .big{grid-template-columns:1fr;gap:22px}
+  .dockin{flex-wrap:wrap;gap:10px;padding:9px clamp(12px,3vw,18px)}
+  .slots{order:2;width:100%;flex:none;gap:6px}
+  .slot{height:40px;padding:0 6px;gap:6px;border-radius:8px}
+  .slot .mk{width:26px;height:16px}
+  .slot .si i{display:none}
+  .slot .si b{font-size:10.5px}
+  .slot .ph{font-size:10px;gap:5px;white-space:nowrap;overflow:hidden}
+  .slot .ph b{width:16px;height:16px;font-size:9px}
+  .slot .x{width:16px;font-size:10px}
+  .odds{order:1;padding-left:0;border-left:none;margin-left:auto;gap:16px}
+  .od{min-width:auto}
+  .od .k{font-size:23px}
+  .strength{order:1;width:118px}
+}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
+  .mt .t i{width:var(--w)!important}}
+</style>
+
+<div class="top">
+  <div class="brand"><b>Compass</b><span>DClinPsy 2027 entry · 32 courses</span></div>
+  <button class="tb" id="howBtn">How it works</button>
+  <button class="tb" id="themeBtn" aria-label="Toggle theme">◐</button>
+</div>
+
+<div class="shell">
+  <div class="rail">
+    <div class="ctrl">
+      <label class="find">
+        <span style="color:var(--tx4);font-size:13px">⌕</span>
+        <input id="q" type="search" placeholder="Search course, city, model…" aria-label="Search courses">
+      </label>
+      <div class="sortrow" id="sorts"></div>
+    </div>
+    <div class="rows" id="rows"></div>
+  </div>
+  <div class="stage" id="stage"></div>
+</div>
+
+<div class="dock"><div class="dockin">
+  <div class="slots" id="slots"></div>
+  <div class="strength">
+    <input type="range" id="str" min="50" max="95" value="80" step="5" aria-label="Your application strength percentile">
+    <div class="sl"><span>Strength</span><span id="strv">80th</span></div>
+  </div>
+  <div class="odds">
+    <div class="od i"><div class="k n" id="oInt">—</div><div class="l">≥1 interview</div></div>
+    <div class="od o"><div class="k n" id="oOff">—</div><div class="l">≥1 offer</div></div>
+    <button class="tb" id="howBtn2" style="height:26px;width:26px;padding:0;justify-content:center;font-size:12px;border:1px solid var(--line)" aria-label="How the odds are calculated">?</button>
+  </div>
+</div></div>
+
+<div class="scrim" id="scrim"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <button class="closeb" id="mClose" aria-label="Close">✕</button>
+  <div id="mBody"></div>
+</div>
+
+<script>
+const C=__DATA__;
+const ML={CBT:"CBT",SYS:"Systemic",PSY:"Psychodynamic",CAT:"CAT",NEURO:"Neuropsychology",IPT:"IPT",DBT:"DBT",COMMUNITY:"Community psych"};
+const VL={social_justice:"Social justice",community_psychology:"Community psych",ebe_strong:"Experts by experience",edi_leader:"EDI leader"};
+const GATE={academic:"Academic score",test:"Aptitude test",review:"Application review"};
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const S={q:"",sort:"fit",sel:null,slots:[],str:80};
+
+const CS=C.filter(c=>c.comp).map(c=>c.comp.avg), QS=C.filter(c=>c.qual).map(c=>c.qual.p);
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length, sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length)};
+const CM=mean(CS),CD=sd(CS),QM=mean(QS),QD=sd(QS),CX=Math.max(...CS),QX=Math.max(...QS);
+const idx=c=>(c.qual?(c.qual.p-QM)/QD:0)-(c.comp?(c.comp.avg-CM)/CD:0);
+
+/* inverse normal CDF (Acklam) */
+function inv(p){const a=[-39.696830286653757,220.9460984245205,-275.92851044696869,138.357751867269,-30.66479806614716,2.5066282774592392],
+ b=[-54.476098798224058,161.58583685804089,-155.69897985988661,66.80131188771972,-13.280681552885721],
+ c=[-0.0077848940024302926,-0.32239645804113648,-2.4007582771618381,-2.5497325393437338,4.3746641414649678,2.9381639826987831],
+ d=[0.0077846957090414622,0.32246712907003983,2.445134137142996,3.7544086619074162];
+ const pl=0.02425;let q,r;
+ if(p<pl){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+ if(p<=1-pl){q=p-.5;r=q*q;return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}
+ q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+const cdf=z=>{const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2);
+ let p=d*t*(1.330274*Math.pow(t,5)-1.821256*Math.pow(t,4)+1.781478*t*t*t-.356538*t*t+.319381*t);return z>0?1-p:p};
+
+/* odds: latent quality + course noise, correlated through shared q */
+function odds(){
+  const picks=S.slots.filter(Boolean).map(n=>C.find(c=>c.name===n)).filter(c=>c&&c.comp);
+  if(!picks.length) return null;
+  const qz=inv(S.str/100), SIG=0.8, N=4000;
+  let ai=0,ao=0;
+  const thrO=picks.map(c=>inv(1-1/c.comp.avg));
+  const thrI=picks.map(c=>inv(1-Math.min(.95,3/c.comp.avg)));
+  for(let k=0;k<N;k++){
+    let gi=false,go=false;
+    for(let j=0;j<picks.length;j++){
+      const e=qz+(Math.random()*2-1+Math.random()*2-1+Math.random()*2-1)*SIG*0.816;
+      if(e>thrI[j])gi=true; if(e>thrO[j])go=true;
+    }
+    if(gi)ai++; if(go)ao++;
+  }
+  return {i:Math.round(ai/N*100), o:Math.round(ao/N*100), n:picks.length};
+}
+
+const SORTS=[["fit","Openness"],["comp","Least competitive"],["qual","Most non-postgrad"],["az","A–Z"]];
+function sorted(){
+  let L=C.filter(c=>{ if(!S.q)return true;
+    return (c.name+" "+c.city+" "+c.region+" "+c.models.map(m=>ML[m]).join(" ")+" "+
+            c.values.map(v=>VL[v]).join(" ")+" "+c.distinctive.join(" ")).toLowerCase().includes(S.q)});
+  const by={fit:(a,b)=>idx(b)-idx(a),az:(a,b)=>a.name.localeCompare(b.name),
+    comp:(a,b)=>(a.comp?a.comp.avg:1e9)-(b.comp?b.comp.avg:1e9),
+    qual:(a,b)=>(b.qual?b.qual.p:-1)-(a.qual?a.qual.p:-1)};
+  return L.sort(by[S.sort]);
+}
+const mark=(c,cls="")=>c.logo?`<span class="mk ${c.logoDark?"dk":""} ${cls}"><img src="${c.logo}" alt="" loading="lazy"></span>`
+  :`<span class="mk ${cls}"><span class="mono">${c.mono}</span></span>`;
+
+function drawRows(){
+  const L=sorted();
+  document.getElementById("rows").innerHTML=L.map((c,i)=>{
+    const inSlot=S.slots.includes(c.name);
+    return `<button class="row ${S.sel===c.name?"sel":""} ${inSlot?"inf":""}" data-n="${esc(c.name)}" style="animation-delay:${Math.min(i*14,420)}ms">
+      <span class="rk n">${i+1}</span>
+      ${mark(c)}
+      <span class="nm"><b>${esc(c.name)}</b><i>${esc(c.city)} · ${esc(c.region)}</i>
+        <u class="mline">${c.comp?`<b class="c">${c.comp.avg}</b> per place`:`no CH data`}${c.qual?` · <b class="q">${c.qual.p}%</b> no PG`:""}</u></span>
+      ${c.comp?`<span class="mt c"><span class="v n">${c.comp.avg}<small>/place</small></span>
+        <span class="t"><i style="--w:${c.comp.avg/CX*100}%"></i></span></span>`:`<span class="na">no data</span>`}
+      ${c.qual?`<span class="mt q"><span class="v n">${c.qual.p}%<small>no PG</small></span>
+        <span class="t"><i style="--w:${c.qual.p/QX*100}%"></i></span></span>`:`<span class="na">—</span>`}
+      <span class="gate g-${c.sel?c.sel.g:"none"}" title="${c.sel?GATE[c.sel.g]:"Not published"}"></span>
+    </button>`}).join("");
+  document.querySelectorAll(".row").forEach(r=>r.addEventListener("click",()=>select(r.dataset.n)));
+  document.getElementById("cnt")&&(document.getElementById("cnt").textContent=L.length+" of "+C.length);
+}
+
+function select(n){ const chg=S.sel!==n; S.sel=n; drawRows(); drawStage();
+  if(chg) document.getElementById("stage").scrollTop=0;
+  if(innerWidth<=900) document.getElementById("stage").classList.add("on"); }
+
+function drawStage(){
+  const st=document.getElementById("stage");
+  const c=C.find(x=>x.name===S.sel);
+  if(!c){ st.innerHTML=`<div class="empty"><div><div class="big2">Choose a course</div>
+    <p>Pick any course to see its competition, intake profile and exactly how it shortlists. Add four to the dock below to model your odds.</p></div></div>`; return; }
+  const yrs=c.comp?Object.entries(c.comp.perYear):[];
+  const mx=yrs.length?Math.max(...yrs.map(([,d])=>d.ratio)):1;
+  const inSlot=S.slots.includes(c.name);
+  st.innerHTML=`<div class="stg">
+    ${innerWidth<=900?`<button class="mobback" id="back">‹ All courses</button>`:""}
+    <div class="shead">${mark(c,"")}
+      <div style="min-width:0"><h2>${esc(c.name)}</h2>
+        <div class="sub">${esc(c.city)} · ${esc(c.region)}${c.recruiting_2026?"":" · <span style='color:var(--hot)'>No 2026 intake</span>"}</div></div>
+    </div>
+    <button class="cta ${inSlot?"done":""}" id="slotBtn">${inSlot?"✓ In your four — remove":"Add to your four"}</button>
+    <div class="big">
+      <div class="c"><div class="k n">${c.comp?c.comp.avg:"—"}</div>
+        <div class="d">applicants per place</div>
+        <div class="e">${c.comp?"3-year average, 2023–25 entry":"Not published by the Clearing House"}</div>
+        ${yrs.length?`<div class="spark"><div class="spk">${yrs.map(([y,d],i)=>`<span class="b ${i===yrs.length-1?"hi":""}"><em>${d.ratio}</em><i style="--h:${Math.max(10,d.ratio/mx*100)}%"></i></span>`).join("")}</div>
+      <div class="spkx">${yrs.map(([y])=>`<span>${y}</span>`).join("")}</div></div>`:""}
+      </div>
+      <div class="q"><div class="k n">${c.qual?c.qual.p+"%":"—"}</div>
+        <div class="d">of trainees arrived with no postgraduate qualification</div>
+        <div class="e">${c.qual?c.qual.none+" of "+c.qual.n+" surveyed":"No data"}</div></div>
+    </div>
+    <div class="sec"><span class="lab">How it shortlists</span>
+      ${c.sel?`<div class="gline"><span class="gtag g-${c.sel.g}">${GATE[c.sel.g]}</span></div>
+        <h4>${esc(c.sel.t)}</h4><p>${esc(c.sel.d)}</p>
+        ${c.sel.pg?`<div class="warnline"><span>▲</span><span>Postgraduate results earn points here — applying without a Masters costs you at this gate.</span></div>`:""}
+        ${c.sel.al?`<div class="warnline"><span>▲</span><span>A-levels are scored — unusual, and unchangeable by the time you apply.</span></div>`:""}`
+      :`<p style="color:var(--tx3)">Not published by the Clearing House. Check the course's own page — the gate type changes who it favours.</p>`}
+    </div>
+    <div class="sec"><span class="lab">Models &amp; specialisms</span>
+      <div class="tags">${c.models.map(m=>`<span class="tg ${m===c.model_lead?"lead":""}">${ML[m]}${m===c.model_lead?" · lead":""}</span>`).join("")}</div>
+      ${c.accreditation_extras.length?`<span class="lab" style="display:block;margin:16px 0 8px">Accreditation extras</span>
+        <div class="tags">${c.accreditation_extras.map(a=>`<span class="tg">${esc(a)}</span>`).join("")}</div>`:""}
+      ${c.values.length?`<span class="lab" style="display:block;margin:16px 0 8px">Values &amp; ethos</span>
+        <div class="tags">${c.values.map(v=>`<span class="tg">${VL[v]}</span>`).join("")}</div>`:""}
+    </div>
+    <div class="sec"><span class="lab">What makes it distinctive</span>
+      <ul class="pts">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>`;
+  const b=document.getElementById("slotBtn"); if(b)b.addEventListener("click",()=>toggleSlot(c.name));
+  const bk=document.getElementById("back"); if(bk)bk.addEventListener("click",()=>st.classList.remove("on"));
+}
+
+function toggleSlot(n){
+  const i=S.slots.indexOf(n);
+  if(i>=0)S.slots.splice(i,1);
+  else if(S.slots.length<4)S.slots.push(n);
+  else return flash();
+  drawSlots(); drawRows(); drawStage();
+}
+function flash(){const s=document.getElementById("slots");s.animate([{transform:"none"},{transform:"translateX(-4px)"},{transform:"translateX(4px)"},{transform:"none"}],{duration:260});}
+function drawSlots(){
+  document.getElementById("slots").innerHTML=[0,1,2,3].map(i=>{
+    const n=S.slots[i]; if(!n)return `<div class="slot"><span class="ph"><b>${i+1}</b>Empty slot</span></div>`;
+    const c=C.find(x=>x.name===n);
+    return `<div class="slot f">${mark(c)}<span class="si"><b>${esc(c.name.split(" (")[0])}</b>
+      <i>${c.comp?c.comp.avg+"/place":"—"}${c.qual?" · "+c.qual.p+"% no PG":""}</i></span>
+      <button class="x" data-rm="${esc(n)}" aria-label="Remove ${esc(c.name)}">✕</button></div>`}).join("");
+  document.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();toggleSlot(b.dataset.rm)}));
+  const o=odds();
+  const oi=document.getElementById("oInt"),oo=document.getElementById("oOff");
+  if(!o){oi.textContent="—";oo.textContent="—";oi.classList.add("dim");oo.classList.add("dim");}
+  else{oi.classList.remove("dim");oo.classList.remove("dim");count(oi,o.i);count(oo,o.o);}
+}
+function count(el,to){const from=parseInt(el.textContent)||0,t0=performance.now();
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=to+"%";return}
+  (function tick(t){const p=Math.min(1,(t-t0)/420),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(to-from)*e)+"%"; if(p<1)requestAnimationFrame(tick)})(t0);}
+
+/* how-it-works modal */
+const HOW=`<h3 id="mTitle">How Compass works</h3>
+<p>Every number here is traceable. Nothing is estimated where it could be measured.</p>
+<span class="lab">Applicants per place</span>
+<p>From the Clearing House “Places by Course Centre” tables, 2023–25 entry, averaged over three years. A course's applications are distinct people who chose <em>it</em> — each applicant may apply to up to four centres, so this is not your odds. Nationally in 2024: 5,603 applicants, 1,164 places, 21% success.</p>
+<span class="lab">Trainees with no postgraduate qualification</span>
+<p>Section 9 of the 2025/26 BPS Alternative Handbook course reports. These are trainees who responded to the survey (~40% nationally), not all successful applicants, so sample sizes are shown throughout — from 12 to 81. Pooled across all courses: 24%.</p>
+<span class="lab">How it shortlists</span>
+<p>Read from each course's Clearing House “Selection procedure” page — all 30 verified. Hull and Belfast are not listed by the Clearing House. Procedures change annually; confirm before applying.</p>
+<span class="lab">The odds model</span>
+<p>A Monte Carlo over a latent-quality model: your strength sits at a percentile of the applicant pool, each course's threshold sits where its selectivity puts it, and course-specific noise is added. Outcomes are <em>correlated</em> — a strong application helps everywhere — so the four are not multiplied independently. Interview rates assume ~3 interviews per place, validated against Leicester's published 96.</p>
+<p style="color:var(--tx3)">The percentile is a judgement, not a measurement. Treat the output as a range, not a forecast.</p>`;
+function openModal(){document.getElementById("mBody").innerHTML=HOW;
+  document.getElementById("modal").classList.add("on");document.getElementById("scrim").classList.add("on");}
+function closeModal(){document.getElementById("modal").classList.remove("on");document.getElementById("scrim").classList.remove("on");}
+
+document.getElementById("sorts").innerHTML=SORTS.map(([k,l])=>
+  `<button class="pill" data-s="${k}" aria-pressed="${k===S.sort}">${l}</button>`).join("")+`<span class="cnt" id="cnt"></span>`;
+document.querySelectorAll("[data-s]").forEach(b=>b.addEventListener("click",()=>{
+  S.sort=b.dataset.s;document.querySelectorAll("[data-s]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===S.sort));drawRows();}));
+document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value.toLowerCase().trim();drawRows();});
+document.getElementById("str").addEventListener("input",e=>{S.str=+e.target.value;
+  document.getElementById("strv").textContent=S.str+"th";drawSlots();});
+document.getElementById("howBtn").addEventListener("click",openModal);
+document.getElementById("howBtn2").addEventListener("click",openModal);
+document.getElementById("mClose").addEventListener("click",closeModal);
+document.getElementById("scrim").addEventListener("click",closeModal);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();
+  if(innerWidth<=900)document.getElementById("stage").classList.remove("on");}});
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
+  document.documentElement.setAttribute("data-theme",cur==="dark"?"light":"dark");});
+
+drawRows(); drawStage(); drawSlots();
+</script>
