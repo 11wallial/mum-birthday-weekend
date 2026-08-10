@@ -1,0 +1,579 @@
+{
+ "Leeds": {
+  "respondents": 32,
+  "none": 6,
+  "pct": 18.8,
+  "quals": {
+   "Masters (MSc)": 20,
+   "Post Graduate Certificate/Diploma": 7,
+   "None": 6,
+   "Masters (MA)": 2,
+   "Other": 2,
+   "Masters (MRes)": 1,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 28,
+   "No, I completed a non-BPS accredited": 4
+  }
+ },
+ "Staffordshire": {
+  "respondents": 23,
+  "none": 5,
+  "pct": 21.7,
+  "quals": {
+   "Masters (MSc)": 16,
+   "None": 5,
+   "Post Graduate Certificate/Diploma": 3,
+   "Diploma": 2
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 22,
+   "No, I completed a non-BPS accredited": 1
+  }
+ },
+ "Southampton": {
+  "respondents": 53,
+  "none": 4,
+  "pct": 7.5,
+  "quals": {
+   "Masters (MSc)": 32,
+   "Post Graduate Certificate/Diploma": 29,
+   "None": 4,
+   "Other": 3,
+   "Masters (MSc) - with placement year": 2,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Masters (MA)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 41,
+   "No, I completed a non-BPS accredited": 11,
+   "Prefer not to say": 1
+  }
+ },
+ "Exeter": {
+  "respondents": 57,
+  "none": 11,
+  "pct": 19.3,
+  "quals": {
+   "Masters (MSc)": 31,
+   "Post Graduate Certificate/Diploma": 12,
+   "None": 11,
+   "Masters (MA)": 6,
+   "Masters (MSc) - with placement year": 5,
+   "Diploma": 3,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 49,
+   "No, I completed a non-BPS accredited": 8
+  }
+ },
+ "East_London": {
+  "respondents": 58,
+  "none": 11,
+  "pct": 19.0,
+  "quals": {
+   "Masters (MSc)": 38,
+   "Post Graduate Certificate/Diploma": 14,
+   "None": 11,
+   "Masters (MA)": 4,
+   "Masters (MRes)": 1,
+   "Masters (MSc) - with placement year": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 50,
+   "No, I completed a non-BPS accredited": 7,
+   "No, I did not complete an": 1
+  }
+ },
+ "Manchester": {
+  "respondents": 58,
+  "none": 19,
+  "pct": 32.8,
+  "quals": {
+   "Masters (MSc)": 27,
+   "None": 19,
+   "Post Graduate Certificate/Diploma": 7,
+   "Masters (MA)": 3,
+   "Masters (MSc) - with placement year": 2,
+   "Other": 2,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 53,
+   "No, I completed a non-BPS accredited": 5
+  }
+ },
+ "Glasgow": {
+  "respondents": 37,
+  "none": 6,
+  "pct": 16.2,
+  "quals": {
+   "Masters (MSc)": 20,
+   "None": 6,
+   "Masters (MSc) - with placement year": 5,
+   "Post Graduate Certificate/Diploma": 5,
+   "Other": 3,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Masters (MA)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 28,
+   "No, I completed a non-BPS accredited": 9
+  }
+ },
+ "Edinburgh": {
+  "respondents": 57,
+  "none": 10,
+  "pct": 17.5,
+  "quals": {
+   "Masters (MSc)": 29,
+   "Masters (MSc) - with placement year": 12,
+   "None": 10,
+   "Post Graduate Certificate/Diploma": 9,
+   "Masters (MA)": 4,
+   "Doctoral level qualification (e.g. PhD)": 3,
+   "Diploma": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 40,
+   "No, I completed a non-BPS accredited": 16,
+   "Prefer not to say": 1
+  }
+ },
+ "Birmingham": {
+  "respondents": 48,
+  "none": 11,
+  "pct": 22.9,
+  "quals": {
+   "Masters (MSc)": 26,
+   "Post Graduate Certificate/Diploma": 12,
+   "None": 11,
+   "Masters (MSc) - with placement year": 4,
+   "Masters (MRes)": 2,
+   "Diploma": 1,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 42,
+   "No, I completed a non-BPS accredited": 5,
+   "Don't know/can't remember": 1
+  }
+ },
+ "Surrey": {
+  "respondents": 81,
+  "none": 23,
+  "pct": 28.4,
+  "quals": {
+   "Masters (MSc)": 40,
+   "None": 23,
+   "Post Graduate Certificate/Diploma": 20,
+   "Masters (MSc) - with placement year": 5,
+   "Masters (MA)": 3,
+   "Diploma": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 70,
+   "No, I completed a non-BPS accredited": 10,
+   "No, I did not complete an": 1
+  }
+ },
+ "Trent": {
+  "respondents": 42,
+  "none": 10,
+  "pct": 23.8,
+  "quals": {
+   "Masters (MSc)": 24,
+   "None": 10,
+   "Masters (MSc) - with placement year": 4,
+   "Other": 2,
+   "Post Graduate Certificate/Diploma": 2,
+   "Doctoral level qualification (e.g. PhD)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 38,
+   "No, I completed a non-BPS accredited": 4
+  }
+ },
+ "East_Anglia": {
+  "respondents": 37,
+  "none": 16,
+  "pct": 43.2,
+  "quals": {
+   "Masters (MSc)": 19,
+   "None": 16,
+   "Post Graduate Certificate/Diploma": 7,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 32,
+   "No, I completed a non-BPS accredited": 5
+  }
+ },
+ "Plymouth": {
+  "respondents": 32,
+  "none": 9,
+  "pct": 28.1,
+  "quals": {
+   "Masters (MSc)": 17,
+   "None": 9,
+   "Post Graduate Certificate/Diploma": 4,
+   "Masters (MSc) - with placement year": 3,
+   "Other": 3
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 27,
+   "No, I completed a non-BPS accredited": 3,
+   "No, I did not complete an": 2
+  }
+ },
+ "Coventry_and_Warwick": {
+  "respondents": 29,
+  "none": 6,
+  "pct": 20.7,
+  "quals": {
+   "Masters (MSc)": 17,
+   "Post Graduate Certificate/Diploma": 8,
+   "None": 6,
+   "Diploma": 2,
+   "Masters (MA)": 2,
+   "Masters (MRes)": 2,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 25,
+   "No, I completed a non-BPS accredited": 4
+  }
+ },
+ "Leicester": {
+  "respondents": 61,
+  "none": 19,
+  "pct": 31.1,
+  "quals": {
+   "Masters (MSc)": 33,
+   "None": 19,
+   "Post Graduate Certificate/Diploma": 6,
+   "Masters (MA)": 1,
+   "Masters (MRes)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 54,
+   "No, I completed a non-BPS accredited": 7
+  }
+ },
+ "Belfast": {
+  "respondents": 12,
+  "none": 0,
+  "pct": 0.0,
+  "quals": {
+   "Masters (MSc)": 9,
+   "Post Graduate Certificate/Diploma": 6,
+   "Masters (MA)": 4
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 9,
+   "No, I completed a non-BPS accredited": 2,
+   "No, I did not complete an": 1
+  }
+ },
+ "Herfordshire": {
+  "respondents": 41,
+  "none": 7,
+  "pct": 17.1,
+  "quals": {
+   "Masters (MSc)": 28,
+   "Post Graduate Certificate/Diploma": 9,
+   "None": 7,
+   "Diploma": 2,
+   "Masters (MA)": 2,
+   "Masters (MSc) - with placement year": 2,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 36,
+   "No, I completed a non-BPS accredited": 5
+  }
+ },
+ "Bath": {
+  "respondents": 41,
+  "none": 7,
+  "pct": 17.1,
+  "quals": {
+   "Masters (MSc)": 27,
+   "None": 7,
+   "Post Graduate Certificate/Diploma": 7,
+   "Masters (MRes)": 4,
+   "Doctoral level qualification (e.g. PhD)": 2,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 34,
+   "No, I completed a non-BPS accredited": 6,
+   "No, I did not complete an": 1
+  }
+ },
+ "Kings_College_London": {
+  "respondents": 50,
+  "none": 6,
+  "pct": 12.0,
+  "quals": {
+   "Masters (MSc)": 30,
+   "Doctoral level qualification (e.g. PhD)": 15,
+   "Post Graduate Certificate/Diploma": 8,
+   "None": 6,
+   "Masters (MA)": 3,
+   "Masters (MRes)": 2,
+   "Masters (MSc) - with placement year": 2,
+   "Diploma": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 41,
+   "No, I completed a non-BPS accredited": 9
+  }
+ },
+ "Teesside": {
+  "respondents": 50,
+  "none": 10,
+  "pct": 20.0,
+  "quals": {
+   "Masters (MSc)": 34,
+   "None": 10,
+   "Post Graduate Certificate/Diploma": 4,
+   "Masters (MSc) - with placement year": 3,
+   "Doctoral level qualification (e.g. PhD)": 2,
+   "Masters (MRes)": 2,
+   "Masters (MA)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 44,
+   "No, I completed a non-BPS accredited": 6
+  }
+ },
+ "Hull": {
+  "respondents": 28,
+  "none": 24,
+  "pct": 85.7,
+  "quals": {
+   "None": 24,
+   "Masters (MSc)": 2,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 28
+  }
+ },
+ "Oxford": {
+  "respondents": 70,
+  "none": 18,
+  "pct": 25.7,
+  "quals": {
+   "Masters (MSc)": 39,
+   "None": 18,
+   "Post Graduate Certificate/Diploma": 13,
+   "Masters (MA)": 4,
+   "Doctoral level qualification (e.g. PhD)": 3,
+   "Masters (MSc) - with placement year": 2,
+   "Other": 2,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 50,
+   "No, I completed a non-BPS accredited": 17,
+   "Don't know/can't remember": 1,
+   "No, I did not complete an": 1,
+   "Prefer not to say": 1
+  }
+ },
+ "Liverpool": {
+  "respondents": 56,
+  "none": 7,
+  "pct": 12.5,
+  "quals": {
+   "Masters (MSc)": 38,
+   "Post Graduate Certificate/Diploma": 8,
+   "None": 7,
+   "Masters (MA)": 4,
+   "Diploma": 2,
+   "Doctoral level qualification (e.g. PhD)": 2,
+   "Masters (MSc) - with placement year": 2,
+   "Other": 2,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 55,
+   "No, I completed a non-BPS accredited": 1
+  }
+ },
+ "Cardiff": {
+  "respondents": 41,
+  "none": 14,
+  "pct": 34.1,
+  "quals": {
+   "Masters (MSc)": 22,
+   "None": 14,
+   "Post Graduate Certificate/Diploma": 7,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 35,
+   "No, I completed a non-BPS accredited": 4,
+   "No, I did not complete an": 2
+  }
+ },
+ "North_Thames": {
+  "respondents": 70,
+  "none": 14,
+  "pct": 20.0,
+  "quals": {
+   "Masters (MSc)": 41,
+   "None": 14,
+   "Post Graduate Certificate/Diploma": 14,
+   "Doctoral level qualification (e.g. PhD)": 6,
+   "Masters (MSc) - with placement year": 4,
+   "Other": 4,
+   "Diploma": 1,
+   "Masters (MA)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 55,
+   "No, I completed a non-BPS accredited": 12,
+   "No, I did not complete an": 3
+  }
+ },
+ "Essex": {
+  "respondents": 33,
+  "none": 6,
+  "pct": 18.2,
+  "quals": {
+   "Masters (MSc)": 19,
+   "Post Graduate Certificate/Diploma": 14,
+   "None": 6,
+   "Masters (MA)": 2,
+   "Doctoral level qualification (e.g. PhD)": 1,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 26,
+   "No, I completed a non-BPS accredited": 7
+  }
+ },
+ "Bangor": {
+  "respondents": 24,
+  "none": 4,
+  "pct": 16.7,
+  "quals": {
+   "Masters (MSc)": 19,
+   "None": 4,
+   "Post Graduate Certificate/Diploma": 2,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 21,
+   "No, I completed a non-BPS accredited": 3
+  }
+ },
+ "Sheffield": {
+  "respondents": 40,
+  "none": 10,
+  "pct": 25.0,
+  "quals": {
+   "Masters (MSc)": 20,
+   "Post Graduate Certificate/Diploma": 13,
+   "None": 10,
+   "Masters (MA)": 3,
+   "Masters (MRes)": 1,
+   "Other": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 32,
+   "No, I completed a non-BPS accredited": 8
+  }
+ },
+ "Royal_Holloway": {
+  "respondents": 57,
+  "none": 11,
+  "pct": 19.3,
+  "quals": {
+   "Masters (MSc)": 31,
+   "None": 11,
+   "Masters (MSc) - with placement year": 9,
+   "Post Graduate Certificate/Diploma": 8,
+   "Masters (MA)": 2,
+   "Other": 2,
+   "Masters (MRes)": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 50,
+   "No, I completed a non-BPS accredited": 7
+  }
+ },
+ "Newcastle": {
+  "respondents": 38,
+  "none": 9,
+  "pct": 23.7,
+  "quals": {
+   "Masters (MSc)": 23,
+   "None": 9,
+   "Post Graduate Certificate/Diploma": 6,
+   "Doctoral level qualification (e.g. PhD)": 3,
+   "Other": 2,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 37,
+   "No, I did not complete an": 1
+  }
+ },
+ "Lancaster": {
+  "respondents": 78,
+  "none": 29,
+  "pct": 37.2,
+  "quals": {
+   "None": 29,
+   "Masters (MSc)": 28,
+   "Post Graduate Certificate/Diploma": 20,
+   "Diploma": 4,
+   "Masters (MA)": 4,
+   "Other": 4,
+   "Doctoral level qualification (e.g. PhD)": 2,
+   "Masters (MRes)": 2,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 70,
+   "No, I completed a non-BPS accredited": 7,
+   "No, I did not complete an": 1
+  }
+ },
+ "Salomons": {
+  "respondents": 36,
+  "none": 5,
+  "pct": 13.9,
+  "quals": {
+   "Masters (MSc)": 23,
+   "Post Graduate Certificate/Diploma": 7,
+   "None": 5,
+   "Other": 2,
+   "Masters (MA)": 1,
+   "Masters (MSc) - with placement year": 1
+  },
+  "undergrad": {
+   "Yes, I completed a BPS accredited": 33,
+   "No, I completed a non-BPS accredited": 2,
+   "No, I did not complete an": 1
+  }
+ }
+}

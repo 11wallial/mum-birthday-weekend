@@ -1,0 +1,602 @@
+{
+ "Bangor (North Wales)": {
+  "perYear": {
+   "2023": {
+    "applications": 203,
+    "places": 14,
+    "ratio": 14.5
+   },
+   "2024": {
+    "applications": 250,
+    "places": 15,
+    "ratio": 16.67
+   },
+   "2025": {
+    "applications": 262,
+    "places": 18,
+    "ratio": 14.56
+   }
+  },
+  "avg": 15.2
+ },
+ "Bath": {
+  "perYear": {
+   "2023": {
+    "applications": 701,
+    "places": 28,
+    "ratio": 25.04
+   },
+   "2024": {
+    "applications": 769,
+    "places": 28,
+    "ratio": 27.46
+   },
+   "2025": {
+    "applications": 867,
+    "places": 28,
+    "ratio": 30.96
+   }
+  },
+  "avg": 27.8
+ },
+ "Birmingham": {
+  "perYear": {
+   "2023": {
+    "applications": 621,
+    "places": 31,
+    "ratio": 20.03
+   },
+   "2024": {
+    "applications": 671,
+    "places": 35,
+    "ratio": 19.17
+   },
+   "2025": {
+    "applications": 751,
+    "places": 35,
+    "ratio": 21.46
+   }
+  },
+  "avg": 20.2
+ },
+ "Coventry & Warwick": {
+  "perYear": {
+   "2023": {
+    "applications": 525,
+    "places": 25,
+    "ratio": 21.0
+   },
+   "2024": {
+    "applications": 657,
+    "places": 25,
+    "ratio": 26.28
+   },
+   "2025": {
+    "applications": 600,
+    "places": 15,
+    "ratio": 40.0
+   }
+  },
+  "avg": 29.1
+ },
+ "East Anglia (UEA)": {
+  "perYear": {
+   "2023": {
+    "applications": 419,
+    "places": 49,
+    "ratio": 8.55
+   },
+   "2024": {
+    "applications": 505,
+    "places": 49,
+    "ratio": 10.31
+   },
+   "2025": {
+    "applications": 527,
+    "places": 53,
+    "ratio": 9.94
+   }
+  },
+  "avg": 9.6
+ },
+ "East London (UEL)": {
+  "perYear": {
+   "2023": {
+    "applications": 889,
+    "places": 61,
+    "ratio": 14.57
+   },
+   "2024": {
+    "applications": 1012,
+    "places": 49,
+    "ratio": 20.65
+   },
+   "2025": {
+    "applications": 987,
+    "places": 49,
+    "ratio": 20.14
+   }
+  },
+  "avg": 18.5
+ },
+ "Edinburgh": {
+  "perYear": {
+   "2023": {
+    "applications": 678,
+    "places": 47,
+    "ratio": 14.43
+   },
+   "2024": {
+    "applications": 768,
+    "places": 45,
+    "ratio": 17.07
+   },
+   "2025": {
+    "applications": 825,
+    "places": 44,
+    "ratio": 18.75
+   }
+  },
+  "avg": 16.8
+ },
+ "Essex (Tavistock)": {
+  "perYear": {
+   "2023": {
+    "applications": 398,
+    "places": 31,
+    "ratio": 12.84
+   },
+   "2024": {
+    "applications": 438,
+    "places": 31,
+    "ratio": 14.13
+   },
+   "2025": {
+    "applications": 464,
+    "places": 35,
+    "ratio": 13.26
+   }
+  },
+  "avg": 13.4
+ },
+ "Exeter": {
+  "perYear": {
+   "2023": {
+    "applications": 536,
+    "places": 28,
+    "ratio": 19.14
+   },
+   "2024": {
+    "applications": 491,
+    "places": 30,
+    "ratio": 16.37
+   },
+   "2025": {
+    "applications": 510,
+    "places": 30,
+    "ratio": 17.0
+   }
+  },
+  "avg": 17.5
+ },
+ "Glasgow": {
+  "perYear": {
+   "2023": {
+    "applications": 521,
+    "places": 38,
+    "ratio": 13.71
+   },
+   "2024": {
+    "applications": 633,
+    "places": 39,
+    "ratio": 16.23
+   },
+   "2025": {
+    "applications": 661,
+    "places": 40,
+    "ratio": 16.52
+   }
+  },
+  "avg": 15.5
+ },
+ "Hertfordshire": {
+  "perYear": {
+   "2023": {
+    "applications": 604,
+    "places": 52,
+    "ratio": 11.62
+   },
+   "2024": {
+    "applications": 779,
+    "places": 52,
+    "ratio": 14.98
+   },
+   "2025": {
+    "applications": 764,
+    "places": 40,
+    "ratio": 19.1
+   }
+  },
+  "avg": 15.2
+ },
+ "King's College London (IoPPN)": {
+  "perYear": {
+   "2023": {
+    "applications": 1187,
+    "places": 41,
+    "ratio": 28.95
+   },
+   "2024": {
+    "applications": 1207,
+    "places": 41,
+    "ratio": 29.44
+   },
+   "2025": {
+    "applications": 1170,
+    "places": 41,
+    "ratio": 28.54
+   }
+  },
+  "avg": 29.0
+ },
+ "Lancaster": {
+  "perYear": {
+   "2023": {
+    "applications": 687,
+    "places": 52,
+    "ratio": 13.21
+   },
+   "2024": {
+    "applications": 773,
+    "places": 52,
+    "ratio": 14.87
+   },
+   "2025": {
+    "applications": 871,
+    "places": 52,
+    "ratio": 16.75
+   }
+  },
+  "avg": 14.9
+ },
+ "Leeds": {
+  "perYear": {
+   "2023": {
+    "applications": 782,
+    "places": 30,
+    "ratio": 26.07
+   },
+   "2024": {
+    "applications": 887,
+    "places": 30,
+    "ratio": 29.57
+   },
+   "2025": {
+    "applications": 889,
+    "places": 30,
+    "ratio": 29.63
+   }
+  },
+  "avg": 28.4
+ },
+ "Leicester": {
+  "perYear": {
+   "2023": {
+    "applications": 353,
+    "places": 25,
+    "ratio": 14.12
+   },
+   "2024": {
+    "applications": 368,
+    "places": 28,
+    "ratio": 13.14
+   },
+   "2025": {
+    "applications": 491,
+    "places": 30,
+    "ratio": 16.37
+   }
+  },
+  "avg": 14.5
+ },
+ "Liverpool": {
+  "perYear": {
+   "2023": {
+    "applications": 795,
+    "places": 40,
+    "ratio": 19.88
+   },
+   "2024": {
+    "applications": 816,
+    "places": 38,
+    "ratio": 21.47
+   },
+   "2025": {
+    "applications": 894,
+    "places": 40,
+    "ratio": 22.35
+   }
+  },
+  "avg": 21.2
+ },
+ "Manchester": {
+  "perYear": {
+   "2023": {
+    "applications": 794,
+    "places": 40,
+    "ratio": 19.85
+   },
+   "2024": {
+    "applications": 926,
+    "places": 40,
+    "ratio": 23.15
+   },
+   "2025": {
+    "applications": 943,
+    "places": 40,
+    "ratio": 23.57
+   }
+  },
+  "avg": 22.2
+ },
+ "Newcastle": {
+  "perYear": {
+   "2023": {
+    "applications": 466,
+    "places": 30,
+    "ratio": 15.53
+   },
+   "2024": {
+    "applications": 546,
+    "places": 30,
+    "ratio": 18.2
+   },
+   "2025": {
+    "applications": 518,
+    "places": 30,
+    "ratio": 17.27
+   }
+  },
+  "avg": 17.0
+ },
+ "North Thames (UCL)": {
+  "perYear": {
+   "2023": {
+    "applications": 1196,
+    "places": 85,
+    "ratio": 14.07
+   },
+   "2024": {
+    "applications": 1308,
+    "places": 85,
+    "ratio": 15.39
+   },
+   "2025": {
+    "applications": 1389,
+    "places": 85,
+    "ratio": 16.34
+   }
+  },
+  "avg": 15.3
+ },
+ "Oxford": {
+  "perYear": {
+   "2023": {
+    "applications": 604,
+    "places": 52,
+    "ratio": 11.62
+   },
+   "2024": {
+    "applications": 637,
+    "places": 52,
+    "ratio": 12.25
+   },
+   "2025": {
+    "applications": 560,
+    "places": 52,
+    "ratio": 10.77
+   }
+  },
+  "avg": 11.5
+ },
+ "Plymouth": {
+  "perYear": {
+   "2023": {
+    "applications": 335,
+    "places": 24,
+    "ratio": 13.96
+   },
+   "2024": {
+    "applications": 352,
+    "places": 24,
+    "ratio": 14.67
+   },
+   "2025": {
+    "applications": 411,
+    "places": 24,
+    "ratio": 17.12
+   }
+  },
+  "avg": 15.2
+ },
+ "Royal Holloway (North Thames)": {
+  "perYear": {
+   "2023": {
+    "applications": 1187,
+    "places": 56,
+    "ratio": 21.2
+   },
+   "2024": {
+    "applications": 1439,
+    "places": 56,
+    "ratio": 25.7
+   },
+   "2025": {
+    "applications": 1524,
+    "places": 60,
+    "ratio": 25.4
+   }
+  },
+  "avg": 24.1
+ },
+ "Salomons (CCCU)": {
+  "perYear": {
+   "2023": {
+    "applications": 491,
+    "places": 55,
+    "ratio": 8.93
+   },
+   "2024": {
+    "applications": 495,
+    "places": 55,
+    "ratio": 9.0
+   },
+   "2025": {
+    "applications": 595,
+    "places": 57,
+    "ratio": 10.44
+   }
+  },
+  "avg": 9.5
+ },
+ "Sheffield": {
+  "perYear": {
+   "2023": {
+    "applications": 626,
+    "places": 35,
+    "ratio": 17.89
+   },
+   "2024": {
+    "applications": 670,
+    "places": 40,
+    "ratio": 16.75
+   },
+   "2025": {
+    "applications": 486,
+    "places": 40,
+    "ratio": 12.15
+   }
+  },
+  "avg": 15.6
+ },
+ "Southampton": {
+  "perYear": {
+   "2023": {
+    "applications": 521,
+    "places": 35,
+    "ratio": 14.89
+   },
+   "2024": {
+    "applications": 531,
+    "places": 30,
+    "ratio": 17.7
+   },
+   "2025": {
+    "applications": 593,
+    "places": 30,
+    "ratio": 19.77
+   }
+  },
+  "avg": 17.5
+ },
+ "Cardiff (South Wales)": {
+  "perYear": {
+   "2023": {
+    "applications": 395,
+    "places": 28,
+    "ratio": 14.11
+   },
+   "2024": {
+    "applications": 471,
+    "places": 29,
+    "ratio": 16.24
+   },
+   "2025": {
+    "applications": 545,
+    "places": 36,
+    "ratio": 15.14
+   }
+  },
+  "avg": 15.2
+ },
+ "Staffordshire": {
+  "perYear": {
+   "2023": {
+    "applications": 377,
+    "places": 23,
+    "ratio": 16.39
+   },
+   "2024": {
+    "applications": 437,
+    "places": 24,
+    "ratio": 18.21
+   },
+   "2025": {
+    "applications": 512,
+    "places": 24,
+    "ratio": 21.33
+   }
+  },
+  "avg": 18.6
+ },
+ "Surrey": {
+  "perYear": {
+   "2023": {
+    "applications": 1027,
+    "places": 44,
+    "ratio": 23.34
+   },
+   "2024": {
+    "applications": 1004,
+    "places": 50,
+    "ratio": 20.08
+   },
+   "2025": {
+    "applications": 1025,
+    "places": 54,
+    "ratio": 18.98
+   }
+  },
+  "avg": 20.8
+ },
+ "Teesside": {
+  "perYear": {
+   "2023": {
+    "applications": 351,
+    "places": 35,
+    "ratio": 10.03
+   },
+   "2024": {
+    "applications": 464,
+    "places": 30,
+    "ratio": 15.47
+   },
+   "2025": {
+    "applications": 499,
+    "places": 35,
+    "ratio": 14.26
+   }
+  },
+  "avg": 13.3
+ },
+ "Trent (Lincoln & Nottingham)": {
+  "perYear": {
+   "2023": {
+    "applications": 420,
+    "places": 32,
+    "ratio": 13.12
+   },
+   "2024": {
+    "applications": 471,
+    "places": 32,
+    "ratio": 14.72
+   },
+   "2025": {
+    "applications": 495,
+    "places": 32,
+    "ratio": 15.47
+   }
+  },
+  "avg": 14.4
+ }
+}

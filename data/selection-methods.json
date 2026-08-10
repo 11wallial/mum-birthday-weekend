@@ -1,0 +1,212 @@
+{
+ "Oxford": {
+  "g": "academic",
+  "t": "Academic threshold, then multi-stage review",
+  "d": "Past academic qualifications are scored (38 pts; up to 18 from three A-levels, 10 for a first-class BSc, Merit MSc scores zero). An academic threshold is set that allows approximately HALF of applicants through to detailed shortlisting; ~150 are then interviewed. Contextual admissions apply from the scoring stage onward.",
+  "pg": 1,
+  "al": 1
+ },
+ "King's College London (IoPPN)": {
+  "g": "academic",
+  "t": "Ranked on academic achievement, then blind scoring",
+  "d": "After eligibility screening, all remaining candidates are RANKED ON ACADEMIC ACHIEVEMENT. Candidates without 12 months FTE relevant experience are excluded. Applications are then scored blindly by two panel members, and the final ranking combines the academic rank with that score. ~3 candidates interviewed per place. No assessment tests.",
+  "pg": 1,
+  "al": 0
+ },
+ "Lancaster": {
+  "g": "test",
+  "t": "Shortlisting test \u2014 deliberately not attainment-based",
+  "d": "All applicants meeting minimum criteria sit a shortlisting test. Lancaster states it assesses doctoral-level potential 'while minimising the impact of socio-economic privilege which other measures such as previous academic attainment do not'. Explicitly designed so prior grades do not drive shortlisting.",
+  "pg": 0,
+  "al": 0
+ },
+ "Manchester": {
+  "g": "test",
+  "t": "Compulsory GMA test, then committee shortlisting",
+  "d": "Applicants meeting minimum entry requirements must sit a General Mental Ability (GMA) test \u2014 it must be completed to be considered. Shortlisting is then done by the Executive Training Programme Committee with regional NHS clinical psychologists. One ~30-minute panel interview.",
+  "pg": 0,
+  "al": 0
+ },
+ "Sheffield": {
+  "g": "test",
+  "t": "Online deductive reasoning test",
+  "d": "All applicants meeting the published shortlisting criteria are invited to sit an online deductive reasoning test. Academic and experience Suitability Statements are reviewed as part of shortlisting. Normally ~3 applicants interviewed per place.",
+  "pg": 0,
+  "al": 0
+ },
+ "Trent (Lincoln & Nottingham)": {
+  "g": "test",
+  "t": "Written task at shortlisting",
+  "d": "All applicants meeting criteria are invited to a written task (Feb, at University of Lincoln) assessing general academic competence and critical thinking. All who pass the written task are invited to interview \u2014 panel interviews assessing clinical, academic and personal suitability.",
+  "pg": 0,
+  "al": 0
+ },
+ "Salomons (CCCU)": {
+  "g": "test",
+  "t": "Screening tests decide the shortlist",
+  "d": "Applicants sit screening tests; the interview shortlist is compiled from TEST SCORES. Where scores tie, Positive Action under the Equality Act (ethnicity, disability, sex) and contextual admissions factors are applied. Test process for 2027 entry under review.",
+  "pg": 0,
+  "al": 0
+ },
+ "Exeter": {
+  "g": "test",
+  "t": "Additional task, then top 50% reviewed",
+  "d": "An additional task informs the first stage of shortlisting. Scores are rank-ordered and the TOP 50% go to a second stage where panels review the forms. A Positive Action route operates for applicants from racially minoritised groups.",
+  "pg": 0,
+  "al": 0
+ },
+ "North Thames (UCL)": {
+  "g": "review",
+  "t": "Application review, no tests",
+  "d": "Rated independently by two clinical psychologists across clinical, personal, academic and research criteria; the strongest are identified for interview. 'We do not use any shortlisting tests at UCL.' Positive action on ethnicity and disability. Interviews include clinical and research vignettes.",
+  "pg": 0,
+  "al": 0
+ },
+ "Cardiff (South Wales)": {
+  "g": "review",
+  "t": "Two shortlisters score the form; written task comes later",
+  "d": "Each application is read and scored by TWO shortlisters (a course team member and a service representative). Top scorers are offered interview or a reserve place. A written task (critical review of research) happens AT interview stage, not at shortlisting. Extra interview places for disabled candidates who narrowly miss out.",
+  "pg": 0,
+  "al": 0
+ },
+ "Leicester": {
+  "g": "review",
+  "t": "Rated application, then assessment centre",
+  "d": "All applicants meeting minimum criteria have applications reviewed and rated for relevant experience, academic credentials and personal statement; references reviewed. 96 candidates invited to a face-to-face Assessment Centre (interviews plus a written task), ranked by total score.",
+  "pg": 0,
+  "al": 0
+ },
+ "East Anglia (UEA)": {
+  "g": "review",
+  "t": "Two-phase: academic scored, then anonymised review",
+  "d": "Phase 1 checks eligibility and scores academic achievements plus references. Phase 2 reviews the form with identifying details AND academic achievements REMOVED, scoring quality of clinical and research experience, theory-practice links, and capacity to reflect. Applicants are then ranked.",
+  "pg": 0,
+  "al": 0
+ },
+ "Plymouth": {
+  "g": "review",
+  "t": "Holistic review, no pre-selection testing",
+  "d": "'We do not use any pre-selection testing.' Every application is assessed by at least one course team member and one local clinical psychologist, then shortlisted applicants attend a selection event.",
+  "pg": 0,
+  "al": 0
+ },
+ "Royal Holloway (North Thames)": {
+  "g": "review",
+  "t": "Paper-based review with positive action",
+  "d": "Preliminary paper-based selection by course staff and regional psychologists, guided by a standard grading system, weighing academic record, clinically relevant experience and referee statements. Applications anonymised; positive action on ethnicity and gender plus contextual admissions. For 2026 entry: 147 interviewed from 1,642 applicants for 60 NHS places.",
+  "pg": 0,
+  "al": 0
+ },
+ "Newcastle": {
+  "g": "review",
+  "t": "Application review plus a video task",
+  "d": "'We do not conduct any short-listing tests.' Shortlisting weighs experience, personal statement and references. Before interview, candidates submit a video response to a question set by the Experts by Experience team, double-rated. 45-minute in-person interview.",
+  "pg": 0,
+  "al": 0
+ },
+ "Surrey": {
+  "g": "review",
+  "t": "Application screening, no tests",
+  "d": "'We do not currently have any short-listing tests.' Applications are read and scored by a programme staff member against the Trainee Clinical Psychologist person specification and programme values. Positive action applied where candidates tie at any ranking point.",
+  "pg": 0,
+  "al": 0
+ },
+ "Leeds": {
+  "g": "review",
+  "t": "Application and interview only",
+  "d": "'Selection is by application and interview only; we have no plans to introduce any extra tests at screening, short-listing, or interview stages.' In-person interviews in Leeds.",
+  "pg": 0,
+  "al": 0
+ },
+ "Edinburgh": {
+  "g": "review",
+  "t": "Fully anonymised shortlisting",
+  "d": "Shortlisting uses anonymised application forms and answers to additional questions; the panel never sees the applicant's identity. Usually ~110 candidates interviewed. Unusually, candidates not offered interview are told which element of shortlisting was unsuccessful.",
+  "pg": 0,
+  "al": 0
+ },
+ "Glasgow": {
+  "g": "review",
+  "t": "Panel review against five domains",
+  "d": "The shortlisting panel weighs academic strength, research strength, exposure to relevant settings, approach to professional issues, and values and ethics, assessing overall readiness. Candidates are then ranked; top-ranked plus Disability Confident opt-ins meeting criteria go forward.",
+  "pg": 0,
+  "al": 0
+ },
+ "Essex (Tavistock)": {
+  "g": "review",
+  "t": "Independently rated and ranked, anonymised",
+  "d": "Applicants meeting entry requirements are independently rated and ranked by programme staff and local clinical psychologists. Applications are FULLY anonymised. About three times as many interviews as places.",
+  "pg": 0,
+  "al": 0
+ },
+ "Birmingham": {
+  "g": "review",
+  "t": "Anonymised rating on three competencies",
+  "d": "Applications screened for minimum criteria, then anonymised and rated on clinical work, academia/research, and personal suitability. Face-to-face interviews with small panels including Experts by Experience. Process under review.",
+  "pg": 0,
+  "al": 0
+ },
+ "Bath": {
+  "g": "review",
+  "t": "Anonymised scoring incl. academic achievement",
+  "d": "Bath states the course is 'academically demanding' and evaluates academic achievement, clinical and research experience and personal qualities at shortlisting. Applications are anonymised and scored on desirable criteria including experience, commitment to evidence-based practice, life skills, and mature reflections on EDI. Only the highest scorers progress.",
+  "pg": 0,
+  "al": 0
+ },
+ "Teesside": {
+  "g": "review",
+  "t": "Scored across four domains",
+  "d": "Applications screened for eligibility, then scored on research knowledge and experience (incl. dissemination), clinical knowledge and experience, awareness of the clinical psychologist role, and personal/professional development. ~20% moderated by a second reviewer (NHS psychologist or lived-experience representative) for inter-rater reliability.",
+  "pg": 0,
+  "al": 0
+ },
+ "Hertfordshire": {
+  "g": "review",
+  "t": "Independent rating; a test may be added",
+  "d": "Note: Hertfordshire flags a 'shortlisting stage which may include a test' \u2014 confirm current arrangements. Eligible applications are independently rated by the Programme Team and local stakeholders on academic ability, relevant experience and its application, and personal/professional suitability. Where scores tie, protected characteristics and contextual admissions are used, prioritising under-represented backgrounds.",
+  "pg": 0,
+  "al": 0
+ },
+ "East London (UEL)": {
+  "g": "review",
+  "t": "Shortlist to an Admissions Day",
+  "d": "Applicants are shortlisted to an Admissions Day where they complete tasks against the Trainee Person Specification, with the programme team, regional clinical supervisors and the People's Committee (service users and carers). Scored against essential and desirable criteria; offers allocated in rank order.",
+  "pg": 0,
+  "al": 0
+ },
+ "Staffordshire": {
+  "g": "review",
+  "t": "Anonymous rubric-based review",
+  "d": "All applications reviewed anonymously by programme staff, followed by moderation. Shortlisting uses a rubric giving a holistic rating. Programme staff, clinical psychologists, placement supervisors and service users/carers all take part. Recruits explicitly to NHS Constitution values.",
+  "pg": 0,
+  "al": 0
+ },
+ "Coventry & Warwick": {
+  "g": "review",
+  "t": "Shortlisting meeting, then a full assessment day",
+  "d": "Applications go to a shortlisting meeting. In 2025, 60 applicants were selected to interview for 15 places. Shortlisted candidates attend a day-long face-to-face assessment: group discussion, written exercise, clinical/personal suitability interview, and an academic interview or exercise. NOT recruiting for 2026 entry.",
+  "pg": 0,
+  "al": 0
+ },
+ "Liverpool": {
+  "g": "review",
+  "t": "Anonymised screening then review (under revision)",
+  "d": "Initial screening of anonymised applications excludes those not meeting minimum eligibility (GBC, minimum work experience, UK work/residency). Shortlisting and interview procedures for 2027 are under review and may change \u2014 check the course page before applying.",
+  "pg": 0,
+  "al": 0
+ },
+ "Southampton": {
+  "g": "review",
+  "t": "Application review, then interview",
+  "d": "Applications are reviewed to produce the interview shortlist; no feedback is given to those not shortlisted. Between 120 and 150 applicants are interviewed, remotely via an online platform, by a panel covering personal, clinical, research and academic competencies.",
+  "pg": 0,
+  "al": 0
+ },
+ "Bangor (North Wales)": {
+  "g": "review",
+  "t": "Blind marking by team, experts and clinicians",
+  "d": "Applications are assessed by programme team members, People Panel members (expert-by-experience advisory group) and local clinical psychologists, who see only the sections they mark and no personal details \u2014 just the Clearing House ID. Additional points awarded for volunteering and publications.",
+  "pg": 0,
+  "al": 0
+ }
+}
