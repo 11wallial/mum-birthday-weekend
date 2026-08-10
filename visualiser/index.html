@@ -288,6 +288,7 @@ footer{border-top:1px solid var(--edge);background:var(--card2);margin-top:30px}
     </div>
   </div>
 
+  <p id="sortHint" style="margin:12px 0 0;font-size:12.5px;color:var(--dim);line-height:1.55"></p>
   <main id="view"></main>
 </div>
 
@@ -349,6 +350,16 @@ function band(c,h){
 }
 
 /* ---- fit ---- */
+const _q=COURSES.filter(c=>c.qual).map(c=>c.qual.p),_c=COURSES.filter(c=>c.comp).map(c=>c.comp.avg);
+const _mean=a=>a.reduce((s,x)=>s+x,0)/a.length,_sd=a=>{const m=_mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length)};
+const QM=_mean(_q),QS=_sd(_q),CM=_mean(_c),CS=_sd(_c);
+/* openness index: above-average non-postgrad intake, below-average competition. 0 = unknown//neutral. */
+function idx(c){return (c.qual?(c.qual.p-QM)/QS:0)-(c.comp?(c.comp.avg-CM)/CS:0);}
+function hits(c){const t=nPri();if(!t)return null;let h=0;
+  S.m.forEach(x=>{if(c.models.includes(x))h++});S.v.forEach(x=>{if(c.values.includes(x))h++});
+  S.g.forEach(x=>{if(c.sel&&c.sel.g===x)h++});S.r.forEach(x=>{if(c.region===x)h++});
+  if(S.neuro&&c.neuro_strength)h++;if(S.accred&&c.accreditation_extras.length)h++;if(S.rec&&c.recruiting_2026)h++;
+  return {h,t};}
 function nPri(){return S.m.size+S.v.size+S.g.size+S.r.size+(S.neuro?1:0)+(S.accred?1:0)+(S.rec?1:0);}
 function fit(c){
   const t=nPri(); if(!t)return null; let h=0;
@@ -376,7 +387,9 @@ function listed(){
     breadth:(a,b)=>b.models.length-a.models.length||a.name.localeCompare(b.name),
     comp:(a,b)=>(a.comp?a.comp.avg:1e9)-(b.comp?b.comp.avg:1e9),
     qual:(a,b)=>(b.qual?b.qual.p:-1)-(a.qual?a.qual.p:-1),
-    fit:(a,b)=>{const x=fit(a);if(x===null)return a.name.localeCompare(b.name);return fit(b)-x||a.name.localeCompare(b.name);}};
+    fit:(a,b)=>{const x=fit(a);
+      if(x===null)return idx(b)-idx(a)||a.name.localeCompare(b.name);
+      return fit(b)-x||idx(b)-idx(a)||a.name.localeCompare(b.name);}};
   return L.sort(by[S.sort]||by.fit);
 }
 
@@ -423,7 +436,7 @@ function sync(){
 
 /* ---- cards ---- */
 function card(c){
-  const f=fit(c),pin=S.pins.has(c.name);
+  const f=fit(c),hh=hits(c),pin=S.pins.has(c.name);
   const q=c.qual,cp=c.comp;
   const tags=[...c.models.slice(0,2).map(m=>`<span class="tg m">${ML[m]}</span>`),
               ...c.values.slice(0,1).map(v=>`<span class="tg v">${VL[v]}</span>`)];
@@ -439,7 +452,7 @@ function card(c){
     </div>
     <div class="cdb">
       <div class="cdh"><h3 class="serif">${esc(c.name)}</h3>
-        <div class="loc">📍 ${esc(c.city)} · ${esc(c.region)}${f!==null?` · <b style="color:var(--m)">${f}% fit</b>`:""}</div></div>
+        <div class="loc">📍 ${esc(c.city)} · ${esc(c.region)}${hh?` · <b style="color:var(--m)" title="Matches ${hh.h} of your ${hh.t} priorities">${hh.h}/${hh.t} priorities</b>`:""}</div></div>
       <div class="mrow">
         ${cp?`<div class="mt c"><div class="mv tnum">${cp.avg}</div><div class="ml">applicants per place</div>
              <div class="mb"><i style="width:${cp.avg/maxComp*100}%"></i></div></div>`
@@ -599,6 +612,14 @@ function togglePin(n){S.pins.has(n)?S.pins.delete(n):S.pins.add(n);sync();draw()
 function draw(){
   const L=listed();
   document.getElementById("cnt").innerHTML=`Showing <b>${L.length}</b> of ${COURSES.length}`+(nPri()&&S.mode==="rank"?" · ranked by fit":"");
+  const HINT={az:"Sorted alphabetically.",comp:"Sorted by fewest applicants per place first.",
+    qual:"Sorted by the highest share of trainees with no postgraduate qualification.",
+    breadth:"Sorted by the number of therapeutic models taught."};
+  document.getElementById("sortHint").innerHTML = S.sort!=="fit" ? HINT[S.sort]||""
+    : nPri()? `<b>Best fit:</b> ranked by how many of your ${nPri()} priorit${nPri()===1?"y":"ies"} each course meets. Courses meeting the same number are then ordered by openness — higher non-postgraduate intake and lower competition first.`
+            : `<b>Best fit needs your priorities.</b> You haven't set any, so courses are ordered by openness instead: above-average non-postgraduate intake and below-average competition first. <button class="lnk" id="openF">Set priorities</button> to rank by what matters to you.`;
+  const of=document.getElementById("openF");
+  if(of)of.addEventListener("click",()=>document.getElementById("filtBtn").click());
   ({cards:vCards,scatter:vScatter,table:vTable}[S.view]||(x=>vBars(x,S.view)))(L);
   document.querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{
     if(e.target.closest("[data-pin]"))return; openDrawer(el.dataset.open);}));
