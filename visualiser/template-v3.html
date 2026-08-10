@@ -193,16 +193,33 @@ ul.pts li::before{content:"";position:absolute;left:1px;top:8px;width:5px;height
 .od .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);margin-top:3px;font-weight:700}
 .od.i .k{color:var(--grn)} .od.o .k{color:var(--ac)}
 .od .k.dim{color:var(--tx4)!important}
-.strength{display:flex;flex-direction:column;gap:4px;width:132px;flex:none}
-.strength input{width:100%;accent-color:var(--ac);cursor:pointer}
-.strength .sl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--tx3)}
+.profbtn{flex:none;display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:7px 12px;
+  border:1px solid var(--line);border-radius:9px;background:var(--g2);transition:.15s;min-width:132px}
+.profbtn:hover{border-color:var(--ac)}
+.profbtn .pl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-weight:700}
+.profbtn .pv{font-size:13px;font-weight:640;letter-spacing:-.015em;color:var(--tx)}
+.profbtn .pv.un{color:var(--tx3);font-weight:500}
+/* profile quiz */
+.qz{display:flex;flex-direction:column;gap:18px;margin-top:6px;padding-bottom:8px}
+.qq>span{display:block;font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
+.qq>em{display:block;font-style:normal;font-size:11.5px;color:var(--tx3);margin:-5px 0 9px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--g2);
+  font-size:12.5px;color:var(--tx2);transition:.14s;text-align:left}
+.opt:hover{border-color:var(--tx4);color:var(--tx)}
+.opt[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.qresult{position:sticky;bottom:-26px;margin:8px -26px -26px;padding:16px 26px;background:var(--g2);
+  border-top:1px solid var(--line);display:flex;align-items:center;gap:16px}
+.qresult .rk2{font-size:30px;font-weight:660;letter-spacing:-.04em;color:var(--ac);line-height:1}
+.qresult .rt{font-size:12.5px;color:var(--tx2);line-height:1.5}
+.qresult .rt b{color:var(--tx);font-weight:640}
 .dockmore{font-size:11px;color:var(--tx3);border-bottom:1px dotted var(--tx4);padding-bottom:1px}
 
 /* ─── modal ─── */
 .scrim{position:fixed;inset:0;background:rgba(4,6,9,.62);backdrop-filter:blur(3px);z-index:90;
   opacity:0;pointer-events:none;transition:opacity .22s}
 .scrim.on{opacity:1;pointer-events:auto}
-.modal{position:fixed;z-index:95;left:50%;top:50%;transform:translate(-50%,-46%) scale(.97);opacity:0;
+.modal{position:fixed;z-index:95;left:50%;top:50%;scroll-padding-bottom:96px;transform:translate(-50%,-46%) scale(.97);opacity:0;
   pointer-events:none;width:min(680px,calc(100vw - 28px));max-height:min(84vh,720px);overflow-y:auto;
   background:var(--g1);border:1px solid var(--line);border-radius:16px;padding:26px;transition:.24s cubic-bezier(.22,1,.36,1)}
 .modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
@@ -277,10 +294,10 @@ ul.pts li::before{content:"";position:absolute;left:1px;top:8px;width:5px;height
 
 <div class="dock"><div class="dockin">
   <div class="slots" id="slots"></div>
-  <div class="strength">
-    <input type="range" id="str" min="50" max="95" value="80" step="5" aria-label="Your application strength percentile">
-    <div class="sl"><span>Strength</span><span id="strv">80th</span></div>
-  </div>
+  <button class="profbtn" id="profBtn">
+    <span class="pl">Your profile</span>
+    <span class="pv" id="profV">Not set</span>
+  </button>
   <div class="odds">
     <div class="od i"><div class="k n" id="oInt">—</div><div class="l">≥1 interview</div></div>
     <div class="od o"><div class="k n" id="oOff">—</div><div class="l">≥1 offer</div></div>
@@ -300,7 +317,32 @@ const ML={CBT:"CBT",SYS:"Systemic",PSY:"Psychodynamic",CAT:"CAT",NEURO:"Neuropsy
 const VL={social_justice:"Social justice",community_psychology:"Community psych",ebe_strong:"Experts by experience",edi_leader:"EDI leader"};
 const GATE={academic:"Academic score",test:"Aptitude test",review:"Application review"};
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const S={q:"",sort:"fit",sel:null,slots:[],str:80};
+const S={q:"",sort:"fit",sel:null,slots:[],str:null,prof:{}};
+const QZ=[
+ {k:"deg",q:"Your undergraduate degree classification",
+  o:[["2:1",0],["First",2]]},
+ {k:"pg",q:"Postgraduate qualifications",
+  h:"Most courses score a Distinction above a Merit; several score nothing for a Merit.",
+  o:[["None",0],["Masters (Merit)",1],["Masters (Distinction)",2],["PhD",3]]},
+ {k:"exp",q:"Months of relevant paid clinical experience",
+  h:"Assistant psychologist, support worker, IAPT/PWP, research assistant with clinical contact.",
+  o:[["Under 12",0],["12–24",1],["2–4 years",2],["4 years +",3]]},
+ {k:"br",q:"How many distinct clinical settings",
+  h:"e.g. adult mental health, CAMHS, forensic, learning disability, neuro, physical health.",
+  o:[["One",0],["Two",1],["Three",2],["Four +",3]]},
+ {k:"res",q:"Research beyond your undergraduate project",
+  h:"Courses rate designing a study and getting approval above collecting data on someone else's.",
+  o:[["None",0],["Assisted on someone else's",1],["Ran an audit or QI project",2],["Designed one and got it approved",3]]},
+ {k:"dis",q:"Dissemination",
+  o:[["None",0],["Presented internally",1],["Conference poster or talk",2],["Peer-reviewed publication",3]]}
+];
+const QMAX=QZ.reduce((s,q)=>s+Math.max(...q.o.map(o=>o[1])),0);
+function profScore(){ if(Object.keys(S.prof).length<QZ.length)return null;
+  return QZ.reduce((s,q)=>s+(S.prof[q.k]??0),0); }
+function profPct(){ const sc=profScore(); if(sc===null)return null;
+  return Math.round(Math.max(30,Math.min(95, 35 + (sc/QMAX)*60))); }
+function profLabel(p){ return p>=85?"Very strong field position":p>=75?"Stronger than most applicants":
+  p>=60?"Around or above average":p>=45?"Around average":"Below the typical applicant"; }
 
 const CS=C.filter(c=>c.comp).map(c=>c.comp.avg), QS=C.filter(c=>c.qual).map(c=>c.qual.p);
 const mean=a=>a.reduce((s,x)=>s+x,0)/a.length, sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length)};
@@ -323,7 +365,8 @@ const cdf=z=>{const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2);
 function odds(){
   const picks=S.slots.filter(Boolean).map(n=>C.find(c=>c.name===n)).filter(c=>c&&c.comp);
   if(!picks.length) return null;
-  const qz=inv(S.str/100), SIG=0.8, N=4000;
+  const pct=profPct(); if(pct===null) return {unset:true};
+  const qz=inv(pct/100), SIG=0.8, N=4000;
   let ai=0,ao=0;
   const thrO=picks.map(c=>inv(1-1/c.comp.avg));
   const thrI=picks.map(c=>inv(1-Math.min(.95,3/c.comp.avg)));
@@ -438,8 +481,11 @@ function drawSlots(){
   document.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();toggleSlot(b.dataset.rm)}));
   const o=odds();
   const oi=document.getElementById("oInt"),oo=document.getElementById("oOff");
-  if(!o){oi.textContent="—";oo.textContent="—";oi.classList.add("dim");oo.classList.add("dim");}
+  if(!o||o.unset){oi.textContent="—";oo.textContent="—";oi.classList.add("dim");oo.classList.add("dim");}
   else{oi.classList.remove("dim");oo.classList.remove("dim");count(oi,o.i);count(oo,o.o);}
+  const p=profPct(),pv=document.getElementById("profV");
+  if(p===null){pv.textContent="Not set";pv.classList.add("un");}
+  else{pv.textContent=p+"th percentile";pv.classList.remove("un");}
 }
 function count(el,to){const from=parseInt(el.textContent)||0,t0=performance.now();
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=to+"%";return}
@@ -456,8 +502,33 @@ const HOW=`<h3 id="mTitle">How Compass works</h3>
 <span class="lab">How it shortlists</span>
 <p>Read from each course's Clearing House “Selection procedure” page — all 30 verified. Hull and Belfast are not listed by the Clearing House. Procedures change annually; confirm before applying.</p>
 <span class="lab">The odds model</span>
-<p>A Monte Carlo over a latent-quality model: your strength sits at a percentile of the applicant pool, each course's threshold sits where its selectivity puts it, and course-specific noise is added. Outcomes are <em>correlated</em> — a strong application helps everywhere — so the four are not multiplied independently. Interview rates assume ~3 interviews per place, validated against Leicester's published 96.</p>
+<p>A Monte Carlo over a latent-quality model. Your six profile answers are scored on the things courses actually rate — degree class, postgraduate results, months and breadth of clinical experience, research you led, and dissemination — and mapped to a percentile of the applicant pool. Each course's threshold sits where its selectivity puts it, and course-specific noise is added. Outcomes are <em>correlated</em> — a strong application helps everywhere — so the four are not multiplied independently. Interview rates assume ~3 interviews per place, validated against Leicester's published 96.</p>
 <p style="color:var(--tx3)">The percentile is a judgement, not a measurement. Treat the output as a range, not a forecast.</p>`;
+function quizHTML(){
+  return `<h3 id="mTitle">Your profile</h3>
+  <p>Six questions about things you already know. Compass turns them into an estimate of where you sit among the ~5,900 people applying this year — which is what the odds depend on.</p>
+  <div class="qz">${QZ.map(q=>`<div class="qq"><span>${q.q}</span>${q.h?`<em>${q.h}</em>`:""}
+    <div class="opts">${q.o.map(([lab,v])=>
+      `<button class="opt" data-qk="${q.k}" data-qv="${v}" aria-pressed="${S.prof[q.k]===v}">${lab}</button>`).join("")}</div></div>`).join("")}
+  </div>
+  <div class="qresult" id="qres"></div>`;
+}
+function drawQRes(){
+  const el=document.getElementById("qres"); if(!el)return;
+  const p=profPct(), sc=profScore(), left=QZ.length-Object.keys(S.prof).length;
+  el.innerHTML = p===null
+    ? `<div class="rt">Answer ${left} more question${left===1?"":"s"} to get your estimate.</div>`
+    : `<div class="rk2 n">${p}<span style="font-size:15px">th</span></div>
+       <div class="rt"><b>${profLabel(p)}</b><br>Scored ${sc} of ${QMAX} on the things courses actually rate.
+       The average applicant lands near the 57th percentile — that's the 21% who get an offer somewhere.</div>`;
+}
+function openQuiz(){document.getElementById("mBody").innerHTML=quizHTML();
+  document.getElementById("modal").classList.add("on");document.getElementById("scrim").classList.add("on");
+  document.querySelectorAll("[data-qk]").forEach(b=>b.addEventListener("click",()=>{
+    S.prof[b.dataset.qk]=+b.dataset.qv;
+    document.querySelectorAll(`[data-qk="${b.dataset.qk}"]`).forEach(x=>x.setAttribute("aria-pressed",x===b));
+    drawQRes(); drawSlots();}));
+  drawQRes();}
 function openModal(){document.getElementById("mBody").innerHTML=HOW;
   document.getElementById("modal").classList.add("on");document.getElementById("scrim").classList.add("on");}
 function closeModal(){document.getElementById("modal").classList.remove("on");document.getElementById("scrim").classList.remove("on");}
@@ -467,8 +538,7 @@ document.getElementById("sorts").innerHTML=SORTS.map(([k,l])=>
 document.querySelectorAll("[data-s]").forEach(b=>b.addEventListener("click",()=>{
   S.sort=b.dataset.s;document.querySelectorAll("[data-s]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===S.sort));drawRows();}));
 document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value.toLowerCase().trim();drawRows();});
-document.getElementById("str").addEventListener("input",e=>{S.str=+e.target.value;
-  document.getElementById("strv").textContent=S.str+"th";drawSlots();});
+document.getElementById("profBtn").addEventListener("click",openQuiz);
 document.getElementById("howBtn").addEventListener("click",openModal);
 document.getElementById("howBtn2").addEventListener("click",openModal);
 document.getElementById("mClose").addEventListener("click",closeModal);
