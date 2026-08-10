@@ -1,742 +1,623 @@
 <title>DClinPsy Course Compass</title>
 <style>
 :root{
-  --bg:#eceff3; --surface:#fff; --surface-2:#f5f7fa; --surface-3:#eef2f6;
-  --ink:#161d26; --ink-2:#3f4b58; --muted:#6a7887; --faint:#98a4b1;
-  --line:#d7dee6; --line-2:#e7ecf1;
-  --m:#0b6fb8; --m-soft:#dbeafa; --m-ink:#08528a;      /* models / specialisms */
-  --v:#bf7414; --v-soft:#faead4; --v-ink:#8c540d;      /* values / ethos */
-  --a:#8a4bc4; --a-soft:#eee0fa; --a-ink:#6a349c;      /* accreditations */
-  --warn:#b8352f; --warn-soft:#fae0de;
-  --good:#1c7a4f;
-  --shadow:0 1px 2px rgba(22,29,38,.05),0 3px 12px rgba(22,29,38,.05);
-  --shadow-lg:0 2px 6px rgba(22,29,38,.07),0 12px 32px rgba(22,29,38,.09);
-  --r:12px; --rail:268px;
+  --bg:#f2f4f7; --card:#fff; --card2:#f7f9fb; --sunk:#eaeff4;
+  --ink:#141b24; --ink2:#3d4b59; --dim:#68768a; --faint:#97a3b4;
+  --edge:#dbe2ea; --edge2:#e9eef3;
+  --m:#0b6fb8; --mS:#dcecfa; --mI:#08528a;
+  --v:#bf7414; --vS:#faead4; --vI:#8c540d;
+  --a:#8a4bc4; --aS:#eee0fa; --aI:#6a349c;
+  --warn:#b8352f; --warnS:#fae0de; --good:#1c7a4f; --goodS:#dcefe5;
+  --sh:0 1px 2px rgba(20,27,36,.05),0 2px 8px rgba(20,27,36,.04);
+  --shL:0 4px 12px rgba(20,27,36,.08),0 16px 40px rgba(20,27,36,.1);
+  --rad:14px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0d1218; --surface:#161d25; --surface-2:#111820; --surface-3:#1c242d;
-  --ink:#e9eef3; --ink-2:#b3bfcb; --muted:#8492a0; --faint:#5f6d7b;
-  --line:#28323d; --line-2:#202932;
-  --m:#2f86cc; --m-soft:#12283c; --m-ink:#7fb8e8;
-  --v:#c28238; --v-soft:#332413; --v-ink:#dda963;
-  --a:#9268d2; --a-soft:#251a38; --a-ink:#b795e5;
-  --warn:#e0736c; --warn-soft:#351d1c;
-  --good:#4aa87a;
-  --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
-  --shadow-lg:0 2px 8px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.36);
+  --bg:#0b1015; --card:#151d26; --card2:#111820; --sunk:#0e141b;
+  --ink:#eaeff5; --ink2:#b4c0cc; --dim:#8492a1; --faint:#5d6b7a;
+  --edge:#26313d; --edge2:#1d2630;
+  --m:#2f86cc; --mS:#12283c; --mI:#82bbea;
+  --v:#c28238; --vS:#332413; --vI:#ddab68;
+  --a:#9268d2; --aS:#251a38; --aI:#bb9ae8;
+  --warn:#e0736c; --warnS:#351d1c; --good:#4aa87a; --goodS:#12291f;
+  --sh:0 1px 2px rgba(0,0,0,.4),0 3px 12px rgba(0,0,0,.3);
+  --shL:0 6px 20px rgba(0,0,0,.45),0 20px 50px rgba(0,0,0,.4);
 }}
 :root[data-theme="dark"]{
-  --bg:#0d1218; --surface:#161d25; --surface-2:#111820; --surface-3:#1c242d;
-  --ink:#e9eef3; --ink-2:#b3bfcb; --muted:#8492a0; --faint:#5f6d7b;
-  --line:#28323d; --line-2:#202932;
-  --m:#2f86cc; --m-soft:#12283c; --m-ink:#7fb8e8;
-  --v:#c28238; --v-soft:#332413; --v-ink:#dda963;
-  --a:#9268d2; --a-soft:#251a38; --a-ink:#b795e5;
-  --warn:#e0736c; --warn-soft:#351d1c;
-  --good:#4aa87a;
-  --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.3);
-  --shadow-lg:0 2px 8px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.36);
+  --bg:#0b1015; --card:#151d26; --card2:#111820; --sunk:#0e141b;
+  --ink:#eaeff5; --ink2:#b4c0cc; --dim:#8492a1; --faint:#5d6b7a;
+  --edge:#26313d; --edge2:#1d2630;
+  --m:#2f86cc; --mS:#12283c; --mI:#82bbea;
+  --v:#c28238; --vS:#332413; --vI:#ddab68;
+  --a:#9268d2; --aS:#251a38; --aI:#bb9ae8;
+  --warn:#e0736c; --warnS:#351d1c; --good:#4aa87a; --goodS:#12291f;
+  --sh:0 1px 2px rgba(0,0,0,.4),0 3px 12px rgba(0,0,0,.3);
+  --shL:0 6px 20px rgba(0,0,0,.45),0 20px 50px rgba(0,0,0,.4);
 }
-
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  line-height:1.5;-webkit-font-smoothing:antialiased}
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+.serif{font-family:Georgia,"Iowan Old Style",serif}
 .tnum{font-variant-numeric:tabular-nums}
-.serif{font-family:Georgia,"Iowan Old Style","Times New Roman",serif}
-button{font:inherit}
-:focus-visible{outline:2px solid var(--m);outline-offset:2px;border-radius:4px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--m);outline-offset:2px;border-radius:5px}
+.wrap{max-width:1400px;margin:0 auto;padding:0 clamp(12px,3vw,26px)}
 
-/* ---------- header ---------- */
-header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--surface) 90%,transparent);
-  backdrop-filter:saturate(1.5) blur(12px);border-bottom:1px solid var(--line)}
-.head{display:flex;align-items:center;gap:14px;padding:12px 22px;max-width:1560px;margin:0 auto}
-.logo{width:34px;height:34px;border-radius:9px;background:var(--m);color:#fff;display:grid;place-items:center;
-  font-weight:700;font-size:15px;flex:none;letter-spacing:-.02em}
-.brand{margin-right:auto;min-width:0}
-.brand h1{margin:0;font-size:17.5px;font-weight:600;letter-spacing:-.015em;line-height:1.2}
-.brand p{margin:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);height:36px;padding:0 13px;
-  border-radius:9px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-.hbtn:hover{border-color:var(--m);color:var(--m)}
-.hbtn.on{background:var(--m);border-color:var(--m);color:#fff}
-.pill-n{background:var(--m-soft);color:var(--m-ink);border-radius:20px;padding:1px 7px;font-size:11.5px;font-weight:700}
-.hbtn.on .pill-n{background:rgba(255,255,255,.25);color:#fff}
+/* header */
+header{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--card) 92%,transparent);
+  backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--edge)}
+.hd{display:flex;align-items:center;gap:12px;padding:11px 0;max-width:1400px;margin:0 auto;
+  padding-left:clamp(12px,3vw,26px);padding-right:clamp(12px,3vw,26px)}
+.mark{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--m),var(--a));color:#fff;font-weight:700;font-size:16px}
+.ttl{margin-right:auto;min-width:0}
+.ttl h1{margin:0;font-size:16.5px;font-weight:650;letter-spacing:-.015em;white-space:nowrap}
+.ttl p{margin:0;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{border:1px solid var(--edge);background:var(--card2);color:var(--ink2);height:36px;padding:0 12px;
+  border-radius:10px;font-size:13px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.ib:hover{border-color:var(--m);color:var(--m)}
+.ib.on{background:var(--m);border-color:var(--m);color:#fff}
+.ib .ct{background:var(--mS);color:var(--mI);border-radius:20px;padding:0 6px;font-size:11px;font-weight:700}
+.ib.on .ct{background:rgba(255,255,255,.25);color:#fff}
+.iconb{width:36px;padding:0;justify-content:center}
 
-/* ---------- shell ---------- */
-.shell{max-width:1560px;margin:0 auto;padding:20px 22px 70px;display:grid;
-  grid-template-columns:var(--rail) minmax(0,1fr);gap:20px;align-items:start}
-aside{position:sticky;top:70px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 90px);overflow-y:auto;padding-right:2px}
-aside::-webkit-scrollbar{width:7px}
-aside::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+/* hero */
+.hero{padding:22px 0 6px}
+.hero h2{margin:0 0 6px;font-size:clamp(20px,3.2vw,27px);font-weight:650;letter-spacing:-.02em;text-wrap:balance}
+.hero p{margin:0;font-size:14px;color:var(--ink2);max-width:70ch;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0 4px}
+.st{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);padding:12px 14px;box-shadow:var(--sh)}
+.st .n{font-size:25px;font-weight:650;letter-spacing:-.02em;line-height:1.05}
+.st .l{font-size:11.5px;color:var(--dim);margin-top:4px;line-height:1.35}
+.st.b .n{color:var(--m)} .st.o .n{color:var(--v)} .st.p .n{color:var(--a)}
 
-.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
-.box-h{padding:12px 14px 0;display:flex;align-items:baseline;gap:8px}
-.box-h h2{margin:0;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
-.box-h .hint{font-size:11px;color:var(--faint);margin-left:auto}
-.box-b{padding:12px 14px 14px}
-
-.lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;
-  display:block;margin:0 0 7px}
-.lab+.lab{margin-top:14px}
-.chips{display:flex;flex-wrap:wrap;gap:5px}
-.chip{cursor:pointer;font-size:12.5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
-  padding:4px 10px;border-radius:20px;transition:background .12s,border-color .12s,color .12s;white-space:nowrap}
-.chip:hover{border-color:var(--muted)}
-.chip[aria-pressed="true"]{background:var(--m);border-color:var(--m);color:#fff;font-weight:600}
-.chip.cv[aria-pressed="true"]{background:var(--v);border-color:var(--v)}
-.chip.ca[aria-pressed="true"]{background:var(--a);border-color:var(--a)}
-.srch{width:100%;font-size:13px;padding:8px 11px;border-radius:9px;border:1px solid var(--line);
-  background:var(--surface-2);color:var(--ink)}
+/* toolbar */
+.bar{position:sticky;top:58px;z-index:50;background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(8px);padding:12px 0;margin:14px 0 0;border-bottom:1px solid var(--edge2)}
+.barin{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.srch{flex:1 1 220px;min-width:0;border:1px solid var(--edge);background:var(--card);color:var(--ink);
+  border-radius:10px;padding:9px 12px;font-size:13.5px}
 .srch::placeholder{color:var(--faint)}
-.txt-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0;
-  text-decoration:underline;text-underline-offset:2px}
-.txt-btn:hover{color:var(--ink)}
-.rail-foot{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
-.cnt{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-right:auto}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:3px;gap:2px;
+  overflow-x:auto;max-width:100%}
+.seg button{border:none;background:none;font-size:13px;color:var(--dim);padding:6px 13px;border-radius:7px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--sunk);color:var(--ink);font-weight:600}
+.sel{border:1px solid var(--edge);background:var(--card);color:var(--ink2);border-radius:10px;padding:8px 10px;font-size:12.5px}
+
+/* filter panel */
+.fp{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);margin:12px 0 0;
+  box-shadow:var(--sh);overflow:hidden}
+.fp[hidden]{display:none}
+.fpin{padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.fg .lb{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700;margin-bottom:7px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.ch{border:1px solid var(--edge);background:var(--card2);color:var(--ink2);padding:4px 10px;border-radius:20px;
+  font-size:12.5px;white-space:nowrap}
+.ch:hover{border-color:var(--dim)}
+.ch[aria-pressed="true"]{background:var(--m);border-color:var(--m);color:#fff;font-weight:600}
+.ch.cv[aria-pressed="true"]{background:var(--v);border-color:var(--v)}
+.ch.ca[aria-pressed="true"]{background:var(--a);border-color:var(--a)}
+.fpft{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--edge2);background:var(--card2)}
+.cnt{font-size:12.5px;color:var(--ink2);font-weight:600;margin-right:auto}
 .cnt b{color:var(--m)}
+.lnk{background:none;border:none;color:var(--dim);font-size:12.5px;text-decoration:underline;text-underline-offset:2px;padding:0}
+.lnk:hover{color:var(--ink)}
 
-/* ---------- toolbar ---------- */
-.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
-.seg button{border:none;background:none;font-size:13px;color:var(--muted);padding:6px 13px;border-radius:7px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
-.sel{font-size:12.5px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer}
+/* grid + cards */
+main{padding:16px 0 70px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:14px}
+.cd{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);overflow:hidden;
+  box-shadow:var(--sh);display:flex;flex-direction:column;text-align:left;padding:0;width:100%;
+  transition:transform .16s cubic-bezier(.22,1,.36,1),box-shadow .16s,border-color .16s}
+.cd:hover{transform:translateY(-3px);box-shadow:var(--shL);border-color:color-mix(in srgb,var(--m) 45%,var(--edge))}
+.cd.pin{border-color:var(--m);box-shadow:0 0 0 1px var(--m),var(--sh)}
+.band{height:84px;position:relative;overflow:hidden;flex:none}
+.band svg{position:absolute;inset:0;width:100%;height:100%}
+.crest{position:absolute;left:13px;bottom:-17px;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;
+  color:#fff;font-weight:700;font-size:15px;letter-spacing:.02em;border:2.5px solid var(--card);z-index:2;
+  font-family:Georgia,serif}
+.pinb{position:absolute;right:9px;top:9px;z-index:3;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:rgba(255,255,255,.9);border:none;color:#5a6675;font-size:14px;line-height:1}
+.pinb[aria-pressed="true"]{background:var(--m);color:#fff}
+.cdb{padding:22px 15px 14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cdh h3{margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.01em;line-height:1.25}
+.loc{font-size:11.5px;color:var(--dim);margin-top:2px;display:flex;align-items:center;gap:5px}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mt{background:var(--card2);border-radius:9px;padding:7px 9px}
+.mt .mv{font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.mt .ml{font-size:9.5px;color:var(--dim);line-height:1.3;margin-top:2px}
+.mt .mb{height:3px;background:var(--sunk);border-radius:3px;margin-top:5px;overflow:hidden}
+.mt .mb i{display:block;height:100%;border-radius:3px}
+.mt.q .mv{color:var(--v)} .mt.q .mb i{background:var(--v)}
+.mt.c .mv{color:var(--m)} .mt.c .mb i{background:var(--m)}
+.mt.na .mv{color:var(--faint);font-size:13px}
+.gate{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 8px;border-radius:8px;background:var(--card2)}
+.gp{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap}
+.g-academic{background:var(--warnS);color:var(--warn)}
+.g-test{background:var(--aS);color:var(--aI)}
+.g-review{background:var(--goodS);color:var(--good)}
+.g-none{background:var(--sunk);color:var(--faint)}
+.gate span.gt{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto}
+.tg{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:550}
+.tg.m{background:var(--mS);color:var(--mI)} .tg.v{background:var(--vS);color:var(--vI)}
+.tg.a{background:var(--aS);color:var(--aI)} .tg.more{background:var(--sunk);color:var(--dim)}
+.flag{position:absolute;right:9px;bottom:9px;z-index:2;font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:5px;
+  background:var(--warn);color:#fff}
 
-/* ---------- context strip ---------- */
-.ctx{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.stat .l{min-height:26px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;box-shadow:var(--shadow)}
-.stat .n{font-size:23px;font-weight:650;letter-spacing:-.02em;line-height:1.1}
-.stat .l{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.3}
-.stat.b .n{color:var(--m)} .stat.o .n{color:var(--v)} .stat.p .n{color:var(--a)}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,15,20,.5);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.dw{position:fixed;top:0;right:0;height:100%;width:min(520px,100%);background:var(--bg);z-index:100;
+  transform:translateX(100%);transition:transform .26s cubic-bezier(.22,1,.36,1);overflow-y:auto;box-shadow:var(--shL)}
+.dw.open{transform:none}
+.dwb{padding:0 0 40px}
+.dwband{height:120px;position:relative;overflow:hidden}
+.dwband svg{position:absolute;inset:0;width:100%;height:100%}
+.dwx{position:absolute;right:12px;top:12px;z-index:3;width:34px;height:34px;border-radius:10px;border:none;
+  background:rgba(255,255,255,.92);color:#3d4b59;font-size:17px;display:grid;place-items:center}
+.dwh{padding:16px clamp(16px,4vw,24px) 0;margin-top:-26px;position:relative;z-index:2}
+.dwcrest{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:700;
+  font-size:19px;border:3px solid var(--bg);font-family:Georgia,serif;margin-bottom:10px}
+.dwh h2{margin:0;font-size:21px;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.dwsec{padding:0 clamp(16px,4vw,24px);margin-top:20px}
+.dwsec h4{margin:0 0 9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);padding:13px 15px}
+.kv{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--edge2);font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--dim);flex:none}
+.kv .v{text-align:right;font-weight:600}
+.bigm{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bm{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);padding:12px 14px}
+.bm .n{font-size:26px;font-weight:700;letter-spacing:-.025em;line-height:1}
+.bm .l{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.35}
+.bm .sub{font-size:10.5px;color:var(--faint);margin-top:5px}
+.bm.q .n{color:var(--v)} .bm.c .n{color:var(--m)}
+ul.bul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2)}
+ul.bul li{padding-left:15px;position:relative;line-height:1.5}
+ul.bul li::before{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--m)}
+.yr{display:flex;gap:6px;margin-top:9px}
+.yb{flex:1;background:var(--card2);border-radius:8px;padding:6px 4px;text-align:center}
+.yb .yy{font-size:9.5px;color:var(--faint)}
+.yb .yv{font-size:13.5px;font-weight:700;color:var(--m)}
 
-/* ---------- cards ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:13px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;
-  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;position:relative;transition:box-shadow .15s,border-color .15s}
-.card:hover{box-shadow:var(--shadow-lg);border-color:color-mix(in srgb,var(--m) 40%,var(--line))}
-.card.starred{border-color:var(--m)}
-.ctop{display:flex;align-items:flex-start;gap:9px}
-.ctop h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.25;padding-right:2px}
-.sub{font-size:11.5px;color:var(--muted);margin-top:3px}
-.star{border:1px solid var(--line);background:var(--surface-2);color:var(--faint);width:30px;height:30px;
-  border-radius:8px;cursor:pointer;flex:none;display:grid;place-items:center;font-size:14px;line-height:1}
-.star:hover{border-color:var(--m);color:var(--m)}
-.star[aria-pressed="true"]{background:var(--m);border-color:var(--m);color:#fff}
-.badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex:none}
-.badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;white-space:nowrap;letter-spacing:.02em}
-.badge.nb{background:var(--m-soft);color:var(--m-ink)}
-.badge.wb{background:var(--warn-soft);color:var(--warn)}
-.row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
-.tag{font-size:11.5px;padding:2.5px 8px;border-radius:6px;font-weight:550;white-space:nowrap}
-.tag.tm{background:var(--m-soft);color:var(--m-ink)}
-.tag.tm.lead{box-shadow:inset 0 0 0 1.5px var(--m)}
-.tag.tv{background:var(--v-soft);color:var(--v-ink)}
-.tag.ta{background:var(--a-soft);color:var(--a-ink)}
-.mlab{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;align-self:center}
-ul.dist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-2)}
-ul.dist li{padding-left:13px;position:relative}
-ul.dist li::before{content:"";position:absolute;left:2px;top:8px;width:4px;height:4px;border-radius:50%;background:var(--m)}
-.fit{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--surface-2);border-radius:8px}
-.fit .ft{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;flex:none}
-.fitbar{flex:1;height:7px;background:var(--surface-3);border-radius:4px;overflow:hidden}
-.fitfill{height:100%;background:var(--m);border-radius:0 4px 4px 0;transition:width .45s cubic-bezier(.22,1,.36,1)}
-.fit .fv{font-size:12.5px;font-weight:700;color:var(--m);flex:none;min-width:34px;text-align:right}
-.slots{display:flex;gap:7px;padding-top:10px;border-top:1px solid var(--line-2);margin-top:auto}
-.slot{flex:1;background:var(--surface-2);border:1px dashed var(--line);border-radius:8px;padding:6px 8px}
-.slot .sv{font-size:15px;font-weight:650;color:var(--faint)}
-.slot .sl{font-size:9px;color:var(--faint);line-height:1.25;margin-top:1px}
-
-/* ---------- matrix ---------- */
-.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
-table{border-collapse:collapse;width:100%;font-size:12px}
-th,td{text-align:center;padding:0}
-thead th{position:sticky;top:0;background:var(--surface-2);border-bottom:1px solid var(--line);z-index:2}
-.colh{height:120px;vertical-align:bottom;padding-bottom:9px}
-.colh>span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:11.5px;font-weight:600;margin:0 auto;color:var(--ink-2)}
-.colh.gm>span{color:var(--m-ink)} .colh.gv>span{color:var(--v-ink)}
-th.nm,td.nm{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;padding:8px 12px;
-  font-weight:600;font-size:12.5px;border-bottom:1px solid var(--line-2);min-width:200px;white-space:nowrap}
-thead th.nm{z-index:3;background:var(--surface-2)}
-tbody tr:hover td,tbody tr:hover td.nm{background:var(--surface-2)}
-td.cl{border-bottom:1px solid var(--line-2);border-left:1px solid var(--line-2);height:34px}
-.dot{width:15px;height:15px;border-radius:4px;margin:0 auto;display:block}
-.dot.dm{background:var(--m)} .dot.dm.str{box-shadow:0 0 0 3px var(--m-soft)}
-.dot.dv{background:var(--v)}
-.gdiv{border-left:2px solid var(--line)!important}
-
-/* ---------- chart ---------- */
-.bars{display:flex;flex-direction:column;gap:8px}
-.bl{display:grid;grid-template-columns:132px 1fr 30px;align-items:center;gap:12px}
-.bl .bt{font-size:12.5px;color:var(--ink-2);text-align:right;font-weight:550}
-.bk{background:var(--surface-2);border-radius:6px;height:22px;overflow:hidden}
-.bf{height:100%;background:var(--m);border-radius:0 6px 6px 0;min-width:3px;transition:width .5s cubic-bezier(.22,1,.36,1)}
-.bl .bv{font-size:12.5px;color:var(--muted);font-weight:600}
-
-.selrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 9px;background:var(--surface-2);border-radius:8px}
-.gpill{font-size:10px;font-weight:700;padding:2.5px 7px;border-radius:5px;white-space:nowrap;letter-spacing:.02em}
-.g-academic{background:var(--warn-soft);color:var(--warn)}
-.g-test{background:var(--a-soft);color:var(--a-ink)}
-.g-review{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
-.seltxt{font-size:11.5px;color:var(--ink-2);font-weight:550}
-.pgwarn{font-size:9.5px;font-weight:700;color:var(--warn);border:1px solid var(--warn);padding:1px 5px;border-radius:4px}
-
-/* ---------- competition ---------- */
-.cbars{display:flex;flex-direction:column;gap:6px}
-.cbar{display:grid;grid-template-columns:26px minmax(120px,190px) 1fr 44px 18px;align-items:center;gap:11px;
-  padding:3px 5px;border-radius:7px}
-.cbar:hover{background:var(--surface-2)}
-.cbar.st{background:var(--m-soft)}
-.cbar .rk{font-size:11px;color:var(--faint);font-weight:700;text-align:right}
-.cbar .cn{font-size:12.5px;color:var(--ink-2);font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cbar .cv{font-size:12.5px;font-weight:700;color:var(--ink);text-align:right}
-.cbar .ct{font-size:9px;text-align:center}
-.ct.up{color:var(--warn)} .ct.down{color:var(--good)} .ct.flat{color:var(--faint)}
-.slot.has{border-style:solid;background:var(--m-soft);border-color:color-mix(in srgb,var(--m) 30%,transparent)}
-.slot.has .sv{color:var(--m-ink)}
-.slot.has.v{background:var(--v-soft);border-color:color-mix(in srgb,var(--v) 30%,transparent)}
-.slot.has.v .sv,.slot.has.v .sl{color:var(--v-ink)}
-.slot.has .sl{color:var(--m-ink);opacity:.8}
-.tr{font-style:normal;font-size:9px;margin-left:3px;vertical-align:middle}
-.tr.up{color:var(--warn)} .tr.down{color:var(--good)} .tr.flat{color:var(--faint)}
-
-/* ---------- compare ---------- */
-.cmp{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
-.cmp table{font-size:12.5px}
-.cmp th,.cmp td{text-align:left;vertical-align:top;padding:11px 13px;border-bottom:1px solid var(--line-2);border-left:1px solid var(--line-2)}
-.cmp thead th{font-size:13.5px;font-weight:600;min-width:210px;background:var(--surface-2)}
-.cmp th.rl{position:sticky;left:0;background:var(--surface-2);font-size:10.5px;text-transform:uppercase;
-  letter-spacing:.06em;color:var(--muted);font-weight:700;min-width:120px;width:120px;z-index:1;border-left:none}
-.cmp thead th.rl{z-index:3}
-
-.note{border-radius:var(--r);padding:13px 16px;margin-bottom:14px;font-size:12.5px;line-height:1.55;
-  background:var(--v-soft);border:1px solid color-mix(in srgb,var(--v) 32%,transparent);color:var(--ink-2)}
-.note b{color:var(--v-ink)}
-.note code{background:color-mix(in srgb,var(--v) 16%,transparent);padding:1px 5px;border-radius:4px;font-size:11.5px}
-.empty{text-align:center;padding:56px 20px;color:var(--muted);font-size:14px;background:var(--surface);
-  border:1px solid var(--line);border-radius:var(--r)}
-.sec{display:flex;align-items:baseline;gap:9px;margin:0 0 11px}
-.sec h2{margin:0;font-size:14.5px;font-weight:650}
-.sec span{font-size:12px;color:var(--muted)}
-
-footer{border-top:1px solid var(--line);background:var(--surface-2)}
-.foot{max-width:1560px;margin:0 auto;padding:20px 22px 44px;font-size:11.5px;color:var(--muted);
-  display:flex;flex-direction:column;gap:6px;line-height:1.55}
-.lg{display:flex;flex-wrap:wrap;gap:15px;margin-bottom:3px}
-.lg span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+/* chart + scatter + table shared */
+.sec{display:flex;align-items:baseline;gap:9px;margin:0 0 12px;flex-wrap:wrap}
+.sec h3{margin:0;font-size:16px;font-weight:650;letter-spacing:-.01em}
+.sec span{font-size:12.5px;color:var(--dim)}
+.box{background:var(--card);border:1px solid var(--edge);border-radius:var(--rad);padding:16px;box-shadow:var(--sh)}
+.note{background:var(--vS);border:1px solid color-mix(in srgb,var(--v) 30%,transparent);border-radius:var(--rad);
+  padding:13px 16px;font-size:12.5px;line-height:1.6;color:var(--ink2);margin-bottom:14px}
+.note b{color:var(--vI)}
+.bl{display:grid;grid-template-columns:minmax(96px,150px) 1fr auto;gap:11px;align-items:center;padding:3px 4px;border-radius:8px}
+.bl:hover{background:var(--card2)}
+.bl.pin{background:var(--mS)}
+.bl .bn{font-size:12.5px;color:var(--ink2);font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk{background:var(--sunk);border-radius:6px;height:20px;overflow:hidden}
+.bf{height:100%;border-radius:0 6px 6px 0;min-width:3px;transition:width .5s cubic-bezier(.22,1,.36,1)}
+.bl .bv{font-size:12.5px;font-weight:700;min-width:42px;text-align:right}
+.scrollx{overflow-x:auto;border:1px solid var(--edge);border-radius:var(--rad);background:var(--card);box-shadow:var(--sh)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--edge2);vertical-align:top}
+thead th{background:var(--card2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);
+  position:sticky;top:0;z-index:2;white-space:nowrap}
+th.rl{position:sticky;left:0;background:var(--card2);min-width:118px;z-index:1;font-weight:700}
+thead th.rl{z-index:3}
+.empty{text-align:center;padding:56px 20px;color:var(--dim);font-size:14px;background:var(--card);
+  border:1px solid var(--edge);border-radius:var(--rad)}
+footer{border-top:1px solid var(--edge);background:var(--card2);margin-top:30px}
+.ft{max-width:1400px;margin:0 auto;padding:20px clamp(12px,3vw,26px) 40px;font-size:11.5px;color:var(--dim);
+  display:flex;flex-direction:column;gap:6px;line-height:1.6}
+.lg{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:4px}
+.lg span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}
 .sw{width:12px;height:12px;border-radius:3px}
-.sw.m{background:var(--m)} .sw.v{background:var(--v)} .sw.a{background:var(--a)}
-
-@media (max-width:1080px){
-  .shell{grid-template-columns:1fr}
-  aside{position:static;max-height:none;overflow:visible}
-  .ctx{grid-template-columns:repeat(2,1fr)}
+@media (max-width:640px){
+  .ttl p{display:none}
+  .bar{top:56px}
+  .grid{grid-template-columns:1fr}
+  .bigm{grid-template-columns:1fr}
+  .bl{grid-template-columns:minmax(80px,110px) 1fr auto;gap:8px}
 }
-@media (max-width:560px){
-  .head{padding:10px 14px}.shell{padding:14px 14px 60px}.foot{padding:18px 14px 36px}
-  .brand p{display:none}.bl{grid-template-columns:100px 1fr 28px}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <header>
-  <div class="head">
-    <div class="logo">Ψ</div>
-    <div class="brand">
+  <div class="hd">
+    <div class="mark">Ψ</div>
+    <div class="ttl">
       <h1 class="serif">DClinPsy Course Compass</h1>
-      <p>Compare all 32 UK clinical psychology doctorates by specialism, model &amp; values</p>
+      <p>All 32 UK clinical psychology doctorates, compared on what actually matters</p>
     </div>
-    <button class="hbtn" id="shortBtn" aria-pressed="false">★ Shortlist <span class="pill-n tnum" id="shortN">0</span></button>
-    <button class="hbtn" id="themeBtn" aria-label="Toggle light or dark theme" title="Toggle theme">◐</button>
+    <button class="ib" id="filtBtn" aria-expanded="false">Filters <span class="ct tnum" id="filtN">0</span></button>
+    <button class="ib" id="pinBtn" aria-pressed="false">★ <span class="ct tnum" id="pinN">0</span></button>
+    <button class="ib iconb" id="themeBtn" aria-label="Toggle theme">◐</button>
   </div>
 </header>
 
-<div class="shell">
-  <aside>
-    <div class="box">
-      <div class="box-h"><h2>Find your fit</h2><span class="hint" id="fitHint">optional</span></div>
-      <div class="box-b">
-        <input class="srch" id="q" type="search" placeholder="Search course or keyword…" aria-label="Search courses">
-        <span class="lab" style="margin-top:14px;">Models &amp; specialisms</span>
-        <div class="chips" id="mChips"></div>
-        <span class="lab">Values &amp; ethos</span>
-        <div class="chips" id="vChips"></div>
-        <span class="lab">Selection gate</span>
-        <div class="chips" id="gChips"></div>
-        <span class="lab">Other priorities</span>
-        <div class="chips" id="oChips"></div>
-        <div class="rail-foot">
-          <span class="cnt" id="cnt"></span>
-          <button class="txt-btn" id="clr">Reset</button>
-        </div>
-      </div>
-    </div>
-    <div class="box">
-      <div class="box-h"><h2>How matching works</h2></div>
-      <div class="box-b" style="font-size:12px;color:var(--ink-2);line-height:1.55;padding-top:8px;">
-        Pick what matters to you. Courses are scored on how many of your priorities they meet and ranked by
-        <b>fit</b>. Nothing is excluded by default — use <b>Filter mode</b> in the toolbar to hide non-matches instead.
-      </div>
-    </div>
-  </aside>
+<div class="wrap">
+  <section class="hero">
+    <h2 class="serif">Find the courses that fit how you actually apply</h2>
+    <p>Every course is compared on four things that change your odds: how competitive it is, how many of its trainees
+       arrived without a postgraduate qualification, how it shortlists, and what it actually teaches. Pick your
+       priorities and the list re-ranks by fit.</p>
+    <div class="stats" id="stats"></div>
+  </section>
 
-  <main>
-    <section class="ctx" id="ctx"></section>
-    <div class="note" id="note"></div>
-
-    <div class="toolbar">
+  <div class="bar">
+    <div class="barin">
+      <input class="srch" id="q" type="search" placeholder="Search course, city or keyword…" aria-label="Search">
       <div class="seg" role="group" aria-label="View">
         <button data-v="cards" aria-pressed="true">Courses</button>
-        <button data-v="matrix" aria-pressed="false">Matrix</button>
-        <button data-v="chart" aria-pressed="false">Specialisms</button>
         <button data-v="comp" aria-pressed="false">Competition</button>
+        <button data-v="qual" aria-pressed="false">Qualifications</button>
         <button data-v="scatter" aria-pressed="false">Scatter</button>
-        <button data-v="compare" aria-pressed="false">Compare</button>
+        <button data-v="table" aria-pressed="false">Compare</button>
       </div>
-      <select class="sel" id="sort" aria-label="Sort courses">
-        <option value="fit">Sort: best fit</option>
-        <option value="az">Sort: A–Z</option>
-        <option value="breadth">Sort: most models taught</option>
-        <option value="accred">Sort: most accreditations</option>
-        <option value="comp">Sort: most competitive</option>
-        <option value="qual">Sort: most without postgrad qual</option>
-      </select>
-      <select class="sel" id="mode" aria-label="Priority mode">
-        <option value="rank">Rank mode (show all)</option>
-        <option value="filter">Filter mode (hide non-matches)</option>
+      <select class="sel" id="sort" aria-label="Sort">
+        <option value="fit">Best fit</option>
+        <option value="az">A–Z</option>
+        <option value="comp">Least competitive</option>
+        <option value="qual">Most non-postgrad</option>
+        <option value="breadth">Most models</option>
       </select>
     </div>
+    <div class="fp" id="fp" hidden>
+      <div class="fpin">
+        <div class="fg"><span class="lb">Models &amp; specialisms</span><div class="chips" id="cM"></div></div>
+        <div class="fg"><span class="lb">Values &amp; ethos</span><div class="chips" id="cV"></div></div>
+        <div class="fg"><span class="lb">How it shortlists</span><div class="chips" id="cG"></div></div>
+        <div class="fg"><span class="lb">Region</span><div class="chips" id="cR"></div></div>
+        <div class="fg"><span class="lb">Other</span><div class="chips" id="cO"></div></div>
+      </div>
+      <div class="fpft">
+        <span class="cnt" id="cnt"></span>
+        <select class="sel" id="mode" aria-label="Priority mode">
+          <option value="rank">Rank all by fit</option>
+          <option value="filter">Hide non-matches</option>
+        </select>
+        <button class="lnk" id="clr">Reset</button>
+      </div>
+    </div>
+  </div>
 
-    <section id="view"></section>
-  </main>
+  <main id="view"></main>
 </div>
 
-<footer>
-  <div class="foot">
-    <div class="lg">
-      <span><i class="sw m"></i> Model / specialism</span>
-      <span><i class="sw v"></i> Value / ethos</span>
-      <span><i class="sw a"></i> Accreditation extra</span>
-    </div>
-    <div><b>Qualitative data</b> gathered from course websites, Clearing House and BPS material (v2 normalised re-sweep, 2026). Course marketing is aspirational — <b>a missing tag means “not surfaced”, not “confirmed absent”</b>. Verify anything decision-critical on the course’s own site and against BPS Alternative Handbook trainee feedback.</div>
-    <div><b>National figures</b> are Clearing House totals for all NHS-funded courses, not per-course rates. Coventry &amp; Warwick is not recruiting for a 2026 intake (aiming 2027).</div>
+<div class="scrim" id="scrim"></div>
+<aside class="dw" id="dw" role="dialog" aria-modal="true" aria-label="Course detail"><div class="dwb" id="dwb"></div></aside>
+
+<footer><div class="ft">
+  <div class="lg">
+    <span><i class="sw" style="background:var(--m)"></i> Models &amp; specialisms</span>
+    <span><i class="sw" style="background:var(--v)"></i> Values &amp; ethos</span>
+    <span><i class="sw" style="background:var(--a)"></i> Accreditations</span>
   </div>
-</footer>
+  <div><b>Crests and landscape bands are illustrative only</b> — generated from each course's region and setting. They are not official university logos or photographs, and no institutional branding is reproduced.</div>
+  <div><b>Competition</b>: Clearing House “Places by Course Centre”, 2023–25 entry. Per-centre applications are distinct applicants for that course. <b>Qualifications</b>: Section 9 of the 2025/26 BPS Alternative Handbook per-course reports — surveyed trainees, not all successful applicants, so sample sizes are shown throughout. <b>Selection</b>: course and Clearing House pages, verified for 10 courses only; others show as not researched. Procedures change annually — confirm before applying.</div>
+  <div>Hull and Belfast publish no Clearing House figures. Coventry &amp; Warwick is not recruiting for 2026 entry.</div>
+</div></footer>
 
 <script>
+const COURSES=[{"name":"Bangor (North Wales)","models":["CBT","SYS","DBT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":["Systemic-Foundation"],"values":[],"distinctive":["Major DBT centre (director chairs World DBT Association)","Systemic Foundations (clinical director is systemic psychotherapist)","Bilingual Welsh / rural","UK's first DClinPsy"],"recruiting_2026":true,"city":"Bangor","region":"North Wales","motif":"coast","col":"#1d4e89","mono":"BU","qual":{"p":16.7,"n":24,"none":4},"comp":{"perYear":{"2023":{"applications":203,"places":14,"ratio":14.5},"2024":{"applications":250,"places":15,"ratio":16.67},"2025":{"applications":262,"places":18,"ratio":14.56}},"avg":15.2},"sel":null},{"name":"Bath","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["BABCP-L2","AFT-Foundation"],"values":["ebe_strong"],"distinctive":["Broad placement portfolio incl. neuro/DBT/eating disorders","NHS-values selection"],"recruiting_2026":true,"city":"Bath","region":"South West","motif":"hills","col":"#12395b","mono":"BA","qual":{"p":17.1,"n":41,"none":7},"comp":{"perYear":{"2023":{"applications":701,"places":28,"ratio":25.04},"2024":{"applications":769,"places":28,"ratio":27.46},"2025":{"applications":867,"places":28,"ratio":30.96}},"avg":27.8},"sel":{"g":"academic","t":"Scored academic gate","d":"Screened for minimum criteria, then scored on academic achievement, research experience, clinical exposure and personal reflection; only highest scorers are shortlisted. Cut-off not published.","pg":1,"al":0}},{"name":"Belfast (QUB)","models":["CBT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Only NI course","Commended for trainee research output","Broad generic competencies"],"recruiting_2026":true,"city":"Belfast","region":"Northern Ireland","motif":"coast","col":"#9d1b2f","mono":"QB","qual":{"p":0.0,"n":12,"none":0},"comp":null,"sel":null},{"name":"Birmingham","models":["CBT","PSY","SYS"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Year-2 model specialisation (psychodynamic/systemic/behavioural)","Health-inequalities framing","500+ alumni since 1967"],"recruiting_2026":true,"city":"Birmingham","region":"West Midlands","motif":"city","col":"#2f2a6b","mono":"BM","qual":{"p":22.9,"n":48,"none":11},"comp":{"perYear":{"2023":{"applications":621,"places":31,"ratio":20.03},"2024":{"applications":671,"places":35,"ratio":19.17},"2025":{"applications":751,"places":35,"ratio":21.46}},"avg":20.2},"sel":null},{"name":"Cardiff (South Wales)","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["ebe_strong"],"distinctive":["Explicit CBT+systemic+neuropsychology competency emphasis","Welsh services focus","Leadership & resilience"],"recruiting_2026":true,"city":"Cardiff","region":"South Wales","motif":"coast","col":"#b3121f","mono":"CF","qual":{"p":34.1,"n":41,"none":14},"comp":{"perYear":{"2023":{"applications":395,"places":28,"ratio":14.11},"2024":{"applications":471,"places":29,"ratio":16.24},"2025":{"applications":545,"places":36,"ratio":15.14}},"avg":15.2},"sel":{"g":"test","t":"Shortlisting test","d":"Shortlisting tests run January to mid-March. Ten additional interview places for highest-scoring candidates declaring a disability who narrowly miss shortlisting. Format to verify with the course.","pg":0,"al":0}},{"name":"Coventry & Warwick","models":["CBT","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["social_justice"],"distinctive":["Clinical neuropsychology & severe/enduring MH teaching","Trauma-informed care, leadership"],"recruiting_2026":false,"city":"Coventry","region":"West Midlands","motif":"city","col":"#4a2d78","mono":"CW","qual":{"p":20.7,"n":29,"none":6},"comp":{"perYear":{"2023":{"applications":525,"places":25,"ratio":21.0},"2024":{"applications":657,"places":25,"ratio":26.28},"2025":{"applications":600,"places":15,"ratio":40.0}},"avg":29.1},"sel":null},{"name":"East Anglia (UEA)","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["BABCP-secondary","Mental-Health-Law-training"],"values":["ebe_strong"],"distinctive":["Behavioural Sleep Medicine specialism","One of 3 nationally for formal Mental Health Law training","Innovative curriculum"],"recruiting_2026":true,"city":"Norwich","region":"East of England","motif":"parkland","col":"#1a4a7a","mono":"EA","qual":{"p":43.2,"n":37,"none":16},"comp":{"perYear":{"2023":{"applications":419,"places":49,"ratio":8.55},"2024":{"applications":505,"places":49,"ratio":10.31},"2025":{"applications":527,"places":53,"ratio":9.94}},"avg":9.6},"sel":{"g":"review","t":"Application review, no test","d":"Each form rated independently by two experienced clinical psychologists (one UEA, one local NHS). Emphasis on understanding of research design, linking theory to practice, capacity to reflect, and NHS values.","pg":0,"al":0}},{"name":"East London (UEL)","models":["CBT","SYS","NEURO","COMMUNITY"],"model_lead":"COMMUNITY","neuro_strength":true,"accreditation_extras":[],"values":["social_justice","community_psychology"],"distinctive":["Strongly critical/pluralistic ethos","Well-rated neuropsychology + CBT + systemic teaching","Widening access"],"recruiting_2026":true,"city":"London","region":"London","motif":"city","col":"#14416b","mono":"EL","qual":{"p":19.0,"n":58,"none":11},"comp":{"perYear":{"2023":{"applications":889,"places":61,"ratio":14.57},"2024":{"applications":1012,"places":49,"ratio":20.65},"2025":{"applications":987,"places":49,"ratio":20.14}},"avg":18.5},"sel":null},{"name":"Edinburgh","models":["CBT","IPT","CAT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Advanced-practice electives: ACT, IPT, CAT, Schema","Aligned pathways: CAMHS / older adult / forensic","NHS Scotland employment"],"recruiting_2026":true,"city":"Edinburgh","region":"Scotland","motif":"hills","col":"#123a63","mono":"ED","qual":{"p":17.5,"n":57,"none":10},"comp":{"perYear":{"2023":{"applications":678,"places":47,"ratio":14.43},"2024":{"applications":768,"places":45,"ratio":17.07},"2025":{"applications":825,"places":44,"ratio":18.75}},"avg":16.8},"sel":null},{"name":"Essex (Tavistock)","models":["PSY","SYS","NEURO"],"model_lead":"PSY","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Psychodynamic strength via Tavistock (possible 3rd-yr placement)","Specialist modules: neuro, forensic, physical health, specialist CBT","Small cohorts"],"recruiting_2026":true,"city":"Colchester","region":"East of England","motif":"parkland","col":"#0e7c86","mono":"EX","qual":{"p":18.2,"n":33,"none":6},"comp":{"perYear":{"2023":{"applications":398,"places":31,"ratio":12.84},"2024":{"applications":438,"places":31,"ratio":14.13},"2025":{"applications":464,"places":35,"ratio":13.26}},"avg":13.4},"sel":null},{"name":"Exeter","models":["CBT","CAT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["BABCP-L1","CAT-Foundation"],"values":["edi_leader"],"distinctive":["Pluralistic PBL; three core approaches","CAT foundation is rare","Neuro & mood-disorders expertise"],"recruiting_2026":true,"city":"Exeter","region":"South West","motif":"hills","col":"#12433c","mono":"ET","qual":{"p":19.3,"n":57,"none":11},"comp":{"perYear":{"2023":{"applications":536,"places":28,"ratio":19.14},"2024":{"applications":491,"places":30,"ratio":16.37},"2025":{"applications":510,"places":30,"ratio":17.0}},"avg":17.5},"sel":null},{"name":"Glasgow","models":["CBT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":["APL-route"],"values":["ebe_strong"],"distinctive":["Older-adult & child specialist routes","Accreditation of Prior Learning route","NHS Scotland"],"recruiting_2026":true,"city":"Glasgow","region":"Scotland","motif":"city","col":"#123a63","mono":"GL","qual":{"p":16.2,"n":37,"none":6},"comp":{"perYear":{"2023":{"applications":521,"places":38,"ratio":13.71},"2024":{"applications":633,"places":39,"ratio":16.23},"2025":{"applications":661,"places":40,"ratio":16.52}},"avg":15.5},"sel":null},{"name":"Hertfordshire","models":["CBT","PSY","SYS","CAT","COMMUNITY"],"model_lead":"COMMUNITY","neuro_strength":false,"accreditation_extras":["BABCP-L1","AFT-in-progress"],"values":["social_justice","community_psychology"],"distinctive":["Social-constructionist; anti-oppressive/cultural humility","Yr3 specialist placements incl. neuro/forensic; models incl. CAT & personal construct","Adult-learning model"],"recruiting_2026":true,"city":"Hatfield","region":"East of England","motif":"parkland","col":"#16345e","mono":"HE","qual":{"p":17.1,"n":41,"none":7},"comp":{"perYear":{"2023":{"applications":604,"places":52,"ratio":11.62},"2024":{"applications":779,"places":52,"ratio":14.98},"2025":{"applications":764,"places":40,"ratio":19.1}},"avg":15.2},"sel":null},{"name":"Hull","models":["CBT","CAT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Fast-track/integrated from undergrad (Hull+York)","CAT expertise on team"],"recruiting_2026":true,"city":"Hull","region":"Yorkshire & Humber","motif":"coast","col":"#0f5570","mono":"HU","qual":{"p":85.7,"n":28,"none":24},"comp":null,"sel":null},{"name":"King's College London (IoPPN)","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["edi_leader"],"distinctive":["World-leading research (IoPPN)","Health psychology strength","Family therapy, mindfulness, neuropsychology"],"recruiting_2026":true,"city":"London","region":"London","motif":"city","col":"#b3201a","mono":"KC","qual":{"p":12.0,"n":50,"none":6},"comp":{"perYear":{"2023":{"applications":1187,"places":41,"ratio":28.95},"2024":{"applications":1207,"places":41,"ratio":29.44},"2025":{"applications":1170,"places":41,"ratio":28.54}},"avg":29.0},"sel":null},{"name":"Lancaster","models":["CBT","NEURO","CAT","SYS"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["ebe_strong"],"distinctive":["Core approaches incl. neuropsychology AND CAT (unusual)","Narrative therapy teaching","Public participation core value; strong publication culture"],"recruiting_2026":true,"city":"Lancaster","region":"North West","motif":"hills","col":"#9e1420","mono":"LA","qual":{"p":37.2,"n":78,"none":29},"comp":{"perYear":{"2023":{"applications":687,"places":52,"ratio":13.21},"2024":{"applications":773,"places":52,"ratio":14.87},"2025":{"applications":871,"places":52,"ratio":16.75}},"avg":14.9},"sel":{"g":"test","t":"Online ability test","d":"All eligible applicants sit an online ability test (deductive-reasoning style) in a February window; top scorers are invited to interview and re-sit under supervision to verify.","pg":0,"al":0}},{"name":"Leeds","models":["CBT","SYS","PSY","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["social_justice","community_psychology"],"distinctive":["Dedicated neuropsychology teaching fellow","Placements incl. neuro/forensic/health; ACT/CFT/EMDR/psychodynamic taught","Minoritised-community outreach"],"recruiting_2026":true,"city":"Leeds","region":"Yorkshire & Humber","motif":"city","col":"#8d1a33","mono":"LE","qual":{"p":18.8,"n":32,"none":6},"comp":{"perYear":{"2023":{"applications":782,"places":30,"ratio":26.07},"2024":{"applications":887,"places":30,"ratio":29.57},"2025":{"applications":889,"places":30,"ratio":29.63}},"avg":28.4},"sel":null},{"name":"Leicester","models":["CBT","PSY","SYS","COMMUNITY"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":["AFT-equivalence"],"values":["social_justice","community_psychology"],"distinctive":["Four core models incl. community psychology","Reputation for power/whiteness/social justice","AFT systemic equivalence"],"recruiting_2026":true,"city":"Leicester","region":"East Midlands","motif":"city","col":"#132b46","mono":"LC","qual":{"p":31.1,"n":61,"none":19},"comp":{"perYear":{"2023":{"applications":353,"places":25,"ratio":14.12},"2024":{"applications":368,"places":28,"ratio":13.14},"2025":{"applications":491,"places":30,"ratio":16.37}},"avg":14.5},"sel":{"g":"review","t":"Application review + assessment centre","d":"Applications rated for relevant experience, academic credentials and personal statement, with references reviewed. 96 candidates invited to an assessment centre combining interview(s) and a written task; ranked by total score.","pg":0,"al":0}},{"name":"Liverpool","models":["CBT","CAT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["CBT-integrated-pathway","CAT-integrated-pathway"],"values":["ebe_strong"],"distinctive":["Integrated CBT OR CAT pathway option","Strong neuropsychology (Walton Centre placements)","Rich specialist placements (Ashworth, addictions)"],"recruiting_2026":true,"city":"Liverpool","region":"North West","motif":"coast","col":"#1a3563","mono":"LV","qual":{"p":12.5,"n":56,"none":7},"comp":{"perYear":{"2023":{"applications":795,"places":40,"ratio":19.88},"2024":{"applications":816,"places":38,"ratio":21.47},"2025":{"applications":894,"places":40,"ratio":22.35}},"avg":21.2},"sel":null},{"name":"Manchester","models":["CBT","PSY","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":[],"distinctive":["Psychodynamic-interpersonal teaching","Critical evaluation of all models","Research-intensive"],"recruiting_2026":true,"city":"Manchester","region":"North West","motif":"city","col":"#5c1a7d","mono":"MA","qual":{"p":32.8,"n":58,"none":19},"comp":{"perYear":{"2023":{"applications":794,"places":40,"ratio":19.85},"2024":{"applications":926,"places":40,"ratio":23.15},"2025":{"applications":943,"places":40,"ratio":23.57}},"avg":22.2},"sel":{"g":"test","t":"GMA test + experience points","d":"Mandatory General Mental Ability test used to deselect before shortlisting. Then points for supervised work involving assessment, formulation, intervention or service development, variety of settings, and clinical research. Minimum 12 months paid relevant experience.","pg":0,"al":0}},{"name":"Newcastle","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":["ebe_strong"],"distinctive":["'Discovery' learning","Neuro & systemic pathways","50+ years"],"recruiting_2026":true,"city":"Newcastle","region":"North East","motif":"city","col":"#134a72","mono":"NC","qual":{"p":23.7,"n":38,"none":9},"comp":{"perYear":{"2023":{"applications":466,"places":30,"ratio":15.53},"2024":{"applications":546,"places":30,"ratio":18.2},"2025":{"applications":518,"places":30,"ratio":17.27}},"avg":17.0},"sel":null},{"name":"North Thames (UCL)","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":[],"values":[],"distinctive":["Largest UK course; research-heavy","Research specialties incl. neuropsychology, dementia, addiction, psychosis","Diverse London services; fast-paced"],"recruiting_2026":true,"city":"London","region":"London","motif":"city","col":"#4a1470","mono":"UC","qual":{"p":20.0,"n":70,"none":14},"comp":{"perYear":{"2023":{"applications":1196,"places":85,"ratio":14.07},"2024":{"applications":1308,"places":85,"ratio":15.39},"2025":{"applications":1389,"places":85,"ratio":16.34}},"avg":15.3},"sel":{"g":"review","t":"Application review, no test","d":"No shortlisting test. Rated independently by two clinical psychologists across clinical, personal, academic and research domains, so the written application carries substantial weight. Positive action on ethnicity and disability at shortlisting and offer.","pg":0,"al":0}},{"name":"Oxford","models":["CBT","SYS"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":["BABCP-L2"],"values":[],"distinctive":["BABCP L2 \u2014 grads auto-eligible for practitioner accreditation","Strong CBT heritage; research-led","Neuro/neuroscience among staff research"],"recruiting_2026":true,"city":"Oxford","region":"South East","motif":"spires","col":"#0d2b4e","mono":"OX","qual":{"p":25.7,"n":70,"none":18},"comp":{"perYear":{"2023":{"applications":604,"places":52,"ratio":11.62},"2024":{"applications":637,"places":52,"ratio":12.25},"2025":{"applications":560,"places":52,"ratio":10.77}},"avg":11.5},"sel":{"g":"academic","t":"Academic point-score gate","d":"Educational score out of 38; up to 18 points from three A-levels. UG 2:1 and PG Merit both score zero \u2014 only results above those thresholds earn points. Approx. top 300 educational scores proceed to shortlisting.","pg":1,"al":1}},{"name":"Plymouth","models":["CBT","PSY"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":["social_justice"],"distinctive":["Psychotherapy & reflective-practice focus","Anti-racism in selection","Cornwall/Devon; welcomes mature/diverse applicants"],"recruiting_2026":true,"city":"Plymouth","region":"South West","motif":"coast","col":"#12456b","mono":"PL","qual":{"p":28.1,"n":32,"none":9},"comp":{"perYear":{"2023":{"applications":335,"places":24,"ratio":13.96},"2024":{"applications":352,"places":24,"ratio":14.67},"2025":{"applications":411,"places":24,"ratio":17.12}},"avg":15.2},"sel":{"g":"review","t":"Holistic review, no test","d":"No pre-selection testing; every application read by at least one course-team member and one local clinical psychologist. Weighs academic and research competencies, clinical experience, reflexivity, values, anti-racism and service-user commitment. Interview plus group task.","pg":0,"al":0}},{"name":"Royal Holloway (North Thames)","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":["BABCP-pathway","AFT-pilot"],"values":["ebe_strong"],"distinctive":["BABCP CBT pathway (200 taught hours) + systemic pathway","Neuropsychology expertise on team","Adult-learner model; lived experience embedded"],"recruiting_2026":true,"city":"Egham, Surrey","region":"South East","motif":"parkland","col":"#4a2456","mono":"RH","qual":{"p":19.3,"n":57,"none":11},"comp":{"perYear":{"2023":{"applications":1187,"places":56,"ratio":21.2},"2024":{"applications":1439,"places":56,"ratio":25.7},"2025":{"applications":1524,"places":60,"ratio":25.4}},"avg":24.1},"sel":{"g":"review","t":"Paper-based review, no test","d":"Preliminary paper-based selection by programme staff and regional psychologists; reported not to use the personal statement. Contextual admissions applied. Positive action on ethnicity and gender.","pg":0,"al":0}},{"name":"Salomons (CCCU)","models":["CBT","SYS","PSY","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["AFT-Foundation"],"values":["ebe_strong"],"distinctive":["Yr3 specialist options (EMDR/systemic/psychoanalytic)","Related neuropsychology & CBT postgrad provision on site","Large & long-established; cultural-sensitivity focus"],"recruiting_2026":true,"city":"Tunbridge Wells","region":"South East","motif":"parkland","col":"#15599e","mono":"SA","qual":{"p":13.9,"n":36,"none":5},"comp":{"perYear":{"2023":{"applications":491,"places":55,"ratio":8.93},"2024":{"applications":495,"places":55,"ratio":9.0},"2025":{"applications":595,"places":57,"ratio":10.44}},"avg":9.5},"sel":null},{"name":"Sheffield","models":["CBT","SYS"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":[],"distinctive":["Neuropsychology placements available across years (not a distinct pathway)","Four-theme curriculum","Strong research links (PEARLS lab)"],"recruiting_2026":true,"city":"Sheffield","region":"Yorkshire & Humber","motif":"hills","col":"#3d1470","mono":"SH","qual":{"p":25.0,"n":40,"none":10},"comp":{"perYear":{"2023":{"applications":626,"places":35,"ratio":17.89},"2024":{"applications":670,"places":40,"ratio":16.75},"2025":{"applications":486,"places":40,"ratio":12.15}},"avg":15.6},"sel":null},{"name":"Southampton","models":["CBT","NEURO","SYS","COMMUNITY"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["Neuropsychology-dual-accred","CBT-dual-accred","Systemic-dual-accred"],"values":["social_justice","community_psychology","ebe_strong","edi_leader"],"distinctive":["Strong neuropsychology emphasis + dual accreditation option","Anti-racist/critical-community psychology","EDI leaders; Top-10 nationally (BPS Alt Handbook 2025)"],"recruiting_2026":true,"city":"Southampton","region":"South East","motif":"coast","col":"#0f5070","mono":"SO","qual":{"p":7.5,"n":53,"none":4},"comp":{"perYear":{"2023":{"applications":521,"places":35,"ratio":14.89},"2024":{"applications":531,"places":30,"ratio":17.7},"2025":{"applications":593,"places":30,"ratio":19.77}},"avg":17.5},"sel":null},{"name":"Staffordshire","models":["CBT","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["Bristol-neuro-diploma-route"],"values":["community_psychology"],"distinctive":["Neuropsychology accreditation route via Bristol (~6 trainees/cohort)","Impact-of-society strand; reflective practice","Shropshire/Staffs"],"recruiting_2026":true,"city":"Stoke-on-Trent","region":"West Midlands","motif":"city","col":"#a81230","mono":"ST","qual":{"p":21.7,"n":23,"none":5},"comp":{"perYear":{"2023":{"applications":377,"places":23,"ratio":16.39},"2024":{"applications":437,"places":24,"ratio":18.21},"2025":{"applications":512,"places":24,"ratio":21.33}},"avg":18.6},"sel":null},{"name":"Surrey","models":["CBT","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["BABCP-L2","AFT-Foundation","BPS-Neuro-Register-components"],"values":[],"distinctive":["Strong triple-accreditation profile","Neuro toward BPS Specialist Register","Yr3 specialist placement"],"recruiting_2026":true,"city":"Guildford","region":"South East","motif":"parkland","col":"#14355e","mono":"SU","qual":{"p":28.4,"n":81,"none":23},"comp":{"perYear":{"2023":{"applications":1027,"places":44,"ratio":23.34},"2024":{"applications":1004,"places":50,"ratio":20.08},"2025":{"applications":1025,"places":54,"ratio":18.98}},"avg":20.8},"sel":null},{"name":"Teesside","models":["CBT","CAT","PSY","SYS","NEURO"],"model_lead":"CBT","neuro_strength":true,"accreditation_extras":["QiCN-partial"],"values":[],"distinctive":["Very broad model range (incl. CAT)","Neuro toward QiCN; neurodiversity & brain injury","TEWV partnership"],"recruiting_2026":true,"city":"Middlesbrough","region":"North East","motif":"coast","col":"#123553","mono":"TE","qual":{"p":20.0,"n":50,"none":10},"comp":{"perYear":{"2023":{"applications":351,"places":35,"ratio":10.03},"2024":{"applications":464,"places":30,"ratio":15.47},"2025":{"applications":499,"places":35,"ratio":14.26}},"avg":13.3},"sel":null},{"name":"Trent (Lincoln & Nottingham)","models":["CBT"],"model_lead":"CBT","neuro_strength":false,"accreditation_extras":[],"values":["ebe_strong"],"distinctive":["Broad range of models","BPS-commended service-user involvement","Multi-trust across Notts/Lincs/Derbyshire"],"recruiting_2026":true,"city":"Lincoln & Nottingham","region":"East Midlands","motif":"parkland","col":"#a81230","mono":"TR","qual":{"p":23.8,"n":42,"none":10},"comp":{"perYear":{"2023":{"applications":420,"places":32,"ratio":13.12},"2024":{"applications":471,"places":32,"ratio":14.72},"2025":{"applications":495,"places":32,"ratio":15.47}},"avg":14.4},"sel":null}];
 const ML={CBT:"CBT",SYS:"Systemic",PSY:"Psychodynamic",CAT:"CAT",NEURO:"Neuropsychology",IPT:"IPT",DBT:"DBT",COMMUNITY:"Community psych"};
 const VL={social_justice:"Social justice",community_psychology:"Community psych",ebe_strong:"Experts by experience",edi_leader:"EDI leader"};
 const MO=["CBT","SYS","PSY","CAT","NEURO","DBT","IPT","COMMUNITY"];
 const VO=["social_justice","community_psychology","ebe_strong","edi_leader"];
-
-const COURSES=[
-{name:"Bangor (North Wales)",models:["CBT","SYS","DBT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:["Systemic Foundation"],values:[],distinctive:["Major DBT centre — director chairs the World DBT Association","Systemic Foundations; clinical director is a systemic psychotherapist","Bilingual Welsh, often rural practice","UK's first DClinPsy"],recruiting_2026:true},
-{name:"Bath",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["BABCP L2","AFT Foundation"],values:["ebe_strong"],distinctive:["Broad placements incl. neuro, DBT, eating disorders, psychosis","NHS-values based selection","People with personal experience shape the programme"],recruiting_2026:true},
-{name:"Belfast (QUB)",models:["CBT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["The only course in Northern Ireland","Commended for trainee research output","Broad generic competencies"],recruiting_2026:true},
-{name:"Birmingham",models:["CBT","PSY","SYS"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["Choose a second model in Year 2 (psychodynamic / systemic / behavioural)","Health-inequalities and privilege framing","Running since 1967; 500+ alumni"],recruiting_2026:true},
-{name:"Cardiff (South Wales)",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["ebe_strong"],distinctive:["Explicit CBT + systemic + neuropsychology competency emphasis","Special emphasis on services in Wales","Leadership, resilience and self-care"],recruiting_2026:true},
-{name:"Coventry & Warwick",models:["CBT","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["social_justice"],distinctive:["Clinical neuropsychology and severe/enduring mental health teaching","Trauma-informed care, public health, clinical leadership"],recruiting_2026:false},
-{name:"East Anglia (UEA)",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["BABCP secondary","Mental Health Law"],values:["ebe_strong"],distinctive:["Behavioural Sleep Medicine specialism — unusual nationally","One of only three providers for formal Mental Health Law training","Innovative, research-informed curriculum"],recruiting_2026:true},
-{name:"East London (UEL)",models:["CBT","SYS","NEURO","COMMUNITY"],model_lead:"COMMUNITY",neuro_strength:true,accreditation_extras:[],values:["social_justice","community_psychology"],distinctive:["Strongly critical and pluralistic ethos","Well-rated neuropsychology, CBT and systemic teaching","Commended for widening access and valuing diversity"],recruiting_2026:true},
-{name:"Edinburgh",models:["CBT","IPT","CAT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["Advanced-practice electives: ACT, IPT, CAT and Schema Therapy","Aligned pathways for CAMHS, older adult and forensic","Employed through NHS Scotland; established 1959"],recruiting_2026:true},
-{name:"Essex (Tavistock)",models:["PSY","SYS","NEURO"],model_lead:"PSY",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["Strongest psychodynamic lean — teaching from the Tavistock & Portman","Possible third-year Tavistock placement","Specialist modules: neuro, forensic, physical health"],recruiting_2026:true},
-{name:"Exeter",models:["CBT","CAT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["BABCP L1","CAT Foundation"],values:["edi_leader"],distinctive:["Pluralistic problem-based learning across three core approaches","CAT Foundation qualification is rare among UK courses","Neuropsychology and mood-disorders expertise"],recruiting_2026:true},
-{name:"Glasgow",models:["CBT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:["APL route"],values:["ebe_strong"],distinctive:["Specialist routes for older adults and children","Accreditation of Prior Learning route can shorten training","Service-user body (CUSP) embedded"],recruiting_2026:true},
-{name:"Hertfordshire",models:["CBT","PSY","SYS","CAT","COMMUNITY"],model_lead:"COMMUNITY",neuro_strength:false,accreditation_extras:["BABCP L1","AFT in progress"],values:["social_justice","community_psychology"],distinctive:["Social-constructionist; anti-oppressive practice and cultural humility","Year 3 specialist placements incl. neuropsychology and forensic","Adult-learning model; trainees treated as mature learners"],recruiting_2026:true},
-{name:"Hull",models:["CBT","CAT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["Fast-track integrated route — can accept applicants straight from undergrad","Run jointly with York","CAT expertise on the team"],recruiting_2026:true},
-{name:"King's College London (IoPPN)",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["edi_leader"],distinctive:["World-leading research environment at the IoPPN","Strengths in family therapy, mindfulness and neuropsychology","Clinical health psychology strength"],recruiting_2026:true},
-{name:"Lancaster",models:["CBT","NEURO","CAT","SYS"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["ebe_strong"],distinctive:["Neuropsychology AND CAT as core approaches — unusual combination","Specialist narrative therapy teaching","Public participation a core value; strong publication culture"],recruiting_2026:true},
-{name:"Leeds",models:["CBT","SYS","PSY","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["social_justice","community_psychology"],distinctive:["Dedicated Clinical Neuropsychology teaching fellow","ACT, CFT, EMDR and psychodynamic all taught","Outreach to minoritised communities; social/developmental framing"],recruiting_2026:true},
-{name:"Leicester",models:["CBT","PSY","SYS","COMMUNITY"],model_lead:"CBT",neuro_strength:false,accreditation_extras:["AFT equivalence"],values:["social_justice","community_psychology"],distinctive:["Four core models — including community psychology","Strong reputation for foregrounding power, social justice and whiteness","Forensic and health psychology placements"],recruiting_2026:true},
-{name:"Liverpool",models:["CBT","CAT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["CBT pathway","CAT pathway"],values:["ebe_strong"],distinctive:["Apply for an integrated CBT or CAT pathway","Strong neuropsychology — Walton Centre placements","Rich specialist placements (Ashworth high-secure, addictions)"],recruiting_2026:true},
-{name:"Manchester",models:["CBT","PSY","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:[],distinctive:["In-depth CBT plus psychodynamic-interpersonal therapy","Critical evaluation of all models emphasised throughout","Research-intensive division"],recruiting_2026:true},
-{name:"Newcastle",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:["ebe_strong"],distinctive:["Specialist pathways in neuropsychology and systemic therapy","'Discovery' learning — trainees as active agents","Experts by Experience involved in recruitment; 50+ years"],recruiting_2026:true},
-{name:"North Thames (UCL)",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:[],values:[],distinctive:["Largest UK course; competency-based model","Research spans neuropsychology, dementia, addiction, psychosis","Diverse London services — trainees describe it as fast-paced"],recruiting_2026:true},
-{name:"Oxford",models:["CBT","SYS"],model_lead:"CBT",neuro_strength:false,accreditation_extras:["BABCP L2"],values:[],distinctive:["BABCP Level 2 — graduates automatically eligible for practitioner accreditation","Strong CBT heritage; research-led teaching","Fully funded and run from within the NHS"],recruiting_2026:true},
-{name:"Plymouth",models:["CBT","PSY"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:["social_justice"],distinctive:["Psychotherapy and reflective-practice focus","Anti-racism and service-user involvement explicit in selection","Cornwall and Devon placements; welcomes mature applicants"],recruiting_2026:true},
-{name:"Royal Holloway (North Thames)",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:false,accreditation_extras:["BABCP pathway","AFT pilot"],values:["ebe_strong"],distinctive:["Established BABCP CBT pathway (200 taught hours) plus a systemic pathway","Team expertise includes neuropsychology","Adult-learner model; lived experience embedded throughout"],recruiting_2026:true},
-{name:"Salomons (CCCU)",models:["CBT","SYS","PSY","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["AFT Foundation"],values:["ebe_strong"],distinctive:["Year 3 specialist options — EMDR, systemic or psychoanalytic","Deliberate exposure to a diversity of therapeutic models","'Thinking Space' reflective groups on diversity and difference"],recruiting_2026:true},
-{name:"Sheffield",models:["CBT","SYS"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:[],distinctive:["Neuropsychology available as placement experience, not a distinct pathway","Curriculum built on four themes across three years","Strong research links (PEARLS lab)"],recruiting_2026:true},
-{name:"Southampton",models:["CBT","NEURO","SYS","COMMUNITY"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["Neuropsychology dual","CBT dual","Systemic dual"],values:["social_justice","community_psychology","ebe_strong","edi_leader"],distinctive:["Dual accreditation option in Neuropsychology, CBT or Systemic Therapy","Unusual pairing: strong neuro strand with an anti-racist, critical-community ethos","Nationally recognised EDI leaders; top-10 in BPS Alternative Handbook 2025"],recruiting_2026:true},
-{name:"Staffordshire",models:["CBT","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["Bristol neuro diploma route"],values:["community_psychology"],distinctive:["Neuropsychology accreditation route via Bristol (limited, ~6 per cohort)","Impact of society on wellbeing runs through the course","Commended for NHS stakeholder and service-user regard"],recruiting_2026:true},
-{name:"Surrey",models:["CBT","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["BABCP L2","AFT Foundation","BPS Neuro register"],values:[],distinctive:["Strongest triple-accreditation profile: BABCP L2 + AFT + neuro components","Neuropsychology toward the BPS Specialist Register","Six-month specialist placement in Year 3"],recruiting_2026:true},
-{name:"Teesside",models:["CBT","CAT","PSY","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["Toward QiCN"],values:[],distinctive:["Widest model range — CBT, CAT, psychodynamic, systemic and neuro","Neuropsychology teaching toward the QiCN qualification","Neurodiversity and acquired brain injury; organisational placements"],recruiting_2026:true},
-{name:"Trent (Lincoln & Nottingham)",models:["CBT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:["ebe_strong"],distinctive:["Broad range of psychological models","BPS-commended depth of service-user and carer involvement","Multi-trust across Nottinghamshire, Lincolnshire and Derbyshire"],recruiting_2026:true}
-];
-
-const COMP={"Bangor (North Wales)":{a:15.2,y:{"2023":[203,14],"2024":[250,15],"2025":[262,18]}},
-"Bath":{a:27.8,y:{"2023":[701,28],"2024":[769,28],"2025":[867,28]}},
-"Birmingham":{a:20.2,y:{"2023":[621,31],"2024":[671,35],"2025":[751,35]}},
-"Cardiff (South Wales)":{a:15.2,y:{"2023":[395,28],"2024":[471,29],"2025":[545,36]}},
-"Coventry & Warwick":{a:29.1,y:{"2023":[525,25],"2024":[657,25],"2025":[600,15]}},
-"East Anglia (UEA)":{a:9.6,y:{"2023":[419,49],"2024":[505,49],"2025":[527,53]}},
-"East London (UEL)":{a:18.5,y:{"2023":[889,61],"2024":[1012,49],"2025":[987,49]}},
-"Edinburgh":{a:16.8,y:{"2023":[678,47],"2024":[768,45],"2025":[825,44]}},
-"Essex (Tavistock)":{a:13.4,y:{"2023":[398,31],"2024":[438,31],"2025":[464,35]}},
-"Exeter":{a:17.5,y:{"2023":[536,28],"2024":[491,30],"2025":[510,30]}},
-"Glasgow":{a:15.5,y:{"2023":[521,38],"2024":[633,39],"2025":[661,40]}},
-"Hertfordshire":{a:15.2,y:{"2023":[604,52],"2024":[779,52],"2025":[764,40]}},
-"King's College London (IoPPN)":{a:29.0,y:{"2023":[1187,41],"2024":[1207,41],"2025":[1170,41]}},
-"Lancaster":{a:14.9,y:{"2023":[687,52],"2024":[773,52],"2025":[871,52]}},
-"Leeds":{a:28.4,y:{"2023":[782,30],"2024":[887,30],"2025":[889,30]}},
-"Leicester":{a:14.5,y:{"2023":[353,25],"2024":[368,28],"2025":[491,30]}},
-"Liverpool":{a:21.2,y:{"2023":[795,40],"2024":[816,38],"2025":[894,40]}},
-"Manchester":{a:22.2,y:{"2023":[794,40],"2024":[926,40],"2025":[943,40]}},
-"Newcastle":{a:17.0,y:{"2023":[466,30],"2024":[546,30],"2025":[518,30]}},
-"North Thames (UCL)":{a:15.3,y:{"2023":[1196,85],"2024":[1308,85],"2025":[1389,85]}},
-"Oxford":{a:11.5,y:{"2023":[604,52],"2024":[637,52],"2025":[560,52]}},
-"Plymouth":{a:15.2,y:{"2023":[335,24],"2024":[352,24],"2025":[411,24]}},
-"Royal Holloway (North Thames)":{a:24.1,y:{"2023":[1187,56],"2024":[1439,56],"2025":[1524,60]}},
-"Salomons (CCCU)":{a:9.5,y:{"2023":[491,55],"2024":[495,55],"2025":[595,57]}},
-"Sheffield":{a:15.6,y:{"2023":[626,35],"2024":[670,40],"2025":[486,40]}},
-"Southampton":{a:17.5,y:{"2023":[521,35],"2024":[531,30],"2025":[593,30]}},
-"Staffordshire":{a:18.6,y:{"2023":[377,23],"2024":[437,24],"2025":[512,24]}},
-"Surrey":{a:20.8,y:{"2023":[1027,44],"2024":[1004,50],"2025":[1025,54]}},
-"Teesside":{a:13.3,y:{"2023":[351,35],"2024":[464,30],"2025":[499,35]}},
-"Trent (Lincoln & Nottingham)":{a:14.4,y:{"2023":[420,32],"2024":[471,32],"2025":[495,32]}}};
-
-/* Applications per place — Clearing House "Places by Course Centre", 2023–2025 entry.
-   NOTE: these are APPLICATIONS, not applicants (each applicant may apply to up to 4 centres).
-   Hull and Belfast (QUB) do not appear in Clearing House data. */
-const QUAL={"Leeds":{"p":18.8,"n":32,"none":6},"Staffordshire":{"p":21.7,"n":23,"none":5},"Southampton":{"p":7.5,"n":53,"none":4},"Exeter":{"p":19.3,"n":57,"none":11},"East London (UEL)":{"p":19.0,"n":58,"none":11},"Manchester":{"p":32.8,"n":58,"none":19},"Glasgow":{"p":16.2,"n":37,"none":6},"Edinburgh":{"p":17.5,"n":57,"none":10},"Birmingham":{"p":22.9,"n":48,"none":11},"Surrey":{"p":28.4,"n":81,"none":23},"Trent (Lincoln & Nottingham)":{"p":23.8,"n":42,"none":10},"East Anglia (UEA)":{"p":43.2,"n":37,"none":16},"Plymouth":{"p":28.1,"n":32,"none":9},"Coventry & Warwick":{"p":20.7,"n":29,"none":6},"Leicester":{"p":31.1,"n":61,"none":19},"Belfast (QUB)":{"p":0.0,"n":12,"none":0},"Hertfordshire":{"p":17.1,"n":41,"none":7},"Bath":{"p":17.1,"n":41,"none":7},"King's College London (IoPPN)":{"p":12.0,"n":50,"none":6},"Teesside":{"p":20.0,"n":50,"none":10},"Hull":{"p":85.7,"n":28,"none":24},"Oxford":{"p":25.7,"n":70,"none":18},"Liverpool":{"p":12.5,"n":56,"none":7},"Cardiff (South Wales)":{"p":34.1,"n":41,"none":14},"North Thames (UCL)":{"p":20.0,"n":70,"none":14},"Essex (Tavistock)":{"p":18.2,"n":33,"none":6},"Bangor (North Wales)":{"p":16.7,"n":24,"none":4},"Sheffield":{"p":25.0,"n":40,"none":10},"Royal Holloway (North Thames)":{"p":19.3,"n":57,"none":11},"Newcastle":{"p":23.7,"n":38,"none":9},"Lancaster":{"p":37.2,"n":78,"none":29},"Salomons (CCCU)":{"p":13.9,"n":36,"none":5}};
-const qual=n=>QUAL[n]||null;
-const SEL={"Oxford":{"g":"academic","t":"Academic point-score gate","d":"Educational score out of 38: up to 18 from three A-levels, 10 for a first-class BSc (zero for a 2:1 or below), the rest from postgraduate results \u2014 a Merit MSc scores zero. Approx. top 300 scores go to shortlisting, ~150 to interview.","pg":1,"al":1},"Bath":{"g":"academic","t":"Scored academic gate","d":"Screened for minimum criteria, then scored on academic achievement, research experience, clinical exposure and personal reflection; only highest scorers are shortlisted. Cut-off not published.","pg":1,"al":0},"Lancaster":{"g":"test","t":"Online ability test","d":"All eligible applicants sit an online ability test (deductive-reasoning style) in a February window; top scorers are invited to interview and re-sit under supervision to verify.","pg":0,"al":0},"Manchester":{"g":"test","t":"GMA test + experience points","d":"Mandatory General Mental Ability test used to deselect before shortlisting. Then points for supervised work involving assessment, formulation, intervention or service development, variety of settings, and clinical research. Minimum 12 months paid relevant experience.","pg":0,"al":0},"Cardiff (South Wales)":{"g":"test","t":"Shortlisting test","d":"Shortlisting tests run January to mid-March. Ten additional interview places for highest-scoring candidates declaring a disability who narrowly miss shortlisting. Format to verify with the course.","pg":0,"al":0},"North Thames (UCL)":{"g":"review","t":"Application review, no test","d":"No shortlisting test. Rated independently by two clinical psychologists across clinical, personal, academic and research domains, so the written application carries substantial weight. Positive action on ethnicity and disability at shortlisting and offer.","pg":0,"al":0},"Plymouth":{"g":"review","t":"Holistic review, no test","d":"No pre-selection testing; every application read by at least one course-team member and one local clinical psychologist. Weighs academic and research competencies, clinical experience, reflexivity, values, anti-racism and service-user commitment. Interview plus group task.","pg":0,"al":0},"Royal Holloway (North Thames)":{"g":"review","t":"Paper-based review, no test","d":"Preliminary paper-based selection by programme staff and regional psychologists; reported not to use the personal statement. Contextual admissions applied. Positive action on ethnicity and gender.","pg":0,"al":0},"East Anglia (UEA)":{"g":"review","t":"Application review, no test","d":"Each form rated independently by two experienced clinical psychologists (one UEA, one local NHS). Emphasis on understanding of research design, linking theory to practice, capacity to reflect, and NHS values.","pg":0,"al":0},"Leicester":{"g":"review","t":"Application review + assessment centre","d":"Applications rated for relevant experience, academic credentials and personal statement, with references reviewed. 96 candidates invited to an assessment centre combining interview(s) and a written task; ranked by total score.","pg":0,"al":0}};
-const sel=n=>SEL[n]||null;
-const GATE={academic:['Academic score','var(--warn)'],test:['Aptitude test','var(--a)'],review:['Application review','var(--good)']};
-
-const CYRS=["2023","2024","2025"];
-const comp=n=>COMP[n]||null;
-function trend(n){const c=comp(n);if(!c)return null;
-  const r=CYRS.filter(y=>c.y[y]).map(y=>c.y[y][1]?c.y[y][0]/c.y[y][1]:null).filter(v=>v!==null);
-  if(r.length<2)return null;const d=r[r.length-1]-r[0];
-  return Math.abs(d)<1.5?{s:"flat",t:"steady"}:d>0?{s:"up",t:"getting harder"}:{s:"down",t:"easing"};}
-function compTitle(n){const c=comp(n);if(!c)return"";
-  return CYRS.filter(y=>c.y[y]).map(y=>`${y}: ${c.y[y][0]} applications / ${c.y[y][1]} places`).join(" · ");}
-
+const GATE={academic:"Academic score",test:"Aptitude test",review:"Application review"};
+const REGIONS=[...new Set(COURSES.map(c=>c.region))].sort();
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const S={models:new Set(),values:new Set(),neuro:false,accred:false,rec:false,q:"",view:"cards",sort:"fit",mode:"rank",
-         stars:new Set(),onlyStars:false,greview:false,gtest:false,gacad:false};
+const S={m:new Set(),v:new Set(),g:new Set(),r:new Set(),neuro:false,accred:false,rec:false,
+         q:"",view:"cards",sort:"fit",mode:"rank",pins:new Set(),onlyPins:false};
 
-/* ---------- fit scoring ---------- */
-function priorityCount(){return S.models.size+S.values.size+(S.neuro?1:0)+(S.accred?1:0)+(S.rec?1:0)+(S.greview?1:0)+(S.gtest?1:0)+(S.gacad?1:0);}
-function score(c){
-  const tot=priorityCount(); if(!tot) return null;
-  let hit=0;
-  S.models.forEach(m=>{if(c.models.includes(m))hit++;});
-  S.values.forEach(v=>{if(c.values.includes(v))hit++;});
-  if(S.neuro&&c.neuro_strength)hit++;
-  if(S.accred&&c.accreditation_extras.length)hit++;
-  if(S.rec&&c.recruiting_2026)hit++;
-  if(S.greview&&sel(c.name)&&sel(c.name).g==="review")hit++;
-  if(S.gtest&&sel(c.name)&&sel(c.name).g==="test")hit++;
-  if(S.gacad&&sel(c.name)&&sel(c.name).g==="academic")hit++;
-  return Math.round(hit/tot*100);
+/* ---- landscape motifs (illustrative) ---- */
+function band(c,h){
+  const col=c.col, id="g"+c.mono+h;
+  const sky=`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${col}" stop-opacity=".95"/><stop offset="1" stop-color="${col}" stop-opacity=".62"/></linearGradient>`;
+  const L=(o,d)=>`<path d="${d}" fill="#fff" fill-opacity="${o}"/>`;
+  let art="";
+  if(c.motif==="coast"){
+    art=`<circle cx="300" cy="26" r="11" fill="#fff" fill-opacity=".5"/>`+
+        L(.16,"M0 66 Q40 58 80 66 T160 66 T240 66 T320 66 T400 66 V100 H0 Z")+
+        L(.24,"M0 78 Q45 70 90 78 T180 78 T270 78 T360 78 T400 78 V100 H0 Z")+
+        L(.34,"M0 90 Q50 84 100 90 T200 90 T300 90 T400 90 V100 H0 Z");
+  }else if(c.motif==="hills"){
+    art=L(.15,"M0 72 L60 44 L120 68 L190 36 L260 66 L330 48 L400 70 V100 H0 Z")+
+        L(.26,"M0 84 L70 60 L140 82 L210 58 L290 80 L360 64 L400 78 V100 H0 Z")+
+        L(.36,"M0 96 L80 78 L160 94 L250 76 L340 92 L400 84 V100 H0 Z");
+  }else if(c.motif==="city"){
+    let b="";const ws=[18,26,14,22,30,16,24,20,28,15,23,19];let x=6;
+    ws.forEach((w,i)=>{const hh=30+((i*37)%42);b+=`<rect x="${x}" y="${100-hh}" width="${w}" height="${hh}" fill="#fff" fill-opacity="${i%3===0?.3:i%3===1?.2:.26}" rx="1.5"/>`;x+=w+7;});
+    art=b;
+  }else if(c.motif==="spires"){
+    const sp=(x,hh,w)=>`<path d="M${x} 100 V${100-hh} L${x+w/2} ${100-hh-13} L${x+w} ${100-hh} V100 Z" fill="#fff" fill-opacity=".26"/>`;
+    art=L(.14,"M0 88 H400 V100 H0 Z")+sp(40,44,26)+sp(110,56,30)+sp(190,38,24)+sp(250,50,28)+sp(320,42,26);
+  }else{
+    const tree=(x,s,o)=>`<g fill="#fff" fill-opacity="${o}"><ellipse cx="${x}" cy="${86-s}" rx="${s*.9}" ry="${s}"/><rect x="${x-1.5}" y="${86-s}" width="3" height="${s+6}"/></g>`;
+    art=L(.14,"M0 84 Q100 76 200 84 T400 84 V100 H0 Z")+tree(46,15,.28)+tree(112,20,.22)+tree(196,13,.3)+tree(268,18,.24)+tree(342,15,.28);
+  }
+  return `<svg viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true"><defs>${sky}</defs>
+    <rect width="400" height="100" fill="url(#${id})"/>${art}</svg>`;
 }
-function matchesAll(c){const s=score(c);return s===null||s===100;}
 
-/* ---------- build ---------- */
-function chipsHTML(){
-  document.getElementById("mChips").innerHTML=MO.map(m=>`<button class="chip" data-t="m" data-v="${m}" aria-pressed="false">${ML[m]}</button>`).join("");
-  document.getElementById("vChips").innerHTML=VO.map(v=>`<button class="chip cv" data-t="v" data-v="${v}" aria-pressed="false">${VL[v]}</button>`).join("");
-  document.getElementById("oChips").innerHTML=
-    `<button class="chip" data-t="neuro" aria-pressed="false">★ Neuro focus</button>`+
-    `<button class="chip ca" data-t="accred" aria-pressed="false">Extra accreditation</button>`+
-    `<button class="chip" data-t="rec" aria-pressed="false">Recruiting 2026</button>`;
-  document.getElementById("gChips").innerHTML=
-    `<button class="chip" data-t="greview" aria-pressed="false">No test / review</button>`+
-    `<button class="chip ca" data-t="gtest" aria-pressed="false">Aptitude test</button>`+
-    `<button class="chip" data-t="gacad" aria-pressed="false">Academic score</button>`;
-  document.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>{
-    const t=ch.dataset.t;
-    if(t==="m"){S.models.has(ch.dataset.v)?S.models.delete(ch.dataset.v):S.models.add(ch.dataset.v);}
-    else if(t==="v"){S.values.has(ch.dataset.v)?S.values.delete(ch.dataset.v):S.values.add(ch.dataset.v);}
-    else S[t]=!S[t];
-    sync();render();
-  }));
+/* ---- fit ---- */
+function nPri(){return S.m.size+S.v.size+S.g.size+S.r.size+(S.neuro?1:0)+(S.accred?1:0)+(S.rec?1:0);}
+function fit(c){
+  const t=nPri(); if(!t)return null; let h=0;
+  S.m.forEach(x=>{if(c.models.includes(x))h++;});
+  S.v.forEach(x=>{if(c.values.includes(x))h++;});
+  S.g.forEach(x=>{if(c.sel&&c.sel.g===x)h++;});
+  S.r.forEach(x=>{if(c.region===x)h++;});
+  if(S.neuro&&c.neuro_strength)h++;
+  if(S.accred&&c.accreditation_extras.length)h++;
+  if(S.rec&&c.recruiting_2026)h++;
+  return Math.round(h/t*100);
+}
+const maxComp=Math.max(...COURSES.filter(c=>c.comp).map(c=>c.comp.avg));
+const maxQual=Math.max(...COURSES.filter(c=>c.qual).map(c=>c.qual.p));
+
+function listed(){
+  let L=COURSES.filter(c=>{
+    if(S.onlyPins&&!S.pins.has(c.name))return false;
+    if(S.q){const hay=(c.name+" "+c.city+" "+c.region+" "+c.models.map(m=>ML[m]).join(" ")+" "+
+      c.values.map(v=>VL[v]).join(" ")+" "+c.accreditation_extras.join(" ")+" "+c.distinctive.join(" ")).toLowerCase();
+      if(!hay.includes(S.q))return false;}
+    if(S.mode==="filter"&&nPri()&&fit(c)!==100)return false;
+    return true;});
+  const by={az:(a,b)=>a.name.localeCompare(b.name),
+    breadth:(a,b)=>b.models.length-a.models.length||a.name.localeCompare(b.name),
+    comp:(a,b)=>(a.comp?a.comp.avg:1e9)-(b.comp?b.comp.avg:1e9),
+    qual:(a,b)=>(b.qual?b.qual.p:-1)-(a.qual?a.qual.p:-1),
+    fit:(a,b)=>{const x=fit(a);if(x===null)return a.name.localeCompare(b.name);return fit(b)-x||a.name.localeCompare(b.name);}};
+  return L.sort(by[S.sort]||by.fit);
+}
+
+/* ---- chrome ---- */
+function stats(){
+  const neuro=COURSES.filter(c=>c.neuro_strength).length;
+  const pooled=(COURSES.filter(c=>c.qual).reduce((s,c)=>s+c.qual.none,0)/
+                COURSES.filter(c=>c.qual).reduce((s,c)=>s+c.qual.n,0)*100).toFixed(0);
+  const cs=COURSES.filter(c=>c.comp).map(c=>c.comp.avg);
+  document.getElementById("stats").innerHTML=[
+    {n:COURSES.length,l:"UK courses compared",c:""},
+    {n:pooled+"%",l:"Trainees nationally with no postgraduate qualification",c:"o"},
+    {n:Math.min(...cs)+"–"+Math.max(...cs),l:"Applicants per place — the range across courses",c:"b"},
+    {n:neuro,l:"With a distinctive neuropsychology focus",c:"p"},
+  ].map(s=>`<div class="st ${s.c}"><div class="n tnum">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
+}
+function chips(){
+  const mk=(id,arr,cls)=>document.getElementById(id).innerHTML=arr.map(([k,lab])=>
+    `<button class="ch ${cls}" data-k="${k}" data-t="${id}" aria-pressed="false">${lab}</button>`).join("");
+  mk("cM",MO.map(m=>[m,ML[m]]),"");
+  mk("cV",VO.map(v=>[v,VL[v]]),"cv");
+  mk("cG",Object.entries(GATE),"ca");
+  mk("cR",REGIONS.map(r=>[r,r]),"");
+  document.getElementById("cO").innerHTML=
+    `<button class="ch" data-t="cO" data-k="neuro" aria-pressed="false">★ Neuro focus</button>`+
+    `<button class="ch ca" data-t="cO" data-k="accred" aria-pressed="false">Extra accreditation</button>`+
+    `<button class="ch" data-t="cO" data-k="rec" aria-pressed="false">Recruiting 2026</button>`;
+  document.querySelectorAll(".ch").forEach(b=>b.addEventListener("click",()=>{
+    const t=b.dataset.t,k=b.dataset.k;
+    const set={cM:S.m,cV:S.v,cG:S.g,cR:S.r}[t];
+    if(set){set.has(k)?set.delete(k):set.add(k);} else {S[k]=!S[k];}
+    sync();draw();}));
 }
 function sync(){
-  document.querySelectorAll(".chip").forEach(ch=>{
-    const t=ch.dataset.t;let on=false;
-    if(t==="m")on=S.models.has(ch.dataset.v);
-    else if(t==="v")on=S.values.has(ch.dataset.v);
-    else on=!!S[t];
-    ch.setAttribute("aria-pressed",on?"true":"false");
-  });
-  const n=priorityCount();
-  document.getElementById("fitHint").textContent=n?`${n} priorit${n===1?"y":"ies"}`:"optional";
-  document.getElementById("shortN").textContent=S.stars.size;
-  document.getElementById("shortBtn").setAttribute("aria-pressed",S.onlyStars?"true":"false");
-  document.getElementById("shortBtn").classList.toggle("on",S.onlyStars);
+  document.querySelectorAll(".ch").forEach(b=>{
+    const t=b.dataset.t,k=b.dataset.k;
+    const set={cM:S.m,cV:S.v,cG:S.g,cR:S.r}[t];
+    b.setAttribute("aria-pressed",(set?set.has(k):!!S[k])?"true":"false");});
+  document.getElementById("filtN").textContent=nPri();
+  document.getElementById("pinN").textContent=S.pins.size;
+  document.getElementById("pinBtn").classList.toggle("on",S.onlyPins);
+  document.getElementById("pinBtn").setAttribute("aria-pressed",S.onlyPins?"true":"false");
 }
 
-function list(){
-  let out=COURSES.filter(c=>{
-    if(S.onlyStars&&!S.stars.has(c.name))return false;
-    if(S.q){
-      const h=(c.name+" "+c.models.map(m=>ML[m]).join(" ")+" "+c.values.map(v=>VL[v]).join(" ")+" "+
-               c.accreditation_extras.join(" ")+" "+c.distinctive.join(" ")).toLowerCase();
-      if(!h.includes(S.q))return false;
-    }
-    if(S.mode==="filter"&&!matchesAll(c))return false;
-    return true;
-  });
-  const by={
-    az:(a,b)=>a.name.localeCompare(b.name),
-    breadth:(a,b)=>b.models.length-a.models.length||a.name.localeCompare(b.name),
-    accred:(a,b)=>b.accreditation_extras.length-a.accreditation_extras.length||a.name.localeCompare(b.name),
-    comp:(a,b)=>{const x=comp(a.name),y=comp(b.name);
-                 if(!x&&!y)return a.name.localeCompare(b.name); if(!x)return 1; if(!y)return -1;
-                 return y.a-x.a;},
-    qual:(a,b)=>{const x=qual(a.name),y=qual(b.name);
-                 if(!x&&!y)return a.name.localeCompare(b.name); if(!x)return 1; if(!y)return -1; return y.p-x.p;},
-    fit:(a,b)=>{const x=score(a),y=score(b);if(x===null)return a.name.localeCompare(b.name);
-                return y-x||a.name.localeCompare(b.name);}
-  };
-  return out.sort(by[S.sort]||by.fit);
-}
-
-/* ---------- context ---------- */
-function ctx(){
-  const ranked=Object.entries(COMP).sort((a,b)=>b[1].a-a[1].a);
-  const most=ranked[0], least=ranked[ranked.length-1];
-  const neuro=COURSES.filter(c=>c.neuro_strength).length;
-  const sj=COURSES.filter(c=>c.values.includes("social_justice")).length;
-  const acc=COURSES.filter(c=>c.accreditation_extras.length).length;
-  document.getElementById("ctx").innerHTML=[
-    {n:COURSES.length,l:"Accredited UK courses",c:""},
-    {n:neuro,l:"With a neuropsychology focus",c:"b"},
-    {n:sj,l:"With an explicit social-justice ethos",c:"o"},
-    {n:acc,l:"Offering extra accreditations (BABCP / AFT / CAT / neuro)",c:"p"},
-    {n:"4.8",l:"Applicants per place nationally (2024)",c:"o"},
-    {n:most[1].a,l:"Applications per place — most competitive ("+most[0].split(" (")[0]+")",c:"b"},
-    {n:least[1].a,l:"Applications per place — least competitive ("+least[0].split(" (")[0]+")",c:""},
-    {n:"20%",l:"National success rate (2025 entry, down from 25% in 2022)",c:"p"}
-  ].map(t=>`<div class="stat ${t.c}"><div class="n tnum">${t.n}</div><div class="l">${t.l}</div></div>`).join("");
-
-  document.getElementById("note").innerHTML=
-    `<b>Competition data is live.</b> Applications and places per course now come from the Clearing House
-     “Places by Course Centre” tables for 2023–2025 entry — see the <b>Competition</b> view.
-     Nationally, applicants rose from 4,655 (2022) to 5,910 (2025) while places barely moved (1,155 → 1,179),
-     pushing the success rate from 25% down to 20%.
-     <br><br><b>Still missing:</b> <code>% of successful applicants with no postgraduate qualification</code>,
-     which lives in the Clearing House <i>Equal Opportunities</i> tables — that slot still reads “—”.
-     <b>Hull</b> and <b>Belfast (QUB)</b> publish no Clearing House figures at all, so they show “n/a”.`;
-}
-
-/* ---------- views ---------- */
+/* ---- cards ---- */
 function card(c){
-  const s=score(c);const cp=comp(c.name),tr=trend(c.name),qu=qual(c.name),se=sel(c.name);
-  const models=c.models.map(m=>`<span class="tag tm ${m===c.model_lead?"lead":""}"${m===c.model_lead?' title="Lead model"':""}>${ML[m]}</span>`).join("");
-  const vals=c.values.length?`<span class="mlab">Values</span>`+c.values.map(v=>`<span class="tag tv">${VL[v]}</span>`).join(""):"";
-  const acc=c.accreditation_extras.length?`<span class="mlab">Accred</span>`+c.accreditation_extras.map(a=>`<span class="tag ta">${esc(a)}</span>`).join(""):"";
-  const bd=[];
-  if(c.neuro_strength)bd.push(`<span class="badge nb">Neuro focus</span>`);
-  if(!c.recruiting_2026)bd.push(`<span class="badge wb">No 2026 intake</span>`);
-  const on=S.stars.has(c.name);
-  return `<article class="card ${on?"starred":""}">
-    <div class="ctop">
-      <div style="margin-right:auto;min-width:0">
-        <h3 class="serif">${esc(c.name)}</h3>
-        <div class="sub">Lead model: ${ML[c.model_lead]} · ${c.models.length} models taught</div>
+  const f=fit(c),pin=S.pins.has(c.name);
+  const q=c.qual,cp=c.comp;
+  const tags=[...c.models.slice(0,2).map(m=>`<span class="tg m">${ML[m]}</span>`),
+              ...c.values.slice(0,1).map(v=>`<span class="tg v">${VL[v]}</span>`)];
+  const extra=c.models.length-2+c.values.length-1+c.accreditation_extras.length;
+  if(extra>0)tags.push(`<span class="tg more">+${extra}</span>`);
+  const g=c.sel?c.sel.g:"none";
+  return `<button class="cd ${pin?"pin":""}" data-open="${esc(c.name)}">
+    <div class="band">${band(c,"c")}
+      <span class="crest" style="background:${c.col}">${c.mono}</span>
+      <span class="pinb" data-pin="${esc(c.name)}" aria-pressed="${pin}" aria-label="Shortlist ${esc(c.name)}">${pin?"★":"☆"}</span>
+      ${!c.recruiting_2026?`<span class="flag">No 2026 intake</span>`:""}
+    </div>
+    <div class="cdb">
+      <div class="cdh"><h3 class="serif">${esc(c.name)}</h3>
+        <div class="loc">📍 ${esc(c.city)} · ${esc(c.region)}${f!==null?` · <b style="color:var(--m)">${f}% fit</b>`:""}</div></div>
+      <div class="mrow">
+        ${cp?`<div class="mt c"><div class="mv tnum">${cp.avg}</div><div class="ml">applicants per place</div>
+             <div class="mb"><i style="width:${cp.avg/maxComp*100}%"></i></div></div>`
+            :`<div class="mt na"><div class="mv">n/a</div><div class="ml">not in Clearing House</div></div>`}
+        ${q?`<div class="mt q"><div class="mv tnum">${q.p}%</div><div class="ml">no postgrad qual · n=${q.n}</div>
+             <div class="mb"><i style="width:${q.p/maxQual*100}%"></i></div></div>`
+           :`<div class="mt na"><div class="mv">—</div><div class="ml">no data</div></div>`}
       </div>
-      <div class="badges">${bd.join("")}</div>
-      <button class="star" data-star="${esc(c.name)}" aria-pressed="${on}" aria-label="${on?"Remove from":"Add to"} shortlist: ${esc(c.name)}" title="Shortlist">${on?"★":"☆"}</button>
-    </div>
-    ${s!==null?`<div class="fit"><span class="ft">Fit</span><div class="fitbar"><div class="fitfill" style="width:${s}%"></div></div><span class="fv tnum">${s}%</span></div>`:""}
-    ${se?`<div class="selrow" title="${esc(se.d)}"><span class="gpill g-${se.g}">${GATE[se.g][0]}</span><span class="seltxt">${esc(se.t)}</span>${se.pg?`<span class="pgwarn" title="Postgraduate qualifications earn points in this course's academic score">PG scored</span>`:""}</div>`:""}
-    <div class="row">${models}</div>
-    ${vals?`<div class="row">${vals}</div>`:""}
-    ${acc?`<div class="row">${acc}</div>`:""}
-    <ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>
-    <div class="slots">
-      ${qu?`<div class="slot has v" title="${qu.none} of ${qu.n} surveyed trainees reported no postgraduate qualification"><div class="sv tnum">${qu.p}%</div><div class="sl">no postgrad qual · n=${qu.n}</div></div>`
-        :`<div class="slot"><div class="sv tnum">—</div><div class="sl">% no postgrad qual</div></div>`}
-      ${cp?`<div class="slot has" title="${esc(compTitle(c.name))}"><div class="sv tnum">${cp.a}${tr?`<i class="tr ${tr.s}">${tr.s==="up"?"▲":tr.s==="down"?"▼":"▬"}</i>`:""}</div><div class="sl">applications per place${tr?` · ${tr.t}`:""}</div></div>`
-          :`<div class="slot"><div class="sv tnum">n/a</div><div class="sl">not in Clearing House data</div></div>`}
-    </div>
-  </article>`;
-}
-function vCards(L){document.getElementById("view").innerHTML=L.length?`<div class="grid">${L.map(card).join("")}</div>`:empty();}
-
-function vMatrix(L){
-  if(!L.length){document.getElementById("view").innerHTML=empty();return;}
-  const mh=MO.map((m,i)=>`<th class="colh gm ${i===0?"gdiv":""}"><span>${ML[m]}</span></th>`).join("");
-  const vh=VO.map((v,i)=>`<th class="colh gv ${i===0?"gdiv":""}"><span>${VL[v]}</span></th>`).join("");
-  const rows=L.map(c=>{
-    const mc=MO.map((m,i)=>{const h=c.models.includes(m),st=m==="NEURO"&&c.neuro_strength;
-      return `<td class="cl ${i===0?"gdiv":""}">${h?`<span class="dot dm ${st?"str":""}" title="${ML[m]}${st?" — distinctive focus":""}"></span>`:""}</td>`;}).join("");
-    const vc=VO.map((v,i)=>{const h=c.values.includes(v);
-      return `<td class="cl ${i===0?"gdiv":""}">${h?`<span class="dot dv" title="${VL[v]}"></span>`:""}</td>`;}).join("");
-    const a=c.accreditation_extras.length?` <span class="tag ta" style="font-size:10px">+${c.accreditation_extras.length}</span>`:"";
-    const w=!c.recruiting_2026?` <span class="badge wb" style="font-size:9px">no ’26</span>`:"";
-    return `<tr><td class="nm">${esc(c.name)}${a}${w}</td>${mc}${vc}</tr>`;
-  }).join("");
-  document.getElementById("view").innerHTML=
-    `<div class="sec"><h2>Specialism &amp; values matrix</h2><span>filled = taught · ring = distinctive focus · scroll for all columns</span></div>
-     <div class="scroll"><table><thead><tr><th class="nm">Course</th>${mh}${vh}</tr></thead><tbody>${rows}</tbody></table></div>`;
+      <div class="gate"><span class="gp g-${g}">${c.sel?GATE[g]:"Not researched"}</span>
+        <span class="gt">${c.sel?esc(c.sel.t):"check Clearing House"}</span></div>
+      <div class="tags">${tags.join("")}</div>
+    </div></button>`;
 }
 
-function vChart(L){
-  if(!L.length){document.getElementById("view").innerHTML=empty();return;}
-  const d=MO.map(m=>({m,n:L.filter(c=>c.models.includes(m)).length})).sort((a,b)=>b.n-a.n);
-  const mx=Math.max(...d.map(x=>x.n),1);
-  document.getElementById("view").innerHTML=
-    `<div class="sec"><h2>How many courses teach each model</h2><span>within the ${L.length} course${L.length===1?"":"s"} shown</span></div>
-     <div class="box"><div class="box-b"><div class="bars">${d.map(x=>
-      `<div class="bl"><div class="bt">${ML[x.m]}</div><div class="bk"><div class="bf" style="width:${(x.n/mx*100).toFixed(1)}%"></div></div><div class="bv tnum">${x.n}</div></div>`
-     ).join("")}</div></div></div>`;
-}
+/* ---- views ---- */
+function vCards(L){document.getElementById("view").innerHTML=L.length?`<div class="grid">${L.map(card).join("")}</div>`:emptyH();}
 
-function vComp(L){
-  const rows=L.filter(c=>comp(c.name)).sort((a,b)=>comp(b.name).a-comp(a.name).a);
-  const none=L.filter(c=>!comp(c.name));
-  if(!rows.length){document.getElementById("view").innerHTML=empty();return;}
-  const mx=Math.max(...rows.map(c=>comp(c.name).a));
-  const nat=(20775/1164).toFixed(1);
-  const bars=rows.map((c,i)=>{
-    const cp=comp(c.name),tr=trend(c.name),st=S.stars.has(c.name);
-    return `<div class="cbar${st?" st":""}" title="${esc(compTitle(c.name))}">
-      <div class="rk tnum">${i+1}</div>
-      <div class="cn">${esc(c.name)}${st?' <span style="color:var(--m)">★</span>':""}</div>
-      <div class="bk"><div class="bf" style="width:${(cp.a/mx*100).toFixed(1)}%"></div></div>
-      <div class="cv tnum">${cp.a}</div>
-      <div class="ct ${tr?tr.s:""}">${tr?(tr.s==="up"?"▲":tr.s==="down"?"▼":"▬"):""}</div>
-    </div>`;}).join("");
+function vBars(L,key){
+  const isC=key==="comp";
+  const rows=L.filter(c=>isC?c.comp:c.qual)
+    .sort((a,b)=>isC?b.comp.avg-a.comp.avg:b.qual.p-a.qual.p);
+  const none=L.filter(c=>isC?!c.comp:!c.qual);
+  if(!rows.length){document.getElementById("view").innerHTML=emptyH();return;}
+  const mx=isC?Math.max(...rows.map(c=>c.comp.avg)):Math.max(...rows.map(c=>c.qual.p));
+  const bars=rows.map(c=>{const v=isC?c.comp.avg:c.qual.p,pin=S.pins.has(c.name);
+    return `<div class="bl ${pin?"pin":""}"><div class="bn">${esc(c.name)}</div>
+      <div class="bk"><div class="bf" style="width:${v/mx*100}%;background:${isC?"var(--m)":"var(--v)"}"></div></div>
+      <div class="bv tnum" style="color:${isC?"var(--m)":"var(--v)"}">${v}${isC?"":"%"}</div></div>`;}).join("");
+  const note=isC
+    ? `<b>Applicants per place, 3-year average (2023–25 entry).</b> Each applicant may apply to up to four course centres,
+       so a course's count is the distinct people who chose <i>it</i> — not your odds. Nationally 5,603 applicants
+       competed for 1,164 places in 2024 (21% success).`
+    : `<b>Share of surveyed trainees who reported no postgraduate qualification.</b> From the BPS Alternative Handbook
+       course reports — these are trainees who responded (~40% nationally), not all successful applicants. Sample sizes
+       vary from 12 to 81, so treat small-n figures cautiously.`;
   document.getElementById("view").innerHTML=
-    `<div class="sec"><h2>Competition: applications per place</h2><span>3-year average, 2023–2025 entry · Clearing House</span></div>
-     <div class="note" style="margin-bottom:12px">
-       <b>These are applications, not applicants.</b> Each applicant may apply to up to 4 course centres, so a course
-       receiving 800 applications is not seeing 800 different people. Nationally in 2024, 5,603 applicants made
-       20,775 applications for 1,164 places — <b>4.8 applicants</b> but <b>~${nat} applications</b> per place.
-       Use this to compare courses <i>against each other</i>, not as your odds.
-     </div>
-     <div class="box"><div class="box-b"><div class="cbars">${bars}</div>
-       ${none.length?`<p style="font-size:12px;color:var(--muted);margin:14px 0 0;padding-top:11px;border-top:1px solid var(--line-2)">
-         No Clearing House figures published for: <b>${none.map(c=>esc(c.name)).join(", ")}</b>.</p>`:""}
-     </div></div>`;
+    `<div class="sec"><h3>${isC?"Competition":"Trainees without a postgraduate qualification"}</h3>
+      <span>${rows.length} courses${isC?"":" · hover a card for sample size"}</span></div>
+     <div class="note">${note}</div>
+     <div class="box">${bars}
+       ${none.length?`<p style="font-size:12px;color:var(--dim);margin:14px 0 0;padding-top:11px;border-top:1px solid var(--edge2)">
+         No data: <b>${none.map(c=>esc(c.name)).join(", ")}</b>.</p>`:""}</div>`;
 }
 
 function vScatter(L){
-  const pts=L.filter(c=>qual(c.name)&&comp(c.name))
-             .map(c=>({c,x:comp(c.name).a,y:qual(c.name).p,n:qual(c.name).n}));
-  const only=L.filter(c=>(qual(c.name)?1:0)+(comp(c.name)?1:0)===1);
-  if(pts.length<3){document.getElementById("view").innerHTML=empty();return;}
-  const W=820,H=470,P={l:62,r:26,t:20,b:52};
-  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-  const x0=0,x1=Math.ceil(Math.max(...xs)/5)*5, y0=0,y1=Math.ceil(Math.max(...ys)/10)*10;
-  const X=v=>P.l+(v-x0)/(x1-x0)*(W-P.l-P.r), Y=v=>H-P.b-(v-y0)/(y1-y0)*(H-P.t-P.b);
-  const n=pts.length, mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
-  const sxy=pts.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0);
-  const sxx=pts.reduce((s,p)=>s+(p.x-mx)**2,0), syy=pts.reduce((s,p)=>s+(p.y-my)**2,0);
-  const r=sxy/Math.sqrt(sxx*syy), b=sxy/sxx, a=my-b*mx;
-  const gx=[],gy=[];
-  for(let v=x0;v<=x1;v+=5)gx.push(v);
-  for(let v=y0;v<=y1;v+=10)gy.push(v);
-  const rad=p=>Math.max(4.5,Math.min(11,Math.sqrt(p.n)*1.05));
-  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Scatter plot of competition against percentage of trainees with no postgraduate qualification">
-    ${gy.map(v=>`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line-2)" stroke-width="1"/>
-      <text x="${P.l-9}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`).join("")}
-    ${gx.map(v=>`<line y1="${P.t}" y2="${H-P.b}" x1="${X(v)}" x2="${X(v)}" stroke="var(--line-2)" stroke-width="1"/>
-      <text y="${H-P.b+18}" x="${X(v)}" text-anchor="middle" font-size="11" fill="var(--muted)">${v}</text>`).join("")}
-    <line x1="${X(x0)}" y1="${Y(a+b*x0)}" x2="${X(x1)}" y2="${Y(a+b*x1)}" stroke="var(--a)" stroke-width="2" stroke-dasharray="6 5" opacity=".85"/>
-    ${pts.map(p=>{const st=S.stars.has(p.c.name);
-      return `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${rad(p)}" fill="${st?"var(--v)":"var(--m)"}" fill-opacity="${st?".95":".62"}"
-        stroke="var(--surface)" stroke-width="2"><title>${esc(p.c.name)} — ${p.y}% no postgrad (n=${p.n}) · ${p.x} applications per place</title></circle>`;}).join("")}
-    ${pts.filter(p=>p.y>=30||p.y<=10||p.x>=26||p.x<=11||S.stars.has(p.c.name)).map(p=>
-      `<text x="${X(p.x)+rad(p)+5}" y="${Y(p.y)+4}" font-size="10.5" fill="var(--ink-2)">${esc(p.c.name.split(" (")[0])}</text>`).join("")}
-    <text x="${P.l+(W-P.l-P.r)/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--ink-2)" font-weight="600">Applications per place (3-yr avg) →</text>
-    <text transform="translate(15,${P.t+(H-P.t-P.b)/2}) rotate(-90)" text-anchor="middle" font-size="12" fill="var(--ink-2)" font-weight="600">% trainees with no postgrad qualification →</text>
+  const P=L.filter(c=>c.qual&&c.comp).map(c=>({c,x:c.comp.avg,y:c.qual.p,n:c.qual.n}));
+  if(P.length<3){document.getElementById("view").innerHTML=emptyH();return;}
+  const W=860,H=500,pad={l:64,r:28,t:22,b:56};
+  const x1=Math.ceil(Math.max(...P.map(p=>p.x))/5)*5,y1=Math.ceil(Math.max(...P.map(p=>p.y))/10)*10;
+  const X=v=>pad.l+v/x1*(W-pad.l-pad.r),Y=v=>H-pad.b-v/y1*(H-pad.t-pad.b);
+  const n=P.length,mx=P.reduce((s,p)=>s+p.x,0)/n,my=P.reduce((s,p)=>s+p.y,0)/n;
+  const sxy=P.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0),sxx=P.reduce((s,p)=>s+(p.x-mx)**2,0),
+        syy=P.reduce((s,p)=>s+(p.y-my)**2,0);
+  const r=sxy/Math.sqrt(sxx*syy),b=sxy/sxx,a=my-b*mx;
+  const gx=[],gy=[];for(let v=0;v<=x1;v+=5)gx.push(v);for(let v=0;v<=y1;v+=10)gy.push(v);
+  const rad=p=>Math.max(5,Math.min(12,Math.sqrt(p.n)*1.15));
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img"
+     aria-label="Scatter of applicants per place against percentage of trainees with no postgraduate qualification">
+    ${gy.map(v=>`<line x1="${pad.l}" x2="${W-pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--edge2)"/>
+      <text x="${pad.l-9}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--dim)">${v}%</text>`).join("")}
+    ${gx.map(v=>`<line y1="${pad.t}" y2="${H-pad.b}" x1="${X(v)}" x2="${X(v)}" stroke="var(--edge2)"/>
+      <text y="${H-pad.b+19}" x="${X(v)}" text-anchor="middle" font-size="11" fill="var(--dim)">${v}</text>`).join("")}
+    <line x1="${X(0)}" y1="${Y(a)}" x2="${X(x1)}" y2="${Y(a+b*x1)}" stroke="var(--a)" stroke-width="2" stroke-dasharray="6 5"/>
+    ${P.map(p=>{const pin=S.pins.has(p.c.name);
+      return `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${rad(p)}" fill="${pin?"var(--v)":p.c.col}"
+        fill-opacity="${pin?.95:.7}" stroke="var(--card)" stroke-width="2">
+        <title>${esc(p.c.name)} — ${p.y}% no postgrad (n=${p.n}), ${p.x} applicants per place</title></circle>`;}).join("")}
+    ${P.filter(p=>p.y>=30||p.y<=12.5||p.x>=26||p.x<=11.5||S.pins.has(p.c.name)).map(p=>
+      `<text x="${X(p.x)+rad(p)+5}" y="${Y(p.y)+4}" font-size="10.5" fill="var(--ink2)">${esc(p.c.name.split(" (")[0])}</text>`).join("")}
+    <text x="${pad.l+(W-pad.l-pad.r)/2}" y="${H-10}" text-anchor="middle" font-size="12.5" fill="var(--ink2)" font-weight="600">Applicants per place →</text>
+    <text transform="translate(16,${pad.t+(H-pad.t-pad.b)/2}) rotate(-90)" text-anchor="middle" font-size="12.5" fill="var(--ink2)" font-weight="600">% trainees with no postgraduate qualification →</text>
   </svg>`;
-  const strength=Math.abs(r)>=.7?"strong":Math.abs(r)>=.4?"moderate":"weak";
   document.getElementById("view").innerHTML=
-    `<div class="sec"><h2>Competition vs. openness to non-postgraduates</h2><span>${pts.length} courses with both metrics · dot size = survey sample</span></div>
-     <div class="box"><div class="box-b">${svg}
-       <p style="font-size:12.5px;color:var(--ink-2);margin:10px 2px 0;line-height:1.6">
-       <b>Pearson r = ${r.toFixed(2)}</b> — a ${strength} ${r<0?"negative":"positive"} relationship.
-       ${r<0?"More competitive courses tend to admit proportionally fewer trainees without a postgraduate qualification":
-             "More competitive courses tend to admit proportionally more trainees without a postgraduate qualification"},
-       but the scatter is wide and there are clear exceptions — the trend line explains only ${(r*r*100).toFixed(0)}% of the variation.
-       <b>Correlation is not causation:</b> it may be that competitive courses screen harder on qualifications, or that courses seen as
-       attainable attract more non-postgraduate applicants in the first place.</p>
-       ${only.length?`<p style="font-size:12px;color:var(--muted);margin:10px 2px 0;padding-top:10px;border-top:1px solid var(--line-2)">
-         Plotted only where both metrics exist. Missing one: <b>${only.map(c=>esc(c.name)).join(", ")}</b>.</p>`:""}
-     </div></div>`;
+    `<div class="sec"><h3>Does competition predict who gets in without a Masters?</h3><span>${P.length} courses · dot size = survey sample</span></div>
+     <div class="box">${svg}
+     <p style="font-size:12.5px;color:var(--ink2);margin:12px 2px 0;line-height:1.65">
+       <b>r = ${r.toFixed(2)}</b> — a weak negative relationship explaining only <b>${(r*r*100).toFixed(0)}%</b> of the variation.
+       More competitive courses lean slightly toward postgraduate-qualified intakes, but the exceptions matter more than the trend:
+       Manchester is competitive <i>and</i> open, Southampton is neither. <b>Don't use competitiveness to predict whether a course
+       will take you without a Masters</b> — and correlation isn't causation either way.</p></div>`;
 }
 
-function vCompare(){
-  const L=COURSES.filter(c=>S.stars.has(c.name));
-  if(!L.length){
-    document.getElementById("view").innerHTML=
-      `<div class="empty">No courses shortlisted yet.<br><span style="font-size:12.5px">Star courses with ☆ in the Courses view to compare them side by side.</span></div>`;
-    return;
-  }
-  const rows=[
-    ["Selection gate",c=>{const s=sel(c.name);
-   return s?`<span class="gpill g-${s.g}">${GATE[s.g][0]}</span><br><b>${esc(s.t)}</b><br><span style="color:var(--muted);font-size:11.5px">${esc(s.d)}</span>`
-           :`<span style="color:var(--muted)">Not yet researched — check Clearing House</span>`;}],
-    ["Lead model",c=>ML[c.model_lead]],
-    ["Models taught",c=>c.models.map(m=>`<span class="tag tm">${ML[m]}</span>`).join(" ")],
-    ["Neuro focus",c=>c.neuro_strength?`<b style="color:var(--good)">Yes</b>`:`<span style="color:var(--muted)">Not surfaced</span>`],
-    ["Accreditations",c=>c.accreditation_extras.length?c.accreditation_extras.map(a=>`<span class="tag ta">${esc(a)}</span>`).join(" "):`<span style="color:var(--muted)">—</span>`],
-    ["Values",c=>c.values.length?c.values.map(v=>`<span class="tag tv">${VL[v]}</span>`).join(" "):`<span style="color:var(--muted)">—</span>`],
-    ["Distinctive",c=>`<ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`],
-    ["2026 intake",c=>c.recruiting_2026?"Yes":`<b style="color:var(--warn)">No — aiming 2027</b>`],
-    ["% no postgrad qual",c=>{const q=qual(c.name);
-   return q?`<b class="tnum" style="font-size:15px">${q.p}%</b> <span style="color:var(--muted)">${q.none} of ${q.n} surveyed</span>`
-           :`<span style="color:var(--muted)">No data</span>`;}],
-    ["Applications per place",c=>{const cp=comp(c.name),tr=trend(c.name);
-     return cp?`<b class="tnum" style="font-size:15px">${cp.a}</b> <span style="color:var(--muted)">3-yr avg${tr?" · "+tr.t:""}</span><br><span style="color:var(--muted);font-size:11.5px">${esc(compTitle(c.name))}</span>`
-              :`<span style="color:var(--muted)">Not in Clearing House data</span>`;}]
-  ];
+function vTable(L){
+  const P=COURSES.filter(c=>S.pins.has(c.name));
+  const rows=P.length?P:L.slice(0,8);
+  if(!rows.length){document.getElementById("view").innerHTML=emptyH();return;}
+  const R=[["Location",c=>esc(c.city)+"<br><span style='color:var(--dim)'>"+esc(c.region)+"</span>"],
+    ["Applicants per place",c=>c.comp?`<b class="tnum" style="font-size:15px;color:var(--m)">${c.comp.avg}</b>`:"<span style='color:var(--dim)'>n/a</span>"],
+    ["No postgrad qual",c=>c.qual?`<b class="tnum" style="font-size:15px;color:var(--v)">${c.qual.p}%</b> <span style="color:var(--dim)">n=${c.qual.n}</span>`:"—"],
+    ["How it shortlists",c=>c.sel?`<span class="gp g-${c.sel.g}">${GATE[c.sel.g]}</span><br><b>${esc(c.sel.t)}</b><br><span style="color:var(--dim);font-size:11.5px">${esc(c.sel.d)}</span>`:"<span style='color:var(--dim)'>Not researched</span>"],
+    ["Models",c=>c.models.map(m=>`<span class="tg m">${ML[m]}</span>`).join(" ")],
+    ["Accreditations",c=>c.accreditation_extras.length?c.accreditation_extras.map(a=>`<span class="tg a">${esc(a)}</span>`).join(" "):"—"],
+    ["Values",c=>c.values.length?c.values.map(v=>`<span class="tg v">${VL[v]}</span>`).join(" "):"—"],
+    ["Distinctive",c=>`<ul class="bul">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`],
+    ["2026 intake",c=>c.recruiting_2026?"Yes":`<b style="color:var(--warn)">No — aiming 2027</b>`]];
   document.getElementById("view").innerHTML=
-    `<div class="sec"><h2>Shortlist comparison</h2><span>${L.length} course${L.length===1?"":"s"} side by side</span></div>
-     <div class="cmp"><table>
-       <thead><tr><th class="rl">&nbsp;</th>${L.map(c=>`<th class="serif">${esc(c.name)}</th>`).join("")}</tr></thead>
-       <tbody>${rows.map(([lab,fn])=>`<tr><th class="rl">${lab}</th>${L.map(c=>`<td>${fn(c)}</td>`).join("")}</tr>`).join("")}</tbody>
-     </table></div>`;
+    `<div class="sec"><h3>Side-by-side comparison</h3><span>${P.length?P.length+" shortlisted":"first 8 — star courses to compare your own"}</span></div>
+     <div class="scrollx"><table><thead><tr><th class="rl"></th>
+       ${rows.map(c=>`<th class="serif" style="font-size:13.5px;color:var(--ink);text-transform:none;letter-spacing:0;min-width:200px">${esc(c.name)}</th>`).join("")}</tr></thead>
+       <tbody>${R.map(([l,f])=>`<tr><th class="rl">${l}</th>${rows.map(c=>`<td>${f(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-function empty(){return `<div class="empty">No courses match. <button class="txt-btn" onclick="document.getElementById('clr').click()">Reset filters</button></div>`;}
+function emptyH(){return `<div class="empty">Nothing matches those filters.<br><button class="lnk" onclick="document.getElementById('clr').click()">Reset filters</button></div>`;}
 
-function render(){
-  const L=list();
-  const n=priorityCount();
-  document.getElementById("cnt").innerHTML=`Showing <b>${L.length}</b> of ${COURSES.length}`+(n&&S.mode==="rank"?" · ranked by fit":"");
-  if(S.view==="cards")vCards(L);
-  else if(S.view==="matrix")vMatrix(L);
-  else if(S.view==="chart")vChart(L);
-  else if(S.view==="comp")vComp(L);
-  else if(S.view==="scatter")vScatter(L);
-  else vCompare();
-  document.querySelectorAll("[data-star]").forEach(b=>b.addEventListener("click",()=>{
-    const k=b.dataset.star;S.stars.has(k)?S.stars.delete(k):S.stars.add(k);sync();render();
-  }));
+/* ---- drawer ---- */
+function openDrawer(name){
+  const c=COURSES.find(x=>x.name===name); if(!c)return;
+  const q=c.qual,cp=c.comp;
+  const yrs=cp?Object.entries(cp.perYear).map(([y,d])=>
+    `<div class="yb"><div class="yy">${y}</div><div class="yv tnum">${d.ratio}</div></div>`).join(""):"";
+  document.getElementById("dwb").innerHTML=`
+    <div class="dwband">${band(c,"d")}<button class="dwx" id="dwx" aria-label="Close">✕</button></div>
+    <div class="dwh">
+      <div class="dwcrest" style="background:${c.col}">${c.mono}</div>
+      <h2 class="serif">${esc(c.name)}</h2>
+      <div class="loc" style="margin-top:5px">📍 ${esc(c.city)} · ${esc(c.region)}</div>
+      ${!c.recruiting_2026?`<div style="margin-top:9px"><span class="gp g-academic">Not recruiting for 2026 entry — aiming 2027</span></div>`:""}
+    </div>
+    <div class="dwsec"><h4>Key numbers</h4><div class="bigm">
+      <div class="bm c"><div class="n tnum">${cp?cp.avg:"n/a"}</div><div class="l">applicants per place</div>
+        <div class="sub">${cp?"3-year average, 2023–25":"Not published by Clearing House"}</div></div>
+      <div class="bm q"><div class="n tnum">${q?q.p+"%":"—"}</div><div class="l">trainees with no postgraduate qualification</div>
+        <div class="sub">${q?q.none+" of "+q.n+" surveyed":"No data"}</div></div>
+    </div>${cp?`<div class="yr">${yrs}</div>`:""}</div>
+    <div class="dwsec"><h4>How this course shortlists</h4><div class="panel">
+      ${c.sel?`<div style="margin-bottom:8px"><span class="gp g-${c.sel.g}">${GATE[c.sel.g]}</span></div>
+        <b style="font-size:13.5px">${esc(c.sel.t)}</b>
+        <p style="margin:7px 0 0;font-size:13px;color:var(--ink2);line-height:1.6">${esc(c.sel.d)}</p>
+        ${c.sel.pg?`<p style="margin:9px 0 0;font-size:12px;color:var(--warn)"><b>Postgraduate results earn points here</b> — applying without a Masters costs you at this gate.</p>`:""}
+        ${c.sel.al?`<p style="margin:6px 0 0;font-size:12px;color:var(--warn)"><b>A-levels are scored</b> — unusual, and unchangeable by the time you apply.</p>`:""}`
+      :`<p style="margin:0;font-size:13px;color:var(--dim)">Not yet researched. Check this course's Clearing House “Selection procedure” page — the gate type materially changes who it favours.</p>`}
+    </div></div>
+    <div class="dwsec"><h4>Models &amp; specialisms</h4><div class="panel">
+      <div class="tags" style="margin:0">${c.models.map(m=>`<span class="tg m">${ML[m]}${m===c.model_lead?" ★":""}</span>`).join("")}</div>
+      ${c.accreditation_extras.length?`<div style="margin-top:10px"><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:700;margin-bottom:6px">Accreditation extras</div>
+        <div class="tags" style="margin:0">${c.accreditation_extras.map(a=>`<span class="tg a">${esc(a)}</span>`).join("")}</div></div>`:""}
+      ${c.values.length?`<div style="margin-top:10px"><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:700;margin-bottom:6px">Values &amp; ethos</div>
+        <div class="tags" style="margin:0">${c.values.map(v=>`<span class="tg v">${VL[v]}</span>`).join("")}</div></div>`:""}
+      <div class="kv" style="margin-top:10px;border-top:1px solid var(--edge2);padding-top:9px"><span class="k">Lead model</span><span class="v">${ML[c.model_lead]}</span></div>
+      <div class="kv"><span class="k">Neuropsychology focus</span><span class="v">${c.neuro_strength?'<span style="color:var(--good)">Distinctive</span>':'<span style="color:var(--dim)">Not surfaced</span>'}</span></div>
+    </div></div>
+    <div class="dwsec"><h4>What makes it distinctive</h4><div class="panel">
+      <ul class="bul">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div></div>
+    <div class="dwsec"><button class="ib" style="width:100%;justify-content:center;height:42px" data-pin="${esc(c.name)}">
+      ${S.pins.has(c.name)?"★ Remove from shortlist":"☆ Add to shortlist"}</button></div>`;
+  document.getElementById("dw").classList.add("open");
+  document.getElementById("scrim").classList.add("open");
+  document.getElementById("dwx").addEventListener("click",closeDrawer);
+  document.querySelectorAll("#dwb [data-pin]").forEach(b=>b.addEventListener("click",()=>{
+    togglePin(b.dataset.pin);openDrawer(name);}));
+}
+function closeDrawer(){document.getElementById("dw").classList.remove("open");
+  document.getElementById("scrim").classList.remove("open");}
+function togglePin(n){S.pins.has(n)?S.pins.delete(n):S.pins.add(n);sync();draw();}
+
+function draw(){
+  const L=listed();
+  document.getElementById("cnt").innerHTML=`Showing <b>${L.length}</b> of ${COURSES.length}`+(nPri()&&S.mode==="rank"?" · ranked by fit":"");
+  ({cards:vCards,scatter:vScatter,table:vTable}[S.view]||(x=>vBars(x,S.view)))(L);
+  document.querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{
+    if(e.target.closest("[data-pin]"))return; openDrawer(el.dataset.open);}));
+  document.querySelectorAll(".grid [data-pin]").forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation();togglePin(b.dataset.pin);}));
 }
 
-/* ---------- wiring ---------- */
 document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true");S.view=b.dataset.v;render();
-}));
-document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value.toLowerCase().trim();render();});
-document.getElementById("sort").addEventListener("change",e=>{S.sort=e.target.value;render();});
-document.getElementById("mode").addEventListener("change",e=>{S.mode=e.target.value;render();});
+  b.setAttribute("aria-pressed","true");S.view=b.dataset.v;draw();}));
+document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value.toLowerCase().trim();draw();});
+document.getElementById("sort").addEventListener("change",e=>{S.sort=e.target.value;draw();});
+document.getElementById("mode").addEventListener("change",e=>{S.mode=e.target.value;draw();});
+document.getElementById("filtBtn").addEventListener("click",()=>{
+  const p=document.getElementById("fp"),o=p.hasAttribute("hidden");
+  o?p.removeAttribute("hidden"):p.setAttribute("hidden","");
+  document.getElementById("filtBtn").setAttribute("aria-expanded",o?"true":"false");});
+document.getElementById("pinBtn").addEventListener("click",()=>{S.onlyPins=!S.onlyPins;sync();draw();});
 document.getElementById("clr").addEventListener("click",()=>{
-  S.models.clear();S.values.clear();S.neuro=S.accred=S.rec=S.greview=S.gtest=S.gacad=false;S.q="";S.onlyStars=false;
-  document.getElementById("q").value="";sync();render();
-});
-document.getElementById("shortBtn").addEventListener("click",()=>{
-  S.onlyStars=!S.onlyStars;if(S.onlyStars&&S.view==="compare")S.view="cards";
-  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===S.view?"true":"false"));
-  sync();render();
-});
+  S.m.clear();S.v.clear();S.g.clear();S.r.clear();S.neuro=S.accred=S.rec=false;S.q="";S.onlyPins=false;
+  document.getElementById("q").value="";sync();draw();});
+document.getElementById("scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer();});
 document.getElementById("themeBtn").addEventListener("click",()=>{
   const cur=document.documentElement.getAttribute("data-theme")||
     (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
-  document.documentElement.setAttribute("data-theme",cur==="dark"?"light":"dark");
-});
+  document.documentElement.setAttribute("data-theme",cur==="dark"?"light":"dark");});
 
-chipsHTML();ctx();sync();render();
+stats();chips();sync();draw();
 </script>
