@@ -1,0 +1,72 @@
+{
+ "Oxford": {
+  "g": "academic",
+  "t": "Academic point-score gate",
+  "d": "Educational score out of 38; up to 18 points from three A-levels. UG 2:1 and PG Merit both score zero \u2014 only results above those thresholds earn points. Approx. top 300 educational scores proceed to shortlisting.",
+  "pg": 1,
+  "al": 1
+ },
+ "Bath": {
+  "g": "academic",
+  "t": "Scored academic gate",
+  "d": "Screened for minimum criteria, then scored on academic achievement, research experience, clinical exposure and personal reflection; only highest scorers are shortlisted. Cut-off not published.",
+  "pg": 1,
+  "al": 0
+ },
+ "Lancaster": {
+  "g": "test",
+  "t": "Online ability test",
+  "d": "All eligible applicants sit an online ability test (deductive-reasoning style) in a February window; top scorers are invited to interview and re-sit under supervision to verify.",
+  "pg": 0,
+  "al": 0
+ },
+ "Manchester": {
+  "g": "test",
+  "t": "GMA test + experience points",
+  "d": "Mandatory General Mental Ability test used to deselect before shortlisting. Then points for supervised work involving assessment, formulation, intervention or service development, variety of settings, and clinical research. Minimum 12 months paid relevant experience.",
+  "pg": 0,
+  "al": 0
+ },
+ "Cardiff (South Wales)": {
+  "g": "test",
+  "t": "Shortlisting test",
+  "d": "Shortlisting tests run January to mid-March. Ten additional interview places for highest-scoring candidates declaring a disability who narrowly miss shortlisting. Format to verify with the course.",
+  "pg": 0,
+  "al": 0
+ },
+ "North Thames (UCL)": {
+  "g": "review",
+  "t": "Application review, no test",
+  "d": "No shortlisting test. Rated independently by two clinical psychologists across clinical, personal, academic and research domains, so the written application carries substantial weight. Positive action on ethnicity and disability at shortlisting and offer.",
+  "pg": 0,
+  "al": 0
+ },
+ "Plymouth": {
+  "g": "review",
+  "t": "Holistic review, no test",
+  "d": "No pre-selection testing; every application read by at least one course-team member and one local clinical psychologist. Weighs academic and research competencies, clinical experience, reflexivity, values, anti-racism and service-user commitment. Interview plus group task.",
+  "pg": 0,
+  "al": 0
+ },
+ "Royal Holloway (North Thames)": {
+  "g": "review",
+  "t": "Paper-based review, no test",
+  "d": "Preliminary paper-based selection by programme staff and regional psychologists; reported not to use the personal statement. Contextual admissions applied. Positive action on ethnicity and gender.",
+  "pg": 0,
+  "al": 0
+ },
+ "East Anglia (UEA)": {
+  "g": "review",
+  "t": "Application review, no test",
+  "d": "Each form rated independently by two experienced clinical psychologists (one UEA, one local NHS). Emphasis on understanding of research design, linking theory to practice, capacity to reflect, and NHS values.",
+  "pg": 0,
+  "al": 0
+ },
+ "Leicester": {
+  "g": "review",
+  "t": "Application review + assessment centre",
+  "d": "Applications rated for relevant experience, academic credentials and personal statement, with references reviewed. 96 candidates invited to an assessment centre combining interview(s) and a written task; ranked by total score.",
+  "pg": 0,
+  "al": 0
+ }
+}
