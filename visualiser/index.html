@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DClinPsy Course Compass</title>
 <style>
 :root{
@@ -35,6 +36,7 @@
   --shL:0 6px 20px rgba(0,0,0,.45),0 20px 50px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box}
+html{overflow-x:hidden;max-width:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5;
   -webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -53,7 +55,7 @@ header{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--card)
 .mark{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;
   background:linear-gradient(140deg,var(--m),var(--a));color:#fff;font-weight:700;font-size:16px}
 .ttl{margin-right:auto;min-width:0}
-.ttl h1{margin:0;font-size:16.5px;font-weight:650;letter-spacing:-.015em;white-space:nowrap}
+.ttl h1{margin:0;font-size:16.5px;font-weight:650;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ttl p{margin:0;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ib{border:1px solid var(--edge);background:var(--card2);color:var(--ink2);height:36px;padding:0 12px;
   border-radius:10px;font-size:13px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
@@ -115,12 +117,12 @@ main{padding:16px 0 70px}
 .cd.pin{border-color:var(--m);box-shadow:0 0 0 1px var(--m),var(--sh)}
 .band{height:84px;position:relative;overflow:hidden;flex:none}
 .band svg{position:absolute;inset:0;width:100%;height:100%}
-.crest.lg{width:auto;min-width:46px;max-width:158px;height:46px;padding:5px 9px;background:#fff;overflow:hidden}
+.crest.lg{width:132px;height:48px;padding:7px 11px;background:#fff;overflow:hidden}
 .crest.lg.dk{background:#0f1319}
-.crest.lg img{height:100%;width:auto;max-width:140px;object-fit:contain;display:block}
-.dwcrest.lg{width:auto;min-width:56px;max-width:230px;height:60px;padding:7px 12px;background:#fff;overflow:hidden}
+.crest.lg img{width:100%;height:100%;object-fit:contain;display:block}
+.dwcrest.lg{width:180px;height:64px;padding:9px 14px;background:#fff;overflow:hidden}
 .dwcrest.lg.dk{background:#0f1319}
-.dwcrest.lg img{height:100%;width:auto;max-width:206px;object-fit:contain;display:block}
+.dwcrest.lg img{width:100%;height:100%;object-fit:contain;display:block}
 .crest{position:absolute;left:13px;bottom:-17px;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;
   color:#fff;font-weight:700;font-size:15px;letter-spacing:.02em;border:2.5px solid var(--card);z-index:2;
   font-family:Georgia,serif}
@@ -157,7 +159,8 @@ main{padding:16px 0 70px}
 .scrim{position:fixed;inset:0;background:rgba(10,15,20,.5);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
 .scrim.open{opacity:1;pointer-events:auto}
 .dw{position:fixed;top:0;right:0;height:100%;width:min(520px,100%);background:var(--bg);z-index:100;
-  transform:translateX(100%);transition:transform .26s cubic-bezier(.22,1,.36,1);overflow-y:auto;box-shadow:var(--shL)}
+  transform:translateX(100%);transition:transform .26s cubic-bezier(.22,1,.36,1),visibility .26s;overflow-y:auto;overflow-x:hidden;box-shadow:var(--shL);visibility:hidden}
+.dw.open{visibility:visible}
 .dw.open{transform:none}
 .dwb{padding:0 0 40px}
 .dwband{height:120px;position:relative;overflow:hidden}
@@ -221,6 +224,8 @@ footer{border-top:1px solid var(--edge);background:var(--card2);margin-top:30px}
 .sw{width:12px;height:12px;border-radius:3px}
 @media (max-width:640px){
   .ttl p{display:none}
+  .ttl h1{font-size:15px}
+  .ib{padding:0 9px;font-size:12.5px}
   .bar{top:56px}
   .grid{grid-template-columns:1fr}
   .bigm{grid-template-columns:1fr}
