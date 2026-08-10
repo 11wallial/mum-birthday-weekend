@@ -188,6 +188,8 @@ td.cl{border-bottom:1px solid var(--line-2);border-left:1px solid var(--line-2);
 .ct.up{color:var(--warn)} .ct.down{color:var(--good)} .ct.flat{color:var(--faint)}
 .slot.has{border-style:solid;background:var(--m-soft);border-color:color-mix(in srgb,var(--m) 30%,transparent)}
 .slot.has .sv{color:var(--m-ink)}
+.slot.has.v{background:var(--v-soft);border-color:color-mix(in srgb,var(--v) 30%,transparent)}
+.slot.has.v .sv,.slot.has.v .sl{color:var(--v-ink)}
 .slot.has .sl{color:var(--m-ink);opacity:.8}
 .tr{font-style:normal;font-size:9px;margin-left:3px;vertical-align:middle}
 .tr.up{color:var(--warn)} .tr.down{color:var(--good)} .tr.flat{color:var(--faint)}
@@ -280,6 +282,7 @@ footer{border-top:1px solid var(--line);background:var(--surface-2)}
         <button data-v="matrix" aria-pressed="false">Matrix</button>
         <button data-v="chart" aria-pressed="false">Specialisms</button>
         <button data-v="comp" aria-pressed="false">Competition</button>
+        <button data-v="scatter" aria-pressed="false">Scatter</button>
         <button data-v="compare" aria-pressed="false">Compare</button>
       </div>
       <select class="sel" id="sort" aria-label="Sort courses">
@@ -288,6 +291,7 @@ footer{border-top:1px solid var(--line);background:var(--surface-2)}
         <option value="breadth">Sort: most models taught</option>
         <option value="accred">Sort: most accreditations</option>
         <option value="comp">Sort: most competitive</option>
+        <option value="qual">Sort: most without postgrad qual</option>
       </select>
       <select class="sel" id="mode" aria-label="Priority mode">
         <option value="rank">Rank mode (show all)</option>
@@ -386,6 +390,8 @@ const COMP={"Bangor (North Wales)":{a:15.2,y:{"2023":[203,14],"2024":[250,15],"2
 /* Applications per place — Clearing House "Places by Course Centre", 2023–2025 entry.
    NOTE: these are APPLICATIONS, not applicants (each applicant may apply to up to 4 centres).
    Hull and Belfast (QUB) do not appear in Clearing House data. */
+const QUAL={"Leeds":{"p":18.8,"n":32,"none":6},"Staffordshire":{"p":21.7,"n":23,"none":5},"Southampton":{"p":7.5,"n":53,"none":4},"Exeter":{"p":19.3,"n":57,"none":11},"East London (UEL)":{"p":19.0,"n":58,"none":11},"Manchester":{"p":32.8,"n":58,"none":19},"Glasgow":{"p":16.2,"n":37,"none":6},"Edinburgh":{"p":17.5,"n":57,"none":10},"Birmingham":{"p":22.9,"n":48,"none":11},"Surrey":{"p":28.4,"n":81,"none":23},"Trent (Lincoln & Nottingham)":{"p":23.8,"n":42,"none":10},"East Anglia (UEA)":{"p":43.2,"n":37,"none":16},"Plymouth":{"p":28.1,"n":32,"none":9},"Coventry & Warwick":{"p":20.7,"n":29,"none":6},"Leicester":{"p":31.1,"n":61,"none":19},"Belfast (QUB)":{"p":0.0,"n":12,"none":0},"Hertfordshire":{"p":17.1,"n":41,"none":7},"Bath":{"p":17.1,"n":41,"none":7},"King's College London (IoPPN)":{"p":12.0,"n":50,"none":6},"Teesside":{"p":20.0,"n":50,"none":10},"Hull":{"p":85.7,"n":28,"none":24},"Oxford":{"p":25.7,"n":70,"none":18},"Liverpool":{"p":12.5,"n":56,"none":7},"Cardiff (South Wales)":{"p":34.1,"n":41,"none":14},"North Thames (UCL)":{"p":20.0,"n":70,"none":14},"Essex (Tavistock)":{"p":18.2,"n":33,"none":6},"Bangor (North Wales)":{"p":16.7,"n":24,"none":4},"Sheffield":{"p":25.0,"n":40,"none":10},"Royal Holloway (North Thames)":{"p":19.3,"n":57,"none":11},"Newcastle":{"p":23.7,"n":38,"none":9},"Lancaster":{"p":37.2,"n":78,"none":29},"Salomons (CCCU)":{"p":13.9,"n":36,"none":5}};
+const qual=n=>QUAL[n]||null;
 const CYRS=["2023","2024","2025"];
 const comp=n=>COMP[n]||null;
 function trend(n){const c=comp(n);if(!c)return null;
@@ -462,6 +468,8 @@ function list(){
     comp:(a,b)=>{const x=comp(a.name),y=comp(b.name);
                  if(!x&&!y)return a.name.localeCompare(b.name); if(!x)return 1; if(!y)return -1;
                  return y.a-x.a;},
+    qual:(a,b)=>{const x=qual(a.name),y=qual(b.name);
+                 if(!x&&!y)return a.name.localeCompare(b.name); if(!x)return 1; if(!y)return -1; return y.p-x.p;},
     fit:(a,b)=>{const x=score(a),y=score(b);if(x===null)return a.name.localeCompare(b.name);
                 return y-x||a.name.localeCompare(b.name);}
   };
@@ -498,7 +506,7 @@ function ctx(){
 
 /* ---------- views ---------- */
 function card(c){
-  const s=score(c);const cp=comp(c.name),tr=trend(c.name);
+  const s=score(c);const cp=comp(c.name),tr=trend(c.name),qu=qual(c.name);
   const models=c.models.map(m=>`<span class="tag tm ${m===c.model_lead?"lead":""}"${m===c.model_lead?' title="Lead model"':""}>${ML[m]}</span>`).join("");
   const vals=c.values.length?`<span class="mlab">Values</span>`+c.values.map(v=>`<span class="tag tv">${VL[v]}</span>`).join(""):"";
   const acc=c.accreditation_extras.length?`<span class="mlab">Accred</span>`+c.accreditation_extras.map(a=>`<span class="tag ta">${esc(a)}</span>`).join(""):"";
@@ -521,7 +529,8 @@ function card(c){
     ${acc?`<div class="row">${acc}</div>`:""}
     <ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>
     <div class="slots">
-      <div class="slot"><div class="sv tnum">—</div><div class="sl">% no postgrad qual</div></div>
+      ${qu?`<div class="slot has v" title="${qu.none} of ${qu.n} surveyed trainees reported no postgraduate qualification"><div class="sv tnum">${qu.p}%</div><div class="sl">no postgrad qual · n=${qu.n}</div></div>`
+        :`<div class="slot"><div class="sv tnum">—</div><div class="sl">% no postgrad qual</div></div>`}
       ${cp?`<div class="slot has" title="${esc(compTitle(c.name))}"><div class="sv tnum">${cp.a}${tr?`<i class="tr ${tr.s}">${tr.s==="up"?"▲":tr.s==="down"?"▼":"▬"}</i>`:""}</div><div class="sl">applications per place${tr?` · ${tr.t}`:""}</div></div>`
           :`<div class="slot"><div class="sv tnum">n/a</div><div class="sl">not in Clearing House data</div></div>`}
     </div>
@@ -587,6 +596,53 @@ function vComp(L){
      </div></div>`;
 }
 
+function vScatter(L){
+  const pts=L.filter(c=>qual(c.name)&&comp(c.name))
+             .map(c=>({c,x:comp(c.name).a,y:qual(c.name).p,n:qual(c.name).n}));
+  const only=L.filter(c=>(qual(c.name)?1:0)+(comp(c.name)?1:0)===1);
+  if(pts.length<3){document.getElementById("view").innerHTML=empty();return;}
+  const W=820,H=470,P={l:62,r:26,t:20,b:52};
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const x0=0,x1=Math.ceil(Math.max(...xs)/5)*5, y0=0,y1=Math.ceil(Math.max(...ys)/10)*10;
+  const X=v=>P.l+(v-x0)/(x1-x0)*(W-P.l-P.r), Y=v=>H-P.b-(v-y0)/(y1-y0)*(H-P.t-P.b);
+  const n=pts.length, mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  const sxy=pts.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0);
+  const sxx=pts.reduce((s,p)=>s+(p.x-mx)**2,0), syy=pts.reduce((s,p)=>s+(p.y-my)**2,0);
+  const r=sxy/Math.sqrt(sxx*syy), b=sxy/sxx, a=my-b*mx;
+  const gx=[],gy=[];
+  for(let v=x0;v<=x1;v+=5)gx.push(v);
+  for(let v=y0;v<=y1;v+=10)gy.push(v);
+  const rad=p=>Math.max(4.5,Math.min(11,Math.sqrt(p.n)*1.05));
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Scatter plot of competition against percentage of trainees with no postgraduate qualification">
+    ${gy.map(v=>`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line-2)" stroke-width="1"/>
+      <text x="${P.l-9}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`).join("")}
+    ${gx.map(v=>`<line y1="${P.t}" y2="${H-P.b}" x1="${X(v)}" x2="${X(v)}" stroke="var(--line-2)" stroke-width="1"/>
+      <text y="${H-P.b+18}" x="${X(v)}" text-anchor="middle" font-size="11" fill="var(--muted)">${v}</text>`).join("")}
+    <line x1="${X(x0)}" y1="${Y(a+b*x0)}" x2="${X(x1)}" y2="${Y(a+b*x1)}" stroke="var(--a)" stroke-width="2" stroke-dasharray="6 5" opacity=".85"/>
+    ${pts.map(p=>{const st=S.stars.has(p.c.name);
+      return `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${rad(p)}" fill="${st?"var(--v)":"var(--m)"}" fill-opacity="${st?".95":".62"}"
+        stroke="var(--surface)" stroke-width="2"><title>${esc(p.c.name)} — ${p.y}% no postgrad (n=${p.n}) · ${p.x} applications per place</title></circle>`;}).join("")}
+    ${pts.filter(p=>p.y>=30||p.y<=10||p.x>=26||p.x<=11||S.stars.has(p.c.name)).map(p=>
+      `<text x="${X(p.x)+rad(p)+5}" y="${Y(p.y)+4}" font-size="10.5" fill="var(--ink-2)">${esc(p.c.name.split(" (")[0])}</text>`).join("")}
+    <text x="${P.l+(W-P.l-P.r)/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--ink-2)" font-weight="600">Applications per place (3-yr avg) →</text>
+    <text transform="translate(15,${P.t+(H-P.t-P.b)/2}) rotate(-90)" text-anchor="middle" font-size="12" fill="var(--ink-2)" font-weight="600">% trainees with no postgrad qualification →</text>
+  </svg>`;
+  const strength=Math.abs(r)>=.7?"strong":Math.abs(r)>=.4?"moderate":"weak";
+  document.getElementById("view").innerHTML=
+    `<div class="sec"><h2>Competition vs. openness to non-postgraduates</h2><span>${pts.length} courses with both metrics · dot size = survey sample</span></div>
+     <div class="box"><div class="box-b">${svg}
+       <p style="font-size:12.5px;color:var(--ink-2);margin:10px 2px 0;line-height:1.6">
+       <b>Pearson r = ${r.toFixed(2)}</b> — a ${strength} ${r<0?"negative":"positive"} relationship.
+       ${r<0?"More competitive courses tend to admit proportionally fewer trainees without a postgraduate qualification":
+             "More competitive courses tend to admit proportionally more trainees without a postgraduate qualification"},
+       but the scatter is wide and there are clear exceptions — the trend line explains only ${(r*r*100).toFixed(0)}% of the variation.
+       <b>Correlation is not causation:</b> it may be that competitive courses screen harder on qualifications, or that courses seen as
+       attainable attract more non-postgraduate applicants in the first place.</p>
+       ${only.length?`<p style="font-size:12px;color:var(--muted);margin:10px 2px 0;padding-top:10px;border-top:1px solid var(--line-2)">
+         Plotted only where both metrics exist. Missing one: <b>${only.map(c=>esc(c.name)).join(", ")}</b>.</p>`:""}
+     </div></div>`;
+}
+
 function vCompare(){
   const L=COURSES.filter(c=>S.stars.has(c.name));
   if(!L.length){
@@ -602,7 +658,9 @@ function vCompare(){
     ["Values",c=>c.values.length?c.values.map(v=>`<span class="tag tv">${VL[v]}</span>`).join(" "):`<span style="color:var(--muted)">—</span>`],
     ["Distinctive",c=>`<ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`],
     ["2026 intake",c=>c.recruiting_2026?"Yes":`<b style="color:var(--warn)">No — aiming 2027</b>`],
-    ["% no postgrad qual",()=>`<span style="color:var(--faint)">— awaiting data</span>`],
+    ["% no postgrad qual",c=>{const q=qual(c.name);
+   return q?`<b class="tnum" style="font-size:15px">${q.p}%</b> <span style="color:var(--muted)">${q.none} of ${q.n} surveyed</span>`
+           :`<span style="color:var(--muted)">No data</span>`;}],
     ["Applications per place",c=>{const cp=comp(c.name),tr=trend(c.name);
      return cp?`<b class="tnum" style="font-size:15px">${cp.a}</b> <span style="color:var(--muted)">3-yr avg${tr?" · "+tr.t:""}</span><br><span style="color:var(--muted);font-size:11.5px">${esc(compTitle(c.name))}</span>`
               :`<span style="color:var(--muted)">Not in Clearing House data</span>`;}]
@@ -625,6 +683,7 @@ function render(){
   else if(S.view==="matrix")vMatrix(L);
   else if(S.view==="chart")vChart(L);
   else if(S.view==="comp")vComp(L);
+  else if(S.view==="scatter")vScatter(L);
   else vCompare();
   document.querySelectorAll("[data-star]").forEach(b=>b.addEventListener("click",()=>{
     const k=b.dataset.star;S.stars.has(k)?S.stars.delete(k):S.stars.add(k);sync();render();
