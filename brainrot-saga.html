@@ -74,7 +74,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .iconbtn:active{transform:scale(.9)}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  font-family:'Baloo 2',cursive;font-weight:800;font-size:19px;letter-spacing:.4px;
+  font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-weight:800;font-size:19px;letter-spacing:.4px;
   padding:13px 26px;border-radius:16px;color:#1a0630;
   background:linear-gradient(180deg,#ffe98a,var(--gold) 40%,#f0a800);
   box-shadow:0 5px 0 #a86f00,0 10px 22px rgba(0,0,0,.45);
@@ -90,7 +90,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
 /* ---------- map screen ---------- */
 #map-screen .brand{
-  font-family:'Baloo 2',cursive;font-weight:800;font-size:20px;line-height:1;
+  font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-weight:800;font-size:20px;line-height:1;
   text-align:center;flex:1;letter-spacing:.5px;
   background:linear-gradient(92deg,var(--pink),var(--gold),var(--cyan));
   -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -99,7 +99,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 #map-scroll{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch;padding:6px 0 24px}
 #map-path{position:relative;width:100%;max-width:520px;margin:0 auto}
 .episode{
-  position:absolute;left:0;right:0;text-align:center;font-family:'Baloo 2',cursive;
+  position:absolute;left:0;right:0;text-align:center;font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
   font-weight:800;font-size:15px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-dim);
 }
 .episode span{
@@ -108,7 +108,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .node{
   position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;
-  display:grid;place-items:center;font-family:'Baloo 2',cursive;font-weight:800;font-size:22px;color:#2a0b3f;
+  display:grid;place-items:center;font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-weight:800;font-size:22px;color:#2a0b3f;
   background:linear-gradient(180deg,#ffe98a,var(--gold) 55%,#e8a400);
   box-shadow:0 4px 0 #9a6600,0 8px 20px rgba(0,0,0,.45);
   transition:transform .14s ease;
@@ -153,7 +153,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   display:grid;place-items:center;width:62px;height:56px;border-radius:16px;
   background:var(--panel);border:1px solid var(--line);
 }
-.moves b{font-family:'Baloo 2',cursive;font-size:26px;line-height:1}
+.moves b{font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-size:26px;line-height:1}
 .moves small{font-size:9px;letter-spacing:1.4px;color:var(--ink-dim);text-transform:uppercase}
 .moves.low b{color:var(--pink);animation:shake .5s ease infinite}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
@@ -166,7 +166,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .goal.done{background:rgba(157,255,61,.2);border-color:rgba(157,255,61,.55)}
 .goal.done .g-num::after{content:'✓';margin-left:2px}
 .scorebox{width:96px;text-align:right}
-.scorebox .sv{font-family:'Baloo 2',cursive;font-size:21px;line-height:1.1}
+.scorebox .sv{font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-size:21px;line-height:1.1}
 .startrack{position:relative;height:9px;border-radius:999px;background:rgba(255,255,255,.13);margin-top:5px;overflow:visible}
 #star-fill{position:absolute;inset:0;width:0;border-radius:999px;background:linear-gradient(90deg,var(--cyan),var(--lime),var(--gold));transition:width .35s ease}
 .startrack i{position:absolute;top:-5px;font-size:13px;transform:translateX(-50%);filter:grayscale(1) brightness(.6);transition:filter .3s ease,transform .3s ease}
@@ -261,14 +261,14 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   animation:shock calc(.5s * var(--dur)) ease-out forwards}
 @keyframes shock{0%{transform:scale(.2);opacity:1}100%{transform:scale(2.4);opacity:0}}
 .floatscore{
-  position:absolute;font-family:'Baloo 2',cursive;font-weight:800;font-size:17px;color:#fff;
+  position:absolute;font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-weight:800;font-size:17px;color:#fff;
   text-shadow:0 2px 6px rgba(0,0,0,.7);pointer-events:none;
   animation:floatup calc(.9s * var(--dur)) ease-out forwards
 }
 @keyframes floatup{0%{opacity:0;transform:translateY(6px) scale(.7)}20%{opacity:1;transform:translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateY(-42px) scale(1)}}
 #combo-banner{
   position:absolute;left:0;right:0;top:38%;text-align:center;z-index:12;pointer-events:none;
-  font-family:'Baloo 2',cursive;font-weight:800;font-size:clamp(26px,7vw,44px);letter-spacing:1px;
+  font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-weight:800;font-size:clamp(26px,7vw,44px);letter-spacing:1px;
   opacity:0;transform:scale(.6) rotate(-6deg);
   background:linear-gradient(92deg,var(--gold),var(--pink),var(--cyan));
   -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -313,8 +313,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   animation:cardin .32s cubic-bezier(.2,1.5,.4,1);
 }
 @keyframes cardin{from{opacity:0;transform:scale(.85) translateY(18px)}to{opacity:1;transform:none}}
-.card h2{font-family:'Baloo 2',cursive;font-size:29px;line-height:1.1;margin-bottom:4px}
-.card h3{font-family:'Baloo 2',cursive;font-size:19px;margin:14px 0 6px;color:var(--ink-dim)}
+.card h2{font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-size:29px;line-height:1.1;margin-bottom:4px}
+.card h3{font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-size:19px;margin:14px 0 6px;color:var(--ink-dim)}
 .card p{font-size:15px;line-height:1.5;color:var(--ink-dim);margin-bottom:12px}
 .card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .bigstars{display:flex;justify-content:center;gap:6px;margin:10px 0 6px;font-size:44px}
@@ -328,7 +328,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   background:rgba(255,255,255,.07);border-radius:14px;padding:9px 12px;
 }
 .goal-row .gi{font-size:24px}
-.goal-row .gn{margin-left:auto;font-family:'Baloo 2',cursive;font-size:19px}
+.goal-row .gn{margin-left:auto;font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;font-size:19px}
 .legend{display:flex;flex-direction:column;gap:9px;text-align:left;font-size:14px;line-height:1.4;color:var(--ink-dim)}
 .legend div{display:flex;gap:10px;align-items:flex-start}
 .legend b{color:var(--ink);font-weight:700}
@@ -606,11 +606,12 @@ function episodeOf(id){
 /* ---------------- save data ---------------- */
 const SAVE_KEY = 'brainrot-saga.v1';
 const LIFE_MAX = 5, LIFE_MS = 5*60*1000;
+const prefersCalm = ()=> !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 const defaultSave = ()=>({
   stars:{}, best:{}, unlocked:1,
   boosters:{hammer:2, shuffle:2, swap:1, moves5:1, portal:1},
   lives:LIFE_MAX, lifeAt:Date.now(),
-  mute:false, motion:true, seenHelp:false
+  mute:false, motion:!prefersCalm(), seenHelp:false   /* the OS setting picks the default; the toggle still wins */
 });
 let save = defaultSave();
 
