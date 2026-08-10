@@ -106,6 +106,7 @@ aside::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
 
 /* ---------- context strip ---------- */
 .ctx{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat .l{min-height:26px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;box-shadow:var(--shadow)}
 .stat .n{font-size:23px;font-weight:650;letter-spacing:-.02em;line-height:1.1}
 .stat .l{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.3}
@@ -173,6 +174,23 @@ td.cl{border-bottom:1px solid var(--line-2);border-left:1px solid var(--line-2);
 .bk{background:var(--surface-2);border-radius:6px;height:22px;overflow:hidden}
 .bf{height:100%;background:var(--m);border-radius:0 6px 6px 0;min-width:3px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 .bl .bv{font-size:12.5px;color:var(--muted);font-weight:600}
+
+/* ---------- competition ---------- */
+.cbars{display:flex;flex-direction:column;gap:6px}
+.cbar{display:grid;grid-template-columns:26px minmax(120px,190px) 1fr 44px 18px;align-items:center;gap:11px;
+  padding:3px 5px;border-radius:7px}
+.cbar:hover{background:var(--surface-2)}
+.cbar.st{background:var(--m-soft)}
+.cbar .rk{font-size:11px;color:var(--faint);font-weight:700;text-align:right}
+.cbar .cn{font-size:12.5px;color:var(--ink-2);font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbar .cv{font-size:12.5px;font-weight:700;color:var(--ink);text-align:right}
+.cbar .ct{font-size:9px;text-align:center}
+.ct.up{color:var(--warn)} .ct.down{color:var(--good)} .ct.flat{color:var(--faint)}
+.slot.has{border-style:solid;background:var(--m-soft);border-color:color-mix(in srgb,var(--m) 30%,transparent)}
+.slot.has .sv{color:var(--m-ink)}
+.slot.has .sl{color:var(--m-ink);opacity:.8}
+.tr{font-style:normal;font-size:9px;margin-left:3px;vertical-align:middle}
+.tr.up{color:var(--warn)} .tr.down{color:var(--good)} .tr.flat{color:var(--faint)}
 
 /* ---------- compare ---------- */
 .cmp{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
@@ -261,6 +279,7 @@ footer{border-top:1px solid var(--line);background:var(--surface-2)}
         <button data-v="cards" aria-pressed="true">Courses</button>
         <button data-v="matrix" aria-pressed="false">Matrix</button>
         <button data-v="chart" aria-pressed="false">Specialisms</button>
+        <button data-v="comp" aria-pressed="false">Competition</button>
         <button data-v="compare" aria-pressed="false">Compare</button>
       </div>
       <select class="sel" id="sort" aria-label="Sort courses">
@@ -268,6 +287,7 @@ footer{border-top:1px solid var(--line);background:var(--surface-2)}
         <option value="az">Sort: A–Z</option>
         <option value="breadth">Sort: most models taught</option>
         <option value="accred">Sort: most accreditations</option>
+        <option value="comp">Sort: most competitive</option>
       </select>
       <select class="sel" id="mode" aria-label="Priority mode">
         <option value="rank">Rank mode (show all)</option>
@@ -331,6 +351,49 @@ const COURSES=[
 {name:"Teesside",models:["CBT","CAT","PSY","SYS","NEURO"],model_lead:"CBT",neuro_strength:true,accreditation_extras:["Toward QiCN"],values:[],distinctive:["Widest model range — CBT, CAT, psychodynamic, systemic and neuro","Neuropsychology teaching toward the QiCN qualification","Neurodiversity and acquired brain injury; organisational placements"],recruiting_2026:true},
 {name:"Trent (Lincoln & Nottingham)",models:["CBT"],model_lead:"CBT",neuro_strength:false,accreditation_extras:[],values:["ebe_strong"],distinctive:["Broad range of psychological models","BPS-commended depth of service-user and carer involvement","Multi-trust across Nottinghamshire, Lincolnshire and Derbyshire"],recruiting_2026:true}
 ];
+
+const COMP={"Bangor (North Wales)":{a:15.2,y:{"2023":[203,14],"2024":[250,15],"2025":[262,18]}},
+"Bath":{a:27.8,y:{"2023":[701,28],"2024":[769,28],"2025":[867,28]}},
+"Birmingham":{a:20.2,y:{"2023":[621,31],"2024":[671,35],"2025":[751,35]}},
+"Cardiff (South Wales)":{a:15.2,y:{"2023":[395,28],"2024":[471,29],"2025":[545,36]}},
+"Coventry & Warwick":{a:29.1,y:{"2023":[525,25],"2024":[657,25],"2025":[600,15]}},
+"East Anglia (UEA)":{a:9.6,y:{"2023":[419,49],"2024":[505,49],"2025":[527,53]}},
+"East London (UEL)":{a:18.5,y:{"2023":[889,61],"2024":[1012,49],"2025":[987,49]}},
+"Edinburgh":{a:16.8,y:{"2023":[678,47],"2024":[768,45],"2025":[825,44]}},
+"Essex (Tavistock)":{a:13.4,y:{"2023":[398,31],"2024":[438,31],"2025":[464,35]}},
+"Exeter":{a:17.5,y:{"2023":[536,28],"2024":[491,30],"2025":[510,30]}},
+"Glasgow":{a:15.5,y:{"2023":[521,38],"2024":[633,39],"2025":[661,40]}},
+"Hertfordshire":{a:15.2,y:{"2023":[604,52],"2024":[779,52],"2025":[764,40]}},
+"King's College London (IoPPN)":{a:29.0,y:{"2023":[1187,41],"2024":[1207,41],"2025":[1170,41]}},
+"Lancaster":{a:14.9,y:{"2023":[687,52],"2024":[773,52],"2025":[871,52]}},
+"Leeds":{a:28.4,y:{"2023":[782,30],"2024":[887,30],"2025":[889,30]}},
+"Leicester":{a:14.5,y:{"2023":[353,25],"2024":[368,28],"2025":[491,30]}},
+"Liverpool":{a:21.2,y:{"2023":[795,40],"2024":[816,38],"2025":[894,40]}},
+"Manchester":{a:22.2,y:{"2023":[794,40],"2024":[926,40],"2025":[943,40]}},
+"Newcastle":{a:17.0,y:{"2023":[466,30],"2024":[546,30],"2025":[518,30]}},
+"North Thames (UCL)":{a:15.3,y:{"2023":[1196,85],"2024":[1308,85],"2025":[1389,85]}},
+"Oxford":{a:11.5,y:{"2023":[604,52],"2024":[637,52],"2025":[560,52]}},
+"Plymouth":{a:15.2,y:{"2023":[335,24],"2024":[352,24],"2025":[411,24]}},
+"Royal Holloway (North Thames)":{a:24.1,y:{"2023":[1187,56],"2024":[1439,56],"2025":[1524,60]}},
+"Salomons (CCCU)":{a:9.5,y:{"2023":[491,55],"2024":[495,55],"2025":[595,57]}},
+"Sheffield":{a:15.6,y:{"2023":[626,35],"2024":[670,40],"2025":[486,40]}},
+"Southampton":{a:17.5,y:{"2023":[521,35],"2024":[531,30],"2025":[593,30]}},
+"Staffordshire":{a:18.6,y:{"2023":[377,23],"2024":[437,24],"2025":[512,24]}},
+"Surrey":{a:20.8,y:{"2023":[1027,44],"2024":[1004,50],"2025":[1025,54]}},
+"Teesside":{a:13.3,y:{"2023":[351,35],"2024":[464,30],"2025":[499,35]}},
+"Trent (Lincoln & Nottingham)":{a:14.4,y:{"2023":[420,32],"2024":[471,32],"2025":[495,32]}}};
+
+/* Applications per place — Clearing House "Places by Course Centre", 2023–2025 entry.
+   NOTE: these are APPLICATIONS, not applicants (each applicant may apply to up to 4 centres).
+   Hull and Belfast (QUB) do not appear in Clearing House data. */
+const CYRS=["2023","2024","2025"];
+const comp=n=>COMP[n]||null;
+function trend(n){const c=comp(n);if(!c)return null;
+  const r=CYRS.filter(y=>c.y[y]).map(y=>c.y[y][1]?c.y[y][0]/c.y[y][1]:null).filter(v=>v!==null);
+  if(r.length<2)return null;const d=r[r.length-1]-r[0];
+  return Math.abs(d)<1.5?{s:"flat",t:"steady"}:d>0?{s:"up",t:"getting harder"}:{s:"down",t:"easing"};}
+function compTitle(n){const c=comp(n);if(!c)return"";
+  return CYRS.filter(y=>c.y[y]).map(y=>`${y}: ${c.y[y][0]} applications / ${c.y[y][1]} places`).join(" · ");}
 
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const S={models:new Set(),values:new Set(),neuro:false,accred:false,rec:false,q:"",view:"cards",sort:"fit",mode:"rank",
@@ -396,6 +459,9 @@ function list(){
     az:(a,b)=>a.name.localeCompare(b.name),
     breadth:(a,b)=>b.models.length-a.models.length||a.name.localeCompare(b.name),
     accred:(a,b)=>b.accreditation_extras.length-a.accreditation_extras.length||a.name.localeCompare(b.name),
+    comp:(a,b)=>{const x=comp(a.name),y=comp(b.name);
+                 if(!x&&!y)return a.name.localeCompare(b.name); if(!x)return 1; if(!y)return -1;
+                 return y.a-x.a;},
     fit:(a,b)=>{const x=score(a),y=score(b);if(x===null)return a.name.localeCompare(b.name);
                 return y-x||a.name.localeCompare(b.name);}
   };
@@ -404,6 +470,8 @@ function list(){
 
 /* ---------- context ---------- */
 function ctx(){
+  const ranked=Object.entries(COMP).sort((a,b)=>b[1].a-a[1].a);
+  const most=ranked[0], least=ranked[ranked.length-1];
   const neuro=COURSES.filter(c=>c.neuro_strength).length;
   const sj=COURSES.filter(c=>c.values.includes("social_justice")).length;
   const acc=COURSES.filter(c=>c.accreditation_extras.length).length;
@@ -411,21 +479,26 @@ function ctx(){
     {n:COURSES.length,l:"Accredited UK courses",c:""},
     {n:neuro,l:"With a neuropsychology focus",c:"b"},
     {n:sj,l:"With an explicit social-justice ethos",c:"o"},
-    {n:acc,l:"Offering extra accreditations (BABCP / AFT / CAT / neuro)",c:"p"}
+    {n:acc,l:"Offering extra accreditations (BABCP / AFT / CAT / neuro)",c:"p"},
+    {n:"4.8",l:"Applicants per place nationally (2024)",c:"o"},
+    {n:most[1].a,l:"Applications per place — most competitive ("+most[0].split(" (")[0]+")",c:"b"},
+    {n:least[1].a,l:"Applications per place — least competitive ("+least[0].split(" (")[0]+")",c:""},
+    {n:"20%",l:"National success rate (2025 entry, down from 25% in 2022)",c:"p"}
   ].map(t=>`<div class="stat ${t.c}"><div class="n tnum">${t.n}</div><div class="l">${t.l}</div></div>`).join("");
 
   document.getElementById("note").innerHTML=
-    `<b>National context (Clearing House).</b> For 2024 entry there were <b>5,603 applicants for 1,164 places</b>
-     — about <b>4.8 applicants per place</b> and a 21% success rate; in 2023 it was 4,990 for 1,166
-     (<b>4.3 per place</b>, 23%). These are <b>national totals across all courses, not per-course rates</b>.
-     <br><br><b>Two per-course metrics are still empty</b> — <code>% of successful applicants with no postgraduate
-     qualification</code> and <code>applicants per place</code>. Those live in Clearing House tables this environment
-     cannot reach, so they show as “—” on every card rather than being estimated. Everything else here is real and filterable.`;
+    `<b>Competition data is live.</b> Applications and places per course now come from the Clearing House
+     “Places by Course Centre” tables for 2023–2025 entry — see the <b>Competition</b> view.
+     Nationally, applicants rose from 4,655 (2022) to 5,910 (2025) while places barely moved (1,155 → 1,179),
+     pushing the success rate from 25% down to 20%.
+     <br><br><b>Still missing:</b> <code>% of successful applicants with no postgraduate qualification</code>,
+     which lives in the Clearing House <i>Equal Opportunities</i> tables — that slot still reads “—”.
+     <b>Hull</b> and <b>Belfast (QUB)</b> publish no Clearing House figures at all, so they show “n/a”.`;
 }
 
 /* ---------- views ---------- */
 function card(c){
-  const s=score(c);
+  const s=score(c);const cp=comp(c.name),tr=trend(c.name);
   const models=c.models.map(m=>`<span class="tag tm ${m===c.model_lead?"lead":""}"${m===c.model_lead?' title="Lead model"':""}>${ML[m]}</span>`).join("");
   const vals=c.values.length?`<span class="mlab">Values</span>`+c.values.map(v=>`<span class="tag tv">${VL[v]}</span>`).join(""):"";
   const acc=c.accreditation_extras.length?`<span class="mlab">Accred</span>`+c.accreditation_extras.map(a=>`<span class="tag ta">${esc(a)}</span>`).join(""):"";
@@ -449,7 +522,8 @@ function card(c){
     <ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>
     <div class="slots">
       <div class="slot"><div class="sv tnum">—</div><div class="sl">% no postgrad qual</div></div>
-      <div class="slot"><div class="sv tnum">—</div><div class="sl">Applicants per place</div></div>
+      ${cp?`<div class="slot has" title="${esc(compTitle(c.name))}"><div class="sv tnum">${cp.a}${tr?`<i class="tr ${tr.s}">${tr.s==="up"?"▲":tr.s==="down"?"▼":"▬"}</i>`:""}</div><div class="sl">applications per place${tr?` · ${tr.t}`:""}</div></div>`
+          :`<div class="slot"><div class="sv tnum">n/a</div><div class="sl">not in Clearing House data</div></div>`}
     </div>
   </article>`;
 }
@@ -484,6 +558,35 @@ function vChart(L){
      ).join("")}</div></div></div>`;
 }
 
+function vComp(L){
+  const rows=L.filter(c=>comp(c.name)).sort((a,b)=>comp(b.name).a-comp(a.name).a);
+  const none=L.filter(c=>!comp(c.name));
+  if(!rows.length){document.getElementById("view").innerHTML=empty();return;}
+  const mx=Math.max(...rows.map(c=>comp(c.name).a));
+  const nat=(20775/1164).toFixed(1);
+  const bars=rows.map((c,i)=>{
+    const cp=comp(c.name),tr=trend(c.name),st=S.stars.has(c.name);
+    return `<div class="cbar${st?" st":""}" title="${esc(compTitle(c.name))}">
+      <div class="rk tnum">${i+1}</div>
+      <div class="cn">${esc(c.name)}${st?' <span style="color:var(--m)">★</span>':""}</div>
+      <div class="bk"><div class="bf" style="width:${(cp.a/mx*100).toFixed(1)}%"></div></div>
+      <div class="cv tnum">${cp.a}</div>
+      <div class="ct ${tr?tr.s:""}">${tr?(tr.s==="up"?"▲":tr.s==="down"?"▼":"▬"):""}</div>
+    </div>`;}).join("");
+  document.getElementById("view").innerHTML=
+    `<div class="sec"><h2>Competition: applications per place</h2><span>3-year average, 2023–2025 entry · Clearing House</span></div>
+     <div class="note" style="margin-bottom:12px">
+       <b>These are applications, not applicants.</b> Each applicant may apply to up to 4 course centres, so a course
+       receiving 800 applications is not seeing 800 different people. Nationally in 2024, 5,603 applicants made
+       20,775 applications for 1,164 places — <b>4.8 applicants</b> but <b>~${nat} applications</b> per place.
+       Use this to compare courses <i>against each other</i>, not as your odds.
+     </div>
+     <div class="box"><div class="box-b"><div class="cbars">${bars}</div>
+       ${none.length?`<p style="font-size:12px;color:var(--muted);margin:14px 0 0;padding-top:11px;border-top:1px solid var(--line-2)">
+         No Clearing House figures published for: <b>${none.map(c=>esc(c.name)).join(", ")}</b>.</p>`:""}
+     </div></div>`;
+}
+
 function vCompare(){
   const L=COURSES.filter(c=>S.stars.has(c.name));
   if(!L.length){
@@ -500,7 +603,9 @@ function vCompare(){
     ["Distinctive",c=>`<ul class="dist">${c.distinctive.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`],
     ["2026 intake",c=>c.recruiting_2026?"Yes":`<b style="color:var(--warn)">No — aiming 2027</b>`],
     ["% no postgrad qual",()=>`<span style="color:var(--faint)">— awaiting data</span>`],
-    ["Applicants per place",()=>`<span style="color:var(--faint)">— awaiting data</span>`]
+    ["Applications per place",c=>{const cp=comp(c.name),tr=trend(c.name);
+     return cp?`<b class="tnum" style="font-size:15px">${cp.a}</b> <span style="color:var(--muted)">3-yr avg${tr?" · "+tr.t:""}</span><br><span style="color:var(--muted);font-size:11.5px">${esc(compTitle(c.name))}</span>`
+              :`<span style="color:var(--muted)">Not in Clearing House data</span>`;}]
   ];
   document.getElementById("view").innerHTML=
     `<div class="sec"><h2>Shortlist comparison</h2><span>${L.length} course${L.length===1?"":"s"} side by side</span></div>
@@ -519,6 +624,7 @@ function render(){
   if(S.view==="cards")vCards(L);
   else if(S.view==="matrix")vMatrix(L);
   else if(S.view==="chart")vChart(L);
+  else if(S.view==="comp")vComp(L);
   else vCompare();
   document.querySelectorAll("[data-star]").forEach(b=>b.addEventListener("click",()=>{
     const k=b.dataset.star;S.stars.has(k)?S.stars.delete(k):S.stars.add(k);sync();render();
