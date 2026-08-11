@@ -1,10 +1,10 @@
 # FOOTFALL — playable build
 
-A browser build of the game the simulator was measuring. Open `game/index.html`
+A browser build of the game the simulator was measuring. Open `index.html`
 over http, or play it on GitHub Pages.
 
 ```
-python3 -m http.server 8099      # then visit /game/
+python3 -m http.server 8099      # then visit /
 node tools/bundle-data.mjs        # after editing anything in /data
 node tools/smoke-game.mjs 30      # plays full runs headlessly, no browser
 node tools/screenshot.mjs shots   # drives it in Chromium and captures each phase
@@ -13,7 +13,7 @@ node tools/screenshot.mjs shots   # drives it in Chromium and captures each phas
 ## It shares the engine, it does not reimplement it
 
 `src/engine.js` re-exports the simulator. Nothing about the rules lives in
-`/game`:
+`/src`:
 
 | | |
 |---|---|

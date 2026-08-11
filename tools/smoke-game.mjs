@@ -7,8 +7,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildContent } from '../sim/content-core.js';
 import { makeRng } from '../sim/rng.js';
-import { createRun } from '../game/src/run.js';
-import { createTradingDay } from '../game/src/trading-day.js';
+import { createRun } from '../src/run.js';
+import { createTradingDay } from '../src/trading-day.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => JSON.parse(readFileSync(join(ROOT, 'data', f), 'utf8'));

@@ -10,17 +10,17 @@
 //   shop.js       topology, placement, levelling, rent, signage
 //   offers.js     supplier tier weights, offers, reroll costs
 
-export { buildContent, auditModifiers } from '../../sim/content-core.js';
+export { buildContent, auditModifiers } from '../sim/content-core.js';
 export {
   resolveDay, collectFlags, ratchetUpkeep, ratchetCount, baseMarginFor,
-} from '../../sim/day.js';
-export { walkIndividual } from '../../sim/walk-one.js';
+} from '../sim/day.js';
+export { walkIndividual } from '../sim/walk-one.js';
 export {
   createShop, addFixture, autoSign, emptySlots, fixtureInstances, findInstance,
   moveFixture, ownedIds, projectRatchets, rentFor, totalSlots, marginPenaltyFromStaff,
-} from '../../sim/shop.js';
-export { makeOffer, rerollCost, supplierUpgradeCost, tillCost, rollFixture } from '../../sim/offers.js';
-export { makeRng } from '../../sim/rng.js';
+} from '../sim/shop.js';
+export { makeOffer, rerollCost, supplierUpgradeCost, tillCost, rollFixture } from '../sim/offers.js';
+export { makeRng } from '../sim/rng.js';
 
 /** The raw /data, either baked in by tools/bundle-data.mjs or fetched. */
 export async function loadRawData() {
@@ -28,7 +28,7 @@ export async function loadRawData() {
   const names = { customers: 'customers', fixtures: 'fixtures', economy: 'economy', run: 'run' };
   const out = {};
   await Promise.all(Object.entries(names).map(async ([key, file]) => {
-    const res = await fetch(`../data/${file}.json`);
+    const res = await fetch(`./data/${file}.json`);
     if (!res.ok) throw new Error(`could not load data/${file}.json`);
     out[key] = await res.json();
   }));

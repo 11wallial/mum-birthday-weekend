@@ -10,7 +10,7 @@ import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 
 const OUT = process.argv[2] || 'shots';
-const URL = process.env.FOOTFALL_URL || 'http://127.0.0.1:8099/game/';
+const URL = process.env.FOOTFALL_URL || 'http://127.0.0.1:8099/';
 mkdirSync(OUT, { recursive: true });
 
 // The container ships a Chromium that may not match the installed Playwright
