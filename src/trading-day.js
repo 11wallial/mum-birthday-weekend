@@ -225,14 +225,13 @@ export function createTradingDay(content, shop, ctx, rng) {
     const unsold = state.served - state.sales;
     const denom = Math.max(1, footfall);
     const share = state.walkouts / denom;
-    const healthy = w.healthyWalkoutShare ?? 0;
-    let carry = share > healthy
-      ? 1 - Math.min(w.maxPenaltyShare ?? 1, (share - healthy) * w.footfallPenaltyPerWalkout)
+    let carry = share > (w.healthyWalkoutShare ?? 0)
+      ? (w.allowedOverload ?? 1.6) * Math.max(0, 1 - share)
       : 1 + (w.recoverPerDay ?? 0);
     if (flags.unsoldToFootfall > 0) carry += (unsold / denom) * flags.unsoldToFootfall;
     if (flags.walkoutsToFootfall) carry += share;
-    carry = Math.max(w.minCarryMul ?? 0.05,
-      Math.min(w.maxCarryMul ?? 1.6, (shop.carryFootfallMul ?? 1) * carry));
+    carry = Math.min(1 + (w.recoverPerDay ?? 0), Math.max(w.minDailyCarry ?? 0.25, carry));
+    carry = Math.min((shop.carryFootfallMul ?? 1) * carry, w.maxCarryMul ?? 1.6);
     state.rateMul = flags.ratchetRateMul || 1;
     state.carry = carry;
     state.avgSaleProfit = state.sales > 0 ? state.tradingProfit / state.sales : 0;

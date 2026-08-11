@@ -65,13 +65,14 @@
  },
  "walkouts": {
   "$comment": "Everything that carries into tomorrow's Footfall is a SHARE of today, not a count of people. Footfall is a product - a base of 120 multiplied up through every ratchet and compounder on the board - so an absolute carry taken from post-multiplier quantities and added to the pre-multiplier base is a units error. It was fatal in both directions. As an absolute penalty capped against today's Footfall, a 73%-walkout day cost 1,700 against a base pool of 120, and a run sitting 160x over its target died the next morning at zero Footfall with no way back. Feeding walkouts the other way, through Warehouse Club, compounded instead. As shares, both read plainly and neither can zero a term: a bad queue costs you a slice of tomorrow, it does not end you.",
-  "$commentEquilibrium": "The brake also has to be able to outrun a compounder, or Footfall has no ceiling at all. Capped at 0.3 it could not: a shop growing Footfall 40% a day still netted +10% a day at a 96% walkout rate and ran to 3.9 quadrillion customers, 0.0% of whom ever reached a till - mechanically harmless, since profit is bounded by throughput, and unreadable on a screen that draws them walking in. Letting the penalty climb with the walkout rate gives Footfall an EQUILIBRIUM instead: it grows until the queue is the binding constraint and then sits at roughly twice what you can serve. Buying tills is what moves the equilibrium up, which is the intended shape of the Footfall build.",
-  "footfallPenaltyPerWalkout": 0.85,
-  "maxPenaltyShare": 0.78,
-  "minCarryMul": 0.05,
+  "$commentEquilibrium": "The brake is quoted against OVERLOAD - how far past capacity you are - not against the walkout share. A share saturates at 1, so a penalty built from it saturates too, and a saturated penalty is a constant factor that a compounder eventually outruns. It did: 3.5e12 customers, 0% of whom reached a till, because the accumulated carry had a floor and the floor is where the authority ran out. Overload does not saturate - serve one in twenty-five and it is 25. Tomorrow's pull is allowedOverload x the fraction you actually served, which at equilibrium equals 1/(your daily growth), so Footfall settles a little above what the tills can take and the only way up is more tills. That is the intended shape of the Footfall build: throughput is the growth purchase.",
   "maxCarryMul": 1.6,
   "healthyWalkoutShare": 0.1,
-  "recoverPerDay": 0.12
+  "recoverPerDay": 0.12,
+  "allowedOverload": 1.6,
+  "minDailyCarry": 0.18,
+  "hardOverloadCap": 12,
+  "$commentHardCap": "A hard ceiling at 12x what the tills could physically serve in a day. The carry brake creates the tension; this guarantees the bound, because the brake's per-day authority is finite and a stack of compounders under two rate multipliers is not - Manager's Office and Stocktake each multiply a compounder's growth FACTOR and also multiply each other, which took Footfall to 1.6e27 on 4.5% of trading days. It costs the player nothing they wanted: Footfall past what you can serve is walkouts, and a walkout is a lost sale and a quieter tomorrow. Growing the crowd beyond the tills should do nothing, and now it does nothing instead of doing something broken."
  },
  "slots": {
   "$comment": "Customers may skip slots unless a rule-breaking fixture or One-Way Barriers stops them.",

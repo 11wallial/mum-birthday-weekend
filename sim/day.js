@@ -692,6 +692,23 @@ export function resolveDay(content, shop, ctx = {}) {
   footfall += flags.footfallAdd;
   footfall *= flags.footfallMul;
   footfall = Math.min(footfall, flags.footfallCap);
+  // A hard ceiling at a multiple of what the shop can physically serve. The
+  // carry brake handles the dynamics and creates the tension; this guarantees
+  // the bound, because the brake's per-day authority is finite and a stack of
+  // compounders under two rate multipliers is not. Manager's Office and
+  // Stocktake both multiply a compounder's growth factor and multiply each
+  // other, which took Footfall to 1.6e27 on 4.5% of trading days.
+  //
+  // It costs the player nothing they wanted: Footfall past what you can serve
+  // is walkouts, and walkouts are a lost sale and a quieter tomorrow. Growing
+  // the crowd beyond the tills should do nothing, and now it does nothing
+  // instead of doing something broken.
+  const overloadCap = content.economy.walkouts.hardOverloadCap;
+  if (overloadCap) {
+    const serveable = ((shop.tills + flags.tillDelta) * content.economy.day.tillRate
+      + flags.throughputBonus) * content.economy.day.ticks;
+    if (serveable > 0) footfall = Math.min(footfall, serveable * overloadCap);
+  }
   if (shop.flags.footfallOverride) {
     const [lo, hi] = shop.flags.footfallOverride;
     footfall = (lo + hi) / 2;
@@ -960,15 +977,29 @@ export function resolveDay(content, shop, ctx = {}) {
   const wcfg = content.economy.walkouts;
   const denom = Math.max(1, footfall);
   const walkoutShare = totalWalkouts / denom;
-  const healthy = wcfg.healthyWalkoutShare ?? 0;
-  let carryMul = walkoutShare > healthy
-    ? 1 - Math.min(wcfg.maxPenaltyShare ?? 1,
-      (walkoutShare - healthy) * wcfg.footfallPenaltyPerWalkout)
+  //
+  // The brake is quoted against how far past capacity you are, not against the
+  // walkout SHARE. A share saturates at 1, so a penalty built from it saturates
+  // too, and a saturated penalty is once again a constant factor that a
+  // compounder eventually outruns — which it did, to 3.5e12 customers, because
+  // the accumulated carry had a floor and the floor is where the authority ran
+  // out. Overload does not saturate: serve one in twenty-five and it is 25.
+  //
+  //     tomorrow  =  allowedOverload x (the fraction you actually served)
+  //
+  // At equilibrium that equals 1/(your daily growth), so Footfall settles a
+  // little above what the tills can take and the only way up is more tills.
+  const servedShare = Math.max(0, 1 - walkoutShare);
+  let carryMul = walkoutShare > (wcfg.healthyWalkoutShare ?? 0)
+    ? (wcfg.allowedOverload ?? 1.6) * servedShare
     : 1 + (wcfg.recoverPerDay ?? 0);
   if (flags.unsoldToFootfall > 0) carryMul += (unsold / denom) * flags.unsoldToFootfall;
   if (flags.walkoutsToFootfall) carryMul += walkoutShare;
-  const carry = clamp((shop.carryFootfallMul ?? 1) * carryMul,
-    wcfg.minCarryMul ?? 0.05, wcfg.maxCarryMul ?? 2);
+  // Clamped per day, so one catastrophic boss cannot crater the shop in a
+  // single morning; unclamped in aggregate, so the brake never runs out of
+  // authority the way a floor made it.
+  carryMul = clamp(carryMul, wcfg.minDailyCarry ?? 0.25, 1 + (wcfg.recoverPerDay ?? 0));
+  const carry = Math.min((shop.carryFootfallMul ?? 1) * carryMul, wcfg.maxCarryMul ?? 1.6);
 
   // The projection panel (section 17). The four terms are chained funnel
   // ratios, not pool averages, so Footfall x Conversion x Basket x Margin
