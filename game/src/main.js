@@ -273,6 +273,9 @@ function bossText(b) {
 }
 
 function renderNight() {
+  const box = $('bosschoice');
+  const night = $('night');
+  if (night.firstElementChild !== box) night.insertBefore(box, night.firstElementChild);
   renderLedger();
   renderPanel();
   renderOffers();
@@ -336,6 +339,8 @@ function settle() {
   const s = day.state;
   const entry = game.settle(s);
   show('settle');
+  $('tip').textContent = entry.fatal ? 'The gap was the term you did not cover.'
+    : 'The panel is the plan. The day is the roll.';
   const row = (k, v, cls = '') => `<div class="r ${cls}"><span>${k}</span><span>${v}</span></div>`;
   $('receipt').innerHTML = `
     <h3>FOOTFALL</h3>
@@ -353,6 +358,7 @@ function settle() {
     ${row('Upkeep', money(-(s.upkeep + s.ratchetUpkeep)))}
     <div class="rule"></div>
     ${row('PROFIT', money(s.profit), 'big')}
+    ${row('You planned', money(s.projection.profit))}
     ${row('Target', money(entry.target))}
     ${row('Gap', money(s.profit - entry.target), 'big')}
     ${entry.interest ? row('Interest', money(entry.interest)) : ''}

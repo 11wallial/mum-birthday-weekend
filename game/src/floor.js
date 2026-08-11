@@ -109,7 +109,7 @@ export function createFloorRenderer(canvas) {
     const padT = 8;
     const padB = 8;
     const laneH = (h - padT - padB) / lanes;
-    const tillX = Math.round(w * 0.76);
+    const tillX = Math.round(w * 0.82);
     // The floor strip customers walk along sits at the bottom of each lane;
     // the shelving stands on it. Person height is set from the strip, not the
     // whole lane, so three aisles and five still read the same.

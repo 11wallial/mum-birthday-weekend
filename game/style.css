@@ -121,7 +121,7 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 #night { display: grid; gap: 16px; }
 @media (min-width: 900px) {
-  #night { grid-template-columns: 1.15fr 1fr; grid-template-areas: "cat floor" "cat fit" "boss boss"; }
+  #night { grid-template-columns: 1.15fr 1fr; grid-template-areas: "boss boss" "cat floor" "cat fit"; }
   #catalogue { grid-area: cat; } #floorplan { grid-area: floor; }
   #shopfitting { grid-area: fit; } #bosschoice { grid-area: boss; }
 }
