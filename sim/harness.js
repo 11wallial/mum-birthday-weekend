@@ -63,9 +63,9 @@ export function runBatch(content, opts = {}) {
     if (r.win) {
       stats.wins++;
       stats.staffInWins.push(r.shop.staff.length);
-      // "Rushed" means reaching tier 3 or better before the natural curve makes
-      // it cheap, i.e. inside the first half of the run.
-      if (rec.tierUpgrades.some((e) => e <= 9) && tier >= 3) stats.tierRush++;
+      // A rush is reaching Tier 3 *early*, paying full price rather than
+      // waiting for the quarterly discount. Two upgrades banked by encounter 9.
+      if (rec.tierUpgrades.length >= 2 && rec.tierUpgrades[1] <= 9) stats.tierRush++;
     } else {
       stats.deaths.push(r.deathEncounter);
       stats.deathByEncounter[r.deathEncounter]++;

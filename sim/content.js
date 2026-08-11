@@ -68,6 +68,9 @@ export function loadContent(overrides = {}) {
     if (fx.trigger.scope === 'next_slots') {
       fx.trigger.count = levelBreadth.slice(0, 3);
     }
+    // Flagship drawbacks are authored per level in fixtures.json rather than
+    // scaled here: their polarity differs (a higher throughput cap helps the
+    // player, a higher rent multiplier hurts), so one scalar cannot serve them.
     fx.tagSet = new Set(fx.tags || []);
     return fx;
   });
@@ -97,10 +100,9 @@ export function loadContent(overrides = {}) {
     econ.walkouts.footfallPenaltyPerWalkout = overrides.walkoutPenalty;
   }
   if (overrides.supplierCostScale != null) {
-    for (const key of Object.keys(econ.supplierTier.costs)) {
-      econ.supplierTier.costs[key] = econ.supplierTier.costs[key].map(
-        (c) => c * overrides.supplierCostScale,
-      );
+    for (const [key, row] of Object.entries(econ.supplierTier.costs)) {
+      if (!Array.isArray(row)) continue; // the table carries a $comment key
+      econ.supplierTier.costs[key] = row.map((c) => c * overrides.supplierCostScale);
     }
   }
   if (overrides.staffMarginScale != null) {
@@ -122,6 +124,7 @@ export function loadContent(overrides = {}) {
     walletMean,
     defaultPool: customers.defaultPool,
     campaigns: customers.marketing.campaigns,
+    marketingMaxHeld: customers.marketing.maxHeld ?? 99,
     fixtures,
     fixtureById,
     byRarity,

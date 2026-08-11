@@ -103,7 +103,7 @@ export function addFixture(content, shop, fixtureId, placement = null) {
     return null;
   }
 
-  const inst = { def, level: 1, copies: 1, staff: null };
+  const inst = { def, level: 1, copies: 1, staff: null, ratchet: 0 };
   const target = placement || emptySlots(shop)[0] || null;
   if (target && !shop.aisles[target.aisle].slots[target.slot]) {
     shop.aisles[target.aisle].slots[target.slot] = inst;
@@ -168,14 +168,41 @@ export function autoSign(content, shop) {
   }
 }
 
-export function rentFor(content, shop, auditMods = {}) {
+/**
+ * Rent is pegged to the target as a declining fraction, so "brutal in act 1,
+ * noise by act 5" holds by construction rather than by coincidence. Footprint
+ * still costs: the fraction is quoted for a baseline shop and scales with the
+ * slots and tills you have actually bought.
+ */
+export function rentFor(content, shop, auditMods = {}, target = null) {
   const e = content.economy.rent;
   const slots = totalSlots(shop);
-  const raw = (slots * e.perSlot + shop.tills * e.perTill)
-    * Math.pow(e.quarterMultiplier, shop.quarter - 1);
+  let raw;
+  if (e.mode === 'fraction_of_target' && target != null) {
+    const frac = e.fractionByQuarter[Math.min(e.fractionByQuarter.length - 1, shop.quarter - 1)];
+    const footprint = (slots + e.tillWeight * shop.tills)
+      / (e.baselineSlots + e.tillWeight * e.baselineTills);
+    raw = target * frac * footprint;
+  } else {
+    const g = e.legacy || e;
+    raw = (slots * g.perSlot + shop.tills * g.perTill)
+      * Math.pow(g.quarterMultiplier, shop.quarter - 1);
+  }
   return raw * (auditMods.rentMultiplier || 1);
 }
 
 export function marginPenaltyFromStaff(shop) {
   return shop.staff.reduce((m, s) => m + s.def.marginCost, 0);
+}
+
+/**
+ * Advance every ratchet by `days`, on a throwaway clone, so a policy can look
+ * ahead. Ratchets are the only unbounded scalers in the pool, so seeing what
+ * one is worth in ten days' time is the difference between a plan and a guess.
+ */
+export function projectRatchets(shop, days) {
+  for (const { inst } of fixtureInstances(shop)) {
+    if (inst.def.effect.op !== 'ratchet') continue;
+    inst.ratchet = (inst.ratchet || 0) + inst.def.effect.value[inst.level - 1] * days;
+  }
 }

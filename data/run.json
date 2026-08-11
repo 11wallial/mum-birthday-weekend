@@ -7,38 +7,179 @@
     "bossEvery": 3
   },
   "targets": {
-    "$comment": "Generated as base * growth^(n-1). Measured, not guessed: at these values the planner wins 57%, greedy 25% and random 0%, which is the section 19 band. Sweep with `node sim/cli.js sweep growth`.",
+    "$comment": "Generated as base * growth^(n-1). Measured after the redesign: planner 66%, greedy 24%, random 0%, gap 42pp. Sweep with `node sim/cli.js sweep growth`.",
     "base": 120,
-    "growth": 1.17,
+    "growth": 1.18,
     "$specified": {
       "base": 450,
       "growth": 1.47,
-      "$comment": "The v0.1 values. Day one produces about £200 against a £450 target, so every policy dies on encounter 1 and no metric is measurable. The achievable profit curve climbs about x98 across 24 encounters; 1.47 asks for x7,052. See REPORT.md."
+      "$comment": "The v0.1 values. Day one produces about \u00a3200 against a \u00a3450 target, so every policy dies on encounter 1 and no metric is measurable. The achievable profit curve climbs about x98 across 24 encounters; 1.47 asks for x7,052. See REPORT.md."
     }
   },
   "bosses": [
-    { "id": "competitor_opens", "name": "Competitor Opens", "effect": "footfall_multiply", "value": 0.5 },
-    { "id": "heatwave", "name": "Heatwave", "effect": "basket_multiply_patience_multiply", "value": [2.0, 0.25] },
-    { "id": "card_terminal_down", "name": "Card Terminal Down", "effect": "only_types_convert", "value": ["trade", "pensioner"] },
-    { "id": "health_inspection", "name": "Health Inspection", "effect": "disable_unstaffed" },
-    { "id": "bank_holiday", "name": "Bank Holiday", "effect": "footfall_multiply_till_disable", "value": [3.0, 1] },
-    { "id": "supply_shortage", "name": "Supply Shortage", "effect": "disable_term_class", "value": ["basket", "additive"] },
-    { "id": "mystery_shopper", "name": "Mystery Shopper", "effect": "margin_halved_unless_staffed_aisles" },
-    { "id": "black_friday", "name": "Black Friday", "effect": "footfall_multiply_margin_flat", "value": [4.0, -0.25] },
-    { "id": "roadworks", "name": "Roadworks", "effect": "close_aisle", "value": 1 },
-    { "id": "refund_day", "name": "Refund Day", "effect": "pool_blend", "value": { "returner": 100 }, "blend": 0.2, "$was": "force_pool with returner 100, which spawns no buyers at all and so guarantees a loss on any build. Measured at -96% of a clean day; see REPORT.md." },
-    { "id": "rate_review", "name": "Rate Review", "effect": "rent_multiply", "value": 10 },
-    { "id": "trading_standards", "name": "Trading Standards", "effect": "disable_rarity", "value": "flagship" }
+    {
+      "id": "competitor_opens",
+      "name": "Competitor Opens",
+      "effect": "footfall_multiply",
+      "value": 0.5
+    },
+    {
+      "id": "heatwave",
+      "name": "Heatwave",
+      "effect": "basket_multiply_patience_multiply",
+      "value": [
+        2.0,
+        0.25
+      ]
+    },
+    {
+      "id": "card_terminal_down",
+      "name": "Card Terminal Down",
+      "effect": "only_types_convert",
+      "value": [
+        "trade",
+        "pensioner"
+      ]
+    },
+    {
+      "id": "health_inspection",
+      "name": "Health Inspection",
+      "effect": "disable_unstaffed"
+    },
+    {
+      "id": "bank_holiday",
+      "name": "Bank Holiday",
+      "effect": "footfall_multiply_till_disable",
+      "value": [
+        3.0,
+        1
+      ]
+    },
+    {
+      "id": "supply_shortage",
+      "name": "Supply Shortage",
+      "effect": "disable_term_class",
+      "value": [
+        "basket",
+        "additive"
+      ]
+    },
+    {
+      "id": "mystery_shopper",
+      "name": "Mystery Shopper",
+      "effect": "margin_halved_unless_staffed_aisles"
+    },
+    {
+      "id": "black_friday",
+      "name": "Black Friday",
+      "effect": "footfall_multiply_margin_flat",
+      "value": [
+        4.0,
+        -0.25
+      ]
+    },
+    {
+      "id": "roadworks",
+      "name": "Roadworks",
+      "effect": "close_aisle",
+      "value": 1
+    },
+    {
+      "id": "refund_day",
+      "name": "Refund Day",
+      "effect": "refund_previous",
+      "value": 0.55,
+      "$comment": "Reverses a share of yesterday's trading profit directly. Previously spawned nothing but Returners, which left no buyers in the shop and made the day unwinnable on any board; Returners have since been cut as a type entirely."
+    },
+    {
+      "id": "rate_review",
+      "name": "Rate Review",
+      "effect": "rent_multiply",
+      "value": 10
+    },
+    {
+      "id": "trading_standards",
+      "name": "Trading Standards",
+      "effect": "disable_rarity",
+      "value": "flagship"
+    }
   ],
   "audits": [
-    { "id": 1, "name": "Audit I", "modifiers": {} },
-    { "id": 2, "name": "Audit II", "modifiers": { "rentMultiplier": 1.5 } },
-    { "id": 3, "name": "Audit III", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2 } },
-    { "id": 4, "name": "Audit IV", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2, "rerollCostMultiplier": 2 } },
-    { "id": 5, "name": "Audit V", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2, "rerollCostMultiplier": 2, "bossEvery": 2 } },
-    { "id": 6, "name": "Audit VI", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2, "rerollCostMultiplier": 2, "bossEvery": 2, "flagshipTwoDayCondition": true } },
-    { "id": 7, "name": "Audit VII", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2, "rerollCostMultiplier": 2, "bossEvery": 2, "flagshipTwoDayCondition": true, "supplierCostsFlat": true } },
-    { "id": 8, "name": "Audit VIII", "modifiers": { "rentMultiplier": 1.5, "targetMultiplier": 1.2, "rerollCostMultiplier": 2, "bossEvery": 2, "flagshipTwoDayCondition": true, "supplierCostsFlat": true, "quarterlyAisleClosure": true } }
+    {
+      "id": 1,
+      "name": "Audit I",
+      "modifiers": {}
+    },
+    {
+      "id": 2,
+      "name": "Audit II",
+      "modifiers": {
+        "rentMultiplier": 1.5
+      }
+    },
+    {
+      "id": 3,
+      "name": "Audit III",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2
+      }
+    },
+    {
+      "id": 4,
+      "name": "Audit IV",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2,
+        "rerollCostMultiplier": 2
+      }
+    },
+    {
+      "id": 5,
+      "name": "Audit V",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2,
+        "rerollCostMultiplier": 2,
+        "bossEvery": 2
+      }
+    },
+    {
+      "id": 6,
+      "name": "Audit VI",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2,
+        "rerollCostMultiplier": 2,
+        "bossEvery": 2,
+        "flagshipTwoDayCondition": true
+      }
+    },
+    {
+      "id": 7,
+      "name": "Audit VII",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2,
+        "rerollCostMultiplier": 2,
+        "bossEvery": 2,
+        "flagshipTwoDayCondition": true,
+        "supplierCostsFlat": true
+      }
+    },
+    {
+      "id": 8,
+      "name": "Audit VIII",
+      "modifiers": {
+        "rentMultiplier": 1.5,
+        "targetMultiplier": 1.2,
+        "rerollCostMultiplier": 2,
+        "bossEvery": 2,
+        "flagshipTwoDayCondition": true,
+        "supplierCostsFlat": true,
+        "quarterlyAisleClosure": true
+      }
+    }
   ],
   "characters": [
     {
@@ -47,10 +188,11 @@
       "rule": "Breaks no rule. The base game the section 14 starting values describe.",
       "baseGame": true,
       "aisles": 3,
-      "slotsPerAisle": 4,
+      "slotsPerAisle": 3,
       "tills": 1,
       "startingFixtures": [],
-      "flags": {}
+      "flags": {},
+      "$note": "3x3 rather than 3x4. A half-empty board makes routing uncontested and End Cap adjacency rare."
     },
     {
       "id": "superstore",
@@ -59,8 +201,13 @@
       "aisles": 4,
       "slotsPerAisle": 4,
       "tills": 2,
-      "startingFixtures": ["bargain_bin"],
-      "flags": { "fixturesPermanent": true, "structuralCostMultiplier": 0.0 }
+      "startingFixtures": [
+        "bargain_bin"
+      ],
+      "flags": {
+        "fixturesPermanent": true,
+        "structuralCostMultiplier": 0.0
+      }
     },
     {
       "id": "discounter",
@@ -69,8 +216,14 @@
       "aisles": 2,
       "slotsPerAisle": 4,
       "tills": 1,
-      "startingFixtures": ["own_brand", "bulk_buy"],
-      "flags": { "marginBonus": 0.2, "maxFixtureTypes": 5 }
+      "startingFixtures": [
+        "own_brand",
+        "bulk_buy"
+      ],
+      "flags": {
+        "marginBonus": 0.2,
+        "maxFixtureTypes": 5
+      }
     },
     {
       "id": "car_dealership",
@@ -79,10 +232,17 @@
       "aisles": 1,
       "slotsPerAisle": 6,
       "tills": 99,
-      "startingFixtures": ["concierge"],
+      "startingFixtures": [
+        "concierge"
+      ],
       "flags": {
-        "forcedPool": { "luxury": 100 },
-        "footfallOverride": [1, 3],
+        "forcedPool": {
+          "luxury": 100
+        },
+        "footfallOverride": [
+          1,
+          3
+        ],
         "noQueue": true,
         "basketMultiplier": 320
       }
@@ -94,7 +254,9 @@
       "aisles": 2,
       "slotsPerAisle": 4,
       "tills": 4,
-      "startingFixtures": ["appointment_book"],
+      "startingFixtures": [
+        "appointment_book"
+      ],
       "flags": {
         "basketFixed": 1400,
         "marginFixed": 0.035,
@@ -109,7 +271,10 @@
       "slotsPerAisle": 3,
       "tills": 1,
       "startingFixtures": [],
-      "flags": { "traversals": 3, "footfallMultiplier": 0.6 }
+      "flags": {
+        "traversals": 3,
+        "footfallMultiplier": 0.6
+      }
     },
     {
       "id": "market_stall",
@@ -119,7 +284,10 @@
       "slotsPerAisle": 2,
       "tills": 1,
       "startingFixtures": [],
-      "flags": { "wipeFloorNightly": true, "freeRerolls": true }
+      "flags": {
+        "wipeFloorNightly": true,
+        "freeRerolls": true
+      }
     }
   ]
 }

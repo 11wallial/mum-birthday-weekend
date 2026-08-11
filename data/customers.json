@@ -95,81 +95,102 @@
       "patience": "very_high",
       "special": "steals",
       "note": "Flat loss on entry unless blocked; never queues"
-    },
-    {
-      "id": "returner",
-      "name": "Returner",
-      "sign": "negative",
-      "conversion": 0.0,
-      "basket": 0,
-      "marginDelta": 0.0,
-      "patience": "very_high",
-      "special": "reverses_sale",
-      "note": "Reverses one sale from the previous day; occupies till time"
     }
   ],
   "defaultPool": {
     "family": 20,
-    "student": 24,
+    "student": 26,
     "pensioner": 18,
     "trade": 8,
     "luxury": 1,
     "tourist": 12,
     "browser": 10,
-    "shoplifter": 5,
-    "returner": 2
+    "shoplifter": 5
   },
   "marketing": {
-    "$comment": "Marketing is deck editing (section 5). Each campaign shifts spawn weights and costs upkeep in cash per day.",
+    "$comment": "Marketing is deck editing, and it is the replayability engine: it is what makes Concierge broken in one run and dead in another. Campaigns are large, expensive and capped, so choosing who shops here is a commitment rather than a shopping list.",
+    "maxHeld": 3,
     "campaigns": [
       {
-        "id": "school_run_flyers",
-        "name": "School Run Flyers",
-        "cost": 300,
-        "upkeep": 40,
-        "add": { "family": 18 },
-        "remove": { "student": 10, "browser": 6 }
+        "id": "family_shop",
+        "name": "The Family Shop",
+        "cost": 700,
+        "upkeep": 90,
+        "add": {
+          "family": 34
+        },
+        "remove": {
+          "student": 16,
+          "browser": 10,
+          "luxury": 1
+        }
       },
       {
-        "id": "trade_mailer",
-        "name": "Trade Mailer",
+        "id": "trade_counter",
+        "name": "Trade Counter",
+        "cost": 1100,
+        "upkeep": 140,
+        "add": {
+          "trade": 30
+        },
+        "remove": {
+          "student": 18,
+          "browser": 10,
+          "pensioner": 6
+        }
+      },
+      {
+        "id": "by_appointment",
+        "name": "By Appointment",
+        "cost": 3200,
+        "upkeep": 420,
+        "add": {
+          "luxury": 16
+        },
+        "remove": {
+          "student": 20,
+          "browser": 12,
+          "family": 8
+        }
+      },
+      {
+        "id": "on_the_tourist_trail",
+        "name": "On the Tourist Trail",
+        "cost": 900,
+        "upkeep": 110,
+        "add": {
+          "tourist": 30
+        },
+        "remove": {
+          "pensioner": 14,
+          "browser": 10
+        }
+      },
+      {
+        "id": "the_local",
+        "name": "The Local",
         "cost": 600,
         "upkeep": 70,
-        "add": { "trade": 16 },
-        "remove": { "student": 12, "browser": 6 }
+        "add": {
+          "pensioner": 26
+        },
+        "remove": {
+          "student": 14,
+          "tourist": 8
+        }
       },
       {
-        "id": "glossy_campaign",
-        "name": "Glossy Campaign",
-        "cost": 2200,
-        "upkeep": 260,
-        "add": { "luxury": 9 },
-        "remove": { "student": 14, "browser": 6 }
-      },
-      {
-        "id": "coach_party_deal",
-        "name": "Coach Party Deal",
-        "cost": 450,
-        "upkeep": 55,
-        "add": { "tourist": 16 },
-        "remove": { "pensioner": 8, "browser": 6 }
-      },
-      {
-        "id": "over_60s_morning",
-        "name": "Over-60s Morning",
-        "cost": 250,
-        "upkeep": 30,
-        "add": { "pensioner": 16 },
-        "remove": { "student": 10, "browser": 4 }
-      },
-      {
-        "id": "neighbourhood_watch",
-        "name": "Neighbourhood Watch",
-        "cost": 400,
-        "upkeep": 45,
+        "id": "clean_high_street",
+        "name": "Clean High Street",
+        "cost": 800,
+        "upkeep": 80,
         "add": {},
-        "remove": { "shoplifter": 5, "browser": 8 }
+        "remove": {
+          "shoplifter": 5,
+          "browser": 14
+        }
       }
     ]
-  }
+  },
+  "$returnerNote": "Returners were cut. Reversing a previous day's sale is unreadable during the walk, and a Returner reverses a full average sale while only about half of customers convert, which made an all-Returner boss mathematically unwinnable. The refund fantasy now lives only on the Refund Day boss."
 }

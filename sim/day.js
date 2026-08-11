@@ -82,6 +82,9 @@ export function collectFlags(content, shop, ctx) {
       // must stay free of RNG, because policies call it hundreds of times.
       case 'close_aisle': f.closedAisle = ctx.closedAisle ?? 0; break;
       case 'force_pool': f.poolOverride = boss.value; break;
+      // Refunds land directly on yesterday's trading profit. Returners as a
+      // customer type were cut: see data/customers.json.
+      case 'refund_previous': f.refundShare = boss.value; break;
       case 'pool_blend': f.poolBlend = { pool: boss.value, blend: boss.blend }; break;
       case 'rent_multiply': f.rentMul *= boss.value; break;
       case 'disable_rarity': break;
@@ -118,6 +121,11 @@ export function collectFlags(content, shop, ctx) {
     if (def.breadth && def.breadth.check === 'scope_widen'
         && def.breadth.value[L] === 'shop') {
       f.globalEffects.push({ inst, def });
+    }
+
+    // Second Branch pays for its Footfall in rent, whatever class it is.
+    if (def.drawback && def.drawback.id === 'rent_multiplier') {
+      f.rentMul *= def.drawback.value[L];
     }
 
     if (def.effect.op !== 'rule') continue;
@@ -272,6 +280,13 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
       if (w === 'aisle' || w === 'shop') p = 1;
     }
 
+    // A ratchet applies whatever it has accumulated so far. It grows once per
+    // real trading day, in run.js, never during evaluation.
+    if (def.effect.op === 'ratchet') {
+      if (def.term !== 'footfall') apply(def.term, 'add', inst.ratchet || 0, p, strength);
+      continue;
+    }
+
     if (scope === 'next_slots') {
       const count = def.trigger.count[L];
       const from = inst.level >= 3 ? i : i + 1;
@@ -309,8 +324,11 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
   if (flags.onlyTypesConvert && !flags.onlyTypesConvert.has(type.id)) terms.conversion = 0;
 
-  terms.conversion = clamp(terms.conversion, 0, 1);
-  terms.margin = clamp(terms.margin, -1, 0.95);
+  // Conversion and Margin are rates, so they cap. They are a floor to defend,
+  // not an axis to grow: all unbounded growth lives in Footfall and Basket.
+  const caps = content.economy.caps || {};
+  terms.conversion = clamp(terms.conversion, 0, caps.conversion ?? 1);
+  terms.margin = clamp(terms.margin, -1, caps.margin ?? 0.95);
   terms.patience = Math.max(0, terms.patience);
   if (type.sign === 'positive') terms.basket = Math.max(0, terms.basket);
   return terms;
@@ -319,6 +337,11 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
 // ---------------------------------------------------------------------------
 // The queue. Tills are hand size; Footfall above throughput is walkouts.
 // ---------------------------------------------------------------------------
+
+// The queue's working array is the single hottest allocation in the simulator:
+// a fresh Float64Array(ticks * types) on every resolveDay, and policies call
+// resolveDay hundreds of times a night. It is reused instead.
+let QUEUE_SCRATCH = new Float64Array(0);
 
 export function runQueue(arrivals, capacity, ticks, patience) {
   const K = arrivals.length;
@@ -338,39 +361,50 @@ export function runQueue(arrivals, capacity, ticks, patience) {
     }
   }
 
-  const perTick = new Float64Array(ticks * K);
-  for (let k = 0; k < K; k++) {
-    const rate = arrivals[k] / ticks;
-    for (let t = 0; t < ticks; t++) perTick[t * K + k] = rate;
+  // Only types that actually turn up need a lane in the queue. Marketing
+  // routinely zeroes two or three, and this loop is the simulator's hot path.
+  const active = [];
+  for (let k = 0; k < K; k++) if (arrivals[k] > 0) active.push(k);
+  const A = active.length;
+  if (A === 0) return { served, walkouts };
+
+  const need = ticks * A;
+  if (QUEUE_SCRATCH.length < need) QUEUE_SCRATCH = new Float64Array(need);
+  const perTick = QUEUE_SCRATCH;
+  const pat = new Float64Array(A);
+  for (let j = 0; j < A; j++) {
+    const rate = arrivals[active[j]] / ticks;
+    pat[j] = patience[active[j]];
+    for (let t = 0; t < ticks; t++) perTick[t * A + j] = rate;
   }
 
-  const headExp = new Int32Array(K);
+  const headExp = new Int32Array(A);
   let headServe = 0;
 
   for (let t = 0; t < ticks; t++) {
     // Patience drains while waiting; at zero it is a walkout.
-    for (let k = 0; k < K; k++) {
-      const horizon = t - patience[k];
-      while (headExp[k] <= horizon && headExp[k] <= t) {
-        const idx = headExp[k] * K + k;
-        walkouts[k] += perTick[idx];
+    for (let j = 0; j < A; j++) {
+      const horizon = t - pat[j];
+      while (headExp[j] <= horizon && headExp[j] <= t) {
+        const idx = headExp[j] * A + j;
+        walkouts[active[j]] += perTick[idx];
         perTick[idx] = 0;
-        headExp[k]++;
+        headExp[j]++;
       }
     }
 
     let cap = capacity;
     while (cap > 1e-9 && headServe <= t) {
       let cohort = 0;
-      const base = headServe * K;
-      for (let k = 0; k < K; k++) cohort += perTick[base + k];
+      const base = headServe * A;
+      for (let j = 0; j < A; j++) cohort += perTick[base + j];
       if (cohort <= 1e-9) { headServe++; continue; }
       const take = Math.min(cap, cohort);
       const frac = take / cohort;
-      for (let k = 0; k < K; k++) {
-        const s = perTick[base + k] * frac;
-        served[k] += s;
-        perTick[base + k] -= s;
+      for (let j = 0; j < A; j++) {
+        const s = perTick[base + j] * frac;
+        served[active[j]] += s;
+        perTick[base + j] -= s;
       }
       cap -= take;
       if (frac >= 1 - 1e-12) headServe++;
@@ -379,7 +413,7 @@ export function runQueue(arrivals, capacity, ticks, patience) {
 
   // Anyone still holding at close is a walkout.
   for (let t = headServe; t < ticks; t++) {
-    for (let k = 0; k < K; k++) walkouts[k] += perTick[t * K + k];
+    for (let j = 0; j < A; j++) walkouts[active[j]] += perTick[t * A + j];
   }
   return { served, walkouts };
 }
@@ -409,7 +443,8 @@ export function resolveDay(content, shop, ctx = {}) {
       const def = inst.def;
       if (def.term !== 'footfall' || def.trigger.scope !== 'shop') continue;
       const v = def.effect.value[inst.level - 1];
-      if (def.effect.op === 'add') footfall += v;
+      if (def.effect.op === 'ratchet') footfall += inst.ratchet || 0;
+      else if (def.effect.op === 'add') footfall += v;
       else if (def.effect.op === 'multiply') footfall *= v;
       if (def.id === 'loss_leader') {
         flags.marginFlat += def.drawback.value[inst.level - 1];
@@ -567,10 +602,6 @@ export function resolveDay(content, shop, ctx = {}) {
       shrink += arrivals[seg.k] * share * terms.basket; // basket is a flat loss
       continue;
     }
-    if (t.id === 'returner') {
-      refunds += served[seg.k] * share * shop.lastAvgSaleProfit;
-      continue;
-    }
     const seen = served[seg.k] * share;
     const s = seen * terms.conversion;
     sales += s;
@@ -582,6 +613,7 @@ export function resolveDay(content, shop, ctx = {}) {
     aMargin += seen * terms.margin;
     wTotal += seen;
   }
+  refunds = (flags.refundShare || 0) * Math.max(0, shop.lastTradingProfit || 0);
   let profit = saleProfit + shrink - refunds;
 
   // Loyalty Card: buyers come back once more the same day.
@@ -601,7 +633,7 @@ export function resolveDay(content, shop, ctx = {}) {
   }
 
   const totalWalkouts = walkouts.reduce((a, b) => a + b, 0);
-  const rent = rentFor(content, shop, auditMods) * flags.rentMul;
+  const rent = rentFor(content, shop, auditMods, ctx.target) * flags.rentMul;
   profit -= rent;
   profit -= shop.marketingUpkeep || 0; // marketing persists and costs upkeep
 

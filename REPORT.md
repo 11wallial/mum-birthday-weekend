@@ -1,10 +1,11 @@
-# FOOTFALL — Phase 0 findings
+# FOOTFALL — Phase 0
 
-What the headless simulator says about the v0.1 ruleset.
+Two parts. **Part one** is what the headless simulator found in the v0.1
+ruleset. **Part two** is the redesign built in response, and what it measured.
 
 Section 19 is explicit that "everything above is a hypothesis and most of it is
-wrong". That turned out to be the right posture. The structure survives well;
-the numbers do not.
+wrong". That turned out to be the right posture. The engine survived intact;
+almost every number did not, and three rules quietly contradicted themselves.
 
 Run it yourself:
 
@@ -12,23 +13,147 @@ Run it yourself:
 node sim/verify.js      # resolver correctness
 node sim/cli.js panel   # the day-one projection panel
 node sim/cli.js check   # the section 19 health check
+node sim/cli.js trace   # one run, encounter by encounter
 ```
 
 ---
 
 ## The short version
 
-| | |
-|---|---|
-| **Biggest problem** | The encounter-24 target is roughly **870x** higher than the best build can reach. |
-| **Second biggest** | One boss, **Refund Day**, is an automatic loss, and it appears in 2 runs out of 3. Before fixing it, no build could win more than ~33% regardless of skill. |
-| **Root cause of the first** | Two of the four terms are capped at 100%. The whole run's growth has to come from Footfall and Basket alone. |
-| **Best news** | The greedy-versus-planner gap is **30.1pp** once the curve is winnable. Milestone 0's gate is met, and the skill headroom the design is betting on is real. |
+**Diagnosis.** On the numbers as written, day one earns about £200 against a
+£450 target, so all three policies die on encounter 1 and nothing is
+measurable. Underneath that, the encounter-24 target is about **870x** higher
+than the best build can reach — because Conversion and Margin cap at 100% and
+saturate by encounter 8, leaving two of the four terms to carry the whole run.
+And one boss, Refund Day, was an automatic loss appearing in two runs out of
+three, holding the win rate near 33% before build quality entered the picture.
 
-The structure is sound. Four multiplicative terms and one subtractor is a good
-engine, order of operations does carry real skill, and the pick-versus-cash
-split does produce two distinct axes. Everything below is about numbers and
-about three places where a rule quietly contradicts itself.
+**Response.** Ratchet fixtures to carry unbounded growth, caps made explicit so
+Conversion and Margin become rates you defend rather than axes you grow, cash
+decoupled from the target, player-chosen bosses, rent pegged to the curve, a
+fuller board, flagship drawbacks that stop melting, Returners cut, and marketing
+turned into a committed identity.
+
+**Result.** All three section 19 win-rate bands hit at once, and the
+greedy-versus-planner gap — the single number that could have killed the
+project — is **39.7pp**, up from 30.1pp.
+
+The engine is sound. Four multiplicative terms and one subtractor is a good
+machine, order of operations does carry real skill, and the pick-versus-cash
+split does produce two distinct axes.
+
+---
+
+# Part two — the redesign
+
+The findings below were the diagnosis. This is what was built in response, and
+what it measured. Everything here is in `/data` and `/sim` and reproducible with
+`node sim/cli.js check`.
+
+## The result
+
+| Metric | Target | v0.1 | After Part One tuning | **After the redesign** |
+|---|---|---|---|---|
+| Random win rate | under 2% | 0.0%* | 0.0% | **0.0%** |
+| Greedy win rate | 15-25% | 0.0%* | 25.9% | **23.7%** |
+| Planner win rate | 55-70% | 0.0%* | 56.0% | **63.5%** |
+| **Greedy-vs-planner gap** | over 30pp | 0.0pp* | 30.1pp | **39.7pp** |
+| High-rarity pick rate at Tier 4 | ~50% | — | 58.6% | **47.6%** |
+| Staff in winning builds | 0-8, spread | — | median 4, 1-9 | **median 4, 0-9** |
+| Tier rush among winners | ~30% | — | 100% | **21.8%** |
+
+\* every policy died on encounter 1, so the v0.1 zeroes are an absence of data.
+
+All three win-rate bands are hit simultaneously for the first time, and the
+skill gap is **9.6pp wider** than the tuned-but-unchanged ruleset. The design
+changes did not just make the game winnable; they made skill matter more.
+
+## What changed, and why
+
+**1. The four terms were given different jobs.** Footfall and Basket are
+quantities and scale forever; Conversion and Margin are rates and cap out. So
+the caps are now explicit (90% and 70%), and all unbounded growth moved into
+five new **ratchet** fixtures — Regulars Book, Word of Mouth, Range Extension,
+Trade Account, Second Branch — which accumulate permanently every trading day.
+
+This is what fixes the collapsed midgame. A ratchet is weak on the day you take
+it and the best card in the pool by encounter 20, so the board keeps
+transforming instead of flattening at encounter 8. It is also the change that
+did most of the work on the skill gap: the planner projects ratchets forward
+before valuing an offer, and greedy — which has no model of tomorrow — cannot.
+That is the skill the design wanted to reward, made mechanical.
+
+**2. Cash was decoupled from the target.** Retained earnings are now a flat
+reward per encounter plus interest plus a *capped* share of overshoot, so the
+target is purely a fail condition. Tier rush fell from 100% to 21.8% and
+Supplier Tier became a decision again. A skip-the-pick-for-cash option was
+added alongside.
+
+**3. The player chooses the boss.** Two are offered, one is taken, revealed two
+encounters ahead. Every boss attacks a term, so choosing which term to be
+attacked on is a direct read of your own funnel — and it converts the variance
+that used to decide runs into a decision. The planner weighs both against the
+board it expects to *have* by then; greedy judges them on the board it has now.
+
+**4. Rent is pegged to the target.** A declining fraction — 62% of target in Q1
+down to 5% by Q8 — scaled by the footprint you have actually bought. Section
+13's "brutal in act 1, noise by act 5" is now true by construction and survives
+any later retune of the curve.
+
+**5. The board was filled.** The default shop is 3x3 rather than 3x4 and starts
+with five fixtures rather than three. This is what replaced the aisle-congestion
+idea that failed in the appendix, and it exposed something sharper: a customer
+walks exactly one aisle, so on a 3x3 board six of your nine slots do nothing for
+them. The whole board only earns if different types take different routes. When
+the planner was changed to route *every* type rather than the top four, win
+rates jumped by more than 20pp. **Signage is not a minor system — it is worth
+about a third of your shop.**
+
+**6. Flagship drawbacks stop melting.** Levelling a rule-breaking fixture
+shrinks its drawback, which on a flagship removed the commitment entirely and
+left pure upside. Flagship drawbacks are now authored per level and barely move.
+Personal Shopper — picked 62-81% of the time it appeared — went from x2.5 Basket
+to x1.9, and its throughput cap from 1/2/3 to 1/1/2.
+
+**7. Returners were cut.** Reversing a previous day's sale is unreadable during
+the walk, and a Returner reverses a full average sale while only half of
+customers convert — which is why the all-Returner boss was unwinnable. Refund
+Day now reverses 55% of yesterday's trading profit directly, and measures at
+49% of a clean day.
+
+**8. Marketing became a committed identity.** Six large, expensive campaigns
+with big pool swings, and you may hold only three. Choosing who shops here now
+costs you the alternative, which is what makes Concierge broken in one run and
+dead in another.
+
+## Still out of band
+
+Three items, all understood, none blocking:
+
+- **Queue share of early losses: 44.6%, wants ~25%.** Tills are still doing
+  nearly twice their share of the killing. `sweep till` moves this cleanly; it
+  was left alone because it interacts with the curve and the curve moved twice.
+- **Top single-fixture pick rate: Loyalty Card at 50%, wants under 40%.** Two
+  rounds of weakening its drawback took it from 55% to 50%. It wants a
+  structural change rather than another number.
+- **Combine rate: 68-95%, wants ~35%.** Unchanged and unfixable at this scale —
+  with 23 fixtures and six commons, a Tier-1 player is offered duplicates most
+  nights. This is a function of pool size, not level payoff, and it cannot be
+  tuned until the pool nears milestone 3's 90-120.
+
+One measurement caveat worth stating plainly: `bossimpact` now reports the
+bosses players *chose*, and a player offered two will take the softer one. The
+four bosses that still bite cluster tightly at 48-52% of a clean day, which is a
+good band; the other eight read as harmless partly because they are the ones
+being declined. Boss severity should be re-measured with choice disabled before
+step 7 is called done.
+
+---
+
+# Part one — the diagnosis
+
+What the simulator said about the v0.1 ruleset, which is what motivated all of
+the above.
 
 ---
 

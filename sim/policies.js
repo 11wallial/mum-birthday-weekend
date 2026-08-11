@@ -11,7 +11,8 @@
 
 import { resolveDay } from './day.js';
 import {
-  addFixture, autoSign, emptySlots, findInstance, fixtureInstances, ownedIds, totalSlots,
+  addFixture, autoSign, emptySlots, findInstance, fixtureInstances, ownedIds,
+  projectRatchets, totalSlots,
 } from './shop.js';
 import { rerollCost, supplierUpgradeCost, tillCost } from './offers.js';
 
@@ -33,6 +34,18 @@ export function cloneShop(shop) {
 }
 
 const profitOf = (content, shop, ctx) => resolveDay(content, shop, ctx).profit;
+
+/**
+ * Profit this shop would make `days` from now, if nothing else changed.
+ * This is the whole point of the planner: a ratchet looks weak today and is
+ * the best card in the pool by encounter 20. Greedy has no such method, which
+ * is exactly the skill the design wants to reward.
+ */
+function profitAhead(content, shop, ctx, days) {
+  const s = cloneShop(shop);
+  projectRatchets(s, days);
+  return resolveDay(content, s, { ...ctx, boss: null }).profit;
+}
 
 /** Candidate slots for a new fixture, cheapest-first and capped for speed. */
 function candidateSlots(shop, limit) {
@@ -71,6 +84,7 @@ function bestPlacement(content, shop, ctx, fx, limit) {
 
 export const randomPolicy = {
   name: 'random',
+  chooseBoss(content, shop, ctx, options) { return ctx.rng ? ctx.rng.int(options.length) : 0; },
   night(nc) {
     const { content, shop, rng } = nc;
     const fx = rng.pick(nc.offers);
@@ -104,6 +118,15 @@ export const randomPolicy = {
 
 export const greedyPolicy = {
   name: 'greedy',
+  /** Greedy judges the boss against the board it has today, not the one it will have. */
+  chooseBoss(content, shop, ctx, options, futureTarget) {
+    let best = 0; let bestVal = -Infinity;
+    for (let i = 0; i < options.length; i++) {
+      const p = profitOf(content, shop, { ...ctx, boss: options[i], target: futureTarget });
+      if (p > bestVal) { bestVal = p; best = i; }
+    }
+    return best;
+  },
   night(nc) {
     const { content, shop, ctx } = nc;
     let best = null;
@@ -159,6 +182,22 @@ const STRESS = [
 
 export const plannerPolicy = {
   name: 'planner',
+  /**
+   * Two bosses are offered; take the one this board can absorb. Every boss
+   * attacks a specific term, so this is a direct read of your own funnel —
+   * and because the boss lands a couple of encounters out, the planner also
+   * weighs it against the board it expects to have by then.
+   */
+  chooseBoss(content, shop, ctx, options, futureTarget) {
+    const ahead = cloneShop(shop);
+    projectRatchets(ahead, content.economy.bossChoice.revealLead || 0);
+    let best = 0; let bestVal = -Infinity;
+    for (let i = 0; i < options.length; i++) {
+      const p = profitOf(content, ahead, { ...ctx, boss: options[i], target: futureTarget });
+      if (p > bestVal) { bestVal = p; best = i; }
+    }
+    return best;
+  },
   night(nc) {
     const { content, shop, ctx } = nc;
     const target = nc.target;
@@ -171,10 +210,17 @@ export const plannerPolicy = {
         worst = Math.min(worst, profitOf(content, s, { ...ctx, boss: b }));
       }
       const bal = termBalance(content, s, ctx);
-      // Weighted toward today when the gap is tight, toward robustness when not.
+      // What this board is worth once its ratchets have run. Weighted by how
+      // much run is left: a ratchet taken on encounter 3 is a different card
+      // from the same ratchet taken on encounter 22.
+      const left = Math.max(0, content.run.encounters - nc.encounter);
+      const horizon = Math.min(10, left);
+      const future = horizon > 0 ? profitAhead(content, s, ctx, horizon) : today;
+      // Weighted toward today when the gap is tight, toward the future when not.
       const urgency = today < target ? 1 : Math.min(1, target / Math.max(1, today));
       return today * (0.55 + 0.35 * urgency)
         + worst * 0.35
+        + future * 0.30 * (left / content.run.encounters)
         + bal.weakest * target * 0.25;
     };
 
@@ -248,22 +294,31 @@ function plannerSign(nc) {
   const { content, shop, ctx } = nc;
   const open = shop.aisles.map((a, i) => i).filter((i) => !shop.aisles[i].closed);
   if (open.length < 2) return;
-  // Mis-signed shops send high-wallet customers past fixtures that do nothing
-  // for them, so route the types that carry the most money first.
+  // A customer walks exactly one aisle, so on a 3x3 board six of your nine
+  // slots do nothing for them. The only way the whole board earns is if
+  // different types take different routes — which means routing every type
+  // that carries money, not just the biggest few, and doing it twice because
+  // the choices interact through the aisle-scoped conditions.
   const ranked = content.types
     .filter((t) => t.sign === 'positive')
     .map((t) => ({ t, w: (shop.pool[t.id] || 0) * t.basket }))
-    .sort((a, b) => b.w - a.w)
-    .slice(0, 4);
-  for (const { t } of ranked) {
-    let best = null;
-    for (const a of open) {
-      const s = cloneShop(shop);
-      s.signage[t.id] = a;
-      const p = profitOf(content, s, ctx);
-      if (!best || p > best.p) best = { a, p };
+    .sort((a, b) => b.w - a.w);
+  // Signage is the only thing changing, so mutate and restore rather than
+  // cloning the shop for every probe — this loop runs a few hundred times a
+  // night and the clone dominated the whole simulator's runtime.
+  for (let pass = 0; pass < 2; pass++) {
+    for (const { t } of ranked) {
+      const original = shop.signage[t.id];
+      let bestAisle = original;
+      let bestProfit = -Infinity;
+      for (const a of open) {
+        if (shop.aisles[a].restrictTypes && !shop.aisles[a].restrictTypes.includes(t.id)) continue;
+        shop.signage[t.id] = a;
+        const p = profitOf(content, shop, ctx);
+        if (p > bestProfit) { bestProfit = p; bestAisle = a; }
+      }
+      shop.signage[t.id] = bestAisle;
     }
-    shop.signage[t.id] = best.a;
   }
 }
 
@@ -279,14 +334,11 @@ function plannerReorder(nc) {
     const slots = shop.aisles[a].slots;
     for (let i = 0; i < slots.length - 1; i++) {
       if (!slots[i] && !slots[i + 1]) continue;
-      const s = cloneShop(shop);
-      const t = s.aisles[a].slots;
-      [t[i], t[i + 1]] = [t[i + 1], t[i]];
-      const p = profitOf(content, s, ctx);
-      if (p > base + 1e-9) {
-        [slots[i], slots[i + 1]] = [slots[i + 1], slots[i]];
-        base = p;
-      }
+      // Swap in place and swap back if it did not help: no clone needed.
+      [slots[i], slots[i + 1]] = [slots[i + 1], slots[i]];
+      const p = profitOf(content, shop, ctx);
+      if (p > base + 1e-9) base = p;
+      else [slots[i], slots[i + 1]] = [slots[i + 1], slots[i]];
     }
   }
 }

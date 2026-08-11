@@ -133,10 +133,14 @@ function affordableOptions(content, shop, auditMods) {
       out.push(`struct:${s.id}`);
     }
   }
-  let mk = 0;
-  for (const c of content.campaigns) {
-    if (shop.marketing.includes(c.id)) continue;
-    if (shop.cash >= c.cost && mk++ < 3) out.push(`marketing:${c.id}`);
+  // Marketing is a committed identity, not a shopping list: you may hold only
+  // a few, so choosing who shops here means giving something else up.
+  if (shop.marketing.length < (content.marketingMaxHeld ?? 99)) {
+    let mk = 0;
+    for (const c of content.campaigns) {
+      if (shop.marketing.includes(c.id)) continue;
+      if (shop.cash >= c.cost && mk++ < 3) out.push(`marketing:${c.id}`);
+    }
   }
   return out;
 }
@@ -181,11 +185,37 @@ function makeNightContext(content, shop, rng, ctx, target, encounter, record) {
         offered: offers.map((o) => ({ id: o.id, rarity: o.rarity })),
       });
     },
+    /** Decline the pick and bank the cash instead: a real tempo choice. */
+    skip() {
+      const pay = content.economy.payout;
+      shop.cash += pay.flatBase * Math.pow(pay.flatGrowth, encounter - 1)
+        * (pay.skipPickReward || 0);
+      record.skips++;
+      return true;
+    },
     costOf: (opt) => costOf(content, shop, opt, ctx.auditMods),
     affordable: () => affordableOptions(content, shop, ctx.auditMods),
     buy: (opt, s = shop) => applyBuy(content, s, opt, s === shop, rng, ctx.auditMods),
   };
   return nc;
+}
+
+/**
+ * Ratchets grow once per real trading day. Never during evaluation: policies
+ * resolve the day hundreds of times a night and must not advance run state.
+ */
+function tickRatchets(shop, day, isBoss) {
+  for (const { inst } of fixtureInstances(shop)) {
+    const def = inst.def;
+    if (def.effect.op !== 'ratchet') continue;
+    let gain = def.effect.value[inst.level - 1];
+    if (def.id === 'range_extension' && inst.level >= 3 && isBoss) gain *= 2;
+    inst.ratchet = (inst.ratchet || 0) + gain;
+    // Word of Mouth: a day of walkouts sets you back.
+    if (def.drawback && def.drawback.id === 'reset_on_walkouts' && day.walkoutRate > 0.1) {
+      inst.ratchet *= 1 - def.drawback.value[inst.level - 1];
+    }
+  }
 }
 
 function classifyDeath(day, target) {
@@ -225,12 +255,12 @@ export function playRun(content, opts = {}) {
   autoSign(content, shop);
 
   const bossEvery = auditMods.bossEvery || content.run.bossEvery;
-  const bossOrder = rng.shuffle(content.bosses);
-  let bossIdx = 0;
+  const bossDeck = rng.shuffle(content.bosses);
+  const bossFor = new Map();
 
   const record = {
     picks: [], rerolls: 0, combines: 0, tierUpgrades: [], bossesFaced: [],
-    trace: [],
+    bossChoices: [], skips: 0, trace: [],
   };
   let lastQuarter = 0;
 
@@ -263,13 +293,35 @@ export function playRun(content, opts = {}) {
       }
     }
 
-    const boss = enc % bossEvery === 0 ? bossOrder[bossIdx++ % bossOrder.length] : null;
+    // Boss choice. Two are offered and the player takes one, revealed a couple
+    // of encounters ahead so a build can be aimed at it. Every boss attacks a
+    // term, so choosing which term to be attacked on is a read of your own
+    // build — and it turns boss variance into a decision.
+    const bc = content.economy.bossChoice || { options: 1, revealLead: 0 };
+    const future = enc + bc.revealLead;
+    if (future <= content.run.encounters && future % bossEvery === 0 && !bossFor.has(future)) {
+      const options = [];
+      for (let i = 0; i < Math.max(1, bc.options) && bossDeck.length; i++) {
+        options.push(bossDeck.splice(rng.int(bossDeck.length), 1)[0]);
+      }
+      if (options.length) {
+        const idx = options.length > 1 && policy.chooseBoss
+          ? policy.chooseBoss(content, shop, { auditMods, rng }, options, content.targets[future - 1])
+          : 0;
+        const chosen = options[Math.min(options.length - 1, Math.max(0, idx))];
+        bossFor.set(future, chosen);
+        record.bossChoices.push({ enc: future, taken: chosen.id, declined: options.filter((o) => o !== chosen).map((o) => o.id) });
+        for (const o of options) if (o !== chosen) bossDeck.push(o); // declined bosses go back
+      }
+    }
+    const boss = enc % bossEvery === 0 ? (bossFor.get(enc) || null) : null;
     if (boss) record.bossesFaced.push(boss.id);
     const target = content.targets[enc - 1] * (auditMods.targetMultiplier || 1);
     const ctx = {
       boss,
       auditMods,
       rng,
+      target,
       // Rolled here, once, so resolveDay stays deterministic under repeated
       // policy evaluation.
       closedAisle: boss && boss.effect === 'close_aisle' ? rng.int(shop.aisles.length) : -1,
@@ -319,6 +371,8 @@ export function playRun(content, opts = {}) {
     shop.cash += Math.min(int.cap, shop.cash * int.ratePerEncounter);
     shop.carryFootfall = day.carry;
     shop.lastAvgSaleProfit = day.avgSaleProfit;
+    shop.lastTradingProfit = day.saleProfit;
+    tickRatchets(shop, day, !!boss);
     shop.flagshipHeldYesterday = fixtureInstances(shop)
       .some(({ inst }) => inst.def.rarity === 'flagship' && !day.flags.disabled.has(inst));
   }
