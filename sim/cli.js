@@ -19,6 +19,7 @@ import { runSweep, SWEEPS } from './sweep.js';
 import { measureEnvelope, fitTargets } from './envelope.js';
 import {
   lookaheadCurve, capabilityAblation, commitmentCurves, ratchetQuotaCurve, signStable,
+  microAblation,
 } from './ablate.js';
 
 const argv = process.argv.slice(2);
@@ -358,6 +359,30 @@ function ablate() {
     + '\n  range spans zero is one draw from the seed space, not a finding.\n');
 }
 
+function micro() {
+  const n = num('n', 300);
+  const blocks = num('blocks', 3);
+  const character = str('character', 'default_shop');
+  console.log(`\nMicro — ${character}, ${n} runs x ${blocks} disjoint seed blocks`);
+  console.log('What the player does DURING the trading day, added to the full planner.\n');
+  const rows = microAblation(content, { n, characterId: character, blocks });
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+  const base = mean(rows[0].rates);
+  rule(72);
+  console.log('variant                 win rate   per block            delta vs none');
+  rule(72);
+  for (const r of rows) {
+    const m = mean(r.rates);
+    const per = r.rates.map((v) => (v * 100).toFixed(1)).join(' ');
+    const d = (m - base) * 100;
+    console.log(`${r.label.padEnd(22)} ${fmtPct(m).padStart(7)}   ${per.padEnd(20)} `
+      + `${(d >= 0 ? '+' : '') + d.toFixed(1)}pp`);
+  }
+  rule(72);
+  console.log('\n  Compare against the pillars this game already has: tempo and'
+    + '\n  signage are worth about 11pp each. Under 2pp means decoration.\n');
+}
+
 function quota() {
   const n = num('n', 350);
   const character = str('character', 'default_shop');
@@ -407,7 +432,7 @@ function commit() {
 
 const commands = {
   panel, check, chars, ladder, bosses, trace, bench, sweep, envelope, fit, bossimpact,
-  depth, ablate, commit, quota,
+  depth, ablate, commit, quota, micro,
 };
 if (!commands[cmd]) {
   console.log(`unknown command: ${cmd}\ncommands: ${Object.keys(commands).join(', ')}`);

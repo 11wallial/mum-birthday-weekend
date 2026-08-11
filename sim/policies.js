@@ -202,6 +202,10 @@ function reorderSlots(nc) {
 export const GREEDY_CFG = {
   lookahead: 0, stress: false, balance: false, tempo: false,
   sign: false, reorder: false, reroll: false, placements: 5,
+  // Micro: what the player does DURING the trading day. Off by default so
+  // every earlier measurement stays comparable.
+  triage: false, // false | 'naive' | 'smart'
+  sale: false,
 };
 
 export const PLANNER_CFG = {
@@ -239,6 +243,9 @@ export function makePolicy(name, overrides = {}) {
       const { content, shop, ctx } = nc;
       const target = nc.target;
       const left = Math.max(0, content.run.encounters - nc.encounter);
+      // Set before anything is evaluated, so the board is judged as it will
+      // actually be played rather than as it would be played passively.
+      shop.triageMode = cfg.triage || null;
 
       // How hard is this policy committing to scaling over surviving today?
       // null means "use the configured weights"; 0 is pure tempo, 1 is pure
@@ -315,6 +322,19 @@ export function makePolicy(name, overrides = {}) {
       if (cfg.tempo) spendPlanned(nc, 4, payback); else spendGreedy(nc);
       if (cfg.sign) signOptimised(nc); else autoSign(content, shop);
       if (cfg.reorder) reorderSlots(nc);
+
+      // The SALE sign, decided once the board is final. Modelled as a plan
+      // rather than a mid-day reaction, so this is the LOWER bound on what the
+      // lever is worth: a player reading the day would do better.
+      if (cfg.sale) {
+        shop.saleOn = false;
+        const without = profitOf(content, shop, ctx);
+        shop.saleOn = true;
+        const with_ = profitOf(content, shop, ctx);
+        shop.saleOn = with_ > without;
+      } else {
+        shop.saleOn = false;
+      }
     },
   };
 }

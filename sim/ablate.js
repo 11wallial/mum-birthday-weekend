@@ -114,3 +114,31 @@ export function ratchetQuotaCurve(content, { n = 350, characterId = 'default_sho
   }
   return out;
 }
+
+/**
+ * Micro: what the player does during the trading day, which currently is
+ * nothing. Measured the same way as every other capability — added to the full
+ * planner, across disjoint seed blocks — so it can be compared against tempo
+ * and signage rather than argued about.
+ */
+export function microAblation(content, { n = 300, characterId = 'default_shop', blocks = 3 } = {}) {
+  const seeds = [];
+  for (let b = 0; b < blocks; b++) seeds.push(1 + b * 100000);
+  const variants = [
+    ['none', {}],
+    ['triage naive', { triage: 'naive' }],
+    ['triage smart', { triage: 'smart' }],
+    ['sale only', { sale: true }],
+    ['triage smart + sale', { triage: 'smart', sale: true }],
+  ];
+  const rows = [];
+  for (const [label, extra] of variants) {
+    const name = `micro_${label.replace(/[^a-z]/gi, '')}`;
+    registerPolicy(name, { ...PLANNER_CFG, ...extra });
+    rows.push({
+      label,
+      rates: seeds.map((seed0) => runBatch(content, { n, characterId, policy: name, seed0 }).winRate),
+    });
+  }
+  return rows;
+}

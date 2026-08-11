@@ -304,5 +304,19 @@
     "upkeepScalePerExtra": 0.72,
     "commitThreshold": 4,
     "commitBonus": 0.55
+  },
+  "micro": {
+    "$comment": "The trading day currently contains no decisions: the walk resolves and the player watches. That matters more now that days can roll badly, because the failure mode is 'you set up correctly, the day rolled against you, you watched'. These are two candidate counterplays, measured before being built.",
+    "triage": {
+      "$comment": "A few 'next please' taps per day, pulling customers out of the queue before their patience runs out. Budget is a fraction of Footfall with a floor, so one tap is a burst rather than one person and the lever stays relevant as the shop grows.",
+      "fractionOfFootfall": 0.05,
+      "floor": 6
+    },
+    "sale": {
+      "$comment": "Flip the SALE sign. More people through the door and more of them buy, at a worse Margin \u2014 and the extra Footfall can drown your tills, which is what makes it a decision rather than a margin threshold.",
+      "footfallMul": 1.25,
+      "conversionMul": 1.18,
+      "marginDelta": -0.06
+    }
   }
 }

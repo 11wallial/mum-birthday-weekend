@@ -44,6 +44,85 @@ split does produce two distinct axes.
 
 ---
 
+# Part five — micro: does the trading day need decisions?
+
+The trading day contained none. You set the shop up at night, the walk resolved,
+you watched. That was tolerable while the resolver was deterministic. It stopped
+being tolerable once variance went in, because the failure mode became *you set
+up correctly, the day rolled against you, and you watched it happen* — which is
+the least satisfying death in the genre. Slay the Spire's appeal is the
+opposite: you rarely die to a bad draw, you die to misplaying one.
+
+So two candidate mechanics were built and measured before being committed to.
+
+**Till triage.** A few interventions per trading day pull customers out of the
+queue before their patience runs out. The budget is a fraction of Footfall with
+a floor, so one tap is a burst rather than one person and the lever stays
+relevant as the shop grows. Which customers you pull is the entire decision.
+
+**The SALE sign.** More people through the door and more of them buy, at a worse
+Margin — and the extra Footfall lands on the same tills, which is what makes it
+a decision rather than a margin threshold.
+
+`node sim/cli.js micro --n=300 --blocks=3`, added to the full planner:
+
+| Variant | Win rate | Per block | Delta |
+|---|---|---|---|
+| none | 33.2% | 34.0 / 31.3 / 34.3 | — |
+| triage, naive | 38.1% | 42.0 / 36.0 / 36.3 | **+4.9pp** |
+| **triage, smart** | **42.8%** | 45.3 / 40.3 / 42.7 | **+9.6pp** |
+| sale only | 36.7% | 37.0 / 33.0 / 40.0 | +3.4pp |
+| triage smart + sale | 43.1% | 44.3 / 42.7 / 42.3 | +9.9pp |
+
+Every row is sign-stable across all three blocks.
+
+## Triage is a third pillar. Build it.
+
+**9.6pp** puts it alongside the two things that already carry this game — tempo
+at 11.2pp and signage at 11.2pp. It is not decoration.
+
+Better than the headline: **it has a skill gradient**. Naive triage — serve
+whoever is nearest — is worth 4.9pp. Smart triage — serve by what that customer
+is actually worth — is worth another 4.7pp on top. So roughly half the value
+comes from engaging with the mechanic at all, and half from engaging with it
+well. That is exactly the shape micro should have: a novice is rewarded for
+touching it, and an expert is rewarded again for reading it properly.
+
+It also acts directly on the subsystem that was already deciding runs. The queue
+does 33-42% of the early killing and the player previously could not touch it.
+
+## The SALE sign is marginal, and redundant with triage. Do not build it.
+
+3.4pp alone, and the widest spread of any row. Worse, adding it on top of triage
+buys **+0.3pp**.
+
+The reason is worth keeping: both mechanics push on the same bottleneck. The
+sale raises Footfall, which worsens the queue; triage relieves the queue. Once
+you can triage, the sale's cost is partly absorbed and so is its benefit. Two
+levers on one bottleneck is one lever.
+
+If a second micro mechanic is wanted, it has to act somewhere else — on Basket
+or Margin directly, not on throughput.
+
+One caveat that cuts in the mechanic's favour: the sale was modelled as a
+**plan** made at night, not a mid-day reaction. A player reading the day as it
+runs would do better than 3.4pp. That is the lower bound, not the ceiling.
+
+## What this changes
+
+The vertical slice now has three skill pillars rather than two, and one of them
+lives in the trading day, which is where all the art and audio budget goes. The
+frenzy parameter, the beep ladder and the cutaway now have something to be
+feedback *for* rather than decoration over.
+
+It also answers the rent question from part four, at least partly. Rent is 42%
+of early deaths and is a fixed number against income that rolls. Triage is the
+counterplay: a bad roll is now something you can partly rescue rather than
+something you watch. Whether that is enough, or whether rent should also stop
+being a deterministic nut, is still open.
+
+---
+
 # Part four — second review, and the pool
 
 The reviewer pulled the branch again, reproduced the variance numbers, and made

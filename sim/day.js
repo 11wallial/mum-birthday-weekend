@@ -596,6 +596,11 @@ export function resolveDay(content, shop, ctx = {}) {
       }
     }
   }
+  // The SALE sign: more people, more of them buy, worse margin — and the extra
+  // Footfall lands on the same tills, which is the actual decision.
+  const saleCfg = content.economy.micro && content.economy.micro.sale;
+  const saleOn = !!shop.saleOn && !!saleCfg;
+  if (saleOn) footfall *= saleCfg.footfallMul;
   footfall += flags.footfallAdd;
   footfall *= flags.footfallMul;
   footfall = Math.min(footfall, flags.footfallCap);
@@ -607,6 +612,7 @@ export function resolveDay(content, shop, ctx = {}) {
 
   // --- Base margin ----------------------------------------------------------
   let baseMargin = content.economy.start.margin;
+  if (saleOn) baseMargin += saleCfg.marginDelta;
   if (shop.flags.marginBonus) baseMargin += shop.flags.marginBonus;
   baseMargin -= marginPenaltyFromStaff(shop);
 
@@ -735,6 +741,41 @@ export function resolveDay(content, shop, ctx = {}) {
   let { served, walkouts } = shop.flags.noQueue
     ? { served: queueArrivals, walkouts: new Float64Array(K) }
     : runQueue(queueArrivals, capacity, ticks, patience);
+
+  // Till triage. A few interventions per day pull customers out of the queue
+  // before their patience runs out. Which customers is the whole decision: the
+  // Luxury with a £225 basket and 25% conversion, or the Pensioner with £17 and
+  // 70% who is about to leave, or neither because the Browser is clogging the
+  // till and will buy nothing anyway.
+  const micro = content.economy.micro;
+  if (shop.triageMode && micro && micro.triage) {
+    let budget = Math.max(micro.triage.floor, footfall * micro.triage.fractionOfFootfall);
+    const order = [];
+    for (let k = 0; k < K; k++) {
+      if (walkouts[k] <= 0) continue;
+      // Naive triage serves whoever is nearest, so value everyone the same.
+      // Smart triage serves by what that customer is actually worth.
+      // routed[] only carries patience; a customer's worth has to come from
+      // the segments, share-weighted across whichever aisles they take.
+      let worth = 1;
+      if (shop.triageMode === 'smart') {
+        worth = 0;
+        for (const seg of segments) {
+          if (seg.k !== k) continue;
+          worth += seg.share * seg.terms.conversion * seg.terms.basket * seg.terms.margin;
+        }
+      }
+      order.push({ k, worth });
+    }
+    order.sort((a, b) => b.worth - a.worth);
+    for (const { k } of order) {
+      if (budget <= 0) break;
+      const take = Math.min(budget, walkouts[k]);
+      walkouts[k] -= take;
+      served[k] += take;
+      budget -= take;
+    }
+  }
 
   // --- Till ----------------------------------------------------------------
   let sales = 0;
