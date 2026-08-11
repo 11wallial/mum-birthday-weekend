@@ -115,6 +115,7 @@ export function loadContent(overrides = {}) {
   if (overrides.payoutMode) econ.payout.mode = overrides.payoutMode;
   if (overrides.congestion != null) econ.congestion.strength = overrides.congestion;
   if (overrides.congestionMode) econ.congestion.mode = overrides.congestionMode;
+  if (overrides.variance != null) econ.variance.enabled = !!overrides.variance;
 
   return {
     types,

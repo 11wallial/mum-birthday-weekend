@@ -18,6 +18,47 @@ import {
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
+/**
+ * What today's scaling costs you today.
+ *
+ * A ratchet pays off later, so it has to hurt now — otherwise long-term
+ * investment is free and there is no decision to make. Upkeep decays as the
+ * fixture matures: steep while it is young and carrying nothing, negligible
+ * once it is carrying the run.
+ */
+export function ratchetCount(shop) {
+  let n = 0;
+  for (const { inst } of fixtureInstances(shop)) {
+    if (inst.def.effect.op === 'ratchet') n++;
+  }
+  return n;
+}
+
+/**
+ * Does this shop clear the commitment threshold? Past it every ratchet is
+ * stronger, which is what stops a hedged build from being the safe optimum.
+ */
+export function commitMultiplier(content, shop) {
+  const cfg = content.economy.ratchets;
+  if (!cfg || !cfg.commitThreshold) return 1;
+  return ratchetCount(shop) >= cfg.commitThreshold ? 1 + cfg.commitBonus : 1;
+}
+
+export function ratchetUpkeep(content, shop, target) {
+  const cfg = content.economy.ratchets;
+  if (!cfg || !target) return 0;
+  // Per-fixture upkeep falls as you hold more, so one or two ratchets is the
+  // worst place to stand: full price each, and not enough of them to matter.
+  const scale = Math.pow(cfg.upkeepScalePerExtra ?? 1, Math.max(0, ratchetCount(shop) - 1));
+  let total = 0;
+  for (const { inst } of fixtureInstances(shop)) {
+    if (inst.def.effect.op !== 'ratchet') continue;
+    const frac = cfg.upkeepFractionOfTarget[inst.def.rarity] ?? 0;
+    total += target * frac * scale * Math.pow(cfg.upkeepDecay, inst.age || 0);
+  }
+  return total;
+}
+
 // ---------------------------------------------------------------------------
 // Rule fixtures and boss effects collapse into one flags object per day.
 // ---------------------------------------------------------------------------
@@ -185,6 +226,14 @@ export function collectFlags(content, shop, ctx) {
 // The walk
 // ---------------------------------------------------------------------------
 
+/** Conditions on a levelled clause. Same vocabulary as a trigger condition. */
+export function clauseHolds(clause, type) {
+  for (const c of clause.conditions || []) {
+    if (c.check === 'customer_type_in' && !c.value.includes(type.id)) return false;
+  }
+  return true;
+}
+
 function conditionsHold(content, shop, def, inst, aisleIdx, type) {
   const L = inst.level - 1;
   for (const c of def.trigger.conditions || []) {
@@ -214,6 +263,7 @@ function conditionsHold(content, shop, def, inst, aisleIdx, type) {
  * Walk one aisle as one customer type. Returns their personal terms at the till.
  */
 export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
+  const commitMul = commitMultiplier(content, shop);
   const aisle = shop.aisles[aisleIdx];
   const passChance = flags.noSkip ? 1 : content.economy.slots.basePassChance;
 
@@ -283,7 +333,9 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
     // A ratchet applies whatever it has accumulated so far. It grows once per
     // real trading day, in run.js, never during evaluation.
     if (def.effect.op === 'ratchet') {
-      if (def.term !== 'footfall') apply(def.term, 'add', inst.ratchet || 0, p, strength);
+      if (def.term !== 'footfall') {
+        apply(def.term, 'add', (inst.ratchet || 0) * commitMul, p, strength);
+      }
       continue;
     }
 
@@ -297,14 +349,11 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
 
     for (let t = 0; t < times; t++) {
       apply(def.term, def.effect.op, def.effect.value[L], p, strength);
-      // L3 clauses: a visible new clause rather than a bigger number.
-      if (inst.level >= 3) {
-        if (def.id === 'sample_table') apply('conversion', 'add', 0.05, p, strength);
-        if (def.id === 'greeter') apply('patience', 'add', 2, p, strength);
-        if (def.id === 'own_brand') apply('basket', 'add', -2, p, strength);
-        if (def.id === 'bargain_bin' && (type.id === 'family' || type.id === 'student')) {
-          apply('conversion', 'add', 0.1, p, strength);
-        }
+      // Levelled clauses are data, not branches: see fixtures.json.
+      for (const cl of def.clauses || []) {
+        if (inst.level < cl.minLevel) continue;
+        if (!clauseHolds(cl, type)) continue;
+        apply(cl.term, cl.op, cl.value, p, strength);
       }
     }
   }
@@ -435,6 +484,7 @@ export function resolveDay(content, shop, ctx = {}) {
   if (openAisles.length === 0) openAisles.push(0);
 
   // --- Footfall -------------------------------------------------------------
+  const commitMul = commitMultiplier(content, shop);
   let footfall = shop.baseFootfall + shop.carryFootfall;
   if (shop.flags.footfallMultiplier) footfall *= shop.flags.footfallMultiplier;
   for (let a = 0; a < shop.aisles.length; a++) {
@@ -443,10 +493,10 @@ export function resolveDay(content, shop, ctx = {}) {
       const def = inst.def;
       if (def.term !== 'footfall' || def.trigger.scope !== 'shop') continue;
       const v = def.effect.value[inst.level - 1];
-      if (def.effect.op === 'ratchet') footfall += inst.ratchet || 0;
+      if (def.effect.op === 'ratchet') footfall += (inst.ratchet || 0) * commitMul;
       else if (def.effect.op === 'add') footfall += v;
       else if (def.effect.op === 'multiply') footfall *= v;
-      if (def.id === 'loss_leader') {
+      if (def.drawback && def.drawback.id === 'margin_flat') {
         flags.marginFlat += def.drawback.value[inst.level - 1];
       }
     }
@@ -487,10 +537,18 @@ export function resolveDay(content, shop, ctx = {}) {
   for (const t of types) poolTotal += pool[t.id] || 0;
   if (poolTotal <= 0) poolTotal = 1;
 
+  // Sampling noise is applied only when the day is really played. Policies
+  // evaluate against the expectation, which is exactly what the projection
+  // panel shows them — so the plan is honest and the day is a roll.
+  const vcfg = content.economy.variance || {};
+  const noise = vcfg.enabled && ctx.sampleRng ? ctx.sampleRng : null;
+
   const arrivals = new Float64Array(K);
   for (const t of types) {
     let share = (pool[t.id] || 0) / poolTotal;
     let n = footfall * share;
+    // Who walks through the door is a draw, not a quota.
+    if (noise && vcfg.arrivals && n > 0) n = noise.binomial(footfall, share);
     if (t.id === 'shoplifter' && (flags.blockShoplifters || flags.shoplifterBecomes)) {
       const target = flags.blockShoplifters ? null : flags.shoplifterBecomes;
       if (target) arrivals[content.typeIndex.get(target)] += n;
@@ -603,11 +661,21 @@ export function resolveDay(content, shop, ctx = {}) {
       continue;
     }
     const seen = served[seg.k] * share;
-    const s = seen * terms.conversion;
+    // Each customer rolls against their own Conversion at the till.
+    const s = noise && vcfg.conversion
+      ? noise.binomial(seen, terms.conversion)
+      : seen * terms.conversion;
     sales += s;
     unsold += seen - s;
-    revenue += s * terms.basket;
-    saleProfit += s * terms.basket * terms.margin;
+    // Wallet rank varies per customer, so basket does too. Variance of a sum
+    // of s independent baskets, expressed as a coefficient of variation.
+    let rev = s * terms.basket;
+    if (noise && s > 0 && vcfg.walletCv) {
+      rev += noise.normal() * terms.basket * vcfg.walletCv * Math.sqrt(s);
+      if (rev < 0) rev = 0;
+    }
+    revenue += rev;
+    saleProfit += rev * terms.margin;
     aConv += seen * terms.conversion;
     aBasket += seen * terms.basket;
     aMargin += seen * terms.margin;
@@ -636,6 +704,7 @@ export function resolveDay(content, shop, ctx = {}) {
   const rent = rentFor(content, shop, auditMods, ctx.target) * flags.rentMul;
   profit -= rent;
   profit -= shop.marketingUpkeep || 0; // marketing persists and costs upkeep
+  profit -= ratchetUpkeep(content, shop, ctx.target); // scaling costs you while young
 
   // --- Tomorrow -------------------------------------------------------------
   const wcfg = content.economy.walkouts;

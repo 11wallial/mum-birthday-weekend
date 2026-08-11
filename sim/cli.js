@@ -17,6 +17,7 @@ import { playRun } from './run.js';
 import { runBatch, earlyDeathCauses, fmtPct, fmtMoney } from './harness.js';
 import { runSweep, SWEEPS } from './sweep.js';
 import { measureEnvelope, fitTargets } from './envelope.js';
+import { lookaheadCurve, capabilityAblation, commitmentCurves, ratchetQuotaCurve } from './ablate.js';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0] || 'check';
@@ -39,6 +40,7 @@ if (flags.rent) overrides.rentScale = Number(flags.rent);
 if (flags.payout) overrides.payoutMode = String(flags.payout);
 if (flags.congestion) overrides.congestion = Number(flags.congestion);
 if (flags.congmode) overrides.congestionMode = String(flags.congmode);
+if (flags.variance != null) overrides.variance = Number(flags.variance);
 const content = loadContent(overrides);
 const rule = (n = 74) => console.log('─'.repeat(n));
 
@@ -301,8 +303,107 @@ function bossimpact() {
     + '\n  the multiplier a boss target should carry (section 15 and step 7).\n');
 }
 
+function depth() {
+  const n = num('n', 600);
+  const character = str('character', 'default_shop');
+  console.log(`\nSkill gap versus lookahead depth — ${character}, ${n} runs per depth`);
+  console.log('Everything except lookahead is held at the greedy setting.\n');
+  rule(56);
+  console.log('lookahead   win rate   median death   gain vs depth 0');
+  rule(56);
+  const rows = lookaheadCurve(content, { n, characterId: character });
+  const zero = rows[0].winRate;
+  for (const r of rows) {
+    console.log(`${String(r.depth).padStart(9)}   ${fmtPct(r.winRate).padStart(8)}   `
+      + `${String(r.medianDeath ?? '-').padStart(12)}   `
+      + `${((r.winRate - zero) * 100).toFixed(1).padStart(10)}pp`);
+  }
+  rule(56);
+  const first = rows[1].winRate - zero;
+  const total = rows[rows.length - 1].winRate - zero;
+  console.log(`\n  One step of lookahead recovers ${fmtPct(total > 0 ? first / total : 0)} `
+    + `of everything depth ever buys.`);
+  console.log('  A steep step then a flat line means a low ceiling: the skill is'
+    + '\n  learnable in one sitting. A curve that keeps climbing means depth pays.\n');
+}
+
+function ablate() {
+  const n = num('n', 600);
+  const character = str('character', 'default_shop');
+  console.log(`\nCapability ablation — ${character}, ${n} runs per cell\n`);
+  const r = capabilityAblation(content, { n, characterId: character });
+  rule(62);
+  console.log(`greedy baseline ${fmtPct(r.base)}      full planner ${fmtPct(r.full)}`
+    + `      gap ${((r.full - r.base) * 100).toFixed(1)}pp`);
+  rule(62);
+  console.log('capability     alone (vs greedy)   removed (vs planner)');
+  rule(62);
+  for (let i = 0; i < r.solo.length; i++) {
+    const s = r.solo[i]; const d = r.drop[i];
+    console.log(`${s.cap.padEnd(14)} ${fmtPct(s.winRate).padStart(7)} `
+      + `${((s.winRate - r.base) * 100).toFixed(1).padStart(7)}pp   `
+      + `${fmtPct(d.winRate).padStart(9)} ${((d.winRate - r.full) * 100).toFixed(1).padStart(7)}pp`);
+  }
+  rule(62);
+  console.log('\n  A capability that adds nothing alone and costs nothing to remove'
+    + '\n  is not carrying skill, whatever the headline gap says.\n');
+}
+
+function quota() {
+  const n = num('n', 350);
+  const character = str('character', 'default_shop');
+  const th = content.economy.ratchets.commitThreshold;
+  console.log(`\nCommitment by ratchets held — ${character}, ${n} runs per cell`);
+  console.log(`Threshold for the commitment bonus is ${th}.\n`);
+  rule(48);
+  console.log('ratchets held   win rate');
+  rule(48);
+  const rows = ratchetQuotaCurve(content, { n, characterId: character });
+  for (const r of rows) {
+    const mark = r.quota >= th ? '  (committed)' : '';
+    console.log(`${String(r.quota).padStart(13)}   ${fmtPct(r.winRate).padStart(7)}${mark}`);
+  }
+  rule(48);
+  const none = rows[0].winRate;
+  const mid = Math.min(...rows.slice(1, th).map((r) => r.winRate));
+  const committed = Math.max(...rows.filter((r) => r.quota >= th).map((r) => r.winRate));
+  console.log(`\n  none ${fmtPct(none)}   hedged ${fmtPct(mid)}   committed ${fmtPct(committed)}`);
+  console.log(`  the design wants hedged to be the WORST of the three; it is `
+    + `${mid < none && mid < committed ? 'holding' : 'NOT holding'}\n`);
+}
+
+function commit() {
+  const n = num('n', 400);
+  const character = str('character', 'default_shop');
+  console.log(`\nCommitment — ${character}, ${n} runs per cell\n`);
+  const r = commitmentCurves(content, { n, characterId: character });
+  rule(58);
+  console.log('static mix (0 = pure tempo, 1 = pure scaling)');
+  rule(58);
+  for (const s of r.statics) {
+    console.log(`  bias ${s.bias.toFixed(2)}   ${fmtPct(s.winRate).padStart(7)}`);
+  }
+  rule(58);
+  console.log('pivot schedule (invest until encounter N, then harvest)');
+  rule(58);
+  for (const p of r.pivots) {
+    console.log(`  pivot @${String(p.pivot).padStart(2)}   ${fmtPct(p.winRate).padStart(7)}`);
+  }
+  rule(58);
+  const bestStatic = Math.max(...r.statics.map((s) => s.winRate));
+  const bestPivot = Math.max(...r.pivots.map((p) => p.winRate));
+  const ends = Math.max(r.statics[0].winRate, r.statics[r.statics.length - 1].winRate);
+  const mid = r.statics[2].winRate;
+  console.log(`\n  best static ${fmtPct(bestStatic)}   best pivot ${fmtPct(bestPivot)}   `
+    + `schedule is worth ${((bestPivot - bestStatic) * 100).toFixed(1)}pp over any fixed mix`);
+  console.log(`  extremes ${fmtPct(ends)}   even blend ${fmtPct(mid)}`);
+  console.log('\n  The design wants both extremes to die, a flat blend to be merely'
+    + '\n  mediocre, and a well-timed schedule to beat every fixed mix.\n');
+}
+
 const commands = {
   panel, check, chars, ladder, bosses, trace, bench, sweep, envelope, fit, bossimpact,
+  depth, ablate, commit, quota,
 };
 if (!commands[cmd]) {
   console.log(`unknown command: ${cmd}\ncommands: ${Object.keys(commands).join(', ')}`);

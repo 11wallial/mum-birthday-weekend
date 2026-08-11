@@ -23,6 +23,36 @@ export function makeRng(seed) {
     }
     return a;
   };
+  // Box-Muller, one value per call. Used for the day's sampling noise.
+  rng.normal = () => {
+    let u = 0; let v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+
+  /**
+   * Number of successes in n trials at probability p. n may be fractional,
+   * because the resolver works in expected customer counts. Exact for small
+   * n, normal approximation above it — the crossover is where the
+   * approximation is already good to well under a customer.
+   */
+  rng.binomial = (n, p) => {
+    if (n <= 0 || p <= 0) return 0;
+    if (p >= 1) return n;
+    if (n < 30) {
+      const whole = Math.floor(n);
+      let k = 0;
+      for (let i = 0; i < whole; i++) if (rng() < p) k++;
+      if (rng() < n - whole && rng() < p) k++; // the fractional customer
+      return k;
+    }
+    const mean = n * p;
+    const sd = Math.sqrt(n * p * (1 - p));
+    const x = mean + sd * rng.normal();
+    return x < 0 ? 0 : x > n ? n : x;
+  };
+
   rng.weighted = (entries) => {
     // entries: [[key, weight], ...]
     let total = 0;

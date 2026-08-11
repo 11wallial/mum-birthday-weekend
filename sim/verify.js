@@ -13,7 +13,7 @@
 //   node sim/verify.js [--n=200000]
 
 import { loadContent } from './content.js';
-import { collectFlags, resolveDay } from './day.js';
+import { clauseHolds, collectFlags, resolveDay } from './day.js';
 import { addFixture, autoSign, createShop, projectRatchets } from './shop.js';
 import { makeRng } from './rng.js';
 
@@ -99,15 +99,18 @@ function walkIndividual(shop, aisleIdx, type, flags, baseMargin, rng) {
     const times = inst.staff === 'assistant' ? 2 : 1;
     for (let t = 0; t < times; t++) {
       if (walked) apply(def.term, def.effect.op, def.effect.value[L], strength);
-      // An L3 clause that touches a second term rolls its own trigger. See
-      // ruling 8 in sim/README.md: sharing one roll across two terms couples
-      // them, and a coupled pair cannot be resolved by expectation.
-      if (inst.level >= 3 && (forced || rng() < passChance)) {
-        if (def.id === 'sample_table') apply('conversion', 'add', 0.05, strength);
-        if (def.id === 'own_brand') apply('basket', 'add', -2, strength);
-        if (def.id === 'bargain_bin' && (type.id === 'family' || type.id === 'student')) {
-          apply('conversion', 'add', 0.1, strength);
-        }
+      // Levelled clauses are read from the same JSON the resolver reads. The
+      // *engine* here is deliberately a second independent implementation;
+      // duplicating the *content* is not independence, it is drift, and it had
+      // already silently dropped Greeter's clause.
+      //
+      // A clause rolls its own trigger — see ruling 8 in sim/README.md:
+      // sharing one roll across two terms couples them, and a coupled pair
+      // cannot be resolved by expectation.
+      for (const cl of def.clauses || []) {
+        if (inst.level < cl.minLevel) continue;
+        if (!clauseHolds(cl, type)) continue;
+        if (forced || rng() < passChance) apply(cl.term, cl.op, cl.value, strength);
       }
     }
   }
@@ -144,6 +147,7 @@ const CASES = [
 const N = flagOf('n', 200000);
 let worst = 0;
 let worstRel = 0;
+const failures = [];
 console.log(`\nWalk verification — ${N.toLocaleString('en-GB')} individual customers per case\n`);
 console.log('case                             aggregate    individual    error   sigmas');
 console.log('─'.repeat(78));
@@ -191,6 +195,16 @@ for (const [name, fixtures] of CASES) {
   worst = Math.max(worst, sigmas);
   const err = diff / Math.max(1, agg.saleProfit);
   worstRel = Math.max(worstRel, err);
+  // Judged per case. Taking the maximum sigma and the maximum relative error
+  // across *different* cases and then failing if either maximum breaches makes
+  // the test fail on noise at low N, which is worse than no test at all.
+  // A case passes if the observed difference is explainable by sampling noise
+  // (3 standard errors) plus the allowed systematic bias from clamping, added
+  // together. Testing either alone makes the result depend on sample size.
+  const allowed = 3 * se + 0.0075 * Math.max(1, agg.saleProfit);
+  if (diff > allowed) {
+    failures.push(`${name}: £${diff.toFixed(2)} exceeds £${allowed.toFixed(2)} allowed`);
+  }
   console.log(
     `${name.padEnd(32)}${`£${agg.saleProfit.toFixed(2)}`.padStart(10)}`
     + `${`£${individual.toFixed(2)}`.padStart(14)}${`${(err * 100).toFixed(2)}%`.padStart(9)}`
@@ -210,9 +224,14 @@ console.log('─'.repeat(78));
 const BIAS_BOUND = 0.0075;
 console.log(`\nworst disagreement ${worst.toFixed(1)} standard errors, `
   + `${(worstRel * 100).toFixed(2)}% relative`);
-console.log(`tolerance: 3.0σ, or ${(BIAS_BOUND * 100).toFixed(2)}% for cap-induced bias`);
-if (worst > 3 && worstRel > BIAS_BOUND) {
-  console.log('FAIL — the aggregate resolution does not match the individual walk\n');
+console.log('a case passes if its gap fits inside 3 standard errors of noise '
+  + `plus ${(BIAS_BOUND * 100).toFixed(2)}% cap bias`);
+if (N < 150000) {
+  console.log(`note: n=${N.toLocaleString('en-GB')} is thin for the Luxury tail; `
+    + 'use 300k+ to separate bias from noise');
+}
+if (failures.length) {
+  console.log(`FAIL — ${failures.join('; ')}\n`);
   process.exit(1);
 }
 console.log('PASS — aggregate resolution matches the individual walk\n');

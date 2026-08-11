@@ -103,7 +103,7 @@ export function addFixture(content, shop, fixtureId, placement = null) {
     return null;
   }
 
-  const inst = { def, level: 1, copies: 1, staff: null, ratchet: 0 };
+  const inst = { def, level: 1, copies: 1, staff: null, ratchet: 0, age: 0 };
   const target = placement || emptySlots(shop)[0] || null;
   if (target && !shop.aisles[target.aisle].slots[target.slot]) {
     shop.aisles[target.aisle].slots[target.slot] = inst;
@@ -204,5 +204,8 @@ export function projectRatchets(shop, days) {
   for (const { inst } of fixtureInstances(shop)) {
     if (inst.def.effect.op !== 'ratchet') continue;
     inst.ratchet = (inst.ratchet || 0) + inst.def.effect.value[inst.level - 1] * days;
+    // Age too, so a lookahead sees the upkeep falling away as well as the
+    // value climbing. Seeing only one half of that is not a plan.
+    inst.age = (inst.age || 0) + days;
   }
 }

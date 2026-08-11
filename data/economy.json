@@ -9,7 +9,8 @@
     "cash": 0,
     "tills": 1,
     "supplierTier": 1,
-    "startingFixtures": 5
+    "startingFixtures": 3,
+    "$startingKitNote": "Back to 3. At 5 with only 6 commons every run opened holding 5 of 6, so Security Tag was present in 83% of runs and shrink was neutralised before encounter 1 \u2014 which silently deleted Finding 5 rather than solving it. The starting kit must stay well under the size of the common pool."
   },
   "rent": {
     "$comment": "Rent is pegged to the target curve as a declining fraction, so section 13's 'brutal in act 1, noise by act 5' is true by construction and survives any later retune of the curve. Footprint still costs: the fraction is for a baseline shop and scales with slots and tills owned.",
@@ -35,8 +36,10 @@
     }
   },
   "interest": {
-    "ratePerEncounter": 0.05,
-    "cap": 500
+    "$comment": "Banked cash compounds hard enough to be a strategy in its own right. If tempo has no long tail there is nothing to over-commit to on that side, and the whole tension collapses into one axis.",
+    "ratePerEncounter": 0.08,
+    "capFractionOfTarget": 1.2,
+    "capFloor": 300
   },
   "payout": {
     "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition. Flat reward per encounter plus interest plus a capped share of overshoot. Measured: this widens the greedy-versus-planner gap.",
@@ -280,5 +283,26 @@
     "$comment": "Two bosses are offered and the player takes one, revealed this many encounters ahead. Every boss attacks a term, so choosing which term to be attacked on is the purest read of your own build - and it converts boss variance into a decision.",
     "options": 2,
     "revealLead": 2
+  },
+  "variance": {
+    "$comment": "Sampling noise on the trading day. Applied only when the day is actually played, never when a policy evaluates a candidate board: the player plans against the projection panel's expectation and the day rolls around it. Without this every headline win rate is measured in a game where no day ever rolls badly, which is most of what difficulty is.",
+    "enabled": true,
+    "arrivals": true,
+    "conversion": true,
+    "walletCv": 0.38
+  },
+  "ratchets": {
+    "$comment": "A ratchet pays off later, so it has to hurt now, or scaling is free and there is no decision. Upkeep is a fraction of TODAY'S TARGET, not a flat cash sum, so the strain stays real at every scale; it decays as the fixture matures. A flagship ratchet costs a whole target on the day you install it. Taking three at once in act 1 is how you die.",
+    "upkeepDecay": 0.78,
+    "upkeepFractionOfTarget": {
+      "common": 0.3,
+      "uncommon": 0.45,
+      "rare": 0.65,
+      "flagship": 1.0
+    },
+    "$commentCommitment": "Economies of scale, and a threshold. 'Overcommitting to either kills you' makes the payoff concave in the mix, and a concave payoff has its optimum in the MIDDLE by definition \u2014 which is the opposite of what we want. To make the middle mediocre you have to pay people for being committed. Two mechanisms do that: per-fixture upkeep falls as you hold more, so holding one or two is the worst place to stand; and holding the threshold count makes every ratchet stronger, which a hedged build never reaches.",
+    "upkeepScalePerExtra": 0.72,
+    "commitThreshold": 4,
+    "commitBonus": 0.55
   }
 }

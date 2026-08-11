@@ -6,7 +6,8 @@
     "trigger.scope": "customer (fires as a customer passes this slot) | shop (evaluated at day start) | next_slots (amplifies same-term effects in the following N slots of this aisle) | exit (fires on exit)",
     "effect.op": "add | multiply | set | rule",
     "conditions": "list of { check, value }, all must hold",
-    "ratchet": "effect.op 'ratchet' grows a stored value by effect.value each trading day and then applies the accumulated total to its term. Ratchets are the only unbounded scalers in the pool, and they are deliberately confined to Footfall and Basket: Conversion and Margin are rates and cap out, so they cannot carry a 24-encounter curve."
+    "ratchet": "effect.op 'ratchet' grows a stored value by effect.value each trading day and then applies the accumulated total to its term. Ratchets are the only unbounded scalers in the pool, and they are deliberately confined to Footfall and Basket: Conversion and Margin are rates and cap out, so they cannot carry a 24-encounter curve.",
+    "clauses": "Extra effects a fixture gains at a level, as data rather than a branch in the resolver. Each clause is { minLevel, term, op, value, conditions? } and is applied by the same machinery as the main effect. A clause that touches a term other than the fixture's own rolls its own trigger \u2014 see ruling 8 in sim/README.md."
   },
   "fixtures": [
     {
@@ -36,7 +37,24 @@
         "value",
         "display"
       ],
-      "cost": 0
+      "cost": 0,
+      "clauses": [
+        {
+          "minLevel": 3,
+          "term": "conversion",
+          "op": "add",
+          "value": 0.1,
+          "conditions": [
+            {
+              "check": "customer_type_in",
+              "value": [
+                "family",
+                "student"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "sample_table",
@@ -64,7 +82,15 @@
         "fresh",
         "display"
       ],
-      "cost": 0
+      "cost": 0,
+      "clauses": [
+        {
+          "minLevel": 3,
+          "term": "conversion",
+          "op": "add",
+          "value": 0.05
+        }
+      ]
     },
     {
       "id": "greeter",
@@ -91,7 +117,15 @@
       "tags": [
         "service"
       ],
-      "cost": 0
+      "cost": 0,
+      "clauses": [
+        {
+          "minLevel": 3,
+          "term": "patience",
+          "op": "add",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "own_brand",
@@ -119,7 +153,15 @@
         "value",
         "stock"
       ],
-      "cost": 0
+      "cost": 0,
+      "clauses": [
+        {
+          "minLevel": 3,
+          "term": "basket",
+          "op": "add",
+          "value": -2
+        }
+      ]
     },
     {
       "id": "security_tag",
@@ -725,7 +767,12 @@
         "stock",
         "ratchet"
       ],
-      "cost": 0
+      "cost": 0,
+      "ratchetBonus": {
+        "minLevel": 3,
+        "when": "boss_day",
+        "multiply": 2
+      }
     },
     {
       "id": "word_of_mouth",

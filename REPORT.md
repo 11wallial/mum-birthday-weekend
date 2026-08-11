@@ -44,6 +44,188 @@ split does produce two distinct axes.
 
 ---
 
+# Part three — external review, and what it found
+
+An indie dev cloned the branch and ran it rather than reading part two on trust.
+Their verdict was that Phase 0 validated the engine and not a single number, and
+that in several places it could not yet. Every checkable claim they made was
+correct. This part is what happened when I acted on it.
+
+## The headline: the bands do not survive variance
+
+Their first objection was that no variance was modelled, so "planner 63.5%" was
+a win rate in a game where no day ever rolls badly. Conversion is now sampled
+binomially, arrivals are drawn rather than quota'd, and basket carries wallet
+noise — applied **only when a day is really played**, never when a policy
+evaluates a candidate board. That split is deliberate and it is also the right
+game design: the player plans against the projection panel's expectation, and
+the day rolls around it.
+
+`node sim/cli.js check --n=900 --variance=0|1`
+
+| | Random | Greedy | Planner | Gap |
+|---|---|---|---|---|
+| Deterministic | 0.0% | 22.9% | 53.2% | 30.3pp |
+| **With variance** | **0.0%** | **21.2%** | **48.8%** | **27.6pp** |
+
+Variance costs the planner 4.4pp and the gap 2.7pp, and **the planner band is
+now missed in both columns**. Part two's 63.5% did not survive the other fixes
+in this part either — chiefly the starting-kit correction below.
+
+Early deaths also change character: rent goes from 27% to **42%** of early
+losses once days can roll badly, overtaking the queue. A deterministic resolver
+was hiding the game's actual killer.
+
+**I have deliberately not re-tuned the curve to put the bands back.** Every
+structural change in this project has moved these numbers, three of the Phase 1
+gate items are still open, and tuning against an unverified queue and a 23-card
+pool would bake in noise and call it balance. The numbers above are what the
+build currently does.
+
+## The skill gap was partly a strawman, and the ruleset has a false claim in it
+
+Their sharpest point: the gap was bot versus bot, both bots written by the same
+author, and greedy had no model of tomorrow *by construction* — which is exactly
+the axis ratchets were added to reward. Close to circular.
+
+So greedy and planner are now two settings of one parameterised policy, and
+`ablate` switches each capability on alone and off from the full planner.
+Greedy also stopped throwing picks away on dead fourth copies, which is why its
+baseline rose from 23.7% to 32.3%: part of the old gap was a strawman, exactly
+as alleged.
+
+`node sim/cli.js ablate --n=400` — greedy 32.3%, planner 65.8%, gap 33.5pp:
+
+| Capability | Alone | Removed |
+|---|---|---|
+| **tempo** (purchase policy) | **+11.2pp** | **-21.7pp** |
+| **sign** (routing) | **+11.2pp** | **-11.7pp** |
+| lookahead | +1.3pp | **-12.5pp** |
+| reroll | -7.3pp | -6.5pp |
+| stress (robustness) | -1.5pp | **+0.8pp** |
+| balance (term coverage) | -0.3pp | -0.7pp |
+| **reorder (order of operations)** | **0.0pp** | **-0.2pp** |
+
+Three things fall out, and the third is the most important finding in the whole
+project.
+
+**Lookahead is a complement, not a skill.** Worth +1.3pp on its own, but -12.5pp
+when removed from a full planner. It only pays once you can afford to act on it.
+The dev was half right: it is not carrying the gap alone, but it is not
+worthless either.
+
+**Tempo and routing are the game.** The purchase policy and the signage are
+worth 11pp each alone and are the two most expensive things to remove. Whatever
+else FOOTFALL is about, the skill currently lives in *what you buy* and *where
+you send people*.
+
+**"Order of operations is the primary skill expression" is false.** Section 2
+puts that claim at the centre of the design. Measured: **0.0pp alone, -0.2pp
+removed.** An optimiser that reorders the entire board finds nothing. The reason
+is content, not principle — End Cap is the only adjacency effect in the pool,
+and on a three-slot aisle holding one amplifier there is almost never a
+profitable swap. The principle is sound and the pool does not express it. If
+that claim is to be true, the game needs many more position-conditional and
+same-term amplifier fixtures, and it needs them before anyone tunes anything
+else against it.
+
+**Stress-testing was actively harmful** and has been left in the planner config
+only so the ablation keeps a control; removing it *improves* the planner by
+0.8pp.
+
+## The starting kit had deleted a finding rather than solved it
+
+They spotted that `startingFixtures` was 5 against a pool of 6 commons, so every
+run opened holding 5 of 6 and Security Tag — which neutralises shoplifters —
+was present in **83%** of runs. Part two's day-one panel read `Shrink £0` for
+exactly that reason. Finding 5 was not fixed, it was accidentally erased.
+
+Back to 3. Shrink is £210 on day one again, and the rule is now written into
+`data/economy.json`: the starting kit must stay well under the size of the
+common pool.
+
+Their combine-rate observation was right too. It fell from 88.5% to 63.6% just
+from this change, so pool size is the dominant term but it is not the only
+lever, and part two overstated the case by calling it unfixable.
+
+## Content has moved out of code
+
+`day.js` branched on five fixture ids and `run.js` on a sixth; `verify.js`
+hand-mirrored three of them and had **silently dropped Greeter's clause**. That
+is exactly the drift the dev predicted, already happening at 23 fixtures.
+
+Levelled clauses are now data — `{ minLevel, term, op, value, conditions }` in
+`fixtures.json` — and there are no fixture ids left in `day.js` or `run.js`.
+The verifier reads the same clause data.
+
+The split that matters: `verify.js` still implements the *engine* independently,
+because that is what makes it a check. Duplicating the *content* was never
+independence, it was just drift.
+
+## The verifier had a bug of its own
+
+It took the worst sigma and the worst relative error across *different* cases
+and failed if either maximum breached, so it could fail on noise at low sample
+counts — it failed at n=120,000 and passed at n=300,000 on identical code. Now
+judged per case, against a threshold that adds sampling noise and the known
+clamp bias together, and it is stable from n=100k to n=400k.
+
+A verifier that fails randomly is worse than no verifier.
+
+## Commitment: mechanics built, design goal not yet met
+
+The brief was: greedy purchases should still pay off long-term, long-term
+purchases should strain you now, over-committing either way should kill you, and
+a flat blend should be merely mediocre.
+
+Built: ratchet upkeep charged as a **fraction of today's target** so the strain
+stays real at every scale, decaying as a fixture matures; economies of scale so
+per-fixture upkeep falls as you hold more; a commitment threshold that
+strengthens every ratchet past four held; and interest that compounds at 8%
+capped at 1.2x target so tempo has a long tail worth over-committing to.
+
+Measured, and it does not do what the brief asks:
+
+| | Result |
+|---|---|
+| Over-commitment punished | **Yes** — extremes 48-50% against 55% for a blend |
+| Blend merely mediocre | **No** — the blend is the *optimum* |
+| Timing beats any fixed mix | **No** — best pivot is 2.6pp *worse* than the best static mix |
+
+There is a structural reason for the middle one and it is worth stating plainly:
+**"over-committing either way kills you" makes the payoff concave in the mix,
+and a concave payoff has its optimum in the middle by definition.** Those two
+halves of the brief cannot both hold on a single axis by tuning. Making the
+middle bad needs a mechanism that *pays for commitment* — thresholds, economies
+of scale, or mutually exclusive keystones. Two of those are now built.
+
+Why they cannot yet be tested: there are five ratchet fixtures in a 23-card
+pool, mostly above common, so at low Supplier Tier the offer usually contains
+none. Forcing a build to hold four is not possible when four are never offered.
+Win rate against ratchets held is flat within 0.9pp, and that flatness measures
+the content, not the mechanism. This needs the larger pool before it means
+anything — the same gate as combine rate and rarity spread.
+
+I went through three wrong measurement axes before this was clear: a scoring
+bias that did not control holdings, and then a quota that was a ceiling rather
+than a target and so was a no-op above the natural level. Both are fixed;
+`node sim/cli.js quota` is the honest test once the pool can support it.
+
+## Still open from their gate list
+
+- **The queue is still unverified** and does 33-42% of the early killing.
+  `verify.js` excludes it by giving the shop infinite throughput. This is the
+  single most valuable remaining piece of work.
+- **Characters are untuned and part two's table was stale.** Not re-run here.
+- **The escalation fantasy is still gone** — encounter 24 is £5,401. Ratchets
+  went in and the curve stayed flat, so the seven-figure ending never came back.
+  That is a decision nobody has actually taken.
+- **The repo.** FOOTFALL is living in `mum-birthday-weekend` next to an
+  unrelated `index.html`. That is the user's call to make, not mine, but they
+  are right that it wants its own repo.
+
+---
+
 # Part two — the redesign
 
 The findings below were the diagnosis. This is what was built in response, and

@@ -209,8 +209,12 @@ function tickRatchets(shop, day, isBoss) {
     const def = inst.def;
     if (def.effect.op !== 'ratchet') continue;
     let gain = def.effect.value[inst.level - 1];
-    if (def.id === 'range_extension' && inst.level >= 3 && isBoss) gain *= 2;
+    const rb = def.ratchetBonus;
+    if (rb && inst.level >= rb.minLevel && (rb.when !== 'boss_day' || isBoss)) {
+      gain *= rb.multiply;
+    }
     inst.ratchet = (inst.ratchet || 0) + gain;
+    inst.age = (inst.age || 0) + 1;
     // Word of Mouth: a day of walkouts sets you back.
     if (def.drawback && def.drawback.id === 'reset_on_walkouts' && day.walkoutRate > 0.1) {
       inst.ratchet *= 1 - def.drawback.value[inst.level - 1];
@@ -333,7 +337,7 @@ export function playRun(content, opts = {}) {
     policy.night(nc);
     if (shop.supplierTier > tierBefore) record.tierUpgrades.push(enc);
 
-    const day = resolveDay(content, shop, ctx);
+    const day = resolveDay(content, shop, { ...ctx, sampleRng: rng });
 
     if (trace) {
       // On a boss day, resolve the same shop again with the boss removed. The
@@ -367,8 +371,13 @@ export function playRun(content, opts = {}) {
     } else {
       shop.cash += day.profit - target;
     }
+    // Banked cash compounds, and the cap scales with the target so tempo play
+    // keeps a long tail instead of flattening once the economy outgrows it.
     const int = content.economy.interest;
-    shop.cash += Math.min(int.cap, shop.cash * int.ratePerEncounter);
+    const cap = int.capFractionOfTarget != null
+      ? Math.max(int.capFloor ?? 0, target * int.capFractionOfTarget)
+      : int.cap;
+    shop.cash += Math.min(cap, shop.cash * int.ratePerEncounter);
     shop.carryFootfall = day.carry;
     shop.lastAvgSaleProfit = day.avgSaleProfit;
     shop.lastTradingProfit = day.saleProfit;
