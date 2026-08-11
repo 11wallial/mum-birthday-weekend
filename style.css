@@ -182,6 +182,9 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 }
 .slot.filled { border-style: solid; background: var(--paper-2); }
 .slot.target { border-color: var(--money); background: rgba(28,122,62,.12); }
+/* Placing onto a full shop clears the slot out. Red, because it is a loss. */
+.slot.target.scrap { border-color: var(--magenta); background: rgba(214,32,106,.12); }
+.slot.target.scrap .fx { text-decoration: line-through; }
 .slot .fx { font-family: var(--cond); font-size: 13px; line-height: 1.05; }
 .slot .lv {
   position: absolute; top: 2px; right: 4px; font-size: 9px;

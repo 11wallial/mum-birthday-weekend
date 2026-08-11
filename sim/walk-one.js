@@ -11,6 +11,7 @@
 // customers across the floor while the projection panel shows the aggregate.
 
 import { clauseHolds } from './day.js';
+import { isMultiplicative } from './ratchets.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -83,8 +84,9 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
       continue;
     }
     // A ratchet applies whatever it has accumulated, like any other add.
-    // A growing multiplier, rather than a growing addend.
-    if (def.effect.op === 'ratchet_mult') {
+    // A growing multiplier, rather than a growing addend — whether it grew by
+    // addition (ratchet_mult) or by multiplication (compound).
+    if (isMultiplicative(def)) {
       if (walked && def.term !== 'footfall') {
         apply(def.term, 'multiply', 1 + (inst.ratchet || 0), strength);
         if (onFire) onFire(i, def);

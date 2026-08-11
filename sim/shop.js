@@ -2,6 +2,8 @@
 // Topology is fixed per shop type and never procedurally generated (section 4),
 // so everything here is either bought or drafted, never rolled.
 
+import { isRatchet } from './ratchets.js';
+
 export function createShop(content, characterId) {
   const ch = content.characterById.get(characterId);
   if (!ch) throw new Error(`unknown character: ${characterId}`);
@@ -106,7 +108,16 @@ export function addFixture(content, shop, fixtureId, placement = null) {
 
   const inst = { def, level: 1, copies: 1, staff: null, ratchet: 0, age: 0 };
   const target = placement || emptySlots(shop)[0] || null;
-  if (target && !shop.aisles[target.aisle].slots[target.slot]) {
+  if (target) {
+    // Naming an occupied slot CLEARS IT OUT. A shop has nine slots and a run
+    // has twenty-four picks, so without this the board is finished by
+    // encounter nine and the next fifteen offers are decoration — which is
+    // exactly what the measurement found: twenty-four picks, 9.2 fixtures
+    // standing at the end, and compounders drafted in act 3 sitting on the
+    // bench where they compound nothing. What you throw out to make room is
+    // the decision the second half of the run is made of.
+    const displaced = shop.aisles[target.aisle].slots[target.slot];
+    if (displaced) shop.scrapped = (shop.scrapped || 0) + 1;
     shop.aisles[target.aisle].slots[target.slot] = inst;
   } else {
     shop.bench.push(inst);
@@ -130,7 +141,7 @@ export function applyOnAcquire(content, shop, inst) {
     case 'reset_ratchets_double_rate':
       for (const { inst: fx } of fixtureInstances(shop)) {
         if (fx === inst) continue;
-        if (fx.def.effect.op !== 'ratchet' && fx.def.effect.op !== 'ratchet_mult') continue;
+        if (!isRatchet(fx.def)) continue;
         fx.ratchet = 0;
       }
       shop.ratchetRateBonus = (shop.ratchetRateBonus || 1) * v;
@@ -236,10 +247,11 @@ export function marginPenaltyFromStaff(shop) {
 export function projectRatchets(shop, days, stats = null) {
   for (const { inst } of fixtureInstances(shop)) {
     const def = inst.def;
-    if (def.effect.op !== 'ratchet' && def.effect.op !== 'ratchet_mult') continue;
+    if (!isRatchet(def)) continue;
     const L = inst.level - 1;
     const eff = def.effect;
     const accel = eff.accel ? eff.accel[L] : 0;
+    const compounding = eff.op === 'compound';
     let rate = inst.rate == null ? eff.value[L] : inst.rate;
 
     // How many times a day does this card's trigger fire? A per-sale ratchet
@@ -251,8 +263,9 @@ export function projectRatchets(shop, days, stats = null) {
       switch (eff.per) {
         case 'sale': fires = stats.sales || 0; break;
         case 'type_sale': fires = (stats.salesByType && stats.salesByType[eff.perType]) || 0; break;
-        case 'walkout': fires = stats.walkouts || 0; break;
+        case 'walkout': fires = Math.min(stats.walkouts || 0, stats.served || 0); break;
         case 'boss': fires = 1 / 3; break; // one day in three
+        case 'win': fires = 1; break;       // planning assumes you clear it
         default: fires = 1;
       }
     } else if (eff.per && eff.per !== 'day') {
@@ -260,7 +273,8 @@ export function projectRatchets(shop, days, stats = null) {
     }
 
     for (let d = 0; d < days; d++) {
-      inst.ratchet = (inst.ratchet || 0) + rate * fires;
+      if (compounding) inst.ratchet = (1 + (inst.ratchet || 0)) * Math.pow(rate, fires) - 1;
+      else inst.ratchet = (inst.ratchet || 0) + rate * fires;
       rate += accel;
     }
     inst.rate = rate;

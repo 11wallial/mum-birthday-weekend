@@ -49,6 +49,13 @@ const CASES = [
   ['accelerating stack', [['bulk_pallets', 2], ['deli_counter', 1], ['long_life_stock', 1]]],
   ['anchor tenant feed', [['anchor_tenant', 1], ['bus_route', 2], ['gift_wrapping', 1]]],
   ['capped and pressing', [['staff_training', 3], ['greeter', 2], ['long_life_stock', 2]]],
+  // The compounding class. Two compounders on the same term multiply, and at
+  // twelve days of growth they are large enough that a wrong composition —
+  // adding the excesses instead of multiplying the factors — is a factor-of-two
+  // error rather than a rounding one.
+  ['two compounders, one term', [['penny_rounding', 1], ['standing_order', 1]]],
+  ['compound across terms', [['the_brand', 1], ['catchment_area', 1], ['sample_table', 1]]],
+  ['compound over a linear stack', [['interest_free_credit', 2], ['range_extension', 1], ['weighing_scales', 1]]],
 ];
 
 const N = flagOf('n', 200000);

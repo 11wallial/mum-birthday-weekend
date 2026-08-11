@@ -39,9 +39,28 @@ function describe(def, level = 1) {
     case 'multiply':
       return `×${v} ${term}`;
     case 'ratchet':
-      return `Gains +${def.term === 'basket' ? `£${v}` : v} ${term} permanently, every trading day`;
+      return `Gains +${def.term === 'basket' ? `£${v}` : v} ${term} permanently, ${feedWord(def)}`
+        + (def.effect.accel ? `, and that gain grows by ${def.effect.accel[L]} a day` : '');
+    case 'ratchet_mult':
+      return `Its ${term} multiplier grows by ${(v * 100).toFixed(1)}% ${feedWord(def)}`;
+    // The one exponential op, and the card has to say so plainly: what makes
+    // it different is not the size of the number but that it multiplies.
+    case 'compound':
+      return `×${v.toFixed(2)} ${term} ${feedWord(def)} — compounding`;
     case 'rule': return ruleText(def, L);
     default: return '';
+  }
+}
+
+/** What feeds this ratchet. Reads as the tail of a sentence. */
+function feedWord(def) {
+  switch (def.effect.per || 'day') {
+    case 'sale': return 'per sale';
+    case 'type_sale': return `per ${def.effect.perType} served`;
+    case 'walkout': return 'per walkout, up to the number you served';
+    case 'boss': return 'per inspection survived';
+    case 'win': return 'on every day you beat the target';
+    default: return 'every trading day';
   }
 }
 
@@ -161,13 +180,16 @@ function beginPlace(def) {
     return;
   }
   pending = def;
-  $('place-hint').textContent = `Placing ${def.name} — pick a slot. Order matters.`;
+  $('place-hint').textContent = emptySlots(game.shop).length
+    ? `Placing ${def.name} — pick a slot. Order matters.`
+    : `Placing ${def.name} — the shop is full. Pick what it goes on top of.`;
   renderNight();
 }
 
 function renderFloorplan() {
   const wrap = $('aisles');
   wrap.innerHTML = '';
+  const full = emptySlots(game.shop).length === 0;
   game.shop.aisles.forEach((aisle, ai) => {
     const row = document.createElement('div');
     row.className = `aisle${aisle.closed ? ' closed' : ''}`;
@@ -175,14 +197,19 @@ function renderFloorplan() {
     aisle.slots.forEach((inst, si) => {
       const cell = document.createElement('div');
       const free = !inst;
-      cell.className = `slot${inst ? ' filled' : ''}${pending && free ? ' target' : ''}`;
+      // A full shop does not end the run's decisions, it sharpens them: the
+      // pick lands on top of something, and choosing what to clear out is the
+      // whole of the back half of the game.
+      const takeable = pending && (free || full);
+      cell.className = `slot${inst ? ' filled' : ''}${takeable ? ' target' : ''}`
+        + `${takeable && !free ? ' scrap' : ''}`;
       cell.innerHTML = inst
         ? `<div class="fx">${inst.def.name}</div><div class="tm">${TERM_WORD[inst.def.term] || '—'}</div>
            ${inst.level > 1 ? `<div class="lv">L${inst.level}</div>` : ''}
            ${inst.staff ? `<div class="st">${inst.staff[0].toUpperCase()}</div>` : ''}`
         : '<div class="tm">empty</div>';
       cell.onclick = () => {
-        if (!pending || !free) return;
+        if (!takeable) return;
         game.take(pending.id, { aisle: ai, slot: si });
         audio.place();
         pending = null;

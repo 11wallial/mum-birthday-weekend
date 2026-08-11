@@ -274,8 +274,10 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
       sales: dayState.sales,
       salesByType: dayState.salesByType,
       walkouts: dayState.walkouts,
+      served: dayState.served,
       footfall: dayState.footfall,
       isBoss: run.encounter % bossEvery === 0,
+      missedTarget: dayState.profit < tgt,
       rateMul: (shop.ratchetRateBonus || 1) * (dayState.rateMul || 1),
     });
     return entry;

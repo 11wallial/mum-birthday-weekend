@@ -303,7 +303,15 @@
       "flagship": 1.0
     },
     "$commentCommitment": "Economies of scale, and a threshold. 'Overcommitting to either kills you' makes the payoff concave in the mix, and a concave payoff has its optimum in the MIDDLE by definition \u2014 which is the opposite of what we want. To make the middle mediocre you have to pay people for being committed. Two mechanisms do that: per-fixture upkeep falls as you hold more, so holding one or two is the worst place to stand; and holding the threshold count makes every ratchet stronger, which a hedged build never reaches.",
-    "upkeepScalePerExtra": 0.72,
+    "$commentCompound": "Compounders are billed on their own line. A linear ratchet's upkeep decays as it matures; a compounder's does not, because a compounder is at its strongest on the last day of the run and a decaying charge would hand the strongest class in the pool to the player for free exactly when it wins the game. Quoted against the target, so a compounder's rent climbs with the economy for as long as you hold it.",
+  "upkeepFractionCompound": {
+    "common": 0.16,
+    "uncommon": 0.27,
+    "rare": 0.42,
+    "flagship": 0.66
+  },
+  "upkeepDecayCompound": 1,
+  "upkeepScalePerExtra": 0.72,
     "commitThreshold": 4,
     "commitBonus": 0.55
   },

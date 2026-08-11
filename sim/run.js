@@ -205,13 +205,15 @@ function makeNightContext(content, shop, rng, ctx, target, encounter, record) {
  * Ratchets grow once per real trading day. Never during evaluation: policies
  * resolve the day hundreds of times a night and must not advance run state.
  */
-function tickRatchets(shop, day, isBoss) {
+function tickRatchets(shop, day, isBoss, missedTarget) {
   growAll(fixtureInstances(shop), {
     sales: day.sales,
     salesByType: day.salesByType,
     walkouts: day.walkouts,
+    served: day.served,
     footfall: day.footfall,
     isBoss,
+    missedTarget,
     rateMul: (shop.ratchetRateBonus || 1) * (day.flags.ratchetRateMul || 1),
   });
 }
@@ -375,7 +377,7 @@ export function playRun(content, opts = {}) {
     shop.carryFootfall = day.carry;
     shop.lastAvgSaleProfit = day.avgSaleProfit;
     shop.lastTradingProfit = day.saleProfit;
-    tickRatchets(shop, day, !!boss);
+    tickRatchets(shop, day, !!boss, day.profit < target);
     shop.flagshipHeldYesterday = fixtureInstances(shop)
       .some(({ inst }) => inst.def.rarity === 'flagship' && !day.flags.disabled.has(inst));
   }

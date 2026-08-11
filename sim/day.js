@@ -15,6 +15,9 @@ import {
   shopHoldsTag,
   totalSlots,
 } from './shop.js';
+import { isRatchet, isMultiplicative } from './ratchets.js';
+
+export { isRatchet, isMultiplicative };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -63,9 +66,6 @@ export function expectedClamped(mu, variance, cap) {
  * fixture matures: steep while it is young and carrying nothing, negligible
  * once it is carrying the run.
  */
-/** Both accumulating classes count as ratchets everywhere. */
-export const isRatchet = (def) => def.effect.op === 'ratchet' || def.effect.op === 'ratchet_mult';
-
 export function ratchetCount(shop) {
   let n = 0;
   for (const { inst } of fixtureInstances(shop)) if (isRatchet(inst.def)) n++;
@@ -91,8 +91,19 @@ export function ratchetUpkeep(content, shop, target) {
   let total = 0;
   for (const { inst } of fixtureInstances(shop)) {
     if (!isRatchet(inst.def)) continue;
-    const frac = cfg.upkeepFractionOfTarget[inst.def.rarity] ?? 0;
-    total += target * frac * scale * Math.pow(cfg.upkeepDecay, inst.age || 0);
+    // A linear ratchet's upkeep decays as it matures — steep while it carries
+    // nothing, negligible once it carries the run. A compounder is the other
+    // way round: it is strongest at the end, so a decaying upkeep would make
+    // the most powerful class in the pool free exactly when it wins the game.
+    // Its upkeep never decays, and because upkeep is quoted against the
+    // target, it climbs with the target for the whole run. That permanent,
+    // scaling nut is what makes committing to scaling a real risk instead of
+    // a free option.
+    const compounding = inst.def.effect.op === 'compound';
+    const table = compounding ? cfg.upkeepFractionCompound : cfg.upkeepFractionOfTarget;
+    const frac = table[inst.def.rarity] ?? 0;
+    const decay = compounding ? (cfg.upkeepDecayCompound ?? 1) : cfg.upkeepDecay;
+    total += target * frac * scale * Math.pow(decay, inst.age || 0);
   }
   return total;
 }
@@ -479,9 +490,11 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
       }
       continue;
     }
-    // A growing multiplier. The only genuinely exponential thing in the pool,
-    // which is why it is rare, expensive to keep, and slow to start.
-    if (def.effect.op === 'ratchet_mult') {
+    // A growing multiplier. ratchet_mult climbs by addition and compound
+    // climbs by multiplication; both are read here as x(1 + ratchet), so the
+    // difference between linear and exponential lives entirely in how the
+    // number got this big, never in how it is spent.
+    if (isMultiplicative(def)) {
       if (def.term !== 'footfall') {
         apply(def.term, 'multiply', 1 + (inst.ratchet || 0) * commitMul, p, strength);
       }
@@ -650,7 +663,7 @@ export function resolveDay(content, shop, ctx = {}) {
       if (def.term !== 'footfall' || def.trigger.scope !== 'shop') continue;
       const v = def.effect.value[inst.level - 1];
       if (def.effect.op === 'ratchet') footfall += (inst.ratchet || 0) * commitMul;
-      else if (def.effect.op === 'ratchet_mult') footfall *= 1 + (inst.ratchet || 0) * commitMul;
+      else if (isMultiplicative(def)) footfall *= 1 + (inst.ratchet || 0) * commitMul;
       else if (def.effect.op === 'add') footfall += v;
       else if (def.effect.op === 'multiply') footfall *= v;
 

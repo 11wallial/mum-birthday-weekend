@@ -14,6 +14,7 @@
 // know that.
 
 import { resolveDay } from './day.js';
+import { isRatchet } from './ratchets.js';
 import {
   addFixture, autoSign, emptySlots, findInstance, fixtureInstances, ownedIds,
   projectRatchets, totalSlots,
@@ -53,6 +54,19 @@ function profitAhead(content, shop, ctx, days) {
 
 function candidateSlots(shop, limit) {
   const empty = emptySlots(shop);
+  // Once the board is full, the only placement left is on top of something.
+  // Offering those slots as candidates is what lets a build pivot in act 3
+  // instead of being frozen at whatever it happened to draft in act 1.
+  if (empty.length === 0) {
+    const held = fixtureInstances(shop)
+      .map(({ aisle, slot, inst }) => ({ aisle, slot, inst }))
+      // Never scrap something that has been accumulating: a ratchet's value is
+      // in its history, and throwing one away is almost always a mistake the
+      // policy should not spend its search budget rediscovering.
+      .sort((a, b) => (a.inst.ratchet || 0) - (b.inst.ratchet || 0))
+      .slice(0, limit);
+    return held.map(({ aisle, slot }) => ({ aisle, slot }));
+  }
   if (empty.length <= limit) return empty;
   const out = [];
   const step = empty.length / limit;
@@ -276,7 +290,8 @@ export function makePolicy(name, overrides = {}) {
         }
         if (cfg.lookahead > 0) {
           const horizon = Math.min(cfg.lookahead, left);
-          v += profitAhead(content, s, ctx, horizon) * 0.30 * (left / content.run.encounters);
+          v += profitAhead(content, s, ctx, horizon)
+            * (cfg.futureWeight ?? 0.30) * (left / content.run.encounters);
         }
         if (cfg.balance) v += termBalance(content, s, ctx).weakest * target * 0.25;
         return v;
@@ -289,7 +304,7 @@ export function makePolicy(name, overrides = {}) {
         // This is the axis the commitment mechanics actually act on, so it is
         // the axis the commitment measurement has to move.
         const held = cfg.ratchetQuota != null
-          ? fixtureInstances(shop).filter((e) => e.inst.def.effect.op === 'ratchet').length
+          ? fixtureInstances(shop).filter((e) => isRatchet(e.inst.def)).length
           : 0;
         for (const fx of nc.offers) {
           const owned = findInstance(shop, fx.id);
@@ -299,10 +314,10 @@ export function makePolicy(name, overrides = {}) {
           // commit. A cap alone can never test a commitment threshold, because
           // any cap at or above the natural level is a no-op.
           if (cfg.ratchetQuota != null && !owned) {
-            const isRatchet = fx.effect.op === 'ratchet';
-            if (isRatchet && held >= cfg.ratchetQuota) continue;
-            if (!isRatchet && held < cfg.ratchetQuota
-                && nc.offers.some((o) => o.effect.op === 'ratchet' && !findInstance(shop, o.id))) {
+            const scales = isRatchet(fx);
+            if (scales && held >= cfg.ratchetQuota) continue;
+            if (!scales && held < cfg.ratchetQuota
+                && nc.offers.some((o) => isRatchet(o) && !findInstance(shop, o.id))) {
               continue;
             }
           }
@@ -317,7 +332,12 @@ export function makePolicy(name, overrides = {}) {
           && shop.cash > nc.rerollCost() * 4
           && attempts < 2;
         if (worthRerolling && nc.reroll()) { attempts++; continue; }
-        if (best) nc.take(best.fx, best.placement);
+        // Taking is no longer free once the board is full: the pick lands on
+        // top of something. If nothing on offer beats what is already
+        // standing, decline and bank the money instead.
+        if (best && best.sc <= score(shop) && emptySlots(shop).length === 0) {
+          nc.skip();
+        } else if (best) nc.take(best.fx, best.placement);
         else nc.take(nc.offers[0], emptySlots(shop)[0] || null);
         break;
       }
