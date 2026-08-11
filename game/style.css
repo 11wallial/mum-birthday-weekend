@@ -1,0 +1,299 @@
+/* FOOTFALL — two registers, one lineage.
+   Night is a 1980s cash-and-carry catalogue page. Day is a cutaway
+   illustration. Both are mid-century print, so one paper-and-ink treatment
+   unifies them: newsprint cream, CMYK at full saturation, halftone, condensed
+   caps for prices and headlines, a humanist sans for everything else. */
+
+:root {
+  --paper: #f4ead6;
+  --paper-2: #eadfc6;
+  --ink: #16130f;
+  --ink-soft: #5b544a;
+  --cyan: #0aa3c2;
+  --magenta: #d6206a;
+  --yellow: #f2b90c;
+  --money: #1c7a3e;      /* one accent reserved exclusively for money */
+  --rule: rgba(22, 19, 15, 0.22);
+  --frenzy: 0;
+  --cond: "Haettenschweiler", "Arial Narrow", "Oswald", system-ui, sans-serif;
+  --body: "Inter", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Phases set display:grid, which beats the hidden attribute's default
+   display:none. Without this every phase renders at once, stacked. */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--body);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The paper treatment everything passes through. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  opacity: calc(0.5 + var(--frenzy) * 0.4);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(22,19,15,.16) 1px, transparent 0),
+    radial-gradient(circle at 3px 3px, rgba(214,32,106,.05) 1px, transparent 0);
+  background-size: 4px 4px, 7px 7px;
+  mix-blend-mode: multiply;
+}
+
+#app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 clamp(8px, 2vw, 22px);
+}
+
+/* ---------------------------------------------------------------- ledger */
+
+#ledger {
+  display: flex; gap: clamp(8px, 2vw, 26px); align-items: baseline;
+  padding: 10px 2px 8px;
+  border-bottom: 3px solid var(--ink);
+  flex-wrap: wrap;
+}
+.led { display: flex; flex-direction: column; line-height: 1; }
+.led .k {
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.led .v { font-family: var(--cond); font-size: clamp(17px, 2.4vw, 25px); letter-spacing: .02em; }
+.led.grow { margin-left: auto; text-align: right; }
+.money { color: var(--money); }
+.boss-flag {
+  font-family: var(--cond); font-size: clamp(14px, 2vw, 19px);
+  background: var(--magenta); color: var(--paper);
+  padding: 3px 10px; text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* ------------------------------------------------------- projection panel */
+/* Section 17: the most important piece of UI in the game. Never hidden. */
+
+#panel {
+  border-bottom: 1px solid var(--rule);
+  padding: 9px 2px 10px;
+}
+.terms { display: flex; align-items: center; gap: clamp(4px, 1.4vw, 16px); flex-wrap: wrap; }
+.term { display: flex; flex-direction: column; line-height: 1.05; min-width: 62px; }
+.term b { font-family: var(--cond); font-size: clamp(21px, 3.4vw, 34px); }
+.term i {
+  font-style: normal; font-size: 9.5px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.term.wide b { color: var(--money); }
+.op { font-family: var(--cond); font-size: clamp(15px, 2vw, 22px); color: var(--ink-soft); }
+.costs {
+  display: flex; gap: clamp(8px, 2vw, 20px); margin-top: 5px;
+  font-size: clamp(11px, 1.5vw, 13px); color: var(--ink-soft); flex-wrap: wrap;
+}
+.costs b { color: var(--ink); }
+.costs .gap.short { color: var(--magenta); }
+.costs .gap.clear { color: var(--money); }
+
+/* ----------------------------------------------------------------- stage */
+
+#stage { overflow-y: auto; padding: 12px 0 6px; scrollbar-width: thin; }
+h2 {
+  font-family: var(--cond); font-size: clamp(15px, 2vw, 19px);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; color: var(--ink-soft); letter-spacing: 0; text-transform: none; }
+.stamp {
+  font-size: 10px; letter-spacing: .1em; border: 2px solid var(--magenta);
+  color: var(--magenta); padding: 2px 7px; transform: rotate(-2deg);
+}
+
+#night { display: grid; gap: 16px; }
+@media (min-width: 900px) {
+  #night { grid-template-columns: 1.15fr 1fr; grid-template-areas: "cat floor" "cat fit" "boss boss"; }
+  #catalogue { grid-area: cat; } #floorplan { grid-area: floor; }
+  #shopfitting { grid-area: fit; } #bosschoice { grid-area: boss; }
+}
+
+/* --------------------------------------------------------- catalogue page */
+/* Section 31: rarity is page real estate, not a coloured border. */
+
+#offers { display: grid; gap: 10px; }
+.entry {
+  border: 1px solid var(--rule); background: var(--paper-2);
+  padding: 10px 12px; cursor: pointer; position: relative;
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.entry:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.entry.chosen { outline: 3px solid var(--money); }
+.entry .name { font-family: var(--cond); font-size: 20px; letter-spacing: .01em; }
+.entry .code { font-size: 9.5px; letter-spacing: .12em; color: var(--ink-soft); }
+.entry .copy { font-size: 12px; grid-column: 1 / -1; color: var(--ink-soft); }
+.entry .eff { font-size: 12.5px; grid-column: 1 / -1; }
+.entry .tier {
+  font-family: var(--cond); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .1em; align-self: start;
+}
+.entry.r-common .tier { color: var(--ink-soft); }
+.entry.r-uncommon { border-left: 4px solid var(--cyan); }
+.entry.r-uncommon .tier { color: var(--cyan); }
+.entry.r-rare { border-left: 4px solid var(--magenta); padding-block: 14px; }
+.entry.r-rare .tier { color: var(--magenta); }
+.entry.r-flagship {
+  border: 3px double var(--ink); padding-block: 18px;
+  background: linear-gradient(100deg, var(--paper-2), #f6e9bd);
+  box-shadow: inset 0 0 0 1px var(--yellow);
+}
+.entry.r-flagship .tier { color: #9a6b00; }
+.entry.owned { opacity: .55; }
+.entry .combine {
+  position: absolute; right: 8px; bottom: 6px; font-size: 10px;
+  font-family: var(--cond); letter-spacing: .08em; color: var(--money);
+}
+#offer-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ------------------------------------------------------------- floorplan */
+
+#aisles { display: grid; gap: 8px; }
+.aisle { display: flex; align-items: stretch; gap: 6px; }
+.aisle .lbl {
+  font-family: var(--cond); font-size: 11px; writing-mode: vertical-rl;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+  display: grid; place-items: center; min-width: 16px;
+}
+.aisle.closed { opacity: .35; }
+.slot {
+  flex: 1; min-height: 62px; min-width: 44px;
+  border: 1px dashed var(--rule); background: rgba(255,255,255,.4);
+  display: grid; place-content: center; text-align: center; padding: 4px;
+  cursor: pointer; position: relative;
+}
+.slot.filled { border-style: solid; background: var(--paper-2); }
+.slot.target { border-color: var(--money); background: rgba(28,122,62,.12); }
+.slot .fx { font-family: var(--cond); font-size: 13px; line-height: 1.05; }
+.slot .lv {
+  position: absolute; top: 2px; right: 4px; font-size: 9px;
+  font-family: var(--cond); color: var(--magenta);
+}
+.slot .st { position: absolute; bottom: 2px; left: 4px; font-size: 9px; color: var(--cyan); }
+.slot .tm { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ------------------------------------------------------------ shopfitting */
+
+#buys { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.buy {
+  border: 1px solid var(--rule); background: var(--paper-2);
+  padding: 7px 9px; text-align: left; cursor: pointer; font: inherit;
+  display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+  min-height: 44px;
+}
+.buy:hover:not(:disabled) { box-shadow: 2px 2px 0 var(--ink); }
+.buy:disabled { opacity: .4; cursor: default; }
+.buy .n { font-size: 12.5px; }
+.buy .c { font-family: var(--cond); font-size: 14px; color: var(--money); white-space: nowrap; }
+
+/* ------------------------------------------------------------- boss cards */
+
+#bosschoice { border: 2px solid var(--magenta); padding: 12px; background: rgba(214,32,106,.06); }
+#boss-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bosscard {
+  border: 1px solid var(--rule); background: var(--paper); padding: 10px;
+  cursor: pointer; text-align: left; font: inherit; min-height: 44px;
+}
+.bosscard:hover { box-shadow: 3px 3px 0 var(--magenta); }
+.bosscard .bn { font-family: var(--cond); font-size: 18px; text-transform: uppercase; }
+.bosscard .bd { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+
+/* -------------------------------------------------------------- the floor */
+
+#day { display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; }
+#floor { width: 100%; height: 100%; min-height: 260px; display: block; cursor: pointer; }
+#daybar {
+  display: flex; gap: clamp(10px, 3vw, 30px); align-items: center;
+  border-top: 3px solid var(--ink); padding-top: 8px; flex-wrap: wrap;
+}
+.dstat { display: flex; flex-direction: column; line-height: 1; }
+.dstat b { font-family: var(--cond); font-size: clamp(18px, 3vw, 28px); }
+.dstat i {
+  font-style: normal; font-size: 9.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.dstat.triage b { color: var(--cyan); }
+#btn-speed { margin-left: auto; }
+
+/* ---------------------------------------------------------------- receipt */
+
+#settle { display: grid; place-items: center; padding: 10px 0 20px; }
+#receipt {
+  background: #fffdf6; width: min(420px, 94vw); padding: 18px 20px 26px;
+  font-family: "SFMono-Regular", ui-monospace, "Courier New", monospace;
+  font-size: 12.5px; line-height: 1.62;
+  box-shadow: 0 10px 26px rgba(0,0,0,.16);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 92% 100%, 84% calc(100% - 8px),
+    76% 100%, 68% calc(100% - 8px), 60% 100%, 52% calc(100% - 8px), 44% 100%,
+    36% calc(100% - 8px), 28% 100%, 20% calc(100% - 8px), 12% 100%, 4% calc(100% - 8px), 0 100%);
+}
+#receipt h3 { font-family: var(--cond); font-size: 19px; letter-spacing: .08em; text-align: center; }
+#receipt .r { display: flex; justify-content: space-between; }
+#receipt .rule { border-top: 1px dashed var(--rule); margin: 7px 0; }
+#receipt .big { font-size: 15px; font-weight: 700; }
+#receipt .verdict { text-align: center; margin-top: 12px; font-size: 14px; letter-spacing: .1em; }
+#receipt .pass { color: var(--money); } #receipt .fail { color: var(--magenta); }
+
+/* ------------------------------------------------------------------ title */
+
+#title { display: grid; place-items: center; gap: 14px; text-align: center; padding: 4vh 0; }
+#title h1 {
+  font-family: var(--cond); font-size: clamp(56px, 15vw, 150px); line-height: .85;
+  letter-spacing: -.01em;
+  text-shadow: 3px 3px 0 var(--cyan), 6px 6px 0 var(--magenta);
+}
+#title .tag { font-size: 14px; color: var(--ink-soft); max-width: 34ch; }
+#title .fine { font-size: 11.5px; color: var(--ink-soft); line-height: 1.7; }
+#charpick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 700px; }
+.charbtn {
+  border: 1px solid var(--rule); background: var(--paper-2); padding: 8px 12px;
+  font: inherit; cursor: pointer; text-align: left; max-width: 210px; min-height: 44px;
+}
+.charbtn.on { outline: 3px solid var(--ink); background: var(--paper); }
+.charbtn .cn { font-family: var(--cond); font-size: 16px; text-transform: uppercase; }
+.charbtn .cr { font-size: 10.5px; color: var(--ink-soft); }
+
+/* ---------------------------------------------------------------- buttons */
+
+#actions { display: flex; gap: 12px; align-items: center; padding: 8px 0 12px; border-top: 1px solid var(--rule); }
+#tip { font-size: 11.5px; color: var(--ink-soft); }
+button { font-family: var(--body); }
+.primary {
+  font-family: var(--cond); font-size: clamp(16px, 2.4vw, 21px); text-transform: uppercase;
+  letter-spacing: .06em; background: var(--ink); color: var(--paper);
+  border: none; padding: 11px 26px; cursor: pointer; min-height: 44px;
+}
+.primary:hover { background: var(--magenta); }
+.primary:disabled { opacity: .35; cursor: default; }
+.ghost {
+  border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  padding: 8px 13px; cursor: pointer; font-size: 12.5px; min-height: 44px;
+}
+.ghost:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.ghost:disabled { opacity: .35; cursor: default; }
+.ghost em { font-style: normal; color: var(--money); margin-left: 5px; }
+.ghost:hover:not(:disabled) em { color: var(--yellow); }
+
+@media (max-width: 620px) {
+  #ledger { gap: 10px; }
+  .term b { font-size: 20px; }
+  #boss-options { grid-template-columns: 1fr; }
+}

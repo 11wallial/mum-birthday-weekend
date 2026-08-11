@@ -60,7 +60,8 @@
     "$comment": "One trading day is this many ticks. Each till serves one customer per tick. This is the throughput knob from tuning step 5.",
     "ticks": 180,
     "tillRate": 1.0,
-    "walkTicksPerSlot": 1
+    "walkTicksPerSlot": 5,
+    "$walkNote": "Raised from 1 for the playable build: at 1 a customer spent three ticks of a hundred and eighty on the floor, so the walk - the centrepiece - was visually empty. This shortens the service window by the same amount (ticks minus aisle length times this), so it moves throughput by about 8% and wants re-measuring with the rest of the tuning."
   },
   "walkouts": {
     "$comment": "A walkout is a lost sale plus a Footfall penalty tomorrow. The penalty is capped as a share of base Footfall: uncapped, one bad boss day drives Footfall to zero and a zero in any term ends the run outright.",

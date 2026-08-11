@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FOOTFALL</title>
+<meta name="description" content="A roguelike where you run a shop. Customers walk your aisles, fixtures fire as they pass, and a quarterly target eats you alive.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4ead6'/%3E%3Crect x='4' y='7' width='24' height='4' fill='%230aa3c2'/%3E%3Crect x='4' y='14' width='24' height='4' fill='%23d6206a'/%3E%3Crect x='4' y='21' width='24' height='4' fill='%23f2b90c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script src="data-bundle.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <header id="ledger">
+    <div class="led"><span class="k">Quarter</span><span class="v" id="l-quarter">1</span></div>
+    <div class="led"><span class="k">Day</span><span class="v" id="l-day">1 / 24</span></div>
+    <div class="led"><span class="k">Target</span><span class="v money" id="l-target">£0</span></div>
+    <div class="led"><span class="k">Cash</span><span class="v money" id="l-cash">£0</span></div>
+    <div class="led"><span class="k">Tills</span><span class="v" id="l-tills">1</span></div>
+    <div class="led"><span class="k">Supplier</span><span class="v" id="l-tier">Tier 1</span></div>
+    <div class="led grow" id="l-boss"></div>
+  </header>
+
+  <section id="panel" aria-label="Projection">
+    <div class="terms">
+      <div class="term"><b id="p-footfall">0</b><i>Footfall</i></div>
+      <span class="op">&times;</span>
+      <div class="term"><b id="p-conv">0%</b><i>Conversion</i></div>
+      <span class="op">&times;</span>
+      <div class="term"><b id="p-basket">£0</b><i>Basket</i></div>
+      <span class="op">&times;</span>
+      <div class="term"><b id="p-margin">0%</b><i>Margin</i></div>
+      <span class="op">=</span>
+      <div class="term wide"><b id="p-trading">£0</b><i>Trading</i></div>
+    </div>
+    <div class="costs">
+      <span id="p-rent">Rent £0</span>
+      <span id="p-shrink">Shrink £0</span>
+      <span id="p-upkeep">Upkeep £0</span>
+      <b id="p-profit">Profit £0</b>
+      <b id="p-gap" class="gap">Gap £0</b>
+    </div>
+  </section>
+
+  <main id="stage">
+    <!-- night -->
+    <div id="night" hidden>
+      <div id="bosschoice" hidden>
+        <h2>The landlord's diary</h2>
+        <p class="sub">Two of these are coming. Take one — the other goes back.</p>
+        <div id="boss-options"></div>
+      </div>
+      <div id="catalogue">
+        <h2>Wholesale catalogue <span class="stamp" id="cat-tier">Tier 1</span></h2>
+        <div id="offers"></div>
+        <div id="offer-actions">
+          <button id="btn-reroll" class="ghost">Fresh flyer <em>£0</em></button>
+          <button id="btn-skip" class="ghost">Take the cash instead <em>£0</em></button>
+        </div>
+      </div>
+      <div id="floorplan">
+        <h2>The floor <span class="hint" id="place-hint"></span></h2>
+        <div id="aisles"></div>
+      </div>
+      <div id="shopfitting">
+        <h2>Shopfitting &amp; staff</h2>
+        <div id="buys"></div>
+      </div>
+    </div>
+
+    <!-- day -->
+    <div id="day" hidden>
+      <canvas id="floor"></canvas>
+      <div id="daybar">
+        <div class="dstat"><b id="d-clock">0%</b><i>Day</i></div>
+        <div class="dstat"><b id="d-sales">0</b><i>Sales</i></div>
+        <div class="dstat"><b id="d-walk">0</b><i>Walkouts</i></div>
+        <div class="dstat"><b id="d-profit" class="money">£0</b><i>Takings</i></div>
+        <div class="dstat triage"><b id="d-triage">0</b><i>Next please</i></div>
+        <button id="btn-speed" class="ghost">&raquo; 1&times;</button>
+      </div>
+    </div>
+
+    <!-- receipt -->
+    <div id="settle" hidden>
+      <div id="receipt"></div>
+      <button id="btn-continue" class="primary">Lock up</button>
+    </div>
+
+    <!-- title -->
+    <div id="title">
+      <h1>FOOTFALL</h1>
+      <p class="tag">Eight quarters. Twenty-four trading days. A target that does not care.</p>
+      <div id="charpick"></div>
+      <button id="btn-start" class="primary">Open the shop</button>
+      <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent.<br>
+      Never add a fifth term.</p>
+    </div>
+  </main>
+
+  <footer id="actions">
+    <button id="btn-open" class="primary" hidden>Open the doors</button>
+    <div id="tip"></div>
+  </footer>
+
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

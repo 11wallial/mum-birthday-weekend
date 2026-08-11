@@ -15,17 +15,21 @@ import { clauseHolds } from './day.js';
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
 /** One customer, one wallet roll, one coin flip per slot. */
-export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin, rng) {
+export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin, rng, onFire) {
   const aisle = shop.aisles[aisleIdx];
   const passChance = flags.noSkip ? 1 : content.economy.slots.basePassChance;
   const w = content.wallet;
   const rank = 1 + rng.int(w.ranks);
   const wallet = w.min + ((rank - 1) * (w.max - w.min)) / (w.ranks - 1);
 
+  const crowd = flags.congestion ? flags.congestion[aisleIdx] : 1;
+  const crowdMode = content.economy.congestion?.mode || 'patience';
   const terms = {
-    conversion: type.conversion,
+    conversion: type.conversion * (crowdMode === 'conversion' ? crowd : 1),
     basket: type.basket * (type.sign === 'positive' ? wallet : 1) * flags.basketMul,
     margin: baseMargin + type.marginDelta,
+    patience: (type.patienceTicks + aisle.patienceBonus + flags.patienceBonus)
+      * flags.patienceMul * (crowdMode === 'patience' ? crowd : 1),
   };
 
   const amps = [];
@@ -80,11 +84,15 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
     }
     // A ratchet applies whatever it has accumulated, like any other add.
     if (def.effect.op === 'ratchet') {
-      if (walked && def.term !== 'footfall') apply(def.term, 'add', inst.ratchet || 0, strength);
+      if (walked && def.term !== 'footfall') {
+        apply(def.term, 'add', inst.ratchet || 0, strength);
+        if (onFire) onFire(i, def);
+      }
       continue;
     }
 
     const times = inst.staff === 'assistant' ? 2 : 1;
+    if (walked && onFire) onFire(i, def);
     for (let t = 0; t < times; t++) {
       if (walked) apply(def.term, def.effect.op, def.effect.value[L], strength);
       // Levelled clauses are read from the same JSON the resolver reads. The
@@ -114,6 +122,7 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
   terms.conversion = clamp(terms.conversion, 0, convCap);
   terms.margin = clamp(terms.margin, -1, marginCap);
   if (type.sign === 'positive') terms.basket = Math.max(0, terms.basket);
-  return { value: terms.conversion * terms.basket * terms.margin, clamped };
+  terms.patience = Math.max(0, terms.patience);
+  return { value: terms.conversion * terms.basket * terms.margin, clamped, terms };
 }
 

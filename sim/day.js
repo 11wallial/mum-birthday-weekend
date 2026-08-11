@@ -259,6 +259,19 @@ export function collectFlags(content, shop, ctx) {
   return f;
 }
 
+/**
+ * The Margin every customer starts from, before anything on the floor touches
+ * them. Exported because the browser build walks individuals and needs the
+ * same starting point the aggregate resolver uses.
+ */
+export function baseMarginFor(content, shop, saleOn = false) {
+  let m = content.economy.start.margin;
+  const sale = content.economy.micro && content.economy.micro.sale;
+  if (saleOn && sale) m += sale.marginDelta;
+  if (shop.flags.marginBonus) m += shop.flags.marginBonus;
+  return m - marginPenaltyFromStaff(shop);
+}
+
 // ---------------------------------------------------------------------------
 // The walk
 // ---------------------------------------------------------------------------
@@ -611,10 +624,7 @@ export function resolveDay(content, shop, ctx = {}) {
   footfall = Math.max(0, footfall);
 
   // --- Base margin ----------------------------------------------------------
-  let baseMargin = content.economy.start.margin;
-  if (saleOn) baseMargin += saleCfg.marginDelta;
-  if (shop.flags.marginBonus) baseMargin += shop.flags.marginBonus;
-  baseMargin -= marginPenaltyFromStaff(shop);
+  const baseMargin = baseMarginFor(content, shop, saleOn);
 
   // --- Pool -----------------------------------------------------------------
   let pool = flags.poolOverride || shop.flags.forcedPool || shop.pool;
@@ -838,9 +848,10 @@ export function resolveDay(content, shop, ctx = {}) {
 
   const totalWalkouts = walkouts.reduce((a, b) => a + b, 0);
   const rent = rentFor(content, shop, auditMods, ctx.target) * flags.rentMul;
+  const upkeepRatchet = ratchetUpkeep(content, shop, ctx.target);
   profit -= rent;
   profit -= shop.marketingUpkeep || 0; // marketing persists and costs upkeep
-  profit -= ratchetUpkeep(content, shop, ctx.target); // scaling costs you while young
+  profit -= upkeepRatchet; // scaling costs you while it is still young
 
   // --- Tomorrow -------------------------------------------------------------
   const wcfg = content.economy.walkouts;
@@ -883,6 +894,7 @@ export function resolveDay(content, shop, ctx = {}) {
   return {
     profit,
     rent,
+    ratchetUpkeep: upkeepRatchet,
     revenue,
     saleProfit,
     shrink,
