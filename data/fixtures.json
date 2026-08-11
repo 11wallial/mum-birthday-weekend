@@ -9,7 +9,9 @@
     "ratchet": "effect.op 'ratchet' grows a stored value by effect.value each trading day and then applies the accumulated total to its term. Ratchets are the only unbounded scalers in the pool, and they are deliberately confined to Footfall and Basket: Conversion and Margin are rates and cap out, so they cannot carry a 24-encounter curve.",
     "clauses": "Extra effects a fixture gains at a level, as data rather than a branch in the resolver. Each clause is { minLevel, term, op, value, conditions? } and is applied by the same machinery as the main effect. A clause that touches a term other than the fixture's own rolls its own trigger \u2014 see ruling 8 in sim/README.md.",
     "position": "Conditions slot_is_first, slot_is_last, slot_index_min, prev_slot_class and prev_slot_term make WHERE a fixture sits matter. The ablation measured reordering the whole board at 0.0pp because End Cap was the only adjacency effect in the pool; section 2 calls order of operations the primary skill expression, so the catalogue has to express it.",
-    "purity": "aisle_all_share_tag and shop_holds_at_least_tag pay for commitment. A concave payoff has its optimum in the middle by definition, so making a hedged build merely mediocre needs effects that reward being pure, not just penalties for going too far."
+    "purity": "aisle_all_share_tag and shop_holds_at_least_tag pay for commitment. A concave payoff has its optimum in the middle by definition, so making a hedged build merely mediocre needs effects that reward being pure, not just penalties for going too far.",
+    "ratchet_growth": "A ratchet may be fed per day, per sale, per sale to one customer type, per walkout, or per boss survived, and may carry `accel` which grows the per-day amount itself. Flat-per-day is linear and linear cannot carry a 24-encounter exponential; `accel` and the per-sale feeds are where the exponent actually lives. See sim/ratchets.js.",
+    "ratchet_mult": "effect.op 'ratchet_mult' accumulates a MULTIPLIER rather than an addend: the term is multiplied by (1 + accumulated). The only genuinely exponential object in the pool, so there are three of them, all flagship, all expensive to keep and slow to start."
   },
   "fixtures": [
     {
@@ -1414,6 +1416,916 @@
         "value",
         "keystone",
         "commitment"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "bus_route",
+      "name": "Bus Route",
+      "class": "additive",
+      "rarity": "common",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          9,
+          21,
+          46
+        ]
+      },
+      "l3Clause": {
+        "text": "The stop moves right outside."
+      },
+      "tags": [
+        "promo",
+        "ratchet"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "delivery_round",
+      "name": "Delivery Round",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          0.12,
+          0.28,
+          0.62
+        ],
+        "per": "sale"
+      },
+      "l3Clause": {
+        "text": "The van does two runs."
+      },
+      "tags": [
+        "service",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "school_opposite",
+      "name": "School Opposite",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          1.1,
+          2.6,
+          5.8
+        ],
+        "per": "type_sale",
+        "perType": "family"
+      },
+      "tags": [
+        "promo",
+        "ratchet",
+        "family"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "trade_directory",
+      "name": "Trade Directory",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          2.0,
+          4.7,
+          10.4
+        ],
+        "per": "type_sale",
+        "perType": "trade"
+      },
+      "tags": [
+        "stock",
+        "ratchet",
+        "trade"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "queue_outside",
+      "name": "Queue Outside",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          2.2,
+          5.2,
+          11.5
+        ],
+        "per": "walkout"
+      },
+      "l3Clause": {
+        "text": "A queue out the door is the best advert there is."
+      },
+      "tags": [
+        "promo",
+        "ratchet",
+        "perverse"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "christmas_lights",
+      "name": "Christmas Lights",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          4,
+          9,
+          20
+        ],
+        "accel": [
+          3.0,
+          4.5,
+          7.0
+        ]
+      },
+      "drawback": {
+        "id": "rent_multiplier",
+        "value": [
+          1.35,
+          1.32,
+          1.28
+        ]
+      },
+      "l3Clause": {
+        "text": "They go up in October now."
+      },
+      "tags": [
+        "promo",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "bank_holiday_trade",
+      "name": "Bank Holiday Trade",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          85,
+          200,
+          440
+        ],
+        "per": "boss"
+      },
+      "l3Clause": {
+        "text": "You are the shop that stayed open."
+      },
+      "tags": [
+        "promo",
+        "ratchet",
+        "patient"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "car_park",
+      "name": "Car Park Extension",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          13,
+          30,
+          66
+        ]
+      },
+      "drawback": {
+        "id": "throughput_cost",
+        "value": [
+          1,
+          1,
+          0
+        ]
+      },
+      "tags": [
+        "value",
+        "ratchet"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "franchise",
+      "name": "Franchise Agreement",
+      "class": "rule_breaking",
+      "rarity": "flagship",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          11,
+          15,
+          20
+        ],
+        "accel": [
+          5.5,
+          6.5,
+          8.0
+        ]
+      },
+      "drawback": {
+        "id": "rent_multiplier",
+        "value": [
+          2.2,
+          2.1,
+          2.0
+        ]
+      },
+      "l3Clause": {
+        "text": "Head office stops asking questions."
+      },
+      "tags": [
+        "commitment",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "retail_park",
+      "name": "Retail Park",
+      "class": "rule_breaking",
+      "rarity": "flagship",
+      "term": "footfall",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet_mult",
+        "value": [
+          0.055,
+          0.065,
+          0.08
+        ]
+      },
+      "drawback": {
+        "id": "margin_flat",
+        "value": [
+          -0.1,
+          -0.09,
+          -0.08
+        ]
+      },
+      "l3Clause": {
+        "text": "The whole park is yours."
+      },
+      "tags": [
+        "commitment",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "weighing_scales",
+      "name": "Weighing Scales",
+      "class": "additive",
+      "rarity": "common",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          0.8,
+          1.9,
+          4.2
+        ]
+      },
+      "tags": [
+        "stock",
+        "ratchet"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "gift_wrapping",
+      "name": "Gift Wrapping",
+      "class": "additive",
+      "rarity": "common",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          0.02,
+          0.05,
+          0.11
+        ],
+        "per": "sale"
+      },
+      "tags": [
+        "service",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "deli_counter",
+      "name": "The Deli Counter",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          2.1,
+          4.9,
+          10.8
+        ]
+      },
+      "drawback": {
+        "id": "conversion_cost",
+        "value": [
+          0.08,
+          0.06,
+          0.04
+        ]
+      },
+      "l3Clause": {
+        "text": "They stop minding the wait."
+      },
+      "tags": [
+        "fresh",
+        "ratchet"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "premium_own_label",
+      "name": "Premium Own Label",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          3.2,
+          7.5,
+          16.6
+        ],
+        "per": "type_sale",
+        "perType": "luxury"
+      },
+      "tags": [
+        "stock",
+        "ratchet",
+        "luxury"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "bulk_pallets",
+      "name": "Bulk Pallets",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          1.1,
+          2.2,
+          4.4
+        ],
+        "accel": [
+          0.45,
+          0.7,
+          1.1
+        ]
+      },
+      "drawback": {
+        "id": "reset_on_walkouts",
+        "value": [
+          0.25,
+          0.15,
+          0.06
+        ]
+      },
+      "l3Clause": {
+        "text": "The pallets stop toppling."
+      },
+      "tags": [
+        "stock",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "wine_aisle",
+      "name": "Wine Aisle",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": [
+          {
+            "check": "aisle_all_share_tag",
+            "value": "stock",
+            "min": 2
+          }
+        ]
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          3.0,
+          7.0,
+          15.5
+        ]
+      },
+      "tags": [
+        "stock",
+        "ratchet",
+        "keystone"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "christmas_club",
+      "name": "The Christmas Club",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet",
+        "value": [
+          24,
+          56,
+          124
+        ],
+        "per": "boss"
+      },
+      "tags": [
+        "service",
+        "ratchet",
+        "patient"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "concession_stand",
+      "name": "Concession Stand",
+      "class": "rule_breaking",
+      "rarity": "flagship",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "ratchet_mult",
+        "value": [
+          0.05,
+          0.06,
+          0.075
+        ]
+      },
+      "drawback": {
+        "id": "rent_multiplier",
+        "value": [
+          1.7,
+          1.6,
+          1.5
+        ]
+      },
+      "l3Clause": {
+        "text": "Three concessions, and all of them pay you."
+      },
+      "tags": [
+        "commitment",
+        "ratchet",
+        "compounding"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "anchor_tenant",
+      "name": "Anchor Tenant",
+      "class": "rule_breaking",
+      "rarity": "flagship",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "footfall_ratchets_feed_basket",
+        "value": [
+          0.09,
+          0.12,
+          0.16
+        ]
+      },
+      "drawback": {
+        "id": "margin_flat",
+        "value": [
+          -0.08,
+          -0.07,
+          -0.06
+        ]
+      },
+      "l3Clause": {
+        "text": "Everything that brings them in also makes them spend."
+      },
+      "tags": [
+        "commitment",
+        "keystone"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "stocktake",
+      "name": "Stocktake",
+      "class": "rule_breaking",
+      "rarity": "rare",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "reset_ratchets_double_rate",
+        "value": [
+          2.0,
+          2.3,
+          2.7
+        ]
+      },
+      "l3Clause": {
+        "text": "The write-off is worth more every time."
+      },
+      "tags": [
+        "stock",
+        "gamble"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "managers_office",
+      "name": "The Manager's Office",
+      "class": "rule_breaking",
+      "rarity": "flagship",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "ratchet_rate_multiply",
+        "value": [
+          1.9,
+          2.1,
+          2.4
+        ]
+      },
+      "drawback": {
+        "id": "margin_flat",
+        "value": [
+          -0.17,
+          -0.15,
+          -0.13
+        ]
+      },
+      "l3Clause": {
+        "text": "You stop doing the rotas yourself."
+      },
+      "tags": [
+        "commitment",
+        "keystone"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "conveyor_belt",
+      "name": "Conveyor Belt",
+      "class": "rule_breaking",
+      "rarity": "uncommon",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "throughput",
+        "value": [
+          3,
+          5,
+          8
+        ]
+      },
+      "drawback": {
+        "id": "block_type_conversion",
+        "type": "pensioner",
+        "value": [
+          0.35,
+          0.2,
+          0.0
+        ]
+      },
+      "tags": [
+        "till"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "second_storey",
+      "name": "Second Storey",
+      "class": "rule_breaking",
+      "rarity": "rare",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "add_aisle_on_acquire",
+        "value": [
+          3,
+          4,
+          5
+        ]
+      },
+      "tags": [
+        "layout"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "price_architecture",
+      "name": "Price Architecture",
+      "class": "multiplicative",
+      "rarity": "rare",
+      "term": "basket",
+      "trigger": {
+        "scope": "customer",
+        "conditions": [
+          {
+            "check": "shop_holds_at_least_tag",
+            "value": "ratchet",
+            "count": 3
+          }
+        ]
+      },
+      "effect": {
+        "op": "multiply",
+        "value": [
+          1.4,
+          1.4,
+          1.4
+        ]
+      },
+      "breadth": {
+        "check": "scope_widen",
+        "value": [
+          "customer",
+          "aisle",
+          "shop"
+        ]
+      },
+      "tags": [
+        "value",
+        "keystone"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "staff_training",
+      "name": "Staff Training",
+      "class": "additive",
+      "rarity": "uncommon",
+      "term": "conversion",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "add",
+        "value": [
+          0.13,
+          0.32,
+          0.72
+        ]
+      },
+      "l3Clause": {
+        "text": "Also +3 Patience."
+      },
+      "tags": [
+        "service"
+      ],
+      "levels": 3,
+      "cost": 0,
+      "clauses": [
+        {
+          "minLevel": 3,
+          "term": "patience",
+          "op": "add",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "long_life_stock",
+      "name": "Long Life Stock",
+      "class": "additive",
+      "rarity": "rare",
+      "term": "margin",
+      "trigger": {
+        "scope": "customer",
+        "conditions": []
+      },
+      "effect": {
+        "op": "add",
+        "value": [
+          0.16,
+          0.4,
+          0.88
+        ]
+      },
+      "drawback": {
+        "id": "basket_flat",
+        "value": [
+          -3,
+          -2,
+          -1
+        ]
+      },
+      "tags": [
+        "stock",
+        "value"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "shrinkage_audit",
+      "name": "Shrinkage Audit",
+      "class": "rule_breaking",
+      "rarity": "uncommon",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "shrink_reduce",
+        "value": [
+          0.5,
+          0.72,
+          1.0
+        ]
+      },
+      "tags": [
+        "loss_prevention"
+      ],
+      "levels": 3,
+      "cost": 0
+    },
+    {
+      "id": "overnight_delivery",
+      "name": "Overnight Delivery",
+      "class": "rule_breaking",
+      "rarity": "rare",
+      "term": "none",
+      "trigger": {
+        "scope": "shop",
+        "conditions": []
+      },
+      "effect": {
+        "op": "rule",
+        "rule": "ratchet_rate_multiply",
+        "value": [
+          1.45,
+          1.6,
+          1.8
+        ]
+      },
+      "drawback": {
+        "id": "rent_multiplier",
+        "value": [
+          1.4,
+          1.35,
+          1.3
+        ]
+      },
+      "tags": [
+        "stock",
+        "keystone"
       ],
       "levels": 3,
       "cost": 0

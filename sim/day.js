@@ -63,11 +63,12 @@ export function expectedClamped(mu, variance, cap) {
  * fixture matures: steep while it is young and carrying nothing, negligible
  * once it is carrying the run.
  */
+/** Both accumulating classes count as ratchets everywhere. */
+export const isRatchet = (def) => def.effect.op === 'ratchet' || def.effect.op === 'ratchet_mult';
+
 export function ratchetCount(shop) {
   let n = 0;
-  for (const { inst } of fixtureInstances(shop)) {
-    if (inst.def.effect.op === 'ratchet') n++;
-  }
+  for (const { inst } of fixtureInstances(shop)) if (isRatchet(inst.def)) n++;
   return n;
 }
 
@@ -89,7 +90,7 @@ export function ratchetUpkeep(content, shop, target) {
   const scale = Math.pow(cfg.upkeepScalePerExtra ?? 1, Math.max(0, ratchetCount(shop) - 1));
   let total = 0;
   for (const { inst } of fixtureInstances(shop)) {
-    if (inst.def.effect.op !== 'ratchet') continue;
+    if (!isRatchet(inst.def)) continue;
     const frac = cfg.upkeepFractionOfTarget[inst.def.rarity] ?? 0;
     total += target * frac * scale * Math.pow(cfg.upkeepDecay, inst.age || 0);
   }
@@ -130,6 +131,12 @@ export function collectFlags(content, shop, ctx) {
     closedAisle: -1,
     rentMul: 1,
     poolOverride: null,
+    conversionFlat: 0,
+    basketFlat: 0,
+    shrinkReduce: 0,
+    footfallFeedsBasket: 0,
+    footfallRatchetTotal: 0,
+    ratchetRateMul: 1,
   };
 
   // Staff, shop-wide
@@ -201,9 +208,22 @@ export function collectFlags(content, shop, ctx) {
       f.globalEffects.push({ inst, def });
     }
 
-    // Second Branch pays for its Footfall in rent, whatever class it is.
-    if (def.drawback && def.drawback.id === 'rent_multiplier') {
-      f.rentMul *= def.drawback.value[L];
+    // Every drawback is applied here, whatever class carries it. Splitting
+    // them between this loop and the Footfall loop is how a double-count
+    // starts, and Loss Leader used to be counted in both.
+    if (def.drawback) {
+      const dv = def.drawback.value[L];
+      switch (def.drawback.id) {
+        case 'rent_multiplier': f.rentMul *= dv; break;
+        case 'margin_flat': f.marginFlat += dv; break;
+        case 'throughput_cost': f.throughputBonus -= dv; break;
+        case 'conversion_cost': f.conversionFlat -= dv; break;
+        case 'basket_flat': f.basketFlat += dv; break;
+        default: break;
+      }
+    }
+    if (isRatchet(def) && def.term === 'footfall') {
+      f.footfallRatchetTotal += inst.ratchet || 0;
     }
 
     if (def.effect.op !== 'rule') continue;
@@ -241,6 +261,21 @@ export function collectFlags(content, shop, ctx) {
       case 'basket_multiply_single_till':
         f.basketMul *= v;
         f.throughputCap = Math.min(f.throughputCap, d);
+        break;
+      // Anchor Tenant: whatever brings them in also makes them spend.
+      case 'footfall_ratchets_feed_basket':
+        f.footfallFeedsBasket = Math.max(f.footfallFeedsBasket, v);
+        break;
+      case 'ratchet_rate_multiply':
+        f.ratchetRateMul *= v;
+        break;
+      case 'shrink_reduce':
+        f.shrinkReduce = Math.max(f.shrinkReduce, v);
+        break;
+      // reset_ratchets_double_rate and add_aisle_on_acquire fire once, when the
+      // fixture is acquired, so they live in shop.js rather than here.
+      case 'reset_ratchets_double_rate':
+      case 'add_aisle_on_acquire':
         break;
       case 'margin_set':
         // A commitment: it only holds while the shop stays small enough.
@@ -444,6 +479,14 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
       }
       continue;
     }
+    // A growing multiplier. The only genuinely exponential thing in the pool,
+    // which is why it is rare, expensive to keep, and slow to start.
+    if (def.effect.op === 'ratchet_mult') {
+      if (def.term !== 'footfall') {
+        apply(def.term, 'multiply', 1 + (inst.ratchet || 0) * commitMul, p, strength);
+      }
+      continue;
+    }
 
     if (scope === 'next_slots') {
       const count = def.trigger.count[L];
@@ -471,6 +514,11 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
     apply(def.term, def.effect.op, def.effect.value[inst.level - 1], 1, 1);
   }
 
+  terms.conversion += flags.conversionFlat;
+  terms.basket += flags.basketFlat;
+  if (flags.footfallFeedsBasket) {
+    terms.basket += flags.footfallRatchetTotal * flags.footfallFeedsBasket;
+  }
   if (flags.conversionCertain) terms.conversion = 1;
   if (flags.marginSet != null) terms.margin = flags.marginSet;
   if (shop.flags.marginFixed != null) terms.margin = shop.flags.marginFixed;
@@ -602,11 +650,10 @@ export function resolveDay(content, shop, ctx = {}) {
       if (def.term !== 'footfall' || def.trigger.scope !== 'shop') continue;
       const v = def.effect.value[inst.level - 1];
       if (def.effect.op === 'ratchet') footfall += (inst.ratchet || 0) * commitMul;
+      else if (def.effect.op === 'ratchet_mult') footfall *= 1 + (inst.ratchet || 0) * commitMul;
       else if (def.effect.op === 'add') footfall += v;
       else if (def.effect.op === 'multiply') footfall *= v;
-      if (def.drawback && def.drawback.id === 'margin_flat') {
-        flags.marginFlat += def.drawback.value[inst.level - 1];
-      }
+
     }
   }
   // The SALE sign: more people, more of them buy, worse margin — and the extra
@@ -796,6 +843,7 @@ export function resolveDay(content, shop, ctx = {}) {
   let unsold = 0;
   let wTotal = 0;
   let returnVisits = 0;
+  const salesByType = Object.create(null);
   // Pool averages of the four terms, kept only to show how badly they lie.
   let aConv = 0; let aBasket = 0; let aMargin = 0;
 
@@ -803,7 +851,7 @@ export function resolveDay(content, shop, ctx = {}) {
     const t = types[seg.k];
     const { terms, share } = seg;
     if (t.id === 'shoplifter') {
-      shrink += arrivals[seg.k] * share * terms.basket; // basket is a flat loss
+      shrink += arrivals[seg.k] * share * terms.basket * (1 - flags.shrinkReduce);
       continue;
     }
     const seen = served[seg.k] * share;
@@ -812,6 +860,7 @@ export function resolveDay(content, shop, ctx = {}) {
       ? noise.binomial(seen, terms.conversion)
       : seen * terms.conversion;
     sales += s;
+    salesByType[t.id] = (salesByType[t.id] || 0) + s;
     unsold += seen - s;
     // Wallet rank varies per customer, so basket does too. Variance of a sum
     // of s independent baskets, expressed as a coefficient of variation.
@@ -862,7 +911,9 @@ export function resolveDay(content, shop, ctx = {}) {
     // Capped: an uncapped penalty lets one bad boss day zero Footfall, and a
     // zero in any of the four terms is an unrecoverable run.
     const penalty = totalWalkouts * wcfg.footfallPenaltyPerWalkout;
-    carry -= Math.min(penalty, shop.baseFootfall * (wcfg.maxPenaltyShare ?? 1));
+    // Against today's Footfall, not the starting Footfall. Otherwise the brake
+    // is weightless exactly when it is needed.
+    carry -= Math.min(penalty, footfall * (wcfg.maxPenaltyShare ?? 1));
   }
 
   // The projection panel (section 17). The four terms are chained funnel
@@ -894,6 +945,7 @@ export function resolveDay(content, shop, ctx = {}) {
   return {
     profit,
     rent,
+    salesByType,
     ratchetUpkeep: upkeepRatchet,
     revenue,
     saleProfit,

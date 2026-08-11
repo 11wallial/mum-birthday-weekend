@@ -11,6 +11,7 @@ import {
   makeOffer, rerollCost, rollFixture, supplierUpgradeCost, tillCost,
 } from './offers.js';
 import { policies } from './policies.js';
+import { growAll } from './ratchets.js';
 
 const STAFF_SINGLETON = new Set(['security', 'buyer', 'cleaner']);
 
@@ -205,21 +206,14 @@ function makeNightContext(content, shop, rng, ctx, target, encounter, record) {
  * resolve the day hundreds of times a night and must not advance run state.
  */
 function tickRatchets(shop, day, isBoss) {
-  for (const { inst } of fixtureInstances(shop)) {
-    const def = inst.def;
-    if (def.effect.op !== 'ratchet') continue;
-    let gain = def.effect.value[inst.level - 1];
-    const rb = def.ratchetBonus;
-    if (rb && inst.level >= rb.minLevel && (rb.when !== 'boss_day' || isBoss)) {
-      gain *= rb.multiply;
-    }
-    inst.ratchet = (inst.ratchet || 0) + gain;
-    inst.age = (inst.age || 0) + 1;
-    // Word of Mouth: a day of walkouts sets you back.
-    if (def.drawback && def.drawback.id === 'reset_on_walkouts' && day.walkoutRate > 0.1) {
-      inst.ratchet *= 1 - def.drawback.value[inst.level - 1];
-    }
-  }
+  growAll(fixtureInstances(shop), {
+    sales: day.sales,
+    salesByType: day.salesByType,
+    walkouts: day.walkouts,
+    footfall: day.footfall,
+    isBoss,
+    rateMul: (shop.ratchetRateBonus || 1) * (day.flags.ratchetRateMul || 1),
+  });
 }
 
 function classifyDeath(day, target) {

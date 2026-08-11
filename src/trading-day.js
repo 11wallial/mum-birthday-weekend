@@ -56,6 +56,7 @@ export function createTradingDay(content, shop, ctx, rng) {
     sales: 0,
     revenue: 0,
     tradingProfit: 0,
+    salesByType: Object.create(null),
     shrink: 0,
     walkouts: 0,
     triageLeft: Math.round(triageBudget),
@@ -119,6 +120,7 @@ export function createTradingDay(content, shop, ctx, rng) {
     const buys = rng() < c.terms.conversion;
     if (buys) {
       state.sales++;
+      state.salesByType[c.type.id] = (state.salesByType[c.type.id] || 0) + 1;
       state.revenue += c.terms.basket;
       state.tradingProfit += c.terms.basket * c.terms.margin;
     }
@@ -223,8 +225,9 @@ export function createTradingDay(content, shop, ctx, rng) {
     if (flags.walkoutsToFootfall) carry += state.walkouts;
     else {
       carry -= Math.min(state.walkouts * w.footfallPenaltyPerWalkout,
-        shop.baseFootfall * (w.maxPenaltyShare ?? 1));
+        footfall * (w.maxPenaltyShare ?? 1));
     }
+    state.rateMul = flags.ratchetRateMul || 1;
     state.carry = carry;
     state.avgSaleProfit = state.sales > 0 ? state.tradingProfit / state.sales : 0;
   }

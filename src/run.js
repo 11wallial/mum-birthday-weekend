@@ -6,6 +6,7 @@ import {
   fixtureInstances, makeOffer, makeRng, ownedIds, rerollCost, rollFixture,
   supplierUpgradeCost, tillCost, resolveDay,
 } from './engine.js';
+import { growAll } from '../sim/ratchets.js';
 
 const STAFF_SINGLETON = new Set(['security', 'buyer', 'cleaner']);
 
@@ -268,20 +269,15 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     shop.flagshipHeldYesterday = fixtureInstances(shop)
       .some(({ inst }) => inst.def.rarity === 'flagship');
 
-    // Ratchets grow, and age out of their upkeep, once per real trading day.
-    const isBoss = run.encounter % bossEvery === 0;
-    for (const { inst } of fixtureInstances(shop)) {
-      if (inst.def.effect.op !== 'ratchet') continue;
-      let gain = inst.def.effect.value[inst.level - 1];
-      const rb = inst.def.ratchetBonus;
-      if (rb && inst.level >= rb.minLevel && (rb.when !== 'boss_day' || isBoss)) gain *= rb.multiply;
-      inst.ratchet = (inst.ratchet || 0) + gain;
-      inst.age = (inst.age || 0) + 1;
-      if (inst.def.drawback && inst.def.drawback.id === 'reset_on_walkouts'
-          && dayState.walkouts / Math.max(1, dayState.footfall) > 0.1) {
-        inst.ratchet *= 1 - inst.def.drawback.value[inst.level - 1];
-      }
-    }
+    // Ratchets grow once per real trading day, by the shared rule.
+    growAll(fixtureInstances(shop), {
+      sales: dayState.sales,
+      salesByType: dayState.salesByType,
+      walkouts: dayState.walkouts,
+      footfall: dayState.footfall,
+      isBoss: run.encounter % bossEvery === 0,
+      rateMul: (shop.ratchetRateBonus || 1) * (dayState.rateMul || 1),
+    });
     return entry;
   }
 

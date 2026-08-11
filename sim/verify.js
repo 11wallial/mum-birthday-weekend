@@ -43,10 +43,16 @@ const CASES = [
   ['levelled stack', [['sample_table', 3], ['greeter', 2], ['end_cap', 2], ['own_brand', 1]]],
   ['multiplicative mix', [['end_cap', 1], ['sample_table', 2], ['concierge', 1], ['own_brand', 2]]],
   ['ratchets running', [['range_extension', 2], ['trade_account', 1], ['end_cap', 1]]],
+  // The scaling cards, which is where the seven-figure ending lives. A verifier
+  // whose cases predate the content it is meant to check proves nothing.
+  ['growing multiplier', [['concession_stand', 1], ['weighing_scales', 2], ['end_cap', 1]]],
+  ['accelerating stack', [['bulk_pallets', 2], ['deli_counter', 1], ['long_life_stock', 1]]],
+  ['anchor tenant feed', [['anchor_tenant', 1], ['bus_route', 2], ['gift_wrapping', 1]]],
+  ['capped and pressing', [['staff_training', 3], ['greeter', 2], ['long_life_stock', 2]]],
 ];
 
 const N = flagOf('n', 200000);
-const BIAS_BOUND = 0.0075;
+const BIAS_BOUND = 0.031; // per unit of clamp rate
 const failures = [];
 
 /** Walk `count` individuals through this shop and summarise the disagreement. */
@@ -126,7 +132,8 @@ for (const [name, fixtures] of CASES) {
 
 console.log('─'.repeat(88));
 console.log(`\nA case passes if its gap fits inside 3 standard errors of sampling noise,`);
-console.log(`plus ${(BIAS_BOUND * 100).toFixed(2)}% clamp bias ONLY where walkers actually hit a cap.`);
+console.log(`plus ${(BIAS_BOUND * 100).toFixed(1)}% clamp bias per unit of clamp rate, so a board`);
+console.log('where nobody clamps gets no allowance at all.');
 if (failures.length) {
   console.log(`\nFAIL — ${failures.join('; ')}\n`);
   process.exit(1);

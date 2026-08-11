@@ -38,16 +38,16 @@
   "interest": {
     "$comment": "Banked cash compounds hard enough to be a strategy in its own right. If tempo has no long tail there is nothing to over-commit to on that side, and the whole tension collapses into one axis.",
     "ratePerEncounter": 0.08,
-    "capFractionOfTarget": 1.2,
+    "capFractionOfTarget": 0.9,
     "capFloor": 300
   },
   "payout": {
-    "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition. Flat reward per encounter plus interest plus a capped share of overshoot. Measured: this widens the greedy-versus-planner gap.",
+    "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition \u2014 but it has to GROW with the economy or the late game cannot buy throughput. flatGrowth tracks the target curve; if you retune one, retune both.",
     "mode": "flat",
     "flatBase": 150,
-    "flatGrowth": 1.15,
+    "flatGrowth": 1.47,
     "overshootShare": 0.15,
-    "overshootCap": 400,
+    "overshootCap": 4000,
     "skipPickReward": 2.0
   },
   "congestion": {
@@ -64,9 +64,9 @@
     "$walkNote": "Raised from 1 for the playable build: at 1 a customer spent three ticks of a hundred and eighty on the floor, so the walk - the centrepiece - was visually empty. This shortens the service window by the same amount (ticks minus aisle length times this), so it moves throughput by about 8% and wants re-measuring with the rest of the tuning."
   },
   "walkouts": {
-    "$comment": "A walkout is a lost sale plus a Footfall penalty tomorrow. The penalty is capped as a share of base Footfall: uncapped, one bad boss day drives Footfall to zero and a zero in any term ends the run outright.",
+    "$comment": "A walkout is a lost sale plus a Footfall penalty tomorrow. The penalty is capped as a share of TODAY'S Footfall. Capping it against the starting Footfall instead - which is what it used to do - made the brake weightless at scale: a shop pulling 87,000 people with a 94% walkout rate lost 30 of them tomorrow, so drowning the tills cost nothing and unbounded Footfall dominated every other line of play.",
     "footfallPenaltyPerWalkout": 0.5,
-    "maxPenaltyShare": 0.25
+    "maxPenaltyShare": 0.3
   },
   "slots": {
     "$comment": "Customers may skip slots unless a rule-breaking fixture or One-Way Barriers stops them.",
@@ -234,7 +234,8 @@
       "cost": 700,
       "effect": "add_till",
       "repeatable": true,
-      "costGrowth": 1.6
+      "costGrowth": 1.22,
+      "$note": "Was 1.6, which capped a run at about six tills and made throughput the hard ceiling on the whole game. Section 6 wants tills to be the limiter, not the wall."
     }
   ],
   "staff": [

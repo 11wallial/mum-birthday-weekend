@@ -83,6 +83,14 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
       continue;
     }
     // A ratchet applies whatever it has accumulated, like any other add.
+    // A growing multiplier, rather than a growing addend.
+    if (def.effect.op === 'ratchet_mult') {
+      if (walked && def.term !== 'footfall') {
+        apply(def.term, 'multiply', 1 + (inst.ratchet || 0), strength);
+        if (onFire) onFire(i, def);
+      }
+      continue;
+    }
     if (def.effect.op === 'ratchet') {
       if (walked && def.term !== 'footfall') {
         apply(def.term, 'add', inst.ratchet || 0, strength);
@@ -112,6 +120,11 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
   }
 
   terms.margin += flags.marginFlat;
+  terms.conversion += flags.conversionFlat || 0;
+  terms.basket += flags.basketFlat || 0;
+  if (flags.footfallFeedsBasket) {
+    terms.basket += (flags.footfallRatchetTotal || 0) * flags.footfallFeedsBasket;
+  }
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
   const caps = content.economy.caps || {};
   const convCap = caps.conversion ?? 1;

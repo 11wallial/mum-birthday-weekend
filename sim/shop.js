@@ -95,6 +95,7 @@ export function addFixture(content, shop, fixtureId, placement = null) {
   if (existing) {
     existing.inst.level = Math.min(3, existing.inst.level + 1);
     existing.inst.copies += 1;
+    applyOnAcquire(content, shop, existing.inst);
     return existing.inst;
   }
 
@@ -110,7 +111,39 @@ export function addFixture(content, shop, fixtureId, placement = null) {
   } else {
     shop.bench.push(inst);
   }
+  applyOnAcquire(content, shop, inst);
   return inst;
+}
+
+/**
+ * Rules that fire once, on acquisition, rather than every trading day.
+ * Called from both the simulator and the browser build so a card cannot behave
+ * differently depending on who is playing.
+ */
+export function applyOnAcquire(content, shop, inst) {
+  if (!inst || inst.def.effect.op !== 'rule') return;
+  const v = inst.def.effect.value[inst.level - 1];
+  switch (inst.def.effect.rule) {
+    // Stocktake: everything you have built up is written off, and everything
+    // you build from here grows faster. Brilliant on day four, ruinous on
+    // day twenty — which is the whole card.
+    case 'reset_ratchets_double_rate':
+      for (const { inst: fx } of fixtureInstances(shop)) {
+        if (fx === inst) continue;
+        if (fx.def.effect.op !== 'ratchet' && fx.def.effect.op !== 'ratchet_mult') continue;
+        fx.ratchet = 0;
+      }
+      shop.ratchetRateBonus = (shop.ratchetRateBonus || 1) * v;
+      break;
+    case 'add_aisle_on_acquire':
+      shop.aisles.push({
+        slots: new Array(v).fill(null), closed: false, patienceBonus: 0, restrictTypes: null,
+      });
+      autoSign(content, shop);
+      break;
+    default:
+      break;
+  }
 }
 
 export function moveFixture(shop, from, to) {
@@ -200,12 +233,37 @@ export function marginPenaltyFromStaff(shop) {
  * ahead. Ratchets are the only unbounded scalers in the pool, so seeing what
  * one is worth in ten days' time is the difference between a plan and a guess.
  */
-export function projectRatchets(shop, days) {
+export function projectRatchets(shop, days, stats = null) {
   for (const { inst } of fixtureInstances(shop)) {
-    if (inst.def.effect.op !== 'ratchet') continue;
-    inst.ratchet = (inst.ratchet || 0) + inst.def.effect.value[inst.level - 1] * days;
-    // Age too, so a lookahead sees the upkeep falling away as well as the
-    // value climbing. Seeing only one half of that is not a plan.
+    const def = inst.def;
+    if (def.effect.op !== 'ratchet' && def.effect.op !== 'ratchet_mult') continue;
+    const L = inst.level - 1;
+    const eff = def.effect;
+    const accel = eff.accel ? eff.accel[L] : 0;
+    let rate = inst.rate == null ? eff.value[L] : inst.rate;
+
+    // How many times a day does this card's trigger fire? A per-sale ratchet
+    // fires once per sale, so projecting it at its nominal per-day rate
+    // undervalues it by two orders of magnitude and the planner would never
+    // take the best cards in the pool.
+    let fires = 1;
+    if (stats) {
+      switch (eff.per) {
+        case 'sale': fires = stats.sales || 0; break;
+        case 'type_sale': fires = (stats.salesByType && stats.salesByType[eff.perType]) || 0; break;
+        case 'walkout': fires = stats.walkouts || 0; break;
+        case 'boss': fires = 1 / 3; break; // one day in three
+        default: fires = 1;
+      }
+    } else if (eff.per && eff.per !== 'day') {
+      fires = 0; // unknown rather than wrong
+    }
+
+    for (let d = 0; d < days; d++) {
+      inst.ratchet = (inst.ratchet || 0) + rate * fires;
+      rate += accel;
+    }
+    inst.rate = rate;
     inst.age = (inst.age || 0) + days;
   }
 }

@@ -42,8 +42,12 @@ const profitOf = (content, shop, ctx) => resolveDay(content, shop, ctx).profit;
 /** What this shop earns `days` from now if nothing else changes. */
 function profitAhead(content, shop, ctx, days) {
   if (days <= 0) return profitOf(content, shop, ctx);
+  // Today's trading tells the projection how often the trigger-fed ratchets
+  // actually fire, which is the difference between valuing them and ignoring
+  // them entirely.
+  const today = resolveDay(content, shop, { ...ctx, boss: null });
   const s = cloneShop(shop);
-  projectRatchets(s, days);
+  projectRatchets(s, days, today);
   return resolveDay(content, s, { ...ctx, boss: null }).profit;
 }
 
