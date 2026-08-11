@@ -94,6 +94,10 @@ export function buildContent(raw, overrides = {}) {
     for (const s of econ.staff) s.marginCost *= overrides.staffMarginScale;
   }
   if (overrides.rentScale != null) {
+    // Rent moved to fraction-of-target mode and this knob was never moved with
+    // it, so it scaled two numbers nothing reads. Any conclusion drawn with
+    // `--rent` since then was measuring an unchanged model.
+    econ.rent.fractionByQuarter = econ.rent.fractionByQuarter.map((f) => f * overrides.rentScale);
     econ.rent.perSlot *= overrides.rentScale;
     econ.rent.perTill *= overrides.rentScale;
   }

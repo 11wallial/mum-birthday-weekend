@@ -263,7 +263,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     entry.interest = Math.min(cap, shop.cash * int.ratePerEncounter);
     shop.cash += entry.interest;
 
-    shop.carryFootfall = dayState.carry;
+    shop.carryFootfallMul = dayState.carry;
     shop.lastAvgSaleProfit = dayState.avgSaleProfit;
     shop.lastTradingProfit = dayState.tradingProfit;
     shop.flagshipHeldYesterday = fixtureInstances(shop)

@@ -44,6 +44,109 @@ split does produce two distinct axes.
 
 ---
 
+# Part six — the ending, and the two things that were actually stopping it
+
+The brief was: go big on content, and make the seven-figure ending reachable.
+The content came first and it was the wrong instinct — twenty-eight new cards
+moved the median build's total climb from **x43 to x66** against a curve that
+wants **x7,000**. Writing more cards was not going to close a gap of that size,
+so I stopped writing them and measured what was binding instead.
+
+Two things were. Neither was the thing I expected, and the second was worth
+fifty times the first.
+
+## Nothing in the pool grew faster than linearly
+
+There were two accumulating ops and I had been treating them as "the scaling
+cards" as a single category. They are not the same shape:
+
+| op | what accumulates | shape over 24 days |
+|---|---|---|
+| `ratchet` | an addend | **linear** — 24 days of +5 is +120 |
+| `ratchet_mult` | a multiplier, by addition | **linear** — 24 days of +0.055 is x2.3 |
+
+Both linear. A target curve that multiplies by 1.47 per encounter is
+exponential, and no quantity of linear cards sums to an exponential. The
+comment in `day.js` calling `ratchet_mult` "the only genuinely exponential
+thing in the pool" was simply false, and had been since the day it was written.
+
+Compounding needs a growth rate proportional to what you already have. So
+there is now a third op:
+
+```
+compound      the multiplier is MULTIPLIED each day, not added to
+```
+
+Twelve cards use it, across every rarity and both unbounded terms. It brings a
+property no other card in the pool has: **a compounder is worth what is left of
+the run.** At encounter 2 a +9%/day card is x8.9 by the end; at encounter 20 the
+same card is x1.5 and the flat one was better. Nothing else in the pool changes
+value with the clock, and that single property is the clearest expression of the
+brief — long-term payoff bought with short-term strain — that any mechanic here
+has managed.
+
+Their upkeep is billed on a separate line that **never decays**. Linear ratchet
+upkeep decays as the fixture matures, which is right for a card that starts
+weak and ends strong-but-bounded. Applied to a compounder it would hand the
+strongest class in the pool to the player for free at exactly the moment it wins
+the game.
+
+## The planner's horizon was not the problem, and I checked before assuming
+
+The obvious suspect for "the median never buys the compounders" is that the
+planner cannot see far enough — its lookahead was 10 days, and a compounder's
+whole value sits past it. That is a good story. It is also wrong:
+
+| horizon / future weight | survived | p25 | p50 | p75 | p90 |
+|---|---|---|---|---|---|
+| 10 / 0.30 | 145/200 | x22 | **x42** | x163 | x580 |
+| 20 / 0.30 | 144/200 | x16 | **x42** | x152 | x498 |
+| 24 / 0.30 | 146/200 | x17 | **x45** | x151 | x456 |
+| 24 / 0.60 | 149/200 | x17 | **x43** | x124 | x410 |
+| 24 / 1.00 | 153/200 | x21 | **x42** | x127 | x391 |
+
+Flat. Letting the planner see the entire remaining run moved the median by
+nothing. Worth recording as a negative result, because it is exactly the change
+I would have shipped on intuition.
+
+## The board was the constraint
+
+The measurement that found it, per run, across 184 full runs:
+
+```
+mean picks made:                24.0
+mean fixtures standing at end:   9.2
+```
+
+A run makes twenty-four picks into nine slots. **The board is finished by
+encounter nine and the next fifteen offers are decoration.** Compounders drafted
+in act 3 were going to the bench, where they compound nothing — one run had
+taken seven of them and was standing zero.
+
+Naming an occupied slot now clears it out. That is not a convenience feature; it
+is the decision the entire back half of the run was missing. Declining the pick
+also becomes a real option, because taking one now costs you whatever it lands
+on.
+
+```
+median total climb    x42  ->  x2,173
+```
+
+Fifty times, from one rule. Every card I wrote before finding this was being
+graded on a board that could not accept it.
+
+## What that says about the order of work
+
+Part four committed to **pool -> queue verification -> tune**. The pool work was
+correct and it did move things, but this finding says the ordering had a missing
+first item: *check that the shop can hold what you are writing.* Twenty-eight
+cards were authored, balanced and verified against a board with room for nine of
+them. The content was not the bottleneck; the container was.
+
+The queue is still unverified, and it is still next.
+
+---
+
 # Part five — micro: does the trading day need decisions?
 
 The trading day contained none. You set the shop up at night, the walk resolved,

@@ -217,16 +217,22 @@ export function createTradingDay(content, shop, ctx, rng) {
       - (projection.ratchetUpkeep || 0);
     state.ratchetUpkeep = projection.ratchetUpkeep || 0;
 
-    // Tomorrow's Footfall carry, same rules as the resolver.
+    // Tomorrow's Footfall carry, same rules as the resolver: a SHARE of today,
+    // never an absolute count. See the note in sim/day.js — Footfall is a
+    // product built up from a base of about 120, so an absolute carry taken
+    // from post-multiplier quantities can wipe the base out entirely.
     const w = content.economy.walkouts;
     const unsold = state.served - state.sales;
-    let carry = 0;
-    if (flags.unsoldToFootfall > 0) carry += unsold * flags.unsoldToFootfall;
-    if (flags.walkoutsToFootfall) carry += state.walkouts;
-    else {
-      carry -= Math.min(state.walkouts * w.footfallPenaltyPerWalkout,
-        footfall * (w.maxPenaltyShare ?? 1));
-    }
+    const denom = Math.max(1, footfall);
+    const share = state.walkouts / denom;
+    const healthy = w.healthyWalkoutShare ?? 0;
+    let carry = share > healthy
+      ? 1 - Math.min(w.maxPenaltyShare ?? 1, (share - healthy) * w.footfallPenaltyPerWalkout)
+      : 1 + (w.recoverPerDay ?? 0);
+    if (flags.unsoldToFootfall > 0) carry += (unsold / denom) * flags.unsoldToFootfall;
+    if (flags.walkoutsToFootfall) carry += share;
+    carry = Math.max(w.minCarryMul ?? 0.05,
+      Math.min(w.maxCarryMul ?? 1.6, (shop.carryFootfallMul ?? 1) * carry));
     state.rateMul = flags.ratchetRateMul || 1;
     state.carry = carry;
     state.avgSaleProfit = state.sales > 0 ? state.tradingProfit / state.sales : 0;

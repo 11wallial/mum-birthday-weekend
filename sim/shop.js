@@ -33,7 +33,7 @@ export function createShop(content, characterId) {
     structural: new Set(),
     signage: {}, // typeId -> aisle index
     baseFootfall: content.economy.start.footfall,
-    carryFootfall: 0, // Clearance / walkout penalties land here
+    carryFootfallMul: 1, // yesterday's queue and leftovers, as a share of today
     lastAvgSaleProfit: 0,
     quarter: 1,
     encounter: 0,

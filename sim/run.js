@@ -374,7 +374,7 @@ export function playRun(content, opts = {}) {
       ? Math.max(int.capFloor ?? 0, target * int.capFractionOfTarget)
       : int.cap;
     shop.cash += Math.min(cap, shop.cash * int.ratePerEncounter);
-    shop.carryFootfall = day.carry;
+    shop.carryFootfallMul = day.carry;
     shop.lastAvgSaleProfit = day.avgSaleProfit;
     shop.lastTradingProfit = day.saleProfit;
     tickRatchets(shop, day, !!boss, day.profit < target);

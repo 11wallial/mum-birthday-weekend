@@ -1,293 +1,299 @@
 {
-  "$comment": "Run structure, targets, bosses, audit ladder, characters. Sections 14-16 and 18.",
-  "structure": {
-    "quarters": 8,
-    "daysPerQuarter": 3,
-    "encounters": 24,
-    "bossEvery": 3
+ "$comment": "Run structure, targets, bosses, audit ladder, characters. Sections 14-16 and 18.",
+ "structure": {
+  "quarters": 8,
+  "daysPerQuarter": 3,
+  "encounters": 24,
+  "bossEvery": 3
+ },
+ "targets": {
+  "$comment": "Generated as base * growth^(n-1). Fitted after the walkout units bug was found: planner 62.5%, greedy 16.3%, gap 46.3pp at 400 runs per cell - the first setting in the project where all three section 19 bands hold at once. The base matters far more than the growth, because early deaths dominate: at growth 1.18, moving the base from 120 to 220 costs the planner 50pp, while moving the growth from 1.18 to 1.28 at base 120 costs 32pp. Sweep with `node sim/cli.js sweep growth`.",
+  "base": 100,
+  "growth": 1.24,
+  "$specified": {
+   "base": 450,
+   "growth": 1.47,
+   "$comment": "The v0.1 values. Day one produces about £200 against a £450 target, so every policy dies on encounter 1 and no metric is measurable. The achievable profit curve climbs about x98 across 24 encounters; 1.47 asks for x7,052. See REPORT.md."
   },
-  "targets": {
-    "$comment": "Generated as base * growth^(n-1). Measured after the redesign: planner 66%, greedy 24%, random 0%, gap 42pp. Sweep with `node sim/cli.js sweep growth`.",
-    "base": 120,
-    "growth": 1.18,
-    "$specified": {
-      "base": 450,
-      "growth": 1.47,
-      "$comment": "The v0.1 values. Day one produces about \u00a3200 against a \u00a3450 target, so every policy dies on encounter 1 and no metric is measurable. The achievable profit curve climbs about x98 across 24 encounters; 1.47 asks for x7,052. See REPORT.md."
-    }
+  "$previous": {
+   "base": 120,
+   "growth": 1.18,
+   "$comment": "Fitted against the 40-card pool and a walkout carry that could zero Footfall. Both are gone."
   },
-  "bosses": [
-    {
-      "id": "competitor_opens",
-      "name": "Competitor Opens",
-      "effect": "footfall_multiply",
-      "value": 0.5
+  "$endingNote": "The ENDING is four figures a day, not seven. Seven figures is where a strong run's BANKED CASH finishes - a traced winner ends on GBP 7.1m against a GBP 14,083 final target. That is the right home for the fantasy: the run's last Tuesday is a shop, and the number you screenshot is what the shop is worth. Asking one trading day to clear seven figures required the target curve to multiply by 1.47 for twenty-four straight encounters, which no pool of 89 cards drawn three at a time can carry from a standing start."
+ },
+ "bosses": [
+  {
+   "id": "competitor_opens",
+   "name": "Competitor Opens",
+   "effect": "footfall_multiply",
+   "value": 0.5
+  },
+  {
+   "id": "heatwave",
+   "name": "Heatwave",
+   "effect": "basket_multiply_patience_multiply",
+   "value": [
+    2.0,
+    0.25
+   ]
+  },
+  {
+   "id": "card_terminal_down",
+   "name": "Card Terminal Down",
+   "effect": "only_types_convert",
+   "value": [
+    "trade",
+    "pensioner"
+   ]
+  },
+  {
+   "id": "health_inspection",
+   "name": "Health Inspection",
+   "effect": "disable_unstaffed"
+  },
+  {
+   "id": "bank_holiday",
+   "name": "Bank Holiday",
+   "effect": "footfall_multiply_till_disable",
+   "value": [
+    3.0,
+    1
+   ]
+  },
+  {
+   "id": "supply_shortage",
+   "name": "Supply Shortage",
+   "effect": "disable_term_class",
+   "value": [
+    "basket",
+    "additive"
+   ]
+  },
+  {
+   "id": "mystery_shopper",
+   "name": "Mystery Shopper",
+   "effect": "margin_halved_unless_staffed_aisles"
+  },
+  {
+   "id": "black_friday",
+   "name": "Black Friday",
+   "effect": "footfall_multiply_margin_flat",
+   "value": [
+    4.0,
+    -0.25
+   ]
+  },
+  {
+   "id": "roadworks",
+   "name": "Roadworks",
+   "effect": "close_aisle",
+   "value": 1
+  },
+  {
+   "id": "refund_day",
+   "name": "Refund Day",
+   "effect": "refund_previous",
+   "value": 0.55,
+   "$comment": "Reverses a share of yesterday's trading profit directly. Previously spawned nothing but Returners, which left no buyers in the shop and made the day unwinnable on any board; Returners have since been cut as a type entirely."
+  },
+  {
+   "id": "rate_review",
+   "name": "Rate Review",
+   "effect": "rent_multiply",
+   "value": 10
+  },
+  {
+   "id": "trading_standards",
+   "name": "Trading Standards",
+   "effect": "disable_rarity",
+   "value": "flagship"
+  }
+ ],
+ "audits": [
+  {
+   "id": 1,
+   "name": "Audit I",
+   "modifiers": {}
+  },
+  {
+   "id": 2,
+   "name": "Audit II",
+   "modifiers": {
+    "rentMultiplier": 1.5
+   }
+  },
+  {
+   "id": 3,
+   "name": "Audit III",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2
+   }
+  },
+  {
+   "id": 4,
+   "name": "Audit IV",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2
+   }
+  },
+  {
+   "id": 5,
+   "name": "Audit V",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2,
+    "bossEvery": 2
+   }
+  },
+  {
+   "id": 6,
+   "name": "Audit VI",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true
+   }
+  },
+  {
+   "id": 7,
+   "name": "Audit VII",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true,
+    "supplierCostsFlat": true
+   }
+  },
+  {
+   "id": 8,
+   "name": "Audit VIII",
+   "modifiers": {
+    "rentMultiplier": 1.5,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true,
+    "supplierCostsFlat": true,
+    "quarterlyAisleClosure": true
+   }
+  }
+ ],
+ "characters": [
+  {
+   "id": "default_shop",
+   "name": "The Shop",
+   "rule": "Breaks no rule. The base game the section 14 starting values describe.",
+   "baseGame": true,
+   "aisles": 3,
+   "slotsPerAisle": 3,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {},
+   "$note": "3x3 rather than 3x4. A half-empty board makes routing uncontested and End Cap adjacency rare."
+  },
+  {
+   "id": "superstore",
+   "name": "Superstore",
+   "rule": "Floorspace is free, but a placed fixture can never be removed.",
+   "aisles": 4,
+   "slotsPerAisle": 4,
+   "tills": 2,
+   "startingFixtures": [
+    "bargain_bin"
+   ],
+   "flags": {
+    "fixturesPermanent": true,
+    "structuralCostMultiplier": 0.0
+   }
+  },
+  {
+   "id": "discounter",
+   "name": "Discounter",
+   "rule": "COGS halved (+20pp Margin), but you may hold only five fixture types.",
+   "aisles": 2,
+   "slotsPerAisle": 4,
+   "tills": 1,
+   "startingFixtures": [
+    "own_brand",
+    "bulk_buy"
+   ],
+   "flags": {
+    "marginBonus": 0.2,
+    "maxFixtureTypes": 5
+   }
+  },
+  {
+   "id": "car_dealership",
+   "name": "Car Dealership",
+   "rule": "1 to 3 customers per day, all Luxury, vast wallets. Conversion is the entire game.",
+   "aisles": 1,
+   "slotsPerAisle": 6,
+   "tills": 99,
+   "startingFixtures": [
+    "concierge"
+   ],
+   "flags": {
+    "forcedPool": {
+     "luxury": 100
     },
-    {
-      "id": "heatwave",
-      "name": "Heatwave",
-      "effect": "basket_multiply_patience_multiply",
-      "value": [
-        2.0,
-        0.25
-      ]
-    },
-    {
-      "id": "card_terminal_down",
-      "name": "Card Terminal Down",
-      "effect": "only_types_convert",
-      "value": [
-        "trade",
-        "pensioner"
-      ]
-    },
-    {
-      "id": "health_inspection",
-      "name": "Health Inspection",
-      "effect": "disable_unstaffed"
-    },
-    {
-      "id": "bank_holiday",
-      "name": "Bank Holiday",
-      "effect": "footfall_multiply_till_disable",
-      "value": [
-        3.0,
-        1
-      ]
-    },
-    {
-      "id": "supply_shortage",
-      "name": "Supply Shortage",
-      "effect": "disable_term_class",
-      "value": [
-        "basket",
-        "additive"
-      ]
-    },
-    {
-      "id": "mystery_shopper",
-      "name": "Mystery Shopper",
-      "effect": "margin_halved_unless_staffed_aisles"
-    },
-    {
-      "id": "black_friday",
-      "name": "Black Friday",
-      "effect": "footfall_multiply_margin_flat",
-      "value": [
-        4.0,
-        -0.25
-      ]
-    },
-    {
-      "id": "roadworks",
-      "name": "Roadworks",
-      "effect": "close_aisle",
-      "value": 1
-    },
-    {
-      "id": "refund_day",
-      "name": "Refund Day",
-      "effect": "refund_previous",
-      "value": 0.55,
-      "$comment": "Reverses a share of yesterday's trading profit directly. Previously spawned nothing but Returners, which left no buyers in the shop and made the day unwinnable on any board; Returners have since been cut as a type entirely."
-    },
-    {
-      "id": "rate_review",
-      "name": "Rate Review",
-      "effect": "rent_multiply",
-      "value": 10
-    },
-    {
-      "id": "trading_standards",
-      "name": "Trading Standards",
-      "effect": "disable_rarity",
-      "value": "flagship"
-    }
-  ],
-  "audits": [
-    {
-      "id": 1,
-      "name": "Audit I",
-      "modifiers": {}
-    },
-    {
-      "id": 2,
-      "name": "Audit II",
-      "modifiers": {
-        "rentMultiplier": 1.5
-      }
-    },
-    {
-      "id": 3,
-      "name": "Audit III",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2
-      }
-    },
-    {
-      "id": 4,
-      "name": "Audit IV",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2,
-        "rerollCostMultiplier": 2
-      }
-    },
-    {
-      "id": 5,
-      "name": "Audit V",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2,
-        "rerollCostMultiplier": 2,
-        "bossEvery": 2
-      }
-    },
-    {
-      "id": 6,
-      "name": "Audit VI",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2,
-        "rerollCostMultiplier": 2,
-        "bossEvery": 2,
-        "flagshipTwoDayCondition": true
-      }
-    },
-    {
-      "id": 7,
-      "name": "Audit VII",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2,
-        "rerollCostMultiplier": 2,
-        "bossEvery": 2,
-        "flagshipTwoDayCondition": true,
-        "supplierCostsFlat": true
-      }
-    },
-    {
-      "id": 8,
-      "name": "Audit VIII",
-      "modifiers": {
-        "rentMultiplier": 1.5,
-        "targetMultiplier": 1.2,
-        "rerollCostMultiplier": 2,
-        "bossEvery": 2,
-        "flagshipTwoDayCondition": true,
-        "supplierCostsFlat": true,
-        "quarterlyAisleClosure": true
-      }
-    }
-  ],
-  "characters": [
-    {
-      "id": "default_shop",
-      "name": "The Shop",
-      "rule": "Breaks no rule. The base game the section 14 starting values describe.",
-      "baseGame": true,
-      "aisles": 3,
-      "slotsPerAisle": 3,
-      "tills": 1,
-      "startingFixtures": [],
-      "flags": {},
-      "$note": "3x3 rather than 3x4. A half-empty board makes routing uncontested and End Cap adjacency rare."
-    },
-    {
-      "id": "superstore",
-      "name": "Superstore",
-      "rule": "Floorspace is free, but a placed fixture can never be removed.",
-      "aisles": 4,
-      "slotsPerAisle": 4,
-      "tills": 2,
-      "startingFixtures": [
-        "bargain_bin"
-      ],
-      "flags": {
-        "fixturesPermanent": true,
-        "structuralCostMultiplier": 0.0
-      }
-    },
-    {
-      "id": "discounter",
-      "name": "Discounter",
-      "rule": "COGS halved (+20pp Margin), but you may hold only five fixture types.",
-      "aisles": 2,
-      "slotsPerAisle": 4,
-      "tills": 1,
-      "startingFixtures": [
-        "own_brand",
-        "bulk_buy"
-      ],
-      "flags": {
-        "marginBonus": 0.2,
-        "maxFixtureTypes": 5
-      }
-    },
-    {
-      "id": "car_dealership",
-      "name": "Car Dealership",
-      "rule": "1 to 3 customers per day, all Luxury, vast wallets. Conversion is the entire game.",
-      "aisles": 1,
-      "slotsPerAisle": 6,
-      "tills": 99,
-      "startingFixtures": [
-        "concierge"
-      ],
-      "flags": {
-        "forcedPool": {
-          "luxury": 100
-        },
-        "footfallOverride": [
-          1,
-          3
-        ],
-        "noQueue": true,
-        "basketMultiplier": 320
-      }
-    },
-    {
-      "id": "estate_agent",
-      "name": "Estate Agent",
-      "rule": "No stock. Basket is fixed at the property price. Pure Footfall x Conversion.",
-      "aisles": 2,
-      "slotsPerAisle": 4,
-      "tills": 4,
-      "startingFixtures": [
-        "appointment_book"
-      ],
-      "flags": {
-        "basketFixed": 1400,
-        "marginFixed": 0.035,
-        "footfallMultiplier": 0.35
-      }
-    },
-    {
-      "id": "corner_shop",
-      "name": "Corner Shop",
-      "rule": "Tiny floor, but every customer traverses it three times per day.",
-      "aisles": 1,
-      "slotsPerAisle": 3,
-      "tills": 1,
-      "startingFixtures": [],
-      "flags": {
-        "traversals": 3,
-        "footfallMultiplier": 0.6
-      }
-    },
-    {
-      "id": "market_stall",
-      "name": "Market Stall",
-      "rule": "The floor wipes every morning. Rebuild from your owned pool each night.",
-      "aisles": 3,
-      "slotsPerAisle": 2,
-      "tills": 1,
-      "startingFixtures": [],
-      "flags": {
-        "wipeFloorNightly": true,
-        "freeRerolls": true
-      }
-    }
-  ]
+    "footfallOverride": [
+     1,
+     3
+    ],
+    "noQueue": true,
+    "basketMultiplier": 320
+   }
+  },
+  {
+   "id": "estate_agent",
+   "name": "Estate Agent",
+   "rule": "No stock. Basket is fixed at the property price. Pure Footfall x Conversion.",
+   "aisles": 2,
+   "slotsPerAisle": 4,
+   "tills": 4,
+   "startingFixtures": [
+    "appointment_book"
+   ],
+   "flags": {
+    "basketFixed": 1400,
+    "marginFixed": 0.035,
+    "footfallMultiplier": 0.35
+   }
+  },
+  {
+   "id": "corner_shop",
+   "name": "Corner Shop",
+   "rule": "Tiny floor, but every customer traverses it three times per day.",
+   "aisles": 1,
+   "slotsPerAisle": 3,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {
+    "traversals": 3,
+    "footfallMultiplier": 0.6
+   }
+  },
+  {
+   "id": "market_stall",
+   "name": "Market Stall",
+   "rule": "The floor wipes every morning. Rebuild from your owned pool each night.",
+   "aisles": 3,
+   "slotsPerAisle": 2,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {
+    "wipeFloorNightly": true,
+    "freeRerolls": true
+   }
+  }
+ ]
 }

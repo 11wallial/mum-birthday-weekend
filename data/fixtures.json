@@ -2689,6 +2689,488 @@
    "levels": 3,
    "cost": 0,
    "$design": "Exponential footfall bought by giving up throughput - the one drawback that attacks the card directly. It asks the question the footfall build always has to answer, and asks it harder every day."
+  },
+  {
+   "id": "pavement_sign",
+   "name": "The Pavement Sign",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     16,
+     30,
+     52
+    ]
+   },
+   "l3Clause": {
+    "text": "It gets a second board, and an arrow."
+   },
+   "tags": [
+    "promo"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The plainest card in the pool and it needs to exist. Act 1 offers were half scaling cards, which pay nothing on the day you buy them and charge upkeep while they wait; a player cannot CHOOSE to overcommit if the draw commits for them."
+  },
+  {
+   "id": "two_for_one",
+   "name": "Two for One",
+   "class": "multiplicative",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.42,
+     1.62,
+     1.95
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.1,
+     -0.085,
+     -0.07
+    ]
+   },
+   "l3Clause": {
+    "text": "Nobody has ever bought one."
+   },
+   "tags": [
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Immediate, large, and pointed straight at the term that caps. Trading Margin for Basket is the first real decision a new player meets."
+  },
+  {
+   "id": "hand_baskets",
+   "name": "Hand Baskets",
+   "class": "multiplicative",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "slot_is_first",
+      "value": true
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.38,
+     1.55,
+     1.8
+    ]
+   },
+   "l3Clause": {
+    "text": "Stacked where they cannot miss them."
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Strong, free of drawback, and only from the front of an aisle - so the cost is a slot you wanted for something else. Teaches order of operations with no text to read."
+  },
+  {
+   "id": "cash_only",
+   "name": "Cash Only",
+   "class": "additive",
+   "rarity": "common",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.15,
+     0.2,
+     0.27
+    ]
+   },
+   "drawback": {
+    "id": "conversion_cost",
+    "value": [
+     0.14,
+     0.12,
+     0.1
+    ]
+   },
+   "l3Clause": {
+    "text": "There is a machine now, for emergencies."
+   },
+   "tags": [
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Two-sided on the two capped terms, which makes it a positional card rather than a good or bad one: excellent in a build already pressing Conversion against its ceiling, poison in one that is not."
+  },
+  {
+   "id": "open_late",
+   "name": "Open Late",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     26,
+     46,
+     78
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.06,
+     -0.05,
+     -0.04
+    ]
+   },
+   "l3Clause": {
+    "text": "The overtime pays for itself."
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "meal_deal",
+   "name": "The Meal Deal",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "customer_type_in",
+      "value": [
+       "worker",
+       "family"
+      ]
+     }
+    ]
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     14,
+     26,
+     44
+    ]
+   },
+   "breadth": {
+    "check": "customer_type_in",
+    "value": [
+     [
+      "worker",
+      "family"
+     ],
+     [
+      "worker",
+      "family",
+      "student"
+     ],
+     [
+      "worker",
+      "family",
+      "student",
+      "trade"
+     ]
+    ]
+   },
+   "l3Clause": {
+    "text": "The queue at one o’clock goes round the corner."
+   },
+   "tags": [
+    "fresh",
+    "specialist"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Specialist that widens as it levels rather than simply growing - the reward for committing to a marketing identity is that the identity stops being narrow."
+  },
+  {
+   "id": "trolley_park",
+   "name": "The Trolley Park",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "prev_slot_term",
+      "value": "footfall"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.55,
+     1.8,
+     2.15
+    ]
+   },
+   "l3Clause": {
+    "text": "They take one without thinking."
+   },
+   "tags": [
+    "service",
+    "adjacency"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Adjacency: worth nothing in the wrong slot and a keystone in the right one. Part four found order-of-operations was worth 0.0pp because no card rewarded it; this is that lesson, written as a common-tier decision."
+  },
+  {
+   "id": "the_bell",
+   "name": "The Bell",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     2,
+     3,
+     4
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.3,
+     1.42,
+     1.55
+    ]
+   },
+   "drawback": {
+    "id": "basket_flat",
+    "value": [
+     -4,
+     -3,
+     -2
+    ]
+   },
+   "l3Clause": {
+    "text": "It rings for the slot it stands in as well."
+   },
+   "tags": [
+    "service",
+    "amplifier"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "An amplifier, so its value is entirely in what stands behind it. Put it last and it does nothing at all."
+  },
+  {
+   "id": "the_free_sample",
+   "name": "The Free Sample",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.16,
+     0.22,
+     0.3
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.07,
+     -0.06,
+     -0.05
+    ]
+   },
+   "clauses": [
+    {
+     "minLevel": 2,
+     "term": "conversion",
+     "op": "add",
+     "value": -0.25,
+     "conditions": [
+      {
+       "check": "customer_type_in",
+       "value": [
+        "shoplifter"
+       ]
+      }
+     ]
+    }
+   ],
+   "l3Clause": {
+    "text": "Shoplifters take two and leave."
+   },
+   "tags": [
+    "fresh"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "everything_must_go",
+   "name": "Everything Must Go",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_all_share_tag",
+      "value": "value",
+      "min": 2
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.3,
+     2.9,
+     3.7
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.16,
+     -0.14,
+     -0.12
+    ]
+   },
+   "l3Clause": {
+    "text": "The sign has been up for four years."
+   },
+   "tags": [
+    "value",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The largest single multiplier in the pool, and it demands a whole aisle share one tag. A payoff for building an aisle with an identity rather than a shelf of best cards."
+  },
+  {
+   "id": "the_managers_round",
+   "name": "The Manager’s Round",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.45,
+     1.62,
+     1.85
+    ]
+   },
+   "drawback": {
+    "id": "throughput_cost",
+    "value": [
+     2,
+     2,
+     1
+    ]
+   },
+   "l3Clause": {
+    "text": "Nobody in the aisle goes unasked."
+   },
+   "tags": [
+    "service",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Conversion bought with throughput, and from level 2 it stops caring whether the customer walked past it. Conversion caps at 90%, so this fills a shop it then cannot serve - the tension the queue exists to create.",
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "aisle"
+    ]
+   }
+  },
+  {
+   "id": "the_gondola_end",
+   "name": "The Gondola End",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     3,
+     4,
+     5
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.55,
+     1.75,
+     2.0
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.3,
+     1.25,
+     1.2
+    ]
+   },
+   "l3Clause": {
+    "text": "It amplifies its own slot too."
+   },
+   "tags": [
+    "stock",
+    "amplifier"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "A long amplifier: it wants to stand at the front of a deep aisle, which is exactly the slot every other strong card wants. Competing for position IS the puzzle."
   }
  ]
 }

@@ -99,11 +99,20 @@ export function ratchetUpkeep(content, shop, target) {
     // target, it climbs with the target for the whole run. That permanent,
     // scaling nut is what makes committing to scaling a real risk instead of
     // a free option.
+    // Charged in proportion to what the fixture is actually delivering. A
+    // linear ratchet is worth most on the day you install it relative to what
+    // it will ever be, so its upkeep starts full and decays. A compounder is
+    // worth almost nothing for its first week and then carries the run, so its
+    // upkeep RAMPS by the same curve, reversed. Billed flat from birth it was
+    // punishing the player twice for the same card — nothing delivered, full
+    // price — in the act where two thirds of runs already die.
     const compounding = inst.def.effect.op === 'compound';
     const table = compounding ? cfg.upkeepFractionCompound : cfg.upkeepFractionOfTarget;
     const frac = table[inst.def.rarity] ?? 0;
-    const decay = compounding ? (cfg.upkeepDecayCompound ?? 1) : cfg.upkeepDecay;
-    total += target * frac * scale * Math.pow(decay, inst.age || 0);
+    const shape = compounding
+      ? 1 - Math.pow(cfg.upkeepRampCompound ?? cfg.upkeepDecay, inst.age || 0)
+      : Math.pow(cfg.upkeepDecay, inst.age || 0);
+    total += target * frac * scale * shape;
   }
   return total;
 }
@@ -233,7 +242,13 @@ export function collectFlags(content, shop, ctx) {
         default: break;
       }
     }
-    if (isRatchet(def) && def.term === 'footfall') {
+    // Anchor Tenant reads this and turns it into Basket, so it may only count
+    // ops whose ratchet is a QUANTITY OF PEOPLE. A ratchet_mult or compound
+    // stores a dimensionless multiplier excess; adding that to a basket is
+    // adding a factor to a number of pounds. Left in, it fed an exponential
+    // footfall multiplier into an additive Basket term and produced a basket
+    // of four quadrillion pounds at a 0% conversion rate.
+    if (def.effect.op === 'ratchet' && def.term === 'footfall') {
       f.footfallRatchetTotal += inst.ratchet || 0;
     }
 
@@ -654,7 +669,7 @@ export function resolveDay(content, shop, ctx = {}) {
 
   // --- Footfall -------------------------------------------------------------
   const commitMul = commitMultiplier(content, shop);
-  let footfall = shop.baseFootfall + shop.carryFootfall;
+  let footfall = shop.baseFootfall * (shop.carryFootfallMul ?? 1);
   if (shop.flags.footfallMultiplier) footfall *= shop.flags.footfallMultiplier;
   for (let a = 0; a < shop.aisles.length; a++) {
     for (const inst of shop.aisles[a].slots) {
@@ -916,18 +931,44 @@ export function resolveDay(content, shop, ctx = {}) {
   profit -= upkeepRatchet; // scaling costs you while it is still young
 
   // --- Tomorrow -------------------------------------------------------------
+  // Everything that carries into tomorrow's Footfall is PROPORTIONAL, and it
+  // has to be, because Footfall is a product. It is built by multiplying a
+  // base of about 120 up through every ratchet and compounder on the board, so
+  // a shop pulling 5,700 people has a base pool that is still 120. An absolute
+  // carry computed from post-multiplier quantities and then added to the
+  // pre-multiplier base is a units error, and it was a fatal one in both
+  // directions: a 73%-walkout day produced a penalty of 1,700 against a pool
+  // of 120, so a run 160x over its target died the next morning with zero
+  // Footfall and nothing in the ruleset able to bring it back. The same error
+  // ran the other way through Warehouse Club, where post-multiplier walkouts
+  // were fed back into the pre-multiplier base and compounded.
+  //
+  // As a share of the day, all three read plainly and none of them can zero a
+  // term: a bad queue costs you a slice of tomorrow, it does not end you.
+  // and it has to COMPOUND, because what it is braking compounds. A single
+  // constant factor cannot hold back a growing product: 0.22 against a chain
+  // of compounders multiplying 1.4x a day is 0.22 once and 1.4x every day
+  // afterwards, which is why Footfall still ran to 1.1e22. So the carry is a
+  // state that persists and multiplies, and the shop's reputation drifts back
+  // up on days the queue behaves.
+  //
+  // That closes the loop: grow past your tills and tomorrow is quieter, trade
+  // cleanly and word gets round again. Footfall settles where the two balance,
+  // at roughly twice what you can serve, and the only way to move the
+  // equilibrium up is to buy throughput — which is exactly the shape the
+  // Footfall build is supposed to have.
   const wcfg = content.economy.walkouts;
-  let carry = 0;
-  if (flags.unsoldToFootfall > 0) carry += unsold * flags.unsoldToFootfall;
-  if (flags.walkoutsToFootfall) carry += totalWalkouts;
-  else {
-    // Capped: an uncapped penalty lets one bad boss day zero Footfall, and a
-    // zero in any of the four terms is an unrecoverable run.
-    const penalty = totalWalkouts * wcfg.footfallPenaltyPerWalkout;
-    // Against today's Footfall, not the starting Footfall. Otherwise the brake
-    // is weightless exactly when it is needed.
-    carry -= Math.min(penalty, footfall * (wcfg.maxPenaltyShare ?? 1));
-  }
+  const denom = Math.max(1, footfall);
+  const walkoutShare = totalWalkouts / denom;
+  const healthy = wcfg.healthyWalkoutShare ?? 0;
+  let carryMul = walkoutShare > healthy
+    ? 1 - Math.min(wcfg.maxPenaltyShare ?? 1,
+      (walkoutShare - healthy) * wcfg.footfallPenaltyPerWalkout)
+    : 1 + (wcfg.recoverPerDay ?? 0);
+  if (flags.unsoldToFootfall > 0) carryMul += (unsold / denom) * flags.unsoldToFootfall;
+  if (flags.walkoutsToFootfall) carryMul += walkoutShare;
+  const carry = clamp((shop.carryFootfallMul ?? 1) * carryMul,
+    wcfg.minCarryMul ?? 0.05, wcfg.maxCarryMul ?? 2);
 
   // The projection panel (section 17). The four terms are chained funnel
   // ratios, not pool averages, so Footfall x Conversion x Basket x Margin
