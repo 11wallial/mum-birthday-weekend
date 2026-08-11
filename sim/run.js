@@ -363,7 +363,10 @@ export function playRun(content, opts = {}) {
       // a capped share of the overshoot. The target is then purely a fail
       // condition and can be tuned for tension without inflating the economy.
       shop.cash += pay.flatBase * Math.pow(pay.flatGrowth, enc - 1)
-        + Math.min(pay.overshootCap, (day.profit - target) * pay.overshootShare);
+        // Overshoot is the skill-paid half of the faucet, so its cap has to scale
+        // with the economy. A flat GBP 4,000 ceiling against a GBP 14,083 target means
+        // beating the target by five times and by fifty times pay the same.
+        + Math.min(pay.overshootCapTargets * target, (day.profit - target) * pay.overshootShare);
     } else {
       shop.cash += day.profit - target;
     }

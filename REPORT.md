@@ -1,7 +1,12 @@
 # FOOTFALL — Phase 0
 
-Two parts. **Part one** is what the headless simulator found in the v0.1
-ruleset. **Part two** is the redesign built in response, and what it measured.
+Six parts, newest first. **Part one** is what the headless simulator found in
+the v0.1 ruleset; each later part is what the one before it got wrong.
+
+**Read part six first.** It finds a units bug that had been distorting every
+win rate in this document, so the numbers in parts two, three and four are the
+record of what was measured at the time rather than statements about the game
+as it now stands.
 
 Section 19 is explicit that "everything above is a hypothesis and most of it is
 wrong". That turned out to be the right posture. The engine survived intact;
@@ -34,9 +39,14 @@ decoupled from the target, player-chosen bosses, rent pegged to the curve, a
 fuller board, flagship drawbacks that stop melting, Returners cut, and marketing
 turned into a committed identity.
 
-**Result.** All three section 19 win-rate bands hit at once, and the
-greedy-versus-planner gap — the single number that could have killed the
-project — is **39.7pp**, up from 30.1pp.
+**Result.** All five section 19 measures hold together — random 0.0%, greedy
+20.6%, planner 62.9%, queue 29.5% of early deaths — and the greedy-versus-planner
+gap, the single number that could have killed the project, is **42.3pp**. A
+winning run's median last day is £731,335 against a £14,083 target, and 42% of
+wins finish on a seven-figure day.
+
+Getting there took finding a units bug that had been distorting every win rate
+in this document. See part six.
 
 The engine is sound. Four multiplicative terms and one subtractor is a good
 machine, order of operations does carry real skill, and the pick-versus-cash
@@ -44,7 +54,7 @@ split does produce two distinct axes.
 
 ---
 
-# Part six — the ending, and the two things that were actually stopping it
+# Part six — the ending, and the three things that were actually stopping it
 
 The brief was: go big on content, and make the seven-figure ending reachable.
 The content came first and it was the wrong instinct — twenty-eight new cards
@@ -52,8 +62,9 @@ moved the median build's total climb from **x43 to x66** against a curve that
 wants **x7,000**. Writing more cards was not going to close a gap of that size,
 so I stopped writing them and measured what was binding instead.
 
-Two things were. Neither was the thing I expected, and the second was worth
-fifty times the first.
+Three things were, in ascending order of how much they mattered and descending
+order of how obvious they seemed. The third had been quietly deciding the win
+rate for the whole project.
 
 ## Nothing in the pool grew faster than linearly
 
@@ -85,11 +96,12 @@ value with the clock, and that single property is the clearest expression of the
 brief — long-term payoff bought with short-term strain — that any mechanic here
 has managed.
 
-Their upkeep is billed on a separate line that **never decays**. Linear ratchet
-upkeep decays as the fixture matures, which is right for a card that starts
-weak and ends strong-but-bounded. Applied to a compounder it would hand the
-strongest class in the pool to the player for free at exactly the moment it wins
-the game.
+Their upkeep is billed on a separate line that **ramps** where a linear
+ratchet's decays — the same curve, reversed. A linear ratchet is worth most,
+relative to its own ceiling, on the day you install it, so its charge starts
+full and falls away. A compounder is worth almost nothing for its first week and
+then carries the run. Billed flat from birth it punished the player twice for
+one card, in the act where two thirds of runs already die.
 
 ## The planner's horizon was not the problem, and I checked before assuming
 
@@ -135,15 +147,138 @@ median total climb    x42  ->  x2,173
 Fifty times, from one rule. Every card I wrote before finding this was being
 graded on a board that could not accept it.
 
+## And then the actual answer: a units bug that had been eating the run
+
+Neither of those was the thing. With the board unlocked I went looking for a
+target curve and found that the planner's win rate had collapsed to 28%. A
+worktree at the previous commit put the blame squarely on the 68-card pool
+rather than on the compounding work — and then a traced run showed what was
+really happening:
+
+```
+ enc  target      profit     footfall   conv   walkout  boss
+  12    £741    £119,750         5703  22.1%    72.8%   bank_holiday
+  13    £875     £-1,075            0   0.0%     0.0%
+```
+
+A run sitting **160x over its target** dies the next morning with zero
+Footfall.
+
+Footfall is a **product**: a base of about 120 multiplied up through every
+ratchet and compounder on the board. The walkout carry was an absolute count of
+people, computed from post-multiplier quantities and then added back to the
+pre-multiplier base. At a 73% walkout rate that is a penalty of 1,700 against a
+pool of 120. The run does not lose 30% of tomorrow — it ceases to exist, and
+nothing in the ruleset can bring it back.
+
+I wrote that bug earlier in this same session, fixing a different one. The
+previous version capped the penalty against the *starting* Footfall, which made
+the brake weightless at scale; capping it against *today's* Footfall made it
+lethal. Both are the same mistake — mixing a quantity from one side of the
+multiplier chain with a quantity from the other — and the same mistake was in
+two more places once I knew to look:
+
+- **Warehouse Club** fed post-multiplier walkouts back into the pre-multiplier
+  base, where they compounded.
+- **Anchor Tenant** summed the ratchet of every Footfall scaler into Basket.
+  For `ratchet` that is a number of people and the card is fine. For `compound`
+  it is a dimensionless multiplier excess, and adding it to a basket produced a
+  basket of four quadrillion pounds at a 0% conversion rate.
+
+Everything that carries into tomorrow is now a **share of the day**.
+
+## Bounding a product takes more than a share
+
+A share is a single constant factor, and a single constant factor cannot brake a
+growing product. 0.22 once, against compounders multiplying 1.4x every day, is
+not a brake. Footfall ran to 1.1e22.
+
+So the carry became a state that persists and multiplies, with the shop's
+reputation drifting back up on days the queue behaves. That still was not enough,
+because the penalty was quoted against the walkout **share**, which saturates at
+1 — so the penalty saturated too, and a saturated penalty is a constant factor
+again. Footfall found 3.5e12.
+
+It is now quoted against **overload**, which does not saturate: serve one in
+twenty-five and it is 25.
+
+```
+tomorrow  =  allowedOverload x (the fraction you actually served)
+```
+
+At equilibrium that equals 1 / (your daily growth), so Footfall settles a little
+above what the tills can take, and the only thing that moves the equilibrium is
+buying throughput. That is the shape the Footfall build was always supposed to
+have, and it took three attempts to write it.
+
+Plus a hard ceiling at twelve times what the tills could physically serve,
+because the brake's per-day authority is finite and a stack of compounders under
+two rate multipliers is not — Manager's Office and Stocktake each multiply a
+compounder's growth *factor*, and they multiply each other. The ceiling costs
+the player nothing they wanted: Footfall past what you can serve is walkouts, and
+a walkout is a lost sale and a quieter tomorrow.
+
+| Footfall, 6,844 trading days | p50 | p90 | p99 | max |
+|---|---|---|---|---|
+| before | 492 | 23,954 | 2.9e10 | 1.6e27 |
+| after | 492 | 23,940 | 84,107 | 107,779 |
+
+## All five bands, at once
+
+At 1,200 runs per policy, on base 88 x 1.24:
+
+| | | |
+|---|---|---|
+| random | 0.0% | band 0–2 |
+| greedy | 20.6% | band 15–25 |
+| planner | 62.9% | band 55–70 |
+| gap | **42.3pp** | milestone wants > 30 |
+| queue | 29.5% of early deaths | wants ~25 |
+
+The first time in the project that all of them have held together. Three of them
+moved into band on the units fix alone, before any tuning at all — which is the
+measure of how much that bug had been distorting. Every conclusion drawn from a
+win rate earlier in this document was drawn through it.
+
+## The ending
+
+The target ends at **£14,083** a day. A winning run does not:
+
+| winning runs | p10 | p50 | p90 | p99 | max |
+|---|---|---|---|---|---|
+| last day profit | £67,807 | **£731,335** | £8,576,342 | £35,978,115 | £153,315,201 |
+| climb, day 1 to 24 | x184 | x1,880 | x18,046 | x101,442 | x347,211 |
+
+**42% of winning runs finish on a day clearing seven figures** — about one run in
+four overall. The median win overshoots its final target by 52x.
+
+That is the resolution of the ending problem, and it is not the one I was
+chasing. Asking the *target* to reach seven figures meant multiplying by 1.47 for
+twenty-four straight encounters, which no pool of 89 cards drawn three at a time
+can carry from a standing start. Asking a good run to overshoot a reachable
+target by fifty times produces the same screenshot with a game underneath it.
+
+One more thing had to be fixed before that was even measurable. `payout.flatGrowth`
+was still 1.47 while the curve had been refitted to 1.24, so the faucet paid
+£150 x 1.47^23 = £1.06m for the final encounter alone, and **100% of winning runs
+finished holding seven figures whether they had played well or not**. The ending
+was being handed out by the payout formula. Matched to the curve, banked cash is
+dominated by overshoot, which is skill.
+
 ## What that says about the order of work
 
 Part four committed to **pool -> queue verification -> tune**. The pool work was
-correct and it did move things, but this finding says the ordering had a missing
-first item: *check that the shop can hold what you are writing.* Twenty-eight
-cards were authored, balanced and verified against a board with room for nine of
-them. The content was not the bottleneck; the container was.
+correct and it did move things, but this part says the ordering had two missing
+items in front of it:
 
-The queue is still unverified, and it is still next.
+1. *Check that the shop can hold what you are writing.* Twenty-eight cards were
+   authored, balanced and verified against a board with room for nine of them.
+2. *Check your units.* Four separate places mixed pre- and post-multiplier
+   quantities, and between them they had been silently deciding the win rate,
+   the ending, and which builds were viable.
+
+Neither is a tuning problem and neither would have been found by tuning. The
+queue is still unverified, and it is still next.
 
 ---
 

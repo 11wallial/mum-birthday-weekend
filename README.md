@@ -21,7 +21,7 @@ python3 -m http.server 8099    # then http://localhost:8099/
 |---|---|
 | `index.html`, `src/` | the playable browser build |
 | `sim/` | the headless simulator the design was measured with |
-| `data/` | fixtures, customers, economy, targets, bosses, audits — the contract |
+| `data/` | 89 fixtures, customers, economy, targets, bosses, audits — the contract |
 | `tools/` | data bundler, headless smoke test, browser screenshotter |
 | `REPORT.md` | **what the simulator found.** The main document |
 | `docs/GAME.md` | how the browser build is put together |
@@ -43,7 +43,7 @@ number, then trade the day around it.
 ## Running things
 
 ```
-node sim/verify.js              # resolver correctness, against 300k walked customers
+node sim/verify.js              # resolver correctness, against 100k walked customers
 node sim/cli.js check           # the section 19 health check
 node sim/cli.js ablate          # where the skill gap comes from, across seed blocks
 node sim/cli.js micro           # what the trading day is worth as a decision layer
@@ -60,19 +60,35 @@ screenshotter, and only as a dev tool.
 
 ## Where the project actually is
 
-Phase 0 is done and then some: the engine is verified, the design has been
-measured, two rounds of external review have been acted on, and there is a
-playable build. What is *not* done is the balance.
+All five of the §19 measures hold together, at 1,200 runs per policy:
 
-Three findings all said "cannot be tested at 23 cards", so the pool went to 40
-and order-of-operations went from measuring **0.0pp** to **+3.4pp** — §2's
-central claim, vindicated by writing the content that expresses it.
+| | | |
+|---|---|---|
+| random | 0.0% | band 0–2 |
+| greedy | 20.6% | band 15–25 |
+| planner | 62.9% | band 55–70 |
+| greedy vs planner | **42.3pp** | milestone wants > 30 |
+| queue | 29.5% of early deaths | wants ~25 |
 
-The committed order for what remains is **pool → queue verification → tune, and
-no tuning before both**. Every win-rate number in parts two and three of
-`REPORT.md` predates the current pool and needs re-running. Two decisions are
-open and on the critical path: whether the run ends in four figures or seven,
-and whether rent should stay a fixed cost at all.
+The first time that has happened. Three of them moved into band on one bug fix,
+before any tuning — the walkout carry was mixing quantities from opposite sides
+of the multiplier chain, and it had been distorting every win rate ever measured
+here. Part six of `REPORT.md` has it.
 
-Read `REPORT.md` newest-part-first. Parts four and five reverse conclusions in
-parts two and three, which are kept as the record rather than edited.
+**The ending.** The target ends at £14,083 a day. A winning run's median last day
+is **£731,335**, and 42% of wins finish on a day clearing seven figures — about
+one run in four overall. Seven figures is the overshoot, not the requirement,
+which is the only version of it a 24-encounter run can actually carry.
+
+Still out of band: tier rush at 74% (wants ~30%), and staff counts in winning
+builds run 0–14 (wants 0–8, unclustered).
+
+The committed order was **pool → queue verification → tune**. The pool is done
+(89 cards, three growth classes) and the tuning has been redone on top of the
+fix. **The queue is still unverified and it is still next** — `verify.js` proves
+the resolver against 100k individually walked customers but excludes the queue
+entirely, which is the one part of the day that decides how much of your Footfall
+is real.
+
+Read `REPORT.md` newest-part-first. Each part reverses conclusions in the one
+before it; earlier parts are kept as the record rather than edited.

@@ -42,13 +42,14 @@
   "capFloor": 300
  },
  "payout": {
-  "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition — but it has to GROW with the economy or the late game cannot buy throughput. flatGrowth tracks the target curve; if you retune one, retune both.",
+  "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition - but it has to GROW with the economy or the late game cannot buy throughput. flatGrowth TRACKS THE TARGET CURVE and must be retuned with it. Left at 1.47 while the curve was refitted to 1.24, the faucet paid GBP 150 x 1.47^23 = GBP 1.06m for the final encounter alone, so every single winning run finished holding seven figures whether it had played well or not - the ending was being handed out by the payout formula rather than earned. Matched to the curve, banked cash is dominated by OVERSHOOT, which is skill.",
   "mode": "flat",
   "flatBase": 150,
-  "flatGrowth": 1.47,
-  "overshootShare": 0.15,
-  "overshootCap": 4000,
-  "skipPickReward": 2.0
+  "flatGrowth": 1.24,
+  "overshootShare": 0.22,
+  "skipPickReward": 2.0,
+  "$flatGrowthWas": 1.47,
+  "overshootCapTargets": 6
  },
  "congestion": {
   "$comment": "Kept at zero. Measured: charging crowding against Patience does nothing because Patience only bites once a queue exists, and charging it against Conversion is a flat difficulty tax that narrows the skill gap. Routing is not uncosted, it is uncontested - the fix is a fuller board and aisle identity.",

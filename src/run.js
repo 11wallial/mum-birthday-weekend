@@ -252,7 +252,10 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     const pay = content.economy.payout;
     if (pay.mode === 'flat') {
       shop.cash += pay.flatBase * Math.pow(pay.flatGrowth, run.encounter - 1)
-        + Math.min(pay.overshootCap, (dayState.profit - tgt) * pay.overshootShare);
+        // Overshoot is the skill-paid half of the faucet, so its cap has to scale
+        // with the economy. A flat GBP 4,000 ceiling against a GBP 14,083 target means
+        // beating the target by five times and by fifty times pay the same.
+        + Math.min(pay.overshootCapTargets * tgt, (dayState.profit - tgt) * pay.overshootShare);
     } else {
       shop.cash += dayState.profit - tgt;
     }

@@ -7,8 +7,8 @@
   "bossEvery": 3
  },
  "targets": {
-  "$comment": "Generated as base * growth^(n-1). Fitted after the walkout units bug was found: planner 62.5%, greedy 16.3%, gap 46.3pp at 400 runs per cell - the first setting in the project where all three section 19 bands hold at once. The base matters far more than the growth, because early deaths dominate: at growth 1.18, moving the base from 120 to 220 costs the planner 50pp, while moving the growth from 1.18 to 1.28 at base 120 costs 32pp. Sweep with `node sim/cli.js sweep growth`.",
-  "base": 100,
+  "$comment": "Generated as base * growth^(n-1). Measured at 1,200 runs per policy: random 0.0%, greedy 20.6%, planner 62.9%, gap 42.3pp - all three section 19 bands holding at once, which had never happened before. The base matters far more than the growth because early deaths dominate: at growth 1.18, moving the base from 120 to 220 costs the planner 50pp, while moving the growth from 1.18 to 1.28 at base 120 costs 32pp. Retune this WITH economy.payout.flatGrowth, which must track it.",
+  "base": 88,
   "growth": 1.24,
   "$specified": {
    "base": 450,
@@ -20,7 +20,7 @@
    "growth": 1.18,
    "$comment": "Fitted against the 40-card pool and a walkout carry that could zero Footfall. Both are gone."
   },
-  "$endingNote": "The ENDING is four figures a day, not seven. Seven figures is where a strong run's BANKED CASH finishes - a traced winner ends on GBP 7.1m against a GBP 14,083 final target. That is the right home for the fantasy: the run's last Tuesday is a shop, and the number you screenshot is what the shop is worth. Asking one trading day to clear seven figures required the target curve to multiply by 1.47 for twenty-four straight encounters, which no pool of 89 cards drawn three at a time can carry from a standing start."
+  "$endingNote": "The target ENDS at GBP 14,083 a day; a winning run does not. Median last day is GBP 731,335, a 52x overshoot, and 42% of winning runs finish on a day clearing seven figures - about one run in four overall. The seven-figure ending is real and it is earned, rather than being the number on the tin. Asking the TARGET to reach seven figures meant multiplying by 1.47 for twenty-four straight encounters, which no pool of 89 cards drawn three at a time can carry from a standing start; asking a good run to overshoot a reachable target by fifty times gets the same screenshot and a game underneath it."
  },
  "bosses": [
   {
