@@ -212,12 +212,18 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
   // Wallet is what a customer is willing to spend, so it scales a real basket.
   // A Shoplifter's loss is the value of what they walk out with, not a wallet.
   const walletScale = type.sign === 'positive' ? content.walletMean : 1;
+  // Crowding. Charged against Patience it is a second-order effect, because
+  // Patience only matters once a queue already exists; charged against
+  // Conversion it always bites. See REPORT.md.
+  const crowd = flags.congestion ? flags.congestion[aisleIdx] : 1;
+  const crowdMode = content.economy.congestion?.mode || 'patience';
   const terms = {
-    conversion: type.conversion,
+    conversion: type.conversion * (crowdMode === 'conversion' ? crowd : 1),
     basket: type.basket * walletScale * flags.basketMul,
     margin: baseMargin + type.marginDelta,
     patience: (type.patienceTicks + aisle.patienceBonus + flags.patienceBonus)
-      * flags.patienceMul,
+      * flags.patienceMul
+      * (crowdMode === 'patience' ? crowd : 1),
   };
   if (flags.basketFixed != null) terms.basket = flags.basketFixed;
   if (shop.flags.basketFixed != null) terms.basket = shop.flags.basketFixed;
@@ -461,6 +467,32 @@ export function resolveDay(content, shop, ctx = {}) {
   const traversals = shop.flags.traversals || 1;
 
   // --- The walk, once per (aisle, type) ------------------------------------
+  // Crowding. Nothing else in the ruleset costs anything for funnelling every
+  // customer down one aisle, so without this signage has a dominant strategy.
+  const cong = content.economy.congestion;
+  if (cong && cong.strength > 0 && openAisles.length > 1) {
+    const load = new Float64Array(shop.aisles.length);
+    let loadTotal = 0;
+    for (const t of types) {
+      const w = pool[t.id] || 0;
+      if (w <= 0) continue;
+      loadTotal += w;
+      if (t.routing === 'random') {
+        for (const a of openAisles) load[a] += w / openAisles.length;
+      } else {
+        let a = shop.signage[t.id];
+        if (a == null || !openAisles.includes(a)) a = openAisles[0];
+        load[a] += w;
+      }
+    }
+    const fair = 1 / openAisles.length;
+    flags.congestion = shop.aisles.map((_, a) => {
+      const share = loadTotal > 0 ? load[a] / loadTotal : 0;
+      const over = Math.max(0, share - fair) / fair;
+      return Math.max(cong.floor, 1 - cong.strength * over);
+    });
+  }
+
   // A customer type can be split across aisles (Tourists ignore signage), so a
   // type becomes one or more segments. Averaging the four terms across aisles
   // and then multiplying would understate profit for the same reason the

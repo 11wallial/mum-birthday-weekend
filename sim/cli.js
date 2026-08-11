@@ -36,6 +36,9 @@ if (flags.base) overrides.targetBase = Number(flags.base);
 if (flags.ticks) overrides.dayTicks = Number(flags.ticks);
 if (flags.pass) overrides.slotPassChance = Number(flags.pass);
 if (flags.rent) overrides.rentScale = Number(flags.rent);
+if (flags.payout) overrides.payoutMode = String(flags.payout);
+if (flags.congestion) overrides.congestion = Number(flags.congestion);
+if (flags.congmode) overrides.congestionMode = String(flags.congmode);
 const content = loadContent(overrides);
 const rule = (n = 74) => console.log('─'.repeat(n));
 

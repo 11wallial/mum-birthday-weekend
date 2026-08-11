@@ -489,3 +489,61 @@ rebuilding by hand 24 times is interesting or exhausting is a playtest question.
   them, but the interaction between pool editing and fixture conditions —
   section 3's "why the same fixture is broken in one run and dead in another" —
   has not been measured.
+
+---
+
+## Appendix — two design experiments, run after the fact
+
+Both are gated off by default, so the baseline above is unchanged.
+`--payout=flat`, `--congestion=0.35 --congmode=patience|conversion`.
+
+### A. Decoupling cash from the target (`--payout=flat`)
+
+Replaces "cash is profit above target" with a flat reward per encounter plus a
+capped share of the overshoot. n=700 per cell:
+
+| | planner | greedy | gap | tier rush |
+|---|---|---|---|---|
+| Baseline | 56.6% | 24.6% | 32.0pp | 100% |
+| Flat payout | 59.7% | 24.0% | **35.7pp** | 100% |
+
+**Works, partially.** The skill gap widens by 3.7pp, because a predictable income
+turns spending into a plan rather than a consequence of how far you overshot.
+Tier rush stays at 100%, which says the flat reward I picked (£260 growing at
+1.17) is still too generous — the mechanism is right, the number needs its own
+pass. Worth noting the direction: this is the only change tested that *increased*
+the skill gap.
+
+### B. Aisle congestion (`--congestion`)
+
+The hypothesis in Finding 6 was that signage is a solved problem because no aisle
+carries a crowding cost. Adding one should make routing a real decision and widen
+the gap. It does not:
+
+| | planner | greedy | gap |
+|---|---|---|---|
+| No congestion | 56.6% | 24.6% | 32.0pp |
+| Charged to Patience (0.35) | 55.7% | 24.4% | 31.3pp |
+| Charged to Conversion (0.25) | 45.3% | 17.0% | 28.3pp |
+| Charged to Conversion (0.45) | 34.9% | 11.0% | 23.9pp |
+
+**The hypothesis was wrong, in two different ways.**
+
+Charged against Patience it does nothing measurable, because Patience only
+matters once a queue exists — it is a second-order penalty on a first-order
+problem, and a shop with enough tills never feels it.
+
+Charged against Conversion it always bites, and it makes things *worse*: the gap
+narrows monotonically as the penalty grows. It is a flat difficulty tax, not a
+decision. The planner still funnels; it just pays.
+
+The reason is the thing the experiment actually exposed: **there is nothing worth
+having in the other aisles.** A 3x4 board is twelve slots, and a mid-run build
+holds seven or eight fixtures, so the alternative routes are half-empty. Routing
+is not a solved problem because it is uncosted; it is solved because there is
+only ever one good answer.
+
+So the fix is not a penalty. It is to make the board full and the aisles
+different — fewer slots, more starting fixtures, and aisle identity of the kind
+the Mezzanine already gestures at. That is a content change, not a rules change,
+and it cannot be tested until the fixture pool is nearer milestone 3's 90-120.

@@ -305,7 +305,16 @@ export function playRun(content, opts = {}) {
       };
     }
 
-    shop.cash += day.profit - target;
+    const pay = content.economy.payout;
+    if (pay.mode === 'flat') {
+      // Cash decoupled from the target: a predictable reward per encounter plus
+      // a capped share of the overshoot. The target is then purely a fail
+      // condition and can be tuned for tension without inflating the economy.
+      shop.cash += pay.flatBase * Math.pow(pay.flatGrowth, enc - 1)
+        + Math.min(pay.overshootCap, (day.profit - target) * pay.overshootShare);
+    } else {
+      shop.cash += day.profit - target;
+    }
     const int = content.economy.interest;
     shop.cash += Math.min(int.cap, shop.cash * int.ratePerEncounter);
     shop.carryFootfall = day.carry;

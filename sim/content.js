@@ -110,6 +110,9 @@ export function loadContent(overrides = {}) {
     econ.rent.perSlot *= overrides.rentScale;
     econ.rent.perTill *= overrides.rentScale;
   }
+  if (overrides.payoutMode) econ.payout.mode = overrides.payoutMode;
+  if (overrides.congestion != null) econ.congestion.strength = overrides.congestion;
+  if (overrides.congestionMode) econ.congestion.mode = overrides.congestionMode;
 
   return {
     types,
