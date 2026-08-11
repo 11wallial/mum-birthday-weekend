@@ -17,7 +17,9 @@ import { playRun } from './run.js';
 import { runBatch, earlyDeathCauses, fmtPct, fmtMoney } from './harness.js';
 import { runSweep, SWEEPS } from './sweep.js';
 import { measureEnvelope, fitTargets } from './envelope.js';
-import { lookaheadCurve, capabilityAblation, commitmentCurves, ratchetQuotaCurve } from './ablate.js';
+import {
+  lookaheadCurve, capabilityAblation, commitmentCurves, ratchetQuotaCurve, signStable,
+} from './ablate.js';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0] || 'check';
@@ -328,25 +330,32 @@ function depth() {
 }
 
 function ablate() {
-  const n = num('n', 600);
+  const n = num('n', 500);
+  const blocks = num('blocks', 3);
   const character = str('character', 'default_shop');
-  console.log(`\nCapability ablation — ${character}, ${n} runs per cell\n`);
-  const r = capabilityAblation(content, { n, characterId: character });
-  rule(62);
-  console.log(`greedy baseline ${fmtPct(r.base)}      full planner ${fmtPct(r.full)}`
-    + `      gap ${((r.full - r.base) * 100).toFixed(1)}pp`);
-  rule(62);
-  console.log('capability     alone (vs greedy)   removed (vs planner)');
-  rule(62);
+  console.log(`\nCapability ablation — ${character}, ${n} runs x ${blocks} disjoint seed blocks\n`);
+  const r = capabilityAblation(content, { n, characterId: character, blocks });
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+  const fmtRange = (d) => {
+    const lo = Math.min(...d) * 100; const hi = Math.max(...d) * 100;
+    return `${mean(d) * 100 >= 0 ? '+' : ''}${(mean(d) * 100).toFixed(1)}pp `
+      + `[${lo.toFixed(1)} to ${hi.toFixed(1)}]`;
+  };
+  rule(78);
+  console.log(`greedy ${fmtPct(mean(r.base))}   planner ${fmtPct(mean(r.full))}   `
+    + `gap ${((mean(r.full) - mean(r.base)) * 100).toFixed(1)}pp`);
+  rule(78);
+  console.log('capability      alone                      removed                    stable');
+  rule(78);
   for (let i = 0; i < r.solo.length; i++) {
     const s = r.solo[i]; const d = r.drop[i];
-    console.log(`${s.cap.padEnd(14)} ${fmtPct(s.winRate).padStart(7)} `
-      + `${((s.winRate - r.base) * 100).toFixed(1).padStart(7)}pp   `
-      + `${fmtPct(d.winRate).padStart(9)} ${((d.winRate - r.full) * 100).toFixed(1).padStart(7)}pp`);
+    const stable = signStable(s.deltas) && signStable(d.deltas);
+    console.log(`${s.cap.padEnd(14)} ${fmtRange(s.deltas).padEnd(26)} `
+      + `${fmtRange(d.deltas).padEnd(26)} ${stable ? 'yes' : 'NO'}`);
   }
-  rule(62);
-  console.log('\n  A capability that adds nothing alone and costs nothing to remove'
-    + '\n  is not carrying skill, whatever the headline gap says.\n');
+  rule(78);
+  console.log('\n  Only rows marked stable are safe to conclude from. A row whose'
+    + '\n  range spans zero is one draw from the seed space, not a finding.\n');
 }
 
 function quota() {
@@ -392,13 +401,8 @@ function commit() {
   rule(58);
   const bestStatic = Math.max(...r.statics.map((s) => s.winRate));
   const bestPivot = Math.max(...r.pivots.map((p) => p.winRate));
-  const ends = Math.max(r.statics[0].winRate, r.statics[r.statics.length - 1].winRate);
-  const mid = r.statics[2].winRate;
   console.log(`\n  best static ${fmtPct(bestStatic)}   best pivot ${fmtPct(bestPivot)}   `
-    + `schedule is worth ${((bestPivot - bestStatic) * 100).toFixed(1)}pp over any fixed mix`);
-  console.log(`  extremes ${fmtPct(ends)}   even blend ${fmtPct(mid)}`);
-  console.log('\n  The design wants both extremes to die, a flat blend to be merely'
-    + '\n  mediocre, and a well-timed schedule to beat every fixed mix.\n');
+    + `schedule is worth ${((bestPivot - bestStatic) * 100).toFixed(1)}pp over any fixed mix\n`);
 }
 
 const commands = {

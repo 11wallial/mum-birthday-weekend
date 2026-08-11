@@ -18,6 +18,43 @@ import {
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
+// --- clamping without bias ---------------------------------------------------
+// The resolver works in expectations, so a capped term was previously computed
+// as min(E[X], cap). That is wrong whenever a build presses against a cap:
+// clamping is non-linear, so E[min(X, cap)] < min(E[X], cap), and the error is
+// systematic rather than noise. It matters twice over — it inflates every
+// measurement, and the policies evaluate candidate boards with this same
+// resolver, so they systematically overvalue cap-pressing builds.
+//
+// The fix is to carry the variance of each capped term alongside its mean and
+// integrate the clamp properly. X is a sum of independent per-slot Bernoulli
+// contributions, so a normal approximation is good well before the handful of
+// fixtures a real aisle holds.
+const SQRT2PI = Math.sqrt(2 * Math.PI);
+const normalPdf = (z) => Math.exp(-0.5 * z * z) / SQRT2PI;
+
+function normalCdf(z) {
+  // Abramowitz and Stegun 7.1.26, accurate to about 1e-7.
+  const sign = z < 0 ? -1 : 1;
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t
+    - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return 0.5 * (1 + sign * y);
+}
+
+/** E[min(X, cap)] for X ~ Normal(mu, sd), falling back to a hard min at sd 0. */
+export function expectedClamped(mu, variance, cap) {
+  const sd = Math.sqrt(Math.max(0, variance));
+  if (sd < 1e-9) return Math.min(mu, cap);
+  const z = (mu - cap) / sd;
+  // E[max(0, X - cap)] for a normal, subtracted from the mean.
+  const overflow = sd * normalPdf(z) + (mu - cap) * normalCdf(z);
+  return mu - overflow;
+}
+
+
+
 /**
  * What today's scaling costs you today.
  *
@@ -234,8 +271,13 @@ export function clauseHolds(clause, type) {
   return true;
 }
 
-function conditionsHold(content, shop, def, inst, aisleIdx, type) {
+function conditionsHold(content, shop, def, inst, aisleIdx, type, slotIdx = -1) {
   const L = inst.level - 1;
+  const slots = shop.aisles[aisleIdx].slots;
+  const prevFilled = () => {
+    for (let i = slotIdx - 1; i >= 0; i--) if (slots[i]) return slots[i];
+    return null;
+  };
   for (const c of def.trigger.conditions || []) {
     switch (c.check) {
       case 'customer_type_in': {
@@ -251,6 +293,46 @@ function conditionsHold(content, shop, def, inst, aisleIdx, type) {
       case 'shop_holds_no_tag':
         if (shopHoldsTag(shop, c.value)) return false;
         break;
+      // --- position and adjacency ------------------------------------------
+      // Order of operations measured 0.0pp because End Cap was the only
+      // adjacency effect in the pool. These are the vocabulary the rest of the
+      // catalogue needs so that where a fixture sits is worth thinking about.
+      case 'slot_is_first':
+        if (slotIdx !== 0) return false;
+        break;
+      case 'slot_is_last':
+        if (slotIdx !== slots.length - 1) return false;
+        break;
+      case 'slot_index_min':
+        if (slotIdx < c.value) return false;
+        break;
+      case 'prev_slot_class': {
+        const p = prevFilled();
+        if (!p || p.def.class !== c.value) return false;
+        break;
+      }
+      case 'prev_slot_term': {
+        const p = prevFilled();
+        if (!p || p.def.term !== c.value) return false;
+        break;
+      }
+      case 'aisle_holds_no_class':
+        if (slots.some((i) => i && i.def.class === c.value)) return false;
+        break;
+      // Purity. Pays only if the whole aisle commits to one identity, which is
+      // what makes a hedged build worse than either pure one.
+      case 'aisle_all_share_tag': {
+        const filled = slots.filter(Boolean);
+        if (filled.length < (c.min || 2)) return false;
+        if (!filled.every((i) => i.def.tagSet.has(c.value))) return false;
+        break;
+      }
+      case 'shop_holds_at_least_tag': {
+        let n = 0;
+        for (const { inst: fx } of fixtureInstances(shop)) if (fx.def.tagSet.has(c.value)) n++;
+        if (n < c.count) return false;
+        break;
+      }
       case 'wallet_at_least':
         return false; // no starter fixture uses this; see README on wallet linearity
       default: break;
@@ -288,16 +370,27 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
   if (shop.flags.basketMultiplier) terms.basket *= shop.flags.basketMultiplier;
 
   const amps = []; // { term, mult, from, to }
+  // Variance of the two capped terms, so the clamp can be integrated rather
+  // than applied to the mean. Only Conversion and Margin are capped.
+  const variance = { conversion: 0, margin: 0 };
 
   const apply = (term, op, value, p, strength) => {
     if (term === 'footfall' || term === 'none') return;
     if (op === 'add') {
       let amp = 1;
       for (const a of amps) if (a.term === term) amp *= a.mult;
-      terms[term] += p * value * strength * amp;
+      const step = value * strength * amp;
+      terms[term] += p * step;
+      // A Bernoulli contribution of size `step` taken with probability p.
+      if (term in variance) variance[term] += step * step * p * (1 - p);
     } else if (op === 'multiply') {
       const m = 1 + (value - 1) * strength;
-      terms[term] *= 1 + p * (m - 1);
+      const f = 1 + p * (m - 1);
+      terms[term] *= f;
+      // Approximate: scale the accumulated spread by the same factor. Exact
+      // when the multiplier is certain, and the starter pool has no
+      // conditional multiplier stacked on a conditional additive.
+      if (term in variance) variance[term] *= f * f;
     }
   };
 
@@ -313,7 +406,7 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
     const L = inst.level - 1;
     const scope = def.trigger.scope;
     if (scope === 'shop' || scope === 'exit') continue;
-    if (!conditionsHold(content, shop, def, inst, aisleIdx, type)) continue;
+    if (!conditionsHold(content, shop, def, inst, aisleIdx, type, i)) continue;
     if (flags.disableBasketAdditive && def.class === 'additive' && def.term === 'basket') {
       continue;
     }
@@ -376,8 +469,10 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
   // Conversion and Margin are rates, so they cap. They are a floor to defend,
   // not an axis to grow: all unbounded growth lives in Footfall and Basket.
   const caps = content.economy.caps || {};
-  terms.conversion = clamp(terms.conversion, 0, caps.conversion ?? 1);
-  terms.margin = clamp(terms.margin, -1, caps.margin ?? 0.95);
+  const convCap = caps.conversion ?? 1;
+  const marginCap = caps.margin ?? 0.95;
+  terms.conversion = Math.max(0, expectedClamped(terms.conversion, variance.conversion, convCap));
+  terms.margin = Math.max(-1, expectedClamped(terms.margin, variance.margin, marginCap));
   terms.patience = Math.max(0, terms.patience);
   if (type.sign === 'positive') terms.basket = Math.max(0, terms.basket);
   return terms;

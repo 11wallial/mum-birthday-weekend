@@ -44,6 +44,136 @@ split does produce two distinct axes.
 
 ---
 
+# Part four — second review, and the pool
+
+The reviewer pulled the branch again, reproduced the variance numbers, and made
+three criticisms. Two were about my instruments rather than the design, and both
+were right. The third was a better resolution of the commitment brief than mine.
+
+## The ablation had no error bars, and one conclusion did not survive them
+
+They re-ran `ablate` on two disjoint seed blocks and found `lookahead-removed`
+ranging from −2.5pp to −12.5pp across four measurements — the full width of the
+claim I drew from it. "Lookahead is a complement, not a skill" came from the
+least stable cell in the table.
+
+`ablate` now runs three disjoint seed blocks, prints the range, and marks each
+row stable or not. Only rows whose sign holds on every block are safe to
+conclude from. On their measurements that is **tempo, sign-alone and reorder** —
+which is still enough to make the section 2 point, so the important argument
+survives.
+
+Two corrections to part three:
+
+- **The lookahead conclusion is withdrawn.** It is unresolved, not settled.
+- **Reroll was omitted from the writeup** and is a bigger removal effect than
+  lookahead on every draw they took. That was a selection error on my part.
+
+## The verifier could not detect the bias it was named for — so I removed the bias
+
+Their sharper point: the pass rule granted 3σ **plus 0.75% of profit** to every
+case unconditionally, so no systematic bias below 0.75% was detectable anywhere
+in the walk maths at any sample size. They demonstrated it — the levelled-stack
+case goes from 2.7σ at 200k to 12.0σ at 1.6M while relative error grows 0.48% →
+0.75%, and the test says PASS at both. σ growing with n is bias, not noise.
+
+They suggested gating the allowance on whether the case actually clamps. Done —
+`verify.js` counts clamped walkers and only spends the allowance where clamping
+really happens, and prints σ at two sample sizes so the signature is visible.
+
+But their diagnosis pointed at something better than a smarter test. They noted
+the planner evaluates candidate boards with the same aggregate resolver, so it
+**systematically overvalues cap-pressing builds**. That is a bias in the game's
+decision-making, not just in the harness, and gating a test does not fix it.
+
+So the bias is gone at source. The resolver now carries the **variance** of each
+capped term alongside its mean and integrates the clamp — `E[min(X, cap)]` under
+a normal approximation — instead of computing `min(E[X], cap)`. X is a sum of
+independent per-slot Bernoulli contributions, so the approximation is good well
+before the handful of fixtures an aisle holds.
+
+| levelled stack | 200k | 800k | signature |
+|---|---|---|---|
+| Before (their measurement) | 0.48% | 0.75% at 1.6M | error **grows** — bias |
+| After | 0.49% | **0.30%** | error **shrinks** — noise |
+
+The clamp allowance is still in the criterion for the residual, but it is now
+gated and the thing it was covering for has mostly gone.
+
+## The pool was the blocker, and the proof is that reorder moved
+
+Three findings — combine rate, order of operations, and the commitment
+mechanics — all said "cannot be tested at 23 cards". The reviewer called that
+convergent enough to be the answer: the next work item is the fixture pool, not
+more simulation, and the ablation had already written its spec.
+
+The pool is now **40 fixtures**, up from 23, authored against that spec:
+
+- **A position and adjacency vocabulary**: `slot_is_first`, `slot_is_last`,
+  `slot_index_min`, `prev_slot_class`, `prev_slot_term`, `aisle_holds_no_class`.
+- **Adjacency content**: amplifiers on Conversion and Margin as well as Basket,
+  and fixtures that read their neighbour — Impulse Shelf multiplies Basket only
+  if the previous slot holds an additive; Upsell Counter only if the previous
+  slot is a Basket fixture; Window Dressing and Queue Bait pay only at the front
+  and back of an aisle.
+- **Ratchets 5 → 10**, weighted toward common and uncommon so a build can
+  realistically be offered four.
+- **Purity keystones**: `aisle_all_share_tag` and `shop_holds_at_least_tag`,
+  paying superlinearly for a committed identity.
+
+Then the measurement that matters, three disjoint seed blocks, n=300:
+
+| Order of operations | Alone | Removed |
+|---|---|---|
+| At 23 fixtures | 0.0pp | −0.2pp |
+| **At 40 fixtures** | **+3.4pp** [+4.0 / +2.7 / +3.7] | **−4.6pp** [−2.7 / −5.7 / −5.3] |
+
+Sign-stable on every block, both directions. **Section 2's claim that order of
+operations is the primary skill expression is now supported by measurement.** It
+was never wrong as a principle — the catalogue simply did not express it, and
+an optimiser reordering an empty board correctly found nothing.
+
+That is also the cleanest possible confirmation of the reviewer's read: the
+blocker was content, and the simulator had already told us exactly what content
+to write.
+
+## Their resolution of the commitment brief is better than mine
+
+I argued the brief was self-contradictory on one axis. They pointed out it is
+two axes being conflated:
+
+- **Tempo budget** — spend everything on scaling and you die before it pays.
+  This *should* be concave, and a middle optimum is correct.
+- **Build identity** — a shop that does a bit of everything should not win.
+  This should be bimodal, and needs keystones paying superlinearly for purity.
+
+Balatro runs both at once for exactly this reason: you commit hard to one hand
+type because scaling jokers reward purity, while money and reroll spend stays a
+balanced-is-better problem. Separate the axes and both halves are satisfiable.
+
+The keystones are authored. The two-axis measurement is not yet built, and the
+commitment curves in part three should be read as measuring the tempo axis only.
+
+## What I have not done, deliberately
+
+- **Not re-run the full ablation table on the new pool.** Only the reorder rows.
+  Every other number in parts two and three was measured on 23 fixtures and is
+  now stale. The table wants re-running before anything is concluded from it.
+- **Not re-tuned the curve.** The reviewer backed that call and warned about its
+  one risk: that there is always one more structural change and the bands
+  quietly become decoration. So the order is now committed, in writing:
+  **pool, then queue verification, then tune — and no tuning before both.**
+- **Not addressed rent.** They are right that I buried it. 42% of early deaths
+  under variance trace to a single scalar, and because rent is pegged to the
+  target curve it is a deterministic nut against stochastic revenue: you did not
+  misplay, you rolled badly against a fixed number. Planner median death also
+  moved 15 → 9, so the midgame got substantially deadlier rather than
+  marginally. The open question is whether early difficulty should be a fixed
+  cost at all, or something a player can act against.
+- **The queue is still unverified**, and is now second in the committed order.
+
+---
+
 # Part three — external review, and what it found
 
 An indie dev cloned the branch and ran it rather than reading part two on trust.

@@ -118,10 +118,15 @@ function walkIndividual(shop, aisleIdx, type, flags, baseMargin, rng) {
   terms.margin += flags.marginFlat;
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
   const caps = content.economy.caps || {};
-  terms.conversion = clamp(terms.conversion, 0, caps.conversion ?? 1);
-  terms.margin = clamp(terms.margin, -1, caps.margin ?? 0.95);
+  const convCap = caps.conversion ?? 1;
+  const marginCap = caps.margin ?? 0.95;
+  // Whether this walker actually hit a cap is the thing that decides if the
+  // clamp allowance may be spent on this case at all.
+  const clamped = terms.conversion > convCap || terms.margin > marginCap;
+  terms.conversion = clamp(terms.conversion, 0, convCap);
+  terms.margin = clamp(terms.margin, -1, marginCap);
   if (type.sign === 'positive') terms.basket = Math.max(0, terms.basket);
-  return terms.conversion * terms.basket * terms.margin;
+  return { value: terms.conversion * terms.basket * terms.margin, clamped };
 }
 
 function buildShop(fixtures) {
@@ -145,20 +150,11 @@ const CASES = [
 ];
 
 const N = flagOf('n', 200000);
-let worst = 0;
-let worstRel = 0;
+const BIAS_BOUND = 0.0075;
 const failures = [];
-console.log(`\nWalk verification — ${N.toLocaleString('en-GB')} individual customers per case\n`);
-console.log('case                             aggregate    individual    error   sigmas');
-console.log('─'.repeat(78));
 
-for (const [name, fixtures] of CASES) {
-  const shop = buildShop(fixtures);
-  const ctx = { auditMods: {} };
-  const agg = resolveDay(content, shop, ctx);
-
-  // Same shop, same pool, one customer at a time.
-  const flags = collectFlags(content, shop, ctx);
+/** Walk `count` individuals through this shop and summarise the disagreement. */
+function sampleCase(shop, agg, flags, count) {
   const baseMargin = content.economy.start.margin;
   const rng = makeRng(20260811);
   const entries = content.types
@@ -167,71 +163,76 @@ for (const [name, fixtures] of CASES) {
   const poolTotal = entries.reduce((a, [, w]) => a + w, 0);
   const allPool = content.types.reduce((a, t) => a + (shop.pool[t.id] || 0), 0);
 
-  let sum = 0;
-  let sumSq = 0;
-  for (let i = 0; i < N; i++) {
+  let sum = 0; let sumSq = 0; let clamps = 0;
+  for (let i = 0; i < count; i++) {
     const t = rng.weighted(entries);
     // Tourists ignore signage and route randomly; day.js averages that outcome
     // across open aisles, so the individual walk has to actually roll it.
     const aisle = t.routing === 'random'
       ? rng.int(shop.aisles.length)
       : (shop.signage[t.id] ?? 0);
-    const v = walkIndividual(shop, aisle, t, flags, baseMargin, rng);
-    sum += v;
-    sumSq += v * v;
+    const r = walkIndividual(shop, aisle, t, flags, baseMargin, rng);
+    sum += r.value;
+    sumSq += r.value * r.value;
+    if (r.clamped) clamps++;
   }
-  // Scale from "per shopping customer" up to a full day's Footfall.
   const shoppers = agg.footfall * (poolTotal / allPool);
-  const mean = sum / N;
+  const mean = sum / count;
   const individual = mean * shoppers;
-
-  // Luxury customers are 1% of the pool carrying 20x the basket, so the
-  // sampling error is dominated by how many of them turned up. Judge the
-  // agreement against that error, not against a tolerance picked to suit.
-  const variance = Math.max(0, sumSq / N - mean * mean);
-  const se = Math.sqrt(variance / N) * shoppers;
+  const variance = Math.max(0, sumSq / count - mean * mean);
+  const se = Math.sqrt(variance / count) * shoppers;
   const diff = Math.abs(individual - agg.saleProfit);
-  const sigmas = se > 0 ? diff / se : 0;
-  worst = Math.max(worst, sigmas);
-  const err = diff / Math.max(1, agg.saleProfit);
-  worstRel = Math.max(worstRel, err);
-  // Judged per case. Taking the maximum sigma and the maximum relative error
-  // across *different* cases and then failing if either maximum breaches makes
-  // the test fail on noise at low N, which is worse than no test at all.
-  // A case passes if the observed difference is explainable by sampling noise
-  // (3 standard errors) plus the allowed systematic bias from clamping, added
-  // together. Testing either alone makes the result depend on sample size.
-  const allowed = 3 * se + 0.0075 * Math.max(1, agg.saleProfit);
-  if (diff > allowed) {
-    failures.push(`${name}: £${diff.toFixed(2)} exceeds £${allowed.toFixed(2)} allowed`);
-  }
+  return {
+    individual,
+    se,
+    diff,
+    sigmas: se > 0 ? diff / se : 0,
+    rel: diff / Math.max(1, agg.saleProfit),
+    clampRate: clamps / count,
+  };
+}
+
+console.log(`\nWalk verification — ${N.toLocaleString('en-GB')} individual customers per case`);
+console.log('Each case is also run at a quarter of that. Sigma that GROWS with the');
+console.log('sample is the signature of real bias; noise alone leaves it flat.\n');
+console.log('case                          aggregate   individual   err    σ@n/4    σ@n  clamped');
+console.log('─'.repeat(88));
+
+for (const [name, fixtures] of CASES) {
+  const shop = buildShop(fixtures);
+  const ctx = { auditMods: {} };
+  const agg = resolveDay(content, shop, ctx);
+  const flags = collectFlags(content, shop, ctx);
+
+  const small = sampleCase(shop, agg, flags, Math.max(1000, Math.floor(N / 4)));
+  const big = sampleCase(shop, agg, flags, N);
+
   console.log(
-    `${name.padEnd(32)}${`£${agg.saleProfit.toFixed(2)}`.padStart(10)}`
-    + `${`£${individual.toFixed(2)}`.padStart(14)}${`${(err * 100).toFixed(2)}%`.padStart(9)}`
-    + `${`${sigmas.toFixed(1)}σ`.padStart(8)}`,
+    `${name.padEnd(29)}${`£${agg.saleProfit.toFixed(0)}`.padStart(10)}`
+    + `${`£${big.individual.toFixed(0)}`.padStart(13)}`
+    + `${`${(big.rel * 100).toFixed(2)}%`.padStart(7)}`
+    + `${small.sigmas.toFixed(1).padStart(8)}`
+    + `${big.sigmas.toFixed(1).padStart(7)}`
+    + `${`${(big.clampRate * 100).toFixed(1)}%`.padStart(9)}`,
   );
+
+  // The clamp allowance is only available to cases that actually clamp.
+  // Granting it unconditionally makes any systematic bias below the bound
+  // undetectable everywhere in the walk maths, at any sample size, which is
+  // the opposite of what a verifier is for.
+  const clamps = big.clampRate > 0.005;
+  const allowed = 3 * big.se + (clamps ? BIAS_BOUND * Math.max(1, agg.saleProfit) : 0);
+  if (big.diff > allowed) {
+    failures.push(`${name}: £${big.diff.toFixed(2)} exceeds £${allowed.toFixed(2)}`
+      + `${clamps ? ' (clamp allowance already granted)' : ' (no clamping, so no allowance)'}`);
+  }
 }
 
-console.log('─'.repeat(78));
-
-// Two different things can separate the two numbers, and they need different
-// tests. Sampling noise shrinks with N and is judged in standard errors. The
-// Conversion and Margin caps introduce a small *systematic* bias that does not
-// shrink: clamping is non-linear, so E[min(X, cap)] < min(E[X], cap), and a
-// build pressed against a cap loses a little on the individual walk that the
-// expectation keeps. It is bounded by the overflow above the cap, which is well
-// under 1% for any board the policies actually build.
-const BIAS_BOUND = 0.0075;
-console.log(`\nworst disagreement ${worst.toFixed(1)} standard errors, `
-  + `${(worstRel * 100).toFixed(2)}% relative`);
-console.log('a case passes if its gap fits inside 3 standard errors of noise '
-  + `plus ${(BIAS_BOUND * 100).toFixed(2)}% cap bias`);
-if (N < 150000) {
-  console.log(`note: n=${N.toLocaleString('en-GB')} is thin for the Luxury tail; `
-    + 'use 300k+ to separate bias from noise');
-}
+console.log('─'.repeat(88));
+console.log(`\nA case passes if its gap fits inside 3 standard errors of sampling noise,`);
+console.log(`plus ${(BIAS_BOUND * 100).toFixed(2)}% clamp bias ONLY where walkers actually hit a cap.`);
 if (failures.length) {
-  console.log(`FAIL — ${failures.join('; ')}\n`);
+  console.log(`\nFAIL — ${failures.join('; ')}\n`);
   process.exit(1);
 }
 console.log('PASS — aggregate resolution matches the individual walk\n');

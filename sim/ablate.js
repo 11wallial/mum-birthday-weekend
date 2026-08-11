@@ -28,9 +28,28 @@ export function lookaheadCurve(content, { n = 600, characterId = 'default_shop' 
 
 const CAPABILITIES = ['lookahead', 'stress', 'balance', 'tempo', 'sign', 'reorder', 'reroll'];
 
-export function capabilityAblation(content, { n = 600, characterId = 'default_shop' } = {}) {
-  const base = runBatch(content, { n, characterId, policy: 'greedy' });
-  const full = runBatch(content, { n, characterId, policy: 'planner' });
+/**
+ * Every cell of an ablation run on one seed block is a single draw from the
+ * seed space. Cells are paired — each uses seeds seed0..seed0+n — which kills
+ * a lot of variance, but it does not make one table trustworthy. So the whole
+ * table is run over several disjoint blocks and the spread is reported, and
+ * only rows whose sign is stable across every block should be concluded from.
+ *
+ * This exists because the first version of this measurement produced a
+ * confident claim about lookahead drawn from its least stable cell.
+ */
+export function capabilityAblation(content, {
+  n = 500, characterId = 'default_shop', blocks = 3,
+} = {}) {
+  const seedBlocks = [];
+  for (let b = 0; b < blocks; b++) seedBlocks.push(1 + b * 100000);
+
+  const across = (policy) => seedBlocks.map(
+    (seed0) => runBatch(content, { n, characterId, policy, seed0 }).winRate,
+  );
+
+  const base = across('greedy');
+  const full = across('planner');
 
   const solo = [];
   const drop = [];
@@ -39,12 +58,21 @@ export function capabilityAblation(content, { n = 600, characterId = 'default_sh
     const off = cap === 'lookahead' ? 0 : false;
 
     registerPolicy(`solo_${cap}`, { ...GREEDY_CFG, [cap]: on });
-    solo.push({ cap, winRate: runBatch(content, { n, characterId, policy: `solo_${cap}` }).winRate });
+    const s = across(`solo_${cap}`);
+    solo.push({ cap, deltas: s.map((v, i) => v - base[i]) });
 
     registerPolicy(`drop_${cap}`, { ...PLANNER_CFG, [cap]: off });
-    drop.push({ cap, winRate: runBatch(content, { n, characterId, policy: `drop_${cap}` }).winRate });
+    const d = across(`drop_${cap}`);
+    drop.push({ cap, deltas: d.map((v, i) => v - full[i]) });
   }
-  return { base: base.winRate, full: full.winRate, solo, drop };
+  return { base, full, solo, drop, seedBlocks };
+}
+
+/** A row is only worth concluding from if every block agrees on the sign. */
+export function signStable(deltas, epsilon = 0.01) {
+  const meaningful = deltas.filter((d) => Math.abs(d) > epsilon);
+  if (meaningful.length === 0) return true; // stably nothing, which is a finding
+  return meaningful.every((d) => d > 0) || meaningful.every((d) => d < 0);
 }
 
 /**
