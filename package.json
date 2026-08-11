@@ -1,0 +1,18 @@
+{
+  "name": "footfall-sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Headless simulator for FOOTFALL (Phase 0). No runtime dependencies.",
+  "type": "module",
+  "scripts": {
+    "verify": "node sim/verify.js",
+    "check": "node sim/cli.js check",
+    "panel": "node sim/cli.js panel",
+    "envelope": "node sim/cli.js envelope",
+    "bossimpact": "node sim/cli.js bossimpact",
+    "bench": "node sim/cli.js bench"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

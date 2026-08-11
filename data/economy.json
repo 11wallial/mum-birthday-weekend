@@ -1,0 +1,92 @@
+{
+  "$comment": "Starting values, rent, interest, supplier tiers, offers. Sections 10-14.",
+  "start": {
+    "footfall": 120,
+    "conversion": 0.45,
+    "basket": 18,
+    "margin": 0.3,
+    "rent": 150,
+    "cash": 0,
+    "tills": 1,
+    "supplierTier": 1,
+    "startingFixtures": 3
+  },
+  "rent": {
+    "$comment": "Rent scales with slots owned and rises per quarter as the landlord reprices. Calibrated so the default 3x4 shop with one till pays the section 14 starting rent of £150.",
+    "perSlot": 10,
+    "quarterMultiplier": 1.4,
+    "perTill": 30
+  },
+  "interest": {
+    "ratePerEncounter": 0.05,
+    "cap": 500
+  },
+  "day": {
+    "$comment": "One trading day is this many ticks. Each till serves one customer per tick. This is the throughput knob from tuning step 5.",
+    "ticks": 180,
+    "tillRate": 1.0,
+    "walkTicksPerSlot": 1
+  },
+  "walkouts": {
+    "$comment": "A walkout is a lost sale plus a Footfall penalty tomorrow. The penalty is capped as a share of base Footfall: uncapped, one bad boss day drives Footfall to zero and a zero in any term ends the run outright.",
+    "footfallPenaltyPerWalkout": 0.5,
+    "maxPenaltyShare": 0.25
+  },
+  "slots": {
+    "$comment": "Customers may skip slots unless a rule-breaking fixture or One-Way Barriers stops them.",
+    "basePassChance": 0.75
+  },
+  "supplierTier": {
+    "weights": {
+      "1": { "common": 1.0, "uncommon": 0.0, "rare": 0.0, "flagship": 0.0 },
+      "2": { "common": 0.6, "uncommon": 0.4, "rare": 0.0, "flagship": 0.0 },
+      "3": { "common": 0.35, "uncommon": 0.45, "rare": 0.2, "flagship": 0.0 },
+      "4": { "common": 0.2, "uncommon": 0.35, "rare": 0.35, "flagship": 0.1 },
+      "5": { "common": 0.1, "uncommon": 0.25, "rare": 0.4, "flagship": 0.25 }
+    },
+    "costs": {
+      "$comment": "Indexed by quarter 1-8. Cost falls each quarter (section 10).",
+      "1->2": [900, 720, 550, 420, 300, 220, 150, 150],
+      "2->3": [4000, 3100, 2400, 1800, 1300, 950, 700, 700],
+      "3->4": [22000, 17000, 13000, 9800, 7000, 5200, 3800, 3800],
+      "4->5": [140000, 108000, 82000, 61000, 45000, 33000, 24000, 24000]
+    },
+    "freePickOnUpgrade": true
+  },
+  "rarityEv": {
+    "$comment": "Relative expected value per tier (section 7). Tuning step 4 sweeps this spread. Authored fixture values are assumed to sit at this baseline.",
+    "common": 100,
+    "uncommon": 115,
+    "rare": 135,
+    "flagship": 160
+  },
+  "offers": {
+    "picks": 3,
+    "rerollBaseCost": 60,
+    "rerollGrowth": 2.0,
+    "lockCost": 0
+  },
+  "levels": {
+    "$comment": "Tuning step 1. Scalars are applied per class; see fixtures.json for the authored per-level arrays.",
+    "maxLevel": 3,
+    "additiveScalar": [1.0, 2.5, 5.5],
+    "multiplicativeBreadth": [1, 2, 3],
+    "drawbackScalar": [1.0, 0.5, 0.0]
+  },
+  "structural": [
+    { "id": "aisle_extension", "name": "Aisle Extension", "cost": 400, "effect": "add_slot" },
+    { "id": "fourth_aisle", "name": "Fourth Aisle", "cost": 3200, "effect": "add_aisle", "slots": 3 },
+    { "id": "second_entrance", "name": "Second Entrance", "cost": 1500, "effect": "footfall_add", "value": 40 },
+    { "id": "mezzanine", "name": "Mezzanine", "cost": 4000, "effect": "add_aisle", "slots": 3, "restrictTypes": ["luxury", "trade"] },
+    { "id": "one_way_barriers", "name": "One-Way Barriers", "cost": 500, "effect": "no_skip" },
+    { "id": "wide_aisle", "name": "Wide Aisle", "cost": 900, "effect": "aisle_patience", "value": 2 },
+    { "id": "extra_till", "name": "Extra Till", "cost": 700, "effect": "add_till", "repeatable": true, "costGrowth": 1.6 }
+  ],
+  "staff": [
+    { "id": "assistant", "name": "Assistant", "marginCost": 0.03, "effect": "fires_twice", "attaches": true },
+    { "id": "security", "name": "Security", "marginCost": 0.02, "effect": "block_shoplifters", "attaches": false },
+    { "id": "buyer", "name": "Buyer", "marginCost": 0.04, "effect": "pick_four", "attaches": false },
+    { "id": "manager", "name": "Manager", "marginCost": 0.05, "effect": "aisle_half_strength", "attaches": true },
+    { "id": "cleaner", "name": "Cleaner", "marginCost": 0.02, "effect": "patience", "value": 3, "attaches": false }
+  ]
+}
