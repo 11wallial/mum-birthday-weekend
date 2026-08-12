@@ -616,8 +616,15 @@ export function runQueue(arrivals, capacity, ticks, patience) {
 
   for (let t = 0; t < ticks; t++) {
     // Patience drains while waiting; at zero it is a walkout.
+    //
+    // A customer tolerates waiting `patience` ticks and leaves when the wait
+    // EXCEEDS it — `waited > patience`, which is what the individual walk in
+    // the browser build does. This expired a cohort whose wait was exactly
+    // equal, one tick early, and only the impatient types could tell: one tick
+    // out of forty is invisible, one tick out of two is half the type. It cost
+    // the short-patience types about a third of the service they were owed.
     for (let j = 0; j < A; j++) {
-      const horizon = t - pat[j];
+      const horizon = t - pat[j] - 1;
       while (headExp[j] <= horizon && headExp[j] <= t) {
         const idx = headExp[j] * A + j;
         walkouts[active[j]] += perTick[idx];
