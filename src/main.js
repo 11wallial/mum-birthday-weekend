@@ -941,6 +941,11 @@ function renderTitle() {
 function openSheet(html) {
   $('sheetbody').innerHTML = html;
   $('sheet').hidden = false;
+  // The rules sheet carries a slot for the customer legend, which is built
+  // from the data rather than written out, so it can never drift from the
+  // eight silhouettes the floor actually draws.
+  const who = $('whoswho');
+  if (who) who.innerHTML = whoHtml();
 }
 
 const RULES = `
@@ -991,7 +996,43 @@ const RULES = `
 
   <h4>The audit ladder</h4>
   <p>Survive all twenty-four days to unlock the next Audit for that shop. Each
-  one changes a rule permanently, and each shop climbs its own ladder.</p>`;
+  one changes a rule permanently, and each shop climbs its own ladder.</p>
+
+  <h4>Who comes in</h4>
+  <p>Eight of them, each drawn differently on the floor. Some cards only fire
+  for certain types, and some inspections only let certain types buy.</p>
+  <div id="whoswho"></div>`;
+
+// The colours the floor draws them in. Kept here rather than imported so the
+// renderer stays a renderer.
+const TYPE_INK = {
+  family: '#d6206a', student: '#0aa3c2', pensioner: '#7a5cbf', trade: '#e07b1a',
+  luxury: '#0f8a4a', tourist: '#f2b90c', browser: '#9a9086', shoplifter: '#2a2622',
+};
+const PATIENCE_WORD = {
+  very_low: 'bolts', low: 'impatient', medium: 'will wait a bit',
+  high: 'patient', very_high: 'will wait all day',
+};
+
+/**
+ * The customer legend.
+ *
+ * The day draws eight silhouettes in eight colours and the game never once
+ * said what any of them were — so a player watching a shop full of people had
+ * no way to connect "Pensioners never convert" on a card to anybody on their
+ * own floor.
+ */
+function whoHtml() {
+  return content.types.map((t) => `
+    <div class="who">
+      <i style="background:${TYPE_INK[t.id] || '#8a8175'}"></i>
+      <span class="wn">${t.name}</span>
+      <span class="wd">${Math.round(t.conversion * 100)}% convert &middot;
+        ${t.basket ? `${money(t.basket)} basket` : 'no basket'} &middot;
+        ${PATIENCE_WORD[t.patience] || t.patience}</span>
+      <span class="wnote">${t.note || ''}</span>
+    </div>`).join('');
+}
 
 function recordsHtml() {
   const s = save.get();

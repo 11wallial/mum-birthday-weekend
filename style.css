@@ -289,8 +289,16 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
   letter-spacing: .15em; text-transform: uppercase;
   color: rgba(23,112,60,.75); border: 3px double rgba(23,112,60,.75);
   padding: 1px 11px 3px; pointer-events: none; white-space: nowrap;
+  animation: stamped .3s cubic-bezier(.3, 1.5, .5, 1) backwards;
+}
+/* It comes down on the page rather than fading up out of it. */
+@keyframes stamped {
+  0%   { opacity: 0; transform: rotate(-16deg) scale(2.4); }
+  60%  { opacity: 1; transform: rotate(-7deg) scale(.94); }
+  100% { opacity: 1; transform: rotate(-7deg) scale(1); }
 }
 .entry.ordered .burst { display: none; }
+@media (prefers-reduced-motion: reduce) { .ordered-stamp { animation: none; } }
 .entry .combine {
   position: absolute; right: 9px; bottom: 7px; font-size: 10px;
   font-family: var(--cond); letter-spacing: .1em; color: var(--money);
@@ -711,6 +719,19 @@ button { font-family: var(--body); }
   padding: 4px 0; border-bottom: 1px dashed var(--rule);
 }
 .sheetinner .hrow .w { color: var(--money); } .sheetinner .hrow .l { color: var(--magenta); }
+
+/* The customer legend. The day draws eight silhouettes in eight colours and
+   nothing in the game said what any of them were, so "Pensioners never
+   convert" on a card connected to nobody on your own floor. */
+#whoswho { display: grid; gap: 5px; margin-top: 6px; }
+.who {
+  display: grid; grid-template-columns: 13px 8.5em 1fr; gap: 4px 9px;
+  align-items: baseline; padding: 4px 0; border-bottom: 1px dashed var(--rule);
+}
+.who i { width: 13px; height: 13px; border: 1.5px solid var(--ink); display: block; }
+.who .wn { font-family: var(--cond); font-size: 15px; text-transform: uppercase; }
+.who .wd { font-size: 11.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.who .wnote { grid-column: 2 / -1; font-size: 11px; font-style: italic; color: var(--ink-soft); }
 
 /* End-of-run summary: the number you finish on is what the game is for, so it
    gets the size. */
