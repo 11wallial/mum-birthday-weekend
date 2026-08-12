@@ -612,14 +612,17 @@ function openDoors() {
     // the player watches a takings figure climb with no way to know whether it
     // is climbing fast enough, which is the only question the day poses.
     const pel = $('d-pace');
-    if (through < 0.12) { pel.textContent = '—'; pel.className = ''; } else {
-      const fixed = (st.projection.rent || 0) + (st.projection.ratchetUpkeep || 0)
-        + (game.shop.marketingUpkeep || 0);
-      const pace = (st.tradingProfit + st.shrink) / through - fixed;
-      const tgt = game.target(game.run.encounter);
-      roll(pel, pace, money, 260);
-      pel.className = pace < tgt ? 'short' : 'clear';
-    }
+    const fixed = (st.projection.rent || 0) + (st.projection.ratchetUpkeep || 0)
+      + (game.shop.marketingUpkeep || 0);
+    const raw = (st.tradingProfit + st.shrink) / Math.max(0.02, through) - fixed;
+    // Blended out of the morning's plan rather than extrapolated from nothing.
+    // Six sales at ten past ten extrapolate to numbers that swing by thousands
+    // between frames, which is not a reading — it is noise wearing a label.
+    const trust = Math.max(0, Math.min(1, (through - 0.14) / 0.34));
+    const pace = st.projection.profit * (1 - trust) + raw * trust;
+    const tgt = game.target(game.run.encounter);
+    roll(pel, pace, money, 320);
+    pel.className = pace < tgt ? 'short' : 'clear';
     $('d-triage').textContent = st.triageLeft;
     $('d-triage').parentElement.classList.toggle('spent', st.triageLeft <= 0);
     if (day.state.finished) { settle(); return; }

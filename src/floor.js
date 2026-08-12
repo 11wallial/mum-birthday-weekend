@@ -220,6 +220,22 @@ export function createFloorRenderer(canvas) {
     // negative and canvas throws on that rather than clamping.
     const strip = Math.max(18, Math.min(laneH * 0.5, 74));
     const person = Math.max(12, Math.min(strip * 0.78, 46));
+    // Which bays have somebody standing at them right now.
+    //
+    // Nothing on the floor reacted when a fixture did its job: the customer
+    // walked, the number moved, and the two were never visibly connected. A
+    // bay with a customer at it lights its barker, so "every fixture fires as
+    // they pass" is something you watch rather than something you read in the
+    // rules. It is computed before the shelving is drawn because the shelving
+    // is drawn first.
+    const busy = new Set();
+    for (const c of s.customers) {
+      if (c.phase !== PHASE.WALKING) continue;
+      const nSlots = Math.max(1, shop.aisles[c.aisle].slots.length);
+      const idx = Math.min(nSlots, Math.floor(c.progress * (nSlots + 1)));
+      if (idx >= 1) busy.add(`${c.lane}:${idx - 1}`);
+    }
+
     const lw = 1.5 + frenzy * 1.5;
     g.lineWidth = lw;
     g.strokeStyle = '#16130f';
@@ -381,10 +397,21 @@ export function createFloorRenderer(canvas) {
           }
         }
 
-        // Header board — a shelf barker, hung slightly askew.
+        // Header board — a shelf barker, hung slightly askew, and lit while
+        // somebody is standing at the bay.
+        const firing = busy.has(`${li}:${i}`);
         g.save();
         g.translate(x0 + uw / 2, y0 - 8);
         g.rotate(((i % 2) ? 1 : -1) * 0.012);
+        if (firing) {
+          const beat = 0.5 + 0.5 * Math.sin(t * 0.4 + i);
+          g.save();
+          g.globalAlpha = 0.2 + beat * 0.24;
+          g.fillStyle = '#f7c331';
+          g.fillRect(-uw / 2 - 7, -15, uw + 14, 30);
+          g.restore();
+          g.scale(1 + beat * 0.035, 1 + beat * 0.05);
+        }
         g.fillStyle = tone;
         g.fillRect(-uw / 2, -8, uw, 16);
         g.strokeRect(-uw / 2, -8, uw, 16);
