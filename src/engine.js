@@ -12,7 +12,8 @@
 
 export { buildContent, auditModifiers } from '../sim/content-core.js';
 export {
-  resolveDay, collectFlags, ratchetUpkeep, ratchetCount, baseMarginFor,
+  resolveDay, collectFlags, ratchetUpkeep, ratchetUpkeepOf, ratchetCount, baseMarginFor,
+  isRatchet, isMultiplicative,
 } from '../sim/day.js';
 export { walkIndividual } from '../sim/walk-one.js';
 export {

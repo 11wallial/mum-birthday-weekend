@@ -1,8 +1,8 @@
 // Wiring: the night catalogue, the trading day, the receipt.
 
 import {
-  buildContent, emptySlots, findInstance, fixtureInstances, loadRawData,
-  ownedIds, ratchetCount,
+  buildContent, emptySlots, findInstance, fixtureInstances, isRatchet, loadRawData,
+  ownedIds, ratchetCount, ratchetUpkeepOf,
 } from './engine.js';
 import { createRun } from './run.js';
 import { createTradingDay } from './trading-day.js';
@@ -156,9 +156,12 @@ function renderLedger() {
   $('l-tier').textContent = shop.supplierTier;
   const b = game.boss();
   const next = game.nextBoss();
+  const away = next ? next.encounter - run.encounter : 0;
   $('l-boss').innerHTML = b
-    ? `<span class="boss-flag">${b.name} today</span>`
-    : next ? `<span class="chip">${next.boss.name} <b>day ${next.encounter}</b></span>` : '';
+    ? `<span class="boss-flag">${b.name} — today</span>`
+    : next
+      ? `<span class="chip warn">${next.boss.name} <b>in ${away} day${away === 1 ? '' : 's'}</b></span>`
+      : '';
 }
 
 // --------------------------------------------------------------- night ----
@@ -170,7 +173,11 @@ function renderOffers() {
     const owned = findInstance(game.shop, def.id);
     const lvl = owned ? Math.min(3, owned.inst.level + 1) : 1;
     const el = document.createElement('div');
-    el.className = `entry r-${def.rarity}${game.run.picked ? ' owned' : ''}`;
+    // Once the pick is made, the page becomes a record of what you chose —
+    // the one you took is stamped ORDERED and the rest go quiet. Dimming all
+    // four equally made the whole screen read as broken rather than settled.
+    const taken = game.run.pickedId === def.id;
+    el.className = `entry r-${def.rarity}${game.run.picked ? (taken ? ' ordered' : ' passed') : ''}`;
     const cond = conditionText(def);
     // A starburst is the catalogue's way of saying "look here", so it goes on
     // the two things worth looking at: the top of the page, and a card you
@@ -181,6 +188,7 @@ function renderOffers() {
         : def.rarity === 'rare' ? '<div class="burst"><b>New<br>in</b></div>' : '';
     el.innerHTML = `
       ${burst}
+      ${taken ? '<div class="ordered-stamp">Ordered</div>' : ''}
       <div class="name">${def.name}</div>
       <div class="byline"><span class="tier">${def.rarity}</span>
         <span class="code">${stockCode(def.id)}</span></div>
@@ -218,6 +226,85 @@ function beginPlace(def) {
   renderNight();
 }
 
+// ------------------------------------------------------------- inspection ----
+// A placed fixture was a name and a term word in a 62px box. Everything that
+// made it worth taking — what it does, what it needs beside it, what it has
+// grown into, what it is costing you — was on a catalogue card that no longer
+// exists. So the back half of the run asked the player to choose what to scrap
+// from four names they could not read.
+
+/** How much a growing fixture has actually put on, in the term's own units. */
+function grownText(inst) {
+  const r = inst.ratchet || 0;
+  if (!isRatchet(inst.def) || r === 0) return '';
+  const term = TERM_WORD[inst.def.term] || '';
+  const op = inst.def.effect.op;
+  if (op === 'ratchet') {
+    const v = inst.def.term === 'basket' ? money(r)
+      : inst.def.term === 'footfall' ? Math.round(r).toLocaleString('en-GB')
+        : `${(r * 100).toFixed(1)}pp`;
+    return `Grown to <b>+${v} ${term}</b> in ${inst.age} day${inst.age === 1 ? '' : 's'}`;
+  }
+  return `Running at <b>×${(1 + r).toFixed(2)} ${term}</b> after ${inst.age} day${inst.age === 1 ? '' : 's'}`;
+}
+
+/** The catalogue entry for something you already own, plus what it became. */
+function inspectHtml(inst, aisle, slot, replacing) {
+  const def = inst.def;
+  const cond = conditionText(def);
+  const target = game.target(game.run.encounter);
+  const up = ratchetUpkeepOf(content, game.shop, target, inst);
+  const bits = [];
+  const grown = grownText(inst);
+  if (grown) bits.push(`<div class="grown">${grown}</div>`);
+  if (up > 0) {
+    bits.push(`<div class="cost">Upkeep <b>${money(up)}</b> a day, and it climbs with the target</div>`);
+  }
+  if (inst.staff) bits.push(`<div class="cost">Staffed — ${inst.staff}</div>`);
+  return `
+    <div class="ihead">
+      <div class="iname">${def.name}${inst.level > 1 ? ` <span class="ilv">L${inst.level}</span>` : ''}</div>
+      <div class="iwhere">Aisle ${aisle + 1}, slot ${slot + 1} &middot; ${stockCode(def.id)}</div>
+    </div>
+    <div class="ieff">${describe(def, inst.level)}</div>
+    ${cond ? `<div class="icond">${cond}</div>` : ''}
+    ${bits.join('')}
+    ${replacing
+    ? `<div class="iact">
+         <button class="ghost danger" id="i-yes">Scrap it for ${replacing.name}</button>
+         <button class="ghost" id="i-no">Keep it</button>
+       </div>`
+    : '<div class="iact"><button class="ghost" id="i-no">Close</button></div>'}`;
+}
+
+/** Anchor the card to the slot it describes, clamped inside the window. */
+function showInspect(inst, aisle, slot, anchor, replacing) {
+  const el = $('inspect');
+  el.innerHTML = inspectHtml(inst, aisle, slot, replacing);
+  el.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const b = el.getBoundingClientRect();
+  const x = Math.max(8, Math.min(window.innerWidth - b.width - 8, r.left + r.width / 2 - b.width / 2));
+  const above = r.bottom + b.height + 12 > window.innerHeight && r.top - b.height - 8 > 0;
+  el.style.left = `${x}px`;
+  el.style.top = `${above ? r.top - b.height - 8 : r.bottom + 8}px`;
+  const no = $('i-no');
+  if (no) no.onclick = closeInspect;
+  const yes = $('i-yes');
+  if (yes) {
+    yes.onclick = () => {
+      closeInspect();
+      game.take(pending.id, { aisle, slot });
+      audio.place();
+      pending = null;
+      $('place-hint').textContent = '';
+      renderNight();
+    };
+  }
+}
+
+function closeInspect() { $('inspect').hidden = true; }
+
 function renderFloorplan() {
   const wrap = $('aisles');
   wrap.innerHTML = '';
@@ -238,9 +325,16 @@ function renderFloorplan() {
       cell.innerHTML = inst
         ? `<div class="fx">${inst.def.name}</div><div class="tm">${TERM_WORD[inst.def.term] || '—'}</div>
            ${inst.level > 1 ? `<div class="lv">L${inst.level}</div>` : ''}
-           ${inst.staff ? `<div class="st">${inst.staff[0].toUpperCase()}</div>` : ''}`
+           ${inst.staff ? `<div class="st">${inst.staff[0].toUpperCase()}</div>` : ''}
+           ${isRatchet(inst.def) ? '<div class="gr">▲</div>' : ''}`
         : '<div class="tm">empty</div>';
+      cell.title = inst ? `${inst.def.name} — ${describe(inst.def, inst.level)}` : '';
       cell.onclick = () => {
+        closeInspect();
+        // Scrapping is permanent, it happens on a single click, and until now
+        // it happened with no statement of what was being destroyed. Read it
+        // first, then decide.
+        if (inst) { showInspect(inst, ai, si, cell, takeable ? pending : null); return; }
         if (!takeable) return;
         game.take(pending.id, { aisle: ai, slot: si });
         audio.place();
@@ -461,6 +555,7 @@ function showWiped(which, after) {
 }
 
 function show(which) {
+  closeInspect();
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
   // The ledger and the projection panel are readouts of a run in progress.
@@ -749,6 +844,26 @@ function runMapHtml() {
       <div class="mqdays">${cells}</div></div>`;
   }
 
+  // What you are actually holding, in walk order. The floorplan is only on the
+  // night screen, so mid-day there was no way to answer "what have I got?".
+  const target = game.target(run.encounter);
+  let held = '';
+  shop.aisles.forEach((aisle, ai) => {
+    const rows = aisle.slots.map((inst, si) => {
+      if (!inst) return `<div class="srow empty"><span>${si + 1}</span><span>&mdash;</span><span></span></div>`;
+      const up = ratchetUpkeepOf(content, shop, target, inst);
+      const grown = grownText(inst);
+      return `<div class="srow">
+        <span class="sn">${si + 1}</span>
+        <span><b>${inst.def.name}${inst.level > 1 ? ` L${inst.level}` : ''}</b>
+          <i>${describe(inst.def, inst.level)}</i>
+          ${grown ? `<em>${grown}</em>` : ''}</span>
+        <span class="su">${up > 0 ? money(up) : ''}</span>
+      </div>`;
+    }).join('');
+    held += `<div class="saisle"><h5>Aisle ${ai + 1}${aisle.closed ? ' — closed' : ''}</h5>${rows}</div>`;
+  });
+
   const cleared = save.clearedFor(character);
   return `<h3>The run</h3>
     <p>Twenty-four trading days in eight quarters. Every day sets a target and
@@ -760,6 +875,10 @@ function runMapHtml() {
       <span><i class="sw boss"></i> inspection</span>
     </div>
     <div class="mmap">${rows}</div>
+    <h4>The shop as it stands</h4>
+    <p class="sublead">Front to back, the order they fire in. The right-hand
+    column is what that fixture charges you in upkeep today.</p>
+    <div class="shoplist">${held}</div>
     <h4>What the curve does</h4>
     <p>The target multiplies by <b>&times;${(content.targets[1] / content.targets[0]).toFixed(2)}</b>
     every day — ${money(content.targets[0])} on day one, <b>${money(maxTarget)}</b> on day
@@ -835,10 +954,18 @@ async function boot() {
     const id = floor.pick(e.clientX - r.left, e.clientY - r.top);
     if (id && day.triage(id)) audio.triage();
   };
+  // Anywhere off the card closes it, except the slots themselves — those
+  // re-open it on the thing you just clicked.
+  document.addEventListener('click', (e) => {
+    if ($('inspect').hidden) return;
+    const t = e.target;
+    if (t instanceof Element && (t.closest('#inspect') || t.closest('.slot'))) return;
+    closeInspect();
+  });
   window.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'INPUT') return;
     if (e.key === 'm') save.setMuted(audio.toggleMute());
-    if (e.key === 'Escape') $('sheet').hidden = true;
+    if (e.key === 'Escape') { $('sheet').hidden = true; closeInspect(); }
     if (e.key === '?') openSheet(RULES);
     // Space is the one action the current phase wants, whatever it is.
     if (e.key === ' ') {

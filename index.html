@@ -135,10 +135,10 @@
       <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</p>
     </div>
 
-    <!-- First run only: one line at a time, at the moment it is needed. A
-         rules sheet nobody opens is not onboarding. -->
-    <div id="coach" hidden><b id="coach-t"></b><span id="coach-b"></span>
-      <button id="coach-x" class="ghost">Got it</button></div>
+    <!-- What a fixture you already own actually does, and what it has grown
+         into. Placing a card is a permanent decision made from a card you can
+         no longer read. -->
+    <div id="inspect" hidden></div>
 
     <!-- rules / records, over the top of whatever is behind -->
     <div id="sheet" hidden>
@@ -148,6 +148,14 @@
       </div>
     </div>
   </main>
+
+  <!-- First run only: one line at a time, at the moment it is needed. A rules
+       sheet nobody opens is not onboarding. It is a row of the page rather
+       than a floating box, so it never covers the thing it is talking about. -->
+  <div id="coach" hidden>
+    <b id="coach-t"></b><span id="coach-b"></span>
+    <button id="coach-x" class="ghost">Got it</button>
+  </div>
 
   <footer id="actions">
     <button id="btn-open" class="primary" hidden>Open the doors</button>

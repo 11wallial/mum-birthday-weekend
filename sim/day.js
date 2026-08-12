@@ -88,40 +88,50 @@ export function commitMultiplier(content, shop) {
   return ratchetCount(shop) >= cfg.commitThreshold ? 1 + cfg.commitBonus : 1;
 }
 
-export function ratchetUpkeep(content, shop, target) {
+/**
+ * What one fixture costs in upkeep today. Split out of the total so the
+ * interface can tell a player which of their cards is bleeding them — an
+ * aggregate "upkeep £4,200" names no culprit, and choosing what to clear out
+ * is the decision the back half of a run is made of.
+ */
+export function ratchetUpkeepOf(content, shop, target, inst) {
   const cfg = content.economy.ratchets;
-  if (!cfg || !target) return 0;
+  if (!cfg || !target || !isRatchet(inst.def)) return 0;
   // Per-fixture upkeep falls as you hold more, so one or two ratchets is the
   // worst place to stand: full price each, and not enough of them to matter.
   const held = shop.flags.alwaysCommitted
     ? Math.max(ratchetCount(shop), cfg.commitThreshold)
     : ratchetCount(shop);
   const scale = Math.pow(cfg.upkeepScalePerExtra ?? 1, Math.max(0, held - 1));
+  // A linear ratchet's upkeep decays as it matures — steep while it carries
+  // nothing, negligible once it carries the run. A compounder is the other
+  // way round: it is strongest at the end, so a decaying upkeep would make
+  // the most powerful class in the pool free exactly when it wins the game.
+  // Its upkeep never decays, and because upkeep is quoted against the
+  // target, it climbs with the target for the whole run. That permanent,
+  // scaling nut is what makes committing to scaling a real risk instead of
+  // a free option.
+  // Charged in proportion to what the fixture is actually delivering. A
+  // linear ratchet is worth most on the day you install it relative to what
+  // it will ever be, so its upkeep starts full and decays. A compounder is
+  // worth almost nothing for its first week and then carries the run, so its
+  // upkeep RAMPS by the same curve, reversed. Billed flat from birth it was
+  // punishing the player twice for the same card — nothing delivered, full
+  // price — in the act where two thirds of runs already die.
+  const compounding = inst.def.effect.op === 'compound';
+  const table = compounding ? cfg.upkeepFractionCompound : cfg.upkeepFractionOfTarget;
+  const frac = table[inst.def.rarity] ?? 0;
+  const shape = compounding
+    ? 1 - Math.pow(cfg.upkeepRampCompound ?? cfg.upkeepDecay, inst.age || 0)
+    : Math.pow(cfg.upkeepDecay, inst.age || 0);
+  return target * frac * scale * shape;
+}
+
+export function ratchetUpkeep(content, shop, target) {
+  if (!content.economy.ratchets || !target) return 0;
   let total = 0;
   for (const { inst } of fixtureInstances(shop)) {
-    if (!isRatchet(inst.def)) continue;
-    // A linear ratchet's upkeep decays as it matures — steep while it carries
-    // nothing, negligible once it carries the run. A compounder is the other
-    // way round: it is strongest at the end, so a decaying upkeep would make
-    // the most powerful class in the pool free exactly when it wins the game.
-    // Its upkeep never decays, and because upkeep is quoted against the
-    // target, it climbs with the target for the whole run. That permanent,
-    // scaling nut is what makes committing to scaling a real risk instead of
-    // a free option.
-    // Charged in proportion to what the fixture is actually delivering. A
-    // linear ratchet is worth most on the day you install it relative to what
-    // it will ever be, so its upkeep starts full and decays. A compounder is
-    // worth almost nothing for its first week and then carries the run, so its
-    // upkeep RAMPS by the same curve, reversed. Billed flat from birth it was
-    // punishing the player twice for the same card — nothing delivered, full
-    // price — in the act where two thirds of runs already die.
-    const compounding = inst.def.effect.op === 'compound';
-    const table = compounding ? cfg.upkeepFractionCompound : cfg.upkeepFractionOfTarget;
-    const frac = table[inst.def.rarity] ?? 0;
-    const shape = compounding
-      ? 1 - Math.pow(cfg.upkeepRampCompound ?? cfg.upkeepDecay, inst.age || 0)
-      : Math.pow(cfg.upkeepDecay, inst.age || 0);
-    total += target * frac * scale * shape;
+    total += ratchetUpkeepOf(content, shop, target, inst);
   }
   return total;
 }

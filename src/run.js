@@ -59,6 +59,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     offers: [],
     rerolls: 0,
     picked: false,
+    pickedId: null,
   };
 
   function target(enc) {
@@ -128,6 +129,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
 
     run.rerolls = 0;
     run.picked = false;
+    run.pickedId = null;
     run.offers = makeOffer(content, shop, rng, pickCount());
     autoSign(content, shop);
   }
@@ -150,6 +152,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     if (!fx || !run.offers.some((o) => o.id === fixtureId)) return false;
     addFixture(content, shop, fixtureId, placement);
     run.picked = true;
+    run.pickedId = fixtureId;
     autoSign(content, shop);
     return true;
   }
@@ -160,6 +163,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     shop.cash += pay.flatBase * Math.pow(pay.flatGrowth, run.encounter - 1)
       * (pay.skipPickReward || 0);
     run.picked = true;
+    run.pickedId = null;
     return true;
   }
 

@@ -62,6 +62,17 @@ await shot('3c-rules');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(150);
 
+// The card for something already placed. A fixture you cannot re-read is a
+// fixture you cannot make a decision about.
+const filled = await page.$('.slot.filled');
+if (filled) {
+  await filled.click();
+  await page.waitForTimeout(250);
+  await shot('3d-inspect');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(120);
+}
+
 await page.click('#btn-open');
 await page.waitForTimeout(2600);
 await shot('4-day');
