@@ -180,10 +180,32 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 #night { display: grid; gap: 16px; }
 @media (min-width: 900px) {
-  #night { grid-template-columns: 1.15fr 1fr; grid-template-areas: "boss boss" "cat floor" "cat fit"; }
+  #night {
+    grid-template-columns: 1.15fr 1fr;
+    grid-template-areas: "today today" "boss boss" "cat floor" "cat fit";
+  }
   #catalogue { grid-area: cat; } #floorplan { grid-area: floor; }
   #shopfitting { grid-area: fit; } #bosschoice { grid-area: boss; }
+  #bosstoday { grid-area: today; }
 }
+
+/* The inspection, and what it does. A name is not something you can plan
+   against, and rebuilding the night around the landlord is the point. */
+#bosstoday {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding: 7px 12px 8px; border: 2px solid var(--red);
+}
+#bosstoday.today { background: var(--red); border-color: var(--ink); color: #fff; }
+#bosstoday.soon { background: rgba(214,52,38,.07); }
+.bt-when {
+  font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; opacity: .85;
+}
+.bt-name {
+  font-family: var(--cond); font-size: 21px; text-transform: uppercase;
+  letter-spacing: .04em; line-height: 1;
+}
+#bosstoday.soon .bt-name { color: var(--red); }
+.bt-eff { font-size: 12.5px; margin-left: auto; }
 
 /* --------------------------------------------------------- catalogue page */
 /* Section 31: rarity is page real estate, not a coloured border. */
@@ -258,16 +280,17 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 .entry.ordered::after {
   content: ""; position: absolute; inset: 0; background: rgba(23,112,60,.07);
 }
-/* Off to the right, clear of the effect line — an authentic overlapping stamp
-   that hides what the card says is a stamp that costs you the card. */
+/* Bottom right, where the card carries only its tag line. An authentic
+   overlapping stamp that hides what the card says costs you the card. */
 .ordered-stamp {
-  position: absolute; right: 7%; top: 50%; z-index: 4;
-  transform: translateY(-50%) rotate(-11deg);
-  font-family: var(--cond); font-size: clamp(22px, 4vw, 34px);
-  letter-spacing: .16em; text-transform: uppercase;
-  color: rgba(23,112,60,.72); border: 4px double rgba(23,112,60,.72);
-  padding: 2px 16px 4px; pointer-events: none; white-space: nowrap;
+  position: absolute; right: 12px; bottom: 8px; z-index: 4;
+  transform: rotate(-7deg);
+  font-family: var(--cond); font-size: clamp(15px, 2.2vw, 21px);
+  letter-spacing: .15em; text-transform: uppercase;
+  color: rgba(23,112,60,.75); border: 3px double rgba(23,112,60,.75);
+  padding: 1px 11px 3px; pointer-events: none; white-space: nowrap;
 }
+.entry.ordered .burst { display: none; }
 .entry .combine {
   position: absolute; right: 9px; bottom: 7px; font-size: 10px;
   font-family: var(--cond); letter-spacing: .1em; color: var(--money);
@@ -328,7 +351,18 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 /* ------------------------------------------------------------ shopfitting */
 
-#buys { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+#buys { display: grid; gap: 4px; }
+.dept {
+  font-family: var(--cond); font-size: 10.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 400;
+  border-bottom: 1px solid var(--rule); padding-bottom: 2px; margin-top: 7px;
+}
+.dept:first-child { margin-top: 0; }
+.deptrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+/* Short lines stay quiet rather than turning the page red — on an early night
+   everything is short, and a column of red prices is not information. What it
+   is short BY is on the hover. */
+.buy.short .c { color: var(--ink-soft); }
 .buy {
   border: 1px solid var(--rule); background: var(--paper-2);
   padding: 7px 9px; text-align: left; cursor: pointer; font: inherit;

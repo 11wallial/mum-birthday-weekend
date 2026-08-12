@@ -30,6 +30,7 @@ let peakDay = 0;
 let particles = null;
 let lastShort = null;
 let paused = false;
+let landed = null; // the slot a fixture just went into, so it can land
 
 // ---------------------------------------------------------------- copy ----
 
@@ -376,37 +377,72 @@ function renderFloorplan() {
         audio.place();
         pending = null;
         $('place-hint').textContent = '';
+        landed = { aisle: ai, slot: si };
         renderNight();
       };
+      // The slot a fixture just went into lands rather than blinking. The
+      // animation existed; nothing ever added the class that fired it.
+      if (landed && landed.aisle === ai && landed.slot === si) {
+        cell.classList.add('landed');
+        landed = null;
+      }
       row.appendChild(cell);
     });
     wrap.appendChild(row);
   });
 }
 
+/**
+ * Shopfitting, in four departments.
+ *
+ * It was one flat run of buttons — tills, floorspace, staff and marketing all
+ * the same shape in one grid, so the page gave no help at all with the actual
+ * question, which is what KIND of thing this cash should become. Four headed
+ * groups, in the order they matter, and an unaffordable line says what it is
+ * short by rather than just going grey.
+ */
 function renderBuys() {
   const { shop } = game;
   const wrap = $('buys');
   wrap.innerHTML = '';
+  let group = null;
+  const dept = (name) => {
+    const h = document.createElement('h3');
+    h.className = 'dept';
+    h.textContent = name;
+    wrap.appendChild(h);
+    group = document.createElement('div');
+    group.className = 'deptrow';
+    wrap.appendChild(group);
+  };
   const add = (label, opt, note) => {
     const cost = game.costOf(opt);
     if (!Number.isFinite(cost)) return;
     const b = document.createElement('button');
-    b.className = 'buy';
+    const short = shop.cash < cost;
+    b.className = `buy${short ? ' short' : ''}`;
     b.innerHTML = `<span class="n">${label}${note ? `<br><span class="code">${note}</span>` : ''}</span>
                    <span class="c">${cost === 0 ? '—' : money(cost)}</span>`;
-    b.disabled = shop.cash < cost;
+    b.disabled = short;
+    // A grey button says no. It does not say how much more you need, which is
+    // the whole of the decision about whether to take the cash tonight.
+    if (short) b.title = `${money(cost - shop.cash)} short`;
     b.onclick = () => { if (game.buy(opt)) { audio.place(); renderNight(); } };
-    wrap.appendChild(b);
+    group.appendChild(b);
   };
 
-  add('Extra till', 'till', 'more throughput');
+  dept('Throughput');
+  add('Extra till', 'till', 'more served per tick');
   if (shop.supplierTier < 5) add(`Supplier Tier ${shop.supplierTier + 1}`, 'tier', 'better catalogue, free pick');
+
+  dept('Floorspace');
   for (const s of content.economy.structural) {
     if (s.id === 'extra_till') continue;
     if (!s.repeatable && shop.structural.has(s.id)) continue;
     add(s.name, `struct:${s.id}`);
   }
+
+  dept('Staff');
   for (const st of content.economy.staff) {
     const pp = `−${Math.round(st.marginCost * 100)}pp Margin`;
     if (!st.attaches) {
@@ -417,11 +453,17 @@ function renderBuys() {
       if (free) add(`${st.name} → ${free.inst.def.name}`, `staff:${st.id}@${free.aisle},${free.slot}`, pp);
     }
   }
+
   if (shop.marketing.length < (content.marketingMaxHeld ?? 99)) {
+    dept('Marketing');
     for (const c of content.campaigns) {
       if (shop.marketing.includes(c.id)) continue;
       add(c.name, `marketing:${c.id}`, `upkeep ${money(c.upkeep)}/day`);
     }
+  }
+  // An empty department is a heading with nothing under it.
+  for (const row of wrap.querySelectorAll('.deptrow')) {
+    if (!row.children.length) { row.previousElementSibling.remove(); row.remove(); }
   }
 }
 
@@ -461,16 +503,41 @@ function bossText(b) {
   }
 }
 
+/**
+ * What is landing on you today, and what it will do.
+ *
+ * The ledger named the inspection and stopped there, and you cannot plan
+ * against a name — the whole point of a boss is that you rebuild the night
+ * around it, which needs the effect stated at the moment you are choosing.
+ */
+function renderBossToday() {
+  const b = game.boss();
+  const next = game.nextBoss();
+  const el = $('bosstoday');
+  el.hidden = !b && !next;
+  if (el.hidden) return;
+  if (b) {
+    el.className = 'today';
+    el.innerHTML = `<span class="bt-when">Today</span>
+      <span class="bt-name">${b.name}</span>
+      <span class="bt-eff">${bossText(b)}</span>`;
+  } else {
+    const away = next.encounter - game.run.encounter;
+    el.className = 'soon';
+    el.innerHTML = `<span class="bt-when">In ${away} day${away === 1 ? '' : 's'}</span>
+      <span class="bt-name">${next.boss.name}</span>
+      <span class="bt-eff">${bossText(next.boss)}</span>`;
+  }
+}
+
 function renderNight() {
-  const box = $('bosschoice');
-  const night = $('night');
-  if (night.firstElementChild !== box) night.insertBefore(box, night.firstElementChild);
   renderLedger();
   renderPanel();
   renderOffers();
   renderFloorplan();
   renderBuys();
   renderBossChoice();
+  renderBossToday();
   $('cat-tier').textContent = `Tier ${game.shop.supplierTier}`;
   const ready = game.run.picked && !game.run.pendingBossChoice;
   $('btn-open').hidden = false;
