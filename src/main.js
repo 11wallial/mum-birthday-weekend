@@ -119,29 +119,32 @@ function renderPanel() {
   $('p-basket').textContent = money(p.basket);
   $('p-margin').textContent = pct(p.margin);
   $('p-trading').textContent = money(p.trading);
-  $('p-rent').textContent = `Rent ${money(-p.rent)}`;
-  $('p-shrink').textContent = `Shrink ${money(p.shrink)}`;
-  $('p-upkeep').textContent = `Upkeep ${money(-(p.upkeep + (d.ratchetUpkeep || 0)))}`;
-  $('p-profit').textContent = `Profit ${money(d.profit)}`;
+  $('p-rent').textContent = `rent ${money(-p.rent)}`;
+  $('p-shrink').textContent = `shrink ${money(p.shrink)}`;
+  $('p-upkeep').textContent = `upkeep ${money(-(p.upkeep + (d.ratchetUpkeep || 0)))}`;
   const gap = d.profit - target;
-  const el = $('p-gap');
-  el.textContent = `Gap ${money(gap)}`;
-  el.className = `gap ${gap < 0 ? 'short' : 'clear'}`;
+  const short = gap < 0;
+  $('p-profit').textContent = money(d.profit);
+  $('p-profit').className = `vprofit ${short ? 'short' : 'clear'}`;
+  const g = $('p-gap');
+  g.innerHTML = short
+    ? `against ${money(target)} — <b>${money(-gap)} short</b>`
+    : `against ${money(target)} — <b>${money(gap)} clear</b>`;
+  g.className = `vgap ${short ? 'short' : 'clear'}`;
 }
 
 function renderLedger() {
   const { shop, run } = game;
-  $('l-quarter').textContent = `${shop.quarter} / 8`;
-  $('l-day').textContent = `${run.encounter} / ${content.run.encounters}`;
-  $('l-target').textContent = money(game.target(run.encounter));
+  $('l-quarter').textContent = shop.quarter;
+  $('l-day').textContent = `${run.encounter}/${content.run.encounters}`;
   $('l-cash').textContent = money(shop.cash);
   $('l-tills').textContent = shop.tills;
-  $('l-tier').textContent = `Tier ${shop.supplierTier}`;
+  $('l-tier').textContent = shop.supplierTier;
   const b = game.boss();
   const next = game.nextBoss();
   $('l-boss').innerHTML = b
-    ? `<span class="boss-flag">${b.name}</span>`
-    : next ? `<span class="k">Coming, day ${next.encounter}</span><span class="v">${next.boss.name}</span>` : '';
+    ? `<span class="boss-flag">${b.name} today</span>`
+    : next ? `<span class="chip">${next.boss.name} <b>day ${next.encounter}</b></span>` : '';
 }
 
 // --------------------------------------------------------------- night ----
@@ -155,12 +158,20 @@ function renderOffers() {
     const el = document.createElement('div');
     el.className = `entry r-${def.rarity}${game.run.picked ? ' owned' : ''}`;
     const cond = conditionText(def);
+    // A starburst is the catalogue's way of saying "look here", so it goes on
+    // the two things worth looking at: the top of the page, and a card you
+    // already hold one of.
+    const burst = owned
+      ? `<div class="burst gold"><b>Makes<br>L${lvl}</b></div>`
+      : def.rarity === 'flagship' ? '<div class="burst"><b>Star<br>buy</b></div>'
+        : def.rarity === 'rare' ? '<div class="burst"><b>New<br>in</b></div>' : '';
     el.innerHTML = `
-      <div><div class="name">${def.name}</div><div class="code">${stockCode(def.id)}</div></div>
-      <div class="tier">${def.rarity}</div>
+      ${burst}
+      <div class="name">${def.name}</div>
+      <div class="byline"><span class="tier">${def.rarity}</span>
+        <span class="code">${stockCode(def.id)}</span></div>
       <div class="eff">${describe(def, lvl)}${cond ? ` <span class="code">— ${cond}</span>` : ''}</div>
-      <div class="copy">${def.class.replace('_', '-')}${def.tags && def.tags.length ? ` · ${def.tags.join(' · ')}` : ''}</div>
-      ${owned ? `<div class="combine">You hold one — combines to L${lvl}</div>` : ''}`;
+      <div class="copy">${def.tags && def.tags.length ? def.tags.join(' · ') : def.class.replace('_', '-')}</div>`;
     el.onclick = () => beginPlace(def);
     wrap.appendChild(el);
   }

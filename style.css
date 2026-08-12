@@ -5,15 +5,22 @@
    caps for prices and headlines, a humanist sans for everything else. */
 
 :root {
-  --paper: #f4ead6;
-  --paper-2: #eadfc6;
-  --ink: #16130f;
-  --ink-soft: #5b544a;
-  --cyan: #0aa3c2;
-  --magenta: #d6206a;
-  --yellow: #f2b90c;
-  --money: #1c7a3e;      /* one accent reserved exclusively for money */
-  --rule: rgba(22, 19, 15, 0.22);
+  /* A 1950s wholesale catalogue page: cheap warm stock, four plates hit hard,
+     and a red reserved for shouting. The palette was drifting towards muted
+     newsprint, which is the wrong reference — a catalogue is not a broadsheet.
+     It is an advert, printed loud, on paper that cost nothing. */
+  --paper: #f7efdb;
+  --paper-2: #efe4c8;
+  --paper-3: #e6d8b4;      /* the tint block behind a boxed offer */
+  --ink: #191410;
+  --ink-soft: #6a6154;
+  --cyan: #0e8fb5;
+  --magenta: #d81e63;
+  --yellow: #f7c331;
+  --red: #d63426;          /* SALE, starbursts, the word NEW */
+  --blue: #1c5fa8;
+  --money: #17703c;        /* one accent reserved exclusively for money */
+  --rule: rgba(25, 20, 16, 0.28);
   --frenzy: 0;
   --cond: "Haettenschweiler", "Arial Narrow", "Oswald", system-ui, sans-serif;
   --body: "Inter", "Helvetica Neue", system-ui, -apple-system, sans-serif;
@@ -44,9 +51,10 @@ body::after {
   z-index: 90;
   opacity: calc(0.5 + var(--frenzy) * 0.4);
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(22,19,15,.16) 1px, transparent 0),
-    radial-gradient(circle at 3px 3px, rgba(214,32,106,.05) 1px, transparent 0);
-  background-size: 4px 4px, 7px 7px;
+    radial-gradient(circle at 1px 1px, rgba(25,20,16,.13) 1px, transparent 0),
+    radial-gradient(circle at 3px 3px, rgba(214,52,38,.07) 1.2px, transparent 0),
+    radial-gradient(circle at 5px 2px, rgba(14,143,181,.05) 1.2px, transparent 0);
+  background-size: 5px 5px, 9px 9px, 13px 13px;
   mix-blend-mode: multiply;
 }
 
@@ -61,49 +69,88 @@ body::after {
 
 /* ---------------------------------------------------------------- ledger */
 
+/* Reference, not headline. Six figures at the same weight as the profit is
+   six figures the eye has to sort before it can find the one that matters. */
 #ledger {
-  display: flex; gap: clamp(8px, 2vw, 26px); align-items: baseline;
-  padding: 10px 2px 8px;
-  border-bottom: 3px solid var(--ink);
+  display: flex; gap: 7px; align-items: center;
+  padding: 7px 2px 6px;
+  border-bottom: 2px solid var(--ink);
   flex-wrap: wrap;
 }
-.led { display: flex; flex-direction: column; line-height: 1; }
-.led .k {
-  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--ink-soft);
+.chip {
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft); border: 1px solid var(--rule); padding: 2px 7px;
+  background: var(--paper-2); white-space: nowrap;
 }
-.led .v { font-family: var(--cond); font-size: clamp(17px, 2.4vw, 25px); letter-spacing: .02em; }
-.led.grow { margin-left: auto; text-align: right; }
+.chip b {
+  font-family: var(--cond); font-size: 14px; letter-spacing: .02em;
+  color: var(--ink); font-weight: 400;
+}
+.chip.money b { color: var(--money); }
+.chipbtn {
+  font: inherit; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink);
+  padding: 3px 9px; cursor: pointer;
+}
+.chipbtn:hover { background: var(--ink); color: var(--paper); }
+#ledger .grow { margin-left: auto; }
 .money { color: var(--money); }
 .boss-flag {
-  font-family: var(--cond); font-size: clamp(14px, 2vw, 19px);
-  background: var(--magenta); color: var(--paper);
-  padding: 3px 10px; text-transform: uppercase; letter-spacing: .05em;
+  font-family: var(--cond); font-size: clamp(13px, 1.8vw, 17px);
+  background: var(--red); color: #fff;
+  padding: 3px 10px; text-transform: uppercase; letter-spacing: .06em;
 }
 
 /* ------------------------------------------------------- projection panel */
 /* Section 17: the most important piece of UI in the game. Never hidden. */
 
+/* One question — will today clear the target — asked once, at size. The four
+   terms are how you answer it, so they are the working: legible, secondary,
+   and visibly subordinate to the number they produce. */
 #panel {
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 2px solid var(--ink);
   padding: 9px 2px 10px;
+  display: grid; grid-template-columns: auto 1fr; gap: clamp(10px, 3vw, 28px);
+  align-items: center;
 }
-.terms { display: flex; align-items: center; gap: clamp(4px, 1.4vw, 16px); flex-wrap: wrap; }
-.term { display: flex; flex-direction: column; line-height: 1.05; min-width: 62px; }
-.term b { font-family: var(--cond); font-size: clamp(21px, 3.4vw, 34px); }
+@media (max-width: 720px) { #panel { grid-template-columns: 1fr; gap: 6px; } }
+
+.verdict-block { line-height: 1; }
+.vlabel {
+  font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 2px;
+}
+.vprofit {
+  font-family: var(--cond); font-size: clamp(38px, 6.5vw, 62px);
+  letter-spacing: -.01em; line-height: .92;
+}
+.vprofit.short { color: var(--red); }
+.vprofit.clear { color: var(--money); }
+.vgap {
+  font-size: 11.5px; letter-spacing: .04em; margin-top: 4px; color: var(--ink-soft);
+}
+.vgap b { font-family: var(--cond); font-size: 15px; letter-spacing: .02em; }
+.vgap.short b { color: var(--red); }
+.vgap.clear b { color: var(--money); }
+
+.working { min-width: 0; }
+.terms {
+  display: flex; align-items: baseline; gap: clamp(3px, 1vw, 11px); flex-wrap: wrap;
+}
+.term { display: flex; flex-direction: column; line-height: 1.05; }
+.term b {
+  font-family: var(--cond); font-size: clamp(16px, 2.1vw, 22px); font-weight: 400;
+}
 .term i {
-  font-style: normal; font-size: 9.5px; letter-spacing: .15em;
+  font-style: normal; font-size: 8.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--ink-soft);
 }
-.term.wide b { color: var(--money); }
-.op { font-family: var(--cond); font-size: clamp(15px, 2vw, 22px); color: var(--ink-soft); }
+.term.wide b { color: var(--money); font-size: clamp(19px, 2.5vw, 26px); }
+.op { font-family: var(--cond); font-size: 13px; color: var(--ink-soft); }
 .costs {
-  display: flex; gap: clamp(8px, 2vw, 20px); margin-top: 5px;
-  font-size: clamp(11px, 1.5vw, 13px); color: var(--ink-soft); flex-wrap: wrap;
+  display: flex; gap: 11px; margin-top: 3px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--ink-soft); letter-spacing: .03em;
 }
-.costs b { color: var(--ink); }
-.costs .gap.short { color: var(--magenta); }
-.costs .gap.clear { color: var(--money); }
 
 /* ----------------------------------------------------------------- stage */
 
@@ -129,39 +176,97 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 /* --------------------------------------------------------- catalogue page */
 /* Section 31: rarity is page real estate, not a coloured border. */
 
-#offers { display: grid; gap: 10px; }
+#offers { display: grid; gap: 12px; }
+
+/* Every entry is a boxed offer on an advert page: heavy rule, tint block,
+   the name shouted in condensed caps, and the effect set as the price flash
+   because the effect IS the price. Rarity is page real estate — more space,
+   heavier furniture, and at the top of the page a starburst. */
 .entry {
-  border: 1px solid var(--rule); background: var(--paper-2);
-  padding: 10px 12px; cursor: pointer; position: relative;
-  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
-  transition: transform .08s ease, box-shadow .08s ease;
+  border: 2px solid var(--ink); background: var(--paper-2);
+  padding: 11px 13px 12px; cursor: pointer; position: relative;
+  display: grid; grid-template-columns: 1fr; gap: 3px 10px;
+  box-shadow: 3px 3px 0 rgba(25,20,16,.16);
+  transition: transform .07s ease, box-shadow .07s ease;
 }
-.entry:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
-.entry.chosen { outline: 3px solid var(--money); }
-.entry .name { font-family: var(--cond); font-size: 20px; letter-spacing: .01em; }
-.entry .code { font-size: 9.5px; letter-spacing: .12em; color: var(--ink-soft); }
-.entry .copy { font-size: 12px; grid-column: 1 / -1; color: var(--ink-soft); }
-.entry .eff { font-size: 12.5px; grid-column: 1 / -1; }
+.entry:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+.entry:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+.entry.chosen { outline: 3px solid var(--money); outline-offset: 2px; }
+.entry .name {
+  font-family: var(--cond); font-size: 23px; letter-spacing: .015em;
+  text-transform: uppercase; line-height: 1;
+}
+.entry .code {
+  font-size: 9.5px; letter-spacing: .14em; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.entry .copy { font-size: 11px; color: var(--ink-soft); letter-spacing: .02em; }
+.entry .byline { display: flex; align-items: center; gap: 7px; margin-top: 1px; }
+
+/* The effect line is the price flash. Red, condensed, oversized. */
+.entry .eff {
+  font-family: var(--cond); font-size: 17px;
+  letter-spacing: .01em; color: var(--red); line-height: 1.15; margin-top: 1px;
+}
+.entry .eff .code { color: var(--ink-soft); font-family: var(--body); }
+
+/* Rarity sits with the stock code, not in the corner — the corner belongs to
+   the starburst, and two things fighting for it is how a catalogue page stops
+   looking designed. */
 .entry .tier {
-  font-family: var(--cond); font-size: 11px; text-transform: uppercase;
-  letter-spacing: .1em; align-self: start;
+  font-family: var(--cond); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .12em; padding: 1px 5px; border: 1.5px solid currentColor;
+  align-self: center; justify-self: start;
 }
 .entry.r-common .tier { color: var(--ink-soft); }
-.entry.r-uncommon { border-left: 4px solid var(--cyan); }
-.entry.r-uncommon .tier { color: var(--cyan); }
-.entry.r-rare { border-left: 4px solid var(--magenta); padding-block: 14px; }
-.entry.r-rare .tier { color: var(--magenta); }
+.entry.r-uncommon { background: linear-gradient(180deg, #e2f0f5 0 34px, var(--paper-2) 34px); }
+.entry.r-uncommon .tier { color: var(--cyan); background: #fff; }
+.entry.r-rare {
+  padding-block: 15px 16px;
+  background: linear-gradient(180deg, #fbdfe9 0 40px, var(--paper-2) 40px);
+}
+.entry.r-rare .tier { color: var(--magenta); background: #fff; }
+.entry.r-rare .name { font-size: 27px; }
+
+/* Flagship: the full-page treatment. Yellow ground, double rule, and a
+   starburst, because a 1950s catalogue never once let a hero line go quiet. */
 .entry.r-flagship {
-  border: 3px double var(--ink); padding-block: 18px;
-  background: linear-gradient(100deg, var(--paper-2), #f6e9bd);
-  box-shadow: inset 0 0 0 1px var(--yellow);
+  border: 3px solid var(--ink); padding: 17px 15px 18px;
+  background:
+    repeating-linear-gradient(-45deg, rgba(247,195,49,.5) 0 9px, rgba(247,195,49,.22) 9px 18px);
+  box-shadow: inset 0 0 0 3px var(--paper-2), 4px 4px 0 var(--ink);
 }
-.entry.r-flagship .tier { color: #9a6b00; }
-.entry.owned { opacity: .55; }
+.entry.r-flagship .name { font-size: 31px; }
+.entry.r-flagship .tier { color: #8a5a00; background: #fff; border-color: #8a5a00; }
+.entry.r-flagship .eff { color: #a8241a; }
+.entry.owned { opacity: .5; }
 .entry .combine {
-  position: absolute; right: 8px; bottom: 6px; font-size: 10px;
-  font-family: var(--cond); letter-spacing: .08em; color: var(--money);
+  position: absolute; right: 9px; bottom: 7px; font-size: 10px;
+  font-family: var(--cond); letter-spacing: .1em; color: var(--money);
+  text-transform: uppercase;
 }
+
+/* The starburst. A real one: twenty points, drawn with a conic gradient mask
+   so it costs nothing and scales cleanly. */
+.burst {
+  position: absolute; top: -15px; right: -13px; width: 64px; height: 64px;
+  display: grid; place-items: center; transform: rotate(-13deg);
+  pointer-events: none; z-index: 3;
+}
+.burst::before {
+  content: ""; position: absolute; inset: 0; background: var(--red);
+  clip-path: polygon(
+    50% 0%, 58% 13%, 71% 5%, 73% 20%, 87% 17%, 84% 31%, 98% 34%, 89% 45%,
+    100% 55%, 88% 62%, 96% 74%, 82% 77%, 85% 91%, 71% 87%, 68% 100%, 57% 91%,
+    50% 100%, 43% 91%, 32% 100%, 29% 87%, 15% 91%, 18% 77%, 4% 74%, 12% 62%,
+    0% 55%, 11% 45%, 2% 34%, 16% 31%, 13% 17%, 27% 20%, 29% 5%, 42% 13%);
+}
+.burst b {
+  position: relative; font-family: var(--cond); font-size: 12px; color: #fff;
+  text-align: center; line-height: .92; letter-spacing: .04em; text-transform: uppercase;
+}
+.burst.gold::before { background: var(--yellow); }
+.burst.gold b { color: var(--ink); }
 #offer-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
 /* ------------------------------------------------------------- floorplan */

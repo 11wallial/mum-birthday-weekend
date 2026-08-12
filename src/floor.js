@@ -11,18 +11,25 @@
 
 import { PHASE } from './trading-day.js';
 
+// What fraction of the time between two shelves is spent moving. The rest is
+// spent standing still, which is the point.
+const HOP_SHARE = 0.34;
+
 const COLOUR = {
   family: '#d6206a', student: '#0aa3c2', pensioner: '#7a5cbf', trade: '#e07b1a',
   luxury: '#0f8a4a', tourist: '#f2b90c', browser: '#9a9086', shoplifter: '#2a2622',
 };
 
 /** Silhouettes. Distinct at a glance is the entire requirement. */
-function drawPerson(g, t, x, y, s, bob) {
+function drawPerson(g, t, x, y, s, bob, onFloor = false) {
   const c = COLOUR[t.id] || '#666';
   g.save();
   g.translate(x, y + bob);
   g.lineWidth = Math.max(1, s * 0.09);
-  g.strokeStyle = '#16130f';
+  // Contrast is attention. Someone crossing the floor is scenery; someone in
+  // the queue is a decision you can act on, so only the queue gets full ink.
+  g.globalAlpha *= onFloor ? 0.5 : 1;
+  g.strokeStyle = onFloor ? 'rgba(25,20,16,.55)' : '#191410';
   g.fillStyle = c;
 
   const body = (w, h, r = 0) => {
@@ -102,14 +109,18 @@ export function createFloorRenderer(canvas) {
     const frenzy = s.frenzy;
 
     g.clearRect(0, 0, w, h);
-    g.fillStyle = '#f4ead6';
+    g.fillStyle = '#f7efdb';
     g.fillRect(0, 0, w, h);
 
     const lanes = s.openAisles.length;
     const padT = 8;
     const padB = 8;
     const laneH = (h - padT - padB) / lanes;
-    const tillX = Math.round(w * 0.82);
+    // The till end is the only part of this screen you can act on, so it gets
+    // a third of it. It used to get a strip: the queue stacked eight deep in a
+    // column while four fifths of the screen showed people walking past
+    // shelves, which is the part you cannot touch.
+    const tillX = Math.round(w * 0.66);
     // The floor strip customers walk along sits at the bottom of each lane;
     // the shelving stands on it. Person height is set from the strip, not the
     // whole lane, so three aisles and five still read the same.
@@ -128,7 +139,7 @@ export function createFloorRenderer(canvas) {
       const shelfBase = floorY - strip * 0.5;
 
       // Lane ground
-      g.fillStyle = li % 2 ? '#eee2c8' : '#f1e7d1';
+      g.fillStyle = li % 2 ? '#ecdfbe' : '#f3ead0';
       g.fillRect(0, top, tillX, laneH - 3);
       g.beginPath();
       g.moveTo(0, floorY); g.lineTo(tillX, floorY);
@@ -144,17 +155,21 @@ export function createFloorRenderer(canvas) {
         const uh = Math.min(laneH - strip * 0.55 - 10, 76);
         const y0 = shelfBase - uh;
         if (!inst) {
-          g.setLineDash([4, 5]);
-          g.strokeStyle = 'rgba(22,19,15,.28)';
-          g.strokeRect(x0, y0, uw, uh);
+          // Faint. An empty slot is an absence, and drawing absences at the
+          // same weight as stock is most of why the floor read as clutter.
+          g.setLineDash([3, 7]);
+          g.strokeStyle = 'rgba(25,20,16,.13)';
+          g.lineWidth = 1;
+          g.strokeRect(x0, y0 + uh * 0.55, uw, uh * 0.45);
           g.setLineDash([]);
-          g.strokeStyle = '#16130f';
+          g.strokeStyle = '#191410';
+          g.lineWidth = lw;
           continue;
         }
-        const tone = inst.def.rarity === 'flagship' ? '#f2b90c'
-          : inst.def.rarity === 'rare' ? '#d6206a'
-            : inst.def.rarity === 'uncommon' ? '#0aa3c2' : '#c7a86b';
-        g.fillStyle = '#e6d9ba';
+        const tone = inst.def.rarity === 'flagship' ? '#f7c331'
+          : inst.def.rarity === 'rare' ? '#d81e63'
+            : inst.def.rarity === 'uncommon' ? '#0e8fb5' : '#d63426';
+        g.fillStyle = '#fdf7e8';
         g.fillRect(x0, y0, uw, uh);
         g.strokeRect(x0, y0, uw, uh);
         // Shelves, with stock on them in the fixture's own colour.
@@ -167,18 +182,18 @@ export function createFloorRenderer(canvas) {
             const iw = uw / items * 0.62;
             const ih = (uh / rows) * 0.5;
             g.fillStyle = tone;
-            g.globalAlpha = 0.55 + ((i + r + k) % 3) * 0.15;
+            g.globalAlpha = 0.78 + ((i + r + k) % 3) * 0.11;
             g.fillRect(x0 + (uw / items) * k + iw * 0.28, sy - ih, iw, ih);
             g.globalAlpha = 1;
           }
         }
         // Header board
         g.fillStyle = tone;
-        g.fillRect(x0, y0 - 13, uw, 13);
-        g.strokeRect(x0, y0 - 13, uw, 13);
-        g.fillStyle = '#16130f';
-        g.font = `600 ${Math.max(8, Math.min(11, uw * 0.11))}px Inter, sans-serif`;
-        g.fillText(inst.def.name.toUpperCase().slice(0, 18), x0 + uw / 2, y0 - 3.5);
+        g.fillRect(x0, y0 - 15, uw, 15);
+        g.strokeRect(x0, y0 - 15, uw, 15);
+        g.fillStyle = inst.def.rarity === 'flagship' ? '#191410' : '#fff';
+        g.font = `700 ${Math.max(8, Math.min(11, uw * 0.11))}px Inter, sans-serif`;
+        g.fillText(inst.def.name.toUpperCase().slice(0, 18), x0 + uw / 2, y0 - 4.5);
         if (inst.level > 1) {
           g.fillStyle = '#16130f';
           g.fillRect(x0 + uw - 17, y0 + 3, 14, 12);
@@ -189,28 +204,39 @@ export function createFloorRenderer(canvas) {
       }
     }
 
-    // --- till bank ---------------------------------------------------------
-    g.fillStyle = '#e2d3ae';
-    g.fillRect(tillX, padT, w - tillX, h - padT - padB);
-    g.strokeStyle = '#16130f';
-    g.lineWidth = lw;
-    g.strokeRect(tillX + 0.5, padT + 0.5, w - tillX - 1, h - padT - padB - 1);
+    // --- the front of shop -------------------------------------------------
+    // Was a large empty tinted rectangle with a queue stacked in one column at
+    // the top of it. A counter you can see is what makes the queue read as a
+    // queue rather than as figures parked in a box.
+    const frontW = w - tillX;
+    g.fillStyle = '#efe0bb';
+    g.fillRect(tillX, padT, frontW, h - padT - padB);
+    g.strokeStyle = '#191410';
+    g.lineWidth = lw + 0.5;
+    g.strokeRect(tillX + 0.5, padT + 0.5, frontW - 1, h - padT - padB - 1);
+
+    // The counter runs along the bottom, with a till per point of throughput.
     const tills = Math.max(1, shop.tills);
-    for (let t = 0; t < Math.min(tills, 6); t++) {
-      const ty = padT + 8 + t * 16;
-      g.fillStyle = '#16130f';
-      g.fillRect(tillX + 10, ty, 22, 9);
-      g.fillStyle = '#0aa3c2';
-      g.fillRect(tillX + 12, ty + 2, 6, 5);
+    const counterY = h - padB - 46;
+    g.fillStyle = '#c8452f';
+    g.fillRect(tillX + 1, counterY, frontW - 2, 20);
+    g.strokeRect(tillX + 1.5, counterY + 0.5, frontW - 3, 19);
+    g.fillStyle = '#efe0bb';
+    for (let t = 0; t < Math.min(tills, 9); t++) {
+      const cw = (frontW - 12) / Math.min(tills, 9);
+      const cx = tillX + 6 + t * cw;
+      g.fillRect(cx + cw * 0.18, counterY + 4, cw * 0.64, 12);
+      g.strokeRect(cx + cw * 0.18, counterY + 4, cw * 0.64, 12);
     }
-    g.fillStyle = '#16130f';
-    g.font = '600 11px Inter, sans-serif';
-    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, (tillX + w) / 2, h - padB - 8);
+    g.fillStyle = '#191410';
+    g.font = '700 10px Inter, sans-serif';
+    g.fillText('TILLS', tillX + frontW / 2, counterY + 33);
+
 
     // --- customers ---------------------------------------------------------
     hitboxes = [];
     const t = s.tick;
-    const qCols = Math.max(1, Math.floor((w - tillX - 24) / Math.max(26, person * 0.8)));
+    const qCols = Math.max(1, Math.floor((w - tillX - 20) / Math.max(30, person * 1.05)));
     for (const c of s.customers) {
       if ((c.phase === PHASE.DONE || c.phase === PHASE.LOST) && t - (c.exitAt ?? 0) > 8) continue;
       const li = c.lane;
@@ -219,23 +245,47 @@ export function createFloorRenderer(canvas) {
       let x; let y = floorY; let alpha = 1;
 
       if (c.phase === PHASE.WALKING) {
-        x = 8 + c.progress * (tillX - 24);
+        // They STEP between shelves, they do not glide.
+        //
+        // A continuous slide across four fifths of the screen is the single
+        // most eye-catching thing a screen can do, and there are a hundred of
+        // them doing it at once, all the same speed, all the same direction.
+        // Smooth pursuit is involuntary: your eyes get dragged along whether
+        // you want them to or not, and after ten seconds it hurts.
+        //
+        // A printed cutaway does not slide. It shows people standing AT
+        // shelves. So progress quantises to the slot they are at, with a quick
+        // hop between and a long dwell — nothing to track, and each figure is
+        // legibly beside a fixture, which is what the walk is meant to show.
+        const nSlots = Math.max(1, shop.aisles[c.aisle].slots.length);
+        const stops = nSlots + 1;
+        const at = c.progress * stops;
+        const idx = Math.min(stops - 1, Math.floor(at));
+        const within = at - idx;
+        const hop = Math.min(1, within / HOP_SHARE);
+        const eased = hop * hop * (3 - 2 * hop);          // smoothstep
+        const step = (tillX - 24) / stops;
+        x = 8 + (idx + eased) * step;
       } else if (c.phase === PHASE.QUEUE) {
+        // Rows fill UP from the counter, so the front of the queue is the row
+        // touching the tills and the shop visibly fills from the front. The
+        // old version stacked downward from the top of an empty box, which
+        // read as a waiting room rather than a queue.
         const qi = Math.max(0, s.queue.indexOf(c));
         const col = qi % qCols;
         const row = Math.floor(qi / qCols);
-        x = tillX + 16 + col * ((w - tillX - 28) / qCols);
-        y = padT + 30 + row * Math.max(24, person * 0.62) + person * 0.2;
-        if (y > h - padB - 14) y = h - padB - 14;
+        const colW = (w - tillX - 20) / qCols;
+        x = tillX + 12 + col * colW + colW / 2;
+        y = counterY - 8 - row * Math.max(26, person * 0.72);
+        if (y < padT + person * 1.3) y = padT + person * 1.3;
       } else {
-        x = tillX + 18;
-        y = padT + 26;
+        x = tillX + frontW / 2;
+        y = counterY - 4;
         alpha = Math.max(0, 1 - (t - (c.exitAt ?? t)) / 8);
       }
 
       g.globalAlpha = alpha;
-      const bob = c.phase === PHASE.WALKING ? Math.sin((t * 1.4 + c.id) * 0.9) * 1.8 : 0;
-      drawPerson(g, c.type, x, y, person, bob);
+      drawPerson(g, c.type, x, y, person, 0, c.phase === PHASE.WALKING);
 
       if (c.phase === PHASE.QUEUE) {
         const left = Math.max(0, 1 - c.waited / c.patience);

@@ -12,34 +12,43 @@
 <body>
 <div id="app">
 
+  <!-- The ledger is reference, not headline: a thin strip of small chips. -->
   <header id="ledger">
-    <div class="led"><span class="k">Quarter</span><span class="v" id="l-quarter">1</span></div>
-    <div class="led"><span class="k">Day</span><span class="v" id="l-day">1 / 24</span></div>
-    <div class="led"><span class="k">Target</span><span class="v money" id="l-target">£0</span></div>
-    <div class="led"><span class="k">Cash</span><span class="v money" id="l-cash">£0</span></div>
-    <div class="led"><span class="k">Tills</span><span class="v" id="l-tills">1</span></div>
-    <div class="led"><span class="k">Supplier</span><span class="v" id="l-tier">Tier 1</span></div>
-    <div class="led grow" id="l-boss"></div>
+    <span class="chip"><b id="l-day">1/24</b> day</span>
+    <span class="chip"><b id="l-quarter">1</b>/8 qtr</span>
+    <span class="chip money"><b id="l-cash">£0</b> cash</span>
+    <span class="chip"><b id="l-tills">1</b> till</span>
+    <span class="chip">tier <b id="l-tier">1</b></span>
+    <span class="grow" id="l-boss"></span>
+    <button id="btn-map" class="chipbtn">The run &rsaquo;</button>
   </header>
 
+  <!-- The verdict is the headline. Everything else on this panel is the
+       working that leads to it, and is sized like working. -->
   <section id="panel" aria-label="Projection">
-    <div class="terms">
-      <div class="term"><b id="p-footfall">0</b><i>Footfall</i></div>
-      <span class="op">&times;</span>
-      <div class="term"><b id="p-conv">0%</b><i>Conversion</i></div>
-      <span class="op">&times;</span>
-      <div class="term"><b id="p-basket">£0</b><i>Basket</i></div>
-      <span class="op">&times;</span>
-      <div class="term"><b id="p-margin">0%</b><i>Margin</i></div>
-      <span class="op">=</span>
-      <div class="term wide"><b id="p-trading">£0</b><i>Trading</i></div>
+    <div class="verdict-block">
+      <div class="vlabel">Today looks like</div>
+      <div class="vprofit" id="p-profit">£0</div>
+      <div class="vgap" id="p-gap">against £0</div>
     </div>
-    <div class="costs">
-      <span id="p-rent">Rent £0</span>
-      <span id="p-shrink">Shrink £0</span>
-      <span id="p-upkeep">Upkeep £0</span>
-      <b id="p-profit">Profit £0</b>
-      <b id="p-gap" class="gap">Gap £0</b>
+    <div class="working">
+      <div class="terms">
+        <div class="term"><b id="p-footfall">0</b><i>Footfall</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-conv">0%</b><i>Conversion</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-basket">£0</b><i>Basket</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-margin">0%</b><i>Margin</i></div>
+        <span class="op">=</span>
+        <div class="term wide"><b id="p-trading">£0</b><i>Takings</i></div>
+      </div>
+      <div class="costs">
+        less
+        <span id="p-rent">rent £0</span>
+        <span id="p-shrink">shrink £0</span>
+        <span id="p-upkeep">upkeep £0</span>
+      </div>
     </div>
   </section>
 
