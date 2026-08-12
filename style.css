@@ -66,6 +66,16 @@ body::after {
   margin: 0 auto;
   padding: 0 clamp(8px, 2vw, 22px);
 }
+/* Explicit rows, because a hidden child is removed from the grid entirely and
+   auto-placement then shifts every later child up one. With the ledger and the
+   panel hidden on the title screen, the stage inherited the `auto` row and the
+   1fr fell to an empty row below the footer — so the title sat in the top half
+   of the window with three hundred pixels of nothing under the buttons. */
+#ledger  { grid-row: 1; }
+#panel   { grid-row: 2; }
+#stage   { grid-row: 3; }
+#coach   { grid-row: 4; }
+#actions { grid-row: 5; }
 
 /* ---------------------------------------------------------------- ledger */
 
@@ -477,10 +487,23 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 /* ------------------------------------------------------------------ title */
 
+/* Cover on the left, order form on the right. As one centred column the
+   masthead ate a third of the screen and pushed the button that starts the
+   game below the fold — on the very first screen of the game. */
 #title {
-  display: grid; place-items: center; gap: 13px; text-align: center;
-  padding: 3vh 0 4vh; position: relative;
+  display: grid; gap: clamp(14px, 3vw, 34px);
+  padding: 2vh 0 3vh; position: relative;
+  /* min-height plus centred content: the box never shrinks below the stage,
+     so on a tall window the cover sits in the middle, and on a short one the
+     box grows past it and there is no free space left to centre — which is
+     what stops the masthead being clipped off the top of a scroll. */
+  min-height: 100%; align-content: center;
 }
+@media (min-width: 940px) {
+  #title { grid-template-columns: 1.05fr .95fr; align-items: start; }
+}
+.cover { display: grid; justify-items: center; gap: 11px; text-align: center; }
+.setup { display: grid; gap: 16px; align-content: start; }
 /* A catalogue cover: issue number, season, a rule top and bottom, and the
    masthead reversed out of a red band. */
 .cover-top {
@@ -493,14 +516,14 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 .cover-top .mid { margin: 0 auto; color: var(--ink); font-weight: 600; }
 .cover-burst { position: static; transform: rotate(-9deg) translateY(-8px); }
 #title h1 {
-  background: var(--red); color: var(--paper); padding: 2px 26px 8px;
+  background: var(--red); color: var(--paper); padding: 2px 22px 8px;
   box-shadow: 5px 5px 0 var(--ink);
-  font-family: var(--cond); font-size: clamp(56px, 15vw, 150px); line-height: .85;
+  font-family: var(--cond); font-size: clamp(52px, 9vw, 108px); line-height: .85;
   letter-spacing: -.01em;
   text-shadow: none;
 }
 #title .tag {
-  font-size: 15px; color: var(--ink); max-width: 42ch; line-height: 1.5;
+  font-size: 14px; color: var(--ink); max-width: 40ch; line-height: 1.5;
   font-style: italic;
 }
 #title .terms-line {
@@ -512,14 +535,14 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
   color: var(--ink); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
   padding: 5px 14px; margin-top: 4px;
 }
-#charpick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 700px; }
+#charpick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 /* Shop cards are stock lines on the cover page, so they get the same
    furniture as a catalogue entry: heavy rule, tint, a drop shadow. */
 .charbtn {
   box-shadow: 3px 3px 0 rgba(25,20,16,.15);
   border-width: 2px !important; border-color: var(--ink) !important;
   border: 1px solid var(--rule); background: var(--paper-2); padding: 8px 12px;
-  font: inherit; cursor: pointer; text-align: left; max-width: 210px; min-height: 44px;
+  font: inherit; cursor: pointer; text-align: left; min-height: 44px;
 }
 .charbtn.on {
   outline: 3px solid var(--red); outline-offset: 2px; background: #fff;
@@ -564,13 +587,19 @@ button { font-family: var(--body); }
    run repeated, and none of this existed in the browser build: it always
    played Audit I and forgot everything when the tab closed. */
 
-#title .pick { display: grid; gap: 7px; justify-items: center; }
+#title .pick { display: grid; gap: 7px; justify-items: stretch; }
 #title .pick h2 {
   font-family: var(--cond); font-size: 12px; letter-spacing: .18em;
   text-transform: uppercase; color: var(--ink-soft);
 }
 #title .pick h2 .hint { letter-spacing: 0; text-transform: none; font-family: var(--body); }
-#charpick, #auditpick { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+/* The shops are stock lines on an order form: one grid, equal cells, so the
+   seventh does not sit alone on a row of its own. */
+#charpick {
+  display: grid; gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+#auditpick { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .auditbtn {
   font-family: var(--cond); font-size: 14px; letter-spacing: .06em;
@@ -581,9 +610,33 @@ button { font-family: var(--body); }
 .auditbtn.done { border-color: var(--money); color: var(--money); }
 .auditbtn:disabled { opacity: .35; cursor: not-allowed; }
 
+/* The season ahead. A curve that multiplies by 1.24 for twenty-four days is
+   140x end to end, so a linear axis draws day one as a hairline; the bars are
+   log-scaled and the two ends are printed as figures underneath. */
+#season { display: grid; gap: 7px; }
+.sbars {
+  display: flex; align-items: flex-end; gap: 2px; height: 42px;
+  border-bottom: 2px solid var(--ink); padding-bottom: 0;
+}
+.sbar {
+  flex: 1; background: var(--ink); opacity: .32; display: block;
+  transition: height .3s cubic-bezier(.2, .9, .3, 1.1);
+}
+.sbar.qstart { margin-left: 7px; }
+.sbar.boss { background: var(--red); opacity: .62; }
+.sends {
+  display: flex; justify-content: space-between; font-size: 11px;
+  color: var(--ink-soft); letter-spacing: .02em;
+}
+.sends b { font-family: var(--cond); font-size: 15px; color: var(--ink); }
+.sends .red b { color: var(--red); }
+.snote { font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.snote b { font-family: var(--cond); font-size: 13px; color: var(--ink); }
+
 #titlestats {
   display: flex; gap: 18px; font-size: 11.5px; color: var(--ink-soft);
-  flex-wrap: wrap; justify-content: center;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--rule); padding-top: 9px;
 }
 #titlestats b { color: var(--ink); font-variant-numeric: tabular-nums; }
 

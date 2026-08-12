@@ -111,37 +111,45 @@
     </div>
 
     <!-- title -->
+    <!-- The cover of the catalogue on the left, the order form on the right.
+         Stacked in one centred column the masthead ate a third of the screen
+         and pushed the button that starts the game below the fold. -->
     <div id="title">
-      <div class="cover-top">
-        <span>No. 24</span><span class="mid">Wholesale &amp; Retail</span><span>Season 1954</span>
-      </div>
-      <h1>FOOTFALL</h1>
-      <div class="burst cover-burst"><b>89<br>lines</b></div>
-      <p class="tag">Fixtures, fittings &amp; stock for the modern retail premises.<br>
-      <span class="terms-line">Terms strictly cash &middot; rent due Friday &middot; no goods on approval</span></p>
-
-      <div class="pick">
-        <h2>The shop</h2>
-        <div id="charpick"></div>
-      </div>
-
-      <div class="pick">
-        <h2>The audit <span class="hint" id="audit-hint"></span></h2>
-        <div id="auditpick"></div>
-      </div>
-
-      <div id="titlestats"></div>
-
-      <button id="btn-start" class="primary">Open the shop</button>
-
-      <div class="titlerow">
-        <button id="btn-rules" class="ghost">How it works</button>
-        <button id="btn-records" class="ghost">Records</button>
-        <label class="seedbox">Seed <input id="seed" type="text" inputmode="numeric"
-          placeholder="random" size="10" autocomplete="off"></label>
+      <div class="cover">
+        <div class="cover-top">
+          <span>No. 24</span><span class="mid">Wholesale &amp; Retail</span><span>Season 1954</span>
+        </div>
+        <h1>FOOTFALL</h1>
+        <div class="burst cover-burst"><b>89<br>lines</b></div>
+        <p class="tag">Fixtures, fittings &amp; stock for the modern retail premises.<br>
+        <span class="terms-line">Terms strictly cash &middot; rent due Friday &middot; no goods on approval</span></p>
+        <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</p>
+        <div class="titlerow">
+          <button id="btn-rules" class="ghost">How it works</button>
+          <button id="btn-records" class="ghost">Records</button>
+          <label class="seedbox">Seed <input id="seed" type="text" inputmode="numeric"
+            placeholder="random" size="8" autocomplete="off"></label>
+        </div>
       </div>
 
-      <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</p>
+      <div class="setup">
+        <div class="pick">
+          <h2>The shop</h2>
+          <div id="charpick"></div>
+        </div>
+
+        <div class="pick">
+          <h2>The audit <span class="hint" id="audit-hint"></span></h2>
+          <div id="auditpick"></div>
+        </div>
+
+        <!-- What you are signing up for, before you sign up for it. It moves
+             when you change the audit, which is the only place the ladder's
+             cost is visible rather than described. -->
+        <div id="season"></div>
+
+        <div id="titlestats"></div>
+      </div>
     </div>
 
     <!-- What a fixture you already own actually does, and what it has grown
@@ -169,6 +177,7 @@
   <!-- Whatever the phase, the thing you do next is in the same place. It used
        to move: the footer on the night, the middle of the page at settle. -->
   <footer id="actions">
+    <button id="btn-start" class="primary" hidden>Open the shop</button>
     <button id="btn-open" class="primary" hidden>Open the doors</button>
     <button id="btn-continue" class="primary" hidden>Lock up</button>
     <div id="tip"></div>

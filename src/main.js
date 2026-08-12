@@ -1,8 +1,8 @@
 // Wiring: the night catalogue, the trading day, the receipt.
 
 import {
-  buildContent, emptySlots, findInstance, fixtureInstances, isRatchet, loadRawData,
-  ownedIds, ratchetCount, ratchetUpkeepOf,
+  auditModifiers, buildContent, emptySlots, findInstance, fixtureInstances,
+  isRatchet, loadRawData, ownedIds, ratchetCount, ratchetUpkeepOf,
 } from './engine.js';
 import { createRun } from './run.js';
 import { createTradingDay } from './trading-day.js';
@@ -650,6 +650,8 @@ function show(which) {
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
   $('btn-continue').hidden = which !== 'settle';
+  $('btn-start').hidden = which !== 'title';
+  $('tip').textContent = which === 'title' ? 'Pick a shop and an audit, then open up.' : '';
   // The ledger and the projection panel are readouts of a run in progress.
   // On the title screen there is no run, and a row of zeroes above the logo
   // reads as a broken game rather than an empty one.
@@ -812,9 +814,49 @@ function auditText(a) {
   return bits.length ? bits.join(', ') : 'the shop as written';
 }
 
+/**
+ * The season ahead, drawn as the curve it is.
+ *
+ * A player choosing an Audit was choosing from a sentence — "targets ×1.15" —
+ * with nothing to compare it against, and a player choosing a shop had no idea
+ * what twenty-four days actually asks for. The curve multiplies, so day one
+ * tells you nothing about day twenty-four; this shows both ends and the shape
+ * between them, and it moves when the audit changes.
+ */
+function renderSeason() {
+  const mods = auditModifiers(content, audit);
+  const mul = mods.targetMultiplier || 1;
+  const bossEvery = mods.bossEvery || content.run.bossEvery;
+  const total = content.run.encounters;
+  const first = content.targets[0] * mul;
+  const last = content.targets[total - 1] * mul;
+  const lo = Math.log(first);
+  const hi = Math.log(last);
+  let bars = '';
+  for (let e = 1; e <= total; e++) {
+    const t = content.targets[e - 1] * mul;
+    const hgt = Math.max(3, Math.round(((Math.log(t) - lo) / (hi - lo)) * 34) + 3);
+    const q = e % content.run.daysPerQuarter === 1 && e > 1 ? ' qstart' : '';
+    bars += `<i class="sbar${q}${e % bossEvery === 0 ? ' boss' : ''}"
+      style="height:${hgt}px" title="Day ${e} — ${money(t)}"></i>`;
+  }
+  $('season').innerHTML = `
+    <h2>The season <span class="hint">${content.run.quarters} quarters, ${total} trading days</span></h2>
+    <div class="sbars">${bars}</div>
+    <div class="sends">
+      <span>Day 1 asks <b>${money(first)}</b></span>
+      <span class="red">Day ${total} asks <b>${money(last)}</b></span>
+    </div>
+    <p class="snote">A target that multiplies by
+      <b>×${(content.targets[1] / content.targets[0]).toFixed(2)}</b> a day, and an
+      inspection every ${bossEvery === 1 ? 'day' : `${bossEvery} days`}. Flat cards
+      cannot chase a curve; that is what the compounding lines are for.</p>`;
+}
+
 function renderTitle() {
   renderCharacters();
   renderAudits();
+  renderSeason();
   const s = save.get();
   $('titlestats').innerHTML = [
     `Runs <b>${s.runs}</b>`,
