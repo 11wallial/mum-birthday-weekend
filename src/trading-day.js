@@ -39,6 +39,11 @@ export function createTradingDay(content, shop, ctx, rng) {
   const walkTicks = Math.max(1, content.economy.day.walkTicksPerSlot
     * Math.max(...openAisles.map((a) => shop.aisles[a].slots.length)));
 
+  const arrivals = footfall * traversals;
+  const maxWalkers = content.economy.day.maxWalkers || Infinity;
+  const spawnCount = Math.max(1, Math.min(Math.round(arrivals), maxWalkers));
+  const weight = arrivals / spawnCount;
+
   const micro = content.economy.micro;
   const triageBudget = micro && micro.triage
     ? Math.max(micro.triage.floor, footfall * micro.triage.fractionOfFootfall)
@@ -59,7 +64,7 @@ export function createTradingDay(content, shop, ctx, rng) {
     salesByType: Object.create(null),
     shrink: 0,
     walkouts: 0,
-    triageLeft: Math.round(triageBudget),
+    triageLeft: Math.max(1, Math.round(triageBudget / weight)),
     triageUsed: 0,
     rescued: 0,
     finished: false,
@@ -67,18 +72,32 @@ export function createTradingDay(content, shop, ctx, rng) {
     // visual escalation from one parameter (section 35).
     frenzy: 0,
     recentServed: [],
+    // How many people each sprite stands for. 1 below the sampling threshold.
+    walkerWeight: weight,
+    walkers: spawnCount,
   };
 
   // Spawn schedule: uniform arrivals across the day.
+  //
+  // Above a threshold the walk becomes a weighted SAMPLE. A shop pulling
+  // 80,000 people cannot draw 80,000 sprites, and it should not try: the
+  // arithmetic of the day is settled by the aggregate resolver either way, and
+  // the walk exists so the player can read the shop and reach into the queue.
+  // Each walker then stands for `weight` people and every total they touch —
+  // served, sales, revenue, walkouts — is counted in those units, so the day
+  // still adds up. Throughput and the triage budget are already quoted per
+  // tick against Footfall, so they scale with it untouched.
+  const openFor = Math.max(1, ticks - walkTicks);
   const spawns = [];
-  for (let n = 0; n < footfall * traversals; n++) {
+  for (let n = 0; n < spawnCount; n++) {
     const type = rng.weighted(entries);
-    spawns.push({ type, at: Math.floor((n / Math.max(1, footfall * traversals)) * ticks) });
+    spawns.push({ type, at: Math.floor((n / spawnCount) * openFor) });
   }
   spawns.sort((a, b) => a.at - b.at);
   let spawnIdx = 0;
 
   let nextId = 1;
+  let tillCredit = 0;
 
   function admit(type) {
     // Security and Security Tag act before anyone reaches the floor.
@@ -115,14 +134,14 @@ export function createTradingDay(content, shop, ctx, rng) {
   }
 
   function sell(c) {
-    state.served++;
+    state.served += weight;
     state.recentServed.push(state.tick);
     const buys = rng() < c.terms.conversion;
     if (buys) {
-      state.sales++;
-      state.salesByType[c.type.id] = (state.salesByType[c.type.id] || 0) + 1;
-      state.revenue += c.terms.basket;
-      state.tradingProfit += c.terms.basket * c.terms.margin;
+      state.sales += weight;
+      state.salesByType[c.type.id] = (state.salesByType[c.type.id] || 0) + weight;
+      state.revenue += c.terms.basket * weight;
+      state.tradingProfit += c.terms.basket * c.terms.margin * weight;
     }
     c.bought = buys;
     c.phase = PHASE.DONE;
@@ -138,7 +157,7 @@ export function createTradingDay(content, shop, ctx, rng) {
     const [c] = state.queue.splice(i, 1);
     state.triageLeft--;
     state.triageUsed++;
-    state.rescued++;
+    state.rescued += weight;
     sell(c);
     return true;
   }
@@ -172,18 +191,29 @@ export function createTradingDay(content, shop, ctx, rng) {
         state.queue.splice(i, 1);
         c.phase = PHASE.LOST;
         c.exitAt = t;
-        state.walkouts++;
+        state.walkouts += weight;
       }
     }
 
     let capacity = (shop.tills + flags.tillDelta) * content.economy.day.tillRate
       + flags.throughputBonus;
     capacity = Math.min(capacity, flags.throughputCap);
-    let budget = Math.max(0, capacity);
-    while (budget >= 1 && state.queue.length) {
+    // Till capacity accrues as a credit rather than being spent within the
+    // tick. One sprite costs `weight` people of it, and weight can be larger
+    // than a whole tick's capacity — spend-within-the-tick would then never
+    // clear the bar and the shop would serve nobody at all.
+    tillCredit += Math.max(0, capacity);
+    while (tillCredit >= weight && state.queue.length) {
       sell(state.queue.shift());
-      budget--;
+      tillCredit -= weight;
     }
+    // An idle till is idle time lost, not time saved: the credit banked during
+    // the fifteen ticks it takes the first customers to cross the floor must
+    // not be spendable later, or the day serves a full 180 ticks' worth where
+    // the resolver serves 165. Only while the queue is EMPTY, though — one
+    // sprite can cost more than a whole tick's capacity, and capping then
+    // throws away throughput the shop really has.
+    if (!state.queue.length) tillCredit = Math.min(tillCredit, Math.max(0, capacity));
 
     // Frenzy from throughput over the last stretch of the day.
     const window = 12;
@@ -191,20 +221,25 @@ export function createTradingDay(content, shop, ctx, rng) {
     state.frenzy = Math.min(1, state.recentServed.length / (window * 2.5));
 
     state.tick++;
-    if (state.tick > ticks && !state.queue.length
-        && !state.customers.some((c) => c.phase === PHASE.WALKING)) {
-      finish();
-    }
+    // The shop closes at closing time. Anyone still walking or still holding
+    // in the queue has not bought anything, and finish() counts them.
+    if (state.tick > ticks) finish();
   }
 
   function finish() {
     if (state.finished) return;
-    // Anyone still holding at close leaves.
+    // Anyone still holding at close leaves, and so does anyone still crossing
+    // the floor towards a till that is about to shut.
     for (const c of state.queue) {
       c.phase = PHASE.LOST;
-      state.walkouts++;
+      state.walkouts += weight;
     }
     state.queue.length = 0;
+    for (const c of state.customers) {
+      if (c.phase !== PHASE.WALKING) continue;
+      c.phase = PHASE.LOST;
+      state.walkouts += weight;
+    }
     state.finished = true;
 
     const rent = projection.rent;

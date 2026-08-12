@@ -50,6 +50,8 @@ node sim/cli.js micro           # what the trading day is worth as a decision la
 node sim/cli.js envelope        # what profit curve a build can actually reach
 node sim/cli.js trace           # one run, encounter by encounter
 
+node tools/check-sampling.mjs   # the sampled walk vs the resolver, at every scale
+
 node tools/bundle-data.mjs      # after editing anything in /data
 node tools/smoke-game.mjs 30    # plays full runs through the game's code, no browser
 node tools/screenshot.mjs shots # drives it in Chromium and captures each phase

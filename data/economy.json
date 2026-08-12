@@ -62,7 +62,9 @@
   "ticks": 180,
   "tillRate": 1.0,
   "walkTicksPerSlot": 5,
-  "$walkNote": "Raised from 1 for the playable build: at 1 a customer spent three ticks of a hundred and eighty on the floor, so the walk - the centrepiece - was visually empty. This shortens the service window by the same amount (ticks minus aisle length times this), so it moves throughput by about 8% and wants re-measuring with the rest of the tuning."
+  "$walkNote": "Raised from 1 for the playable build: at 1 a customer spent three ticks of a hundred and eighty on the floor, so the walk - the centrepiece - was visually empty. This shortens the service window by the same amount (ticks minus aisle length times this), so it moves throughput by about 8% and wants re-measuring with the rest of the tuning.",
+  "maxWalkers": 1400,
+  "$maxWalkersNote": "Above this many arrivals the walk becomes a weighted sample: each sprite stands for several people and every total it touches is counted in those units, so the day still adds up. Footfall is now bounded at twelve times throughput and reaches 80,000 in a strong late run - a shop that size cannot draw a sprite per customer and should not try. The arithmetic is settled by the aggregate resolver either way; the walk exists so the player can read the shop and reach into the queue."
  },
  "walkouts": {
   "$comment": "Everything that carries into tomorrow's Footfall is a SHARE of today, not a count of people. Footfall is a product - a base of 120 multiplied up through every ratchet and compounder on the board - so an absolute carry taken from post-multiplier quantities and added to the pre-multiplier base is a units error. It was fatal in both directions. As an absolute penalty capped against today's Footfall, a 73%-walkout day cost 1,700 against a base pool of 120, and a run sitting 160x over its target died the next morning at zero Footfall with no way back. Feeding walkouts the other way, through Warehouse Club, compounded instead. As shares, both read plainly and neither can zero a term: a bad queue costs you a slice of tomorrow, it does not end you.",
