@@ -28,7 +28,7 @@
        working that leads to it, and is sized like working. -->
   <section id="panel" aria-label="Projection">
     <div class="verdict-block">
-      <div class="vlabel">Today looks like</div>
+      <div class="vlabel" id="vlabel">Today looks like</div>
       <div class="vprofit" id="p-profit">£0</div>
       <div class="vgap" id="p-gap">against £0</div>
     </div>
@@ -98,7 +98,6 @@
     <!-- receipt -->
     <div id="settle" hidden>
       <div id="receipt"></div>
-      <button id="btn-continue" class="primary">Lock up</button>
     </div>
 
     <!-- title -->
@@ -157,8 +156,11 @@
     <button id="coach-x" class="ghost">Got it</button>
   </div>
 
+  <!-- Whatever the phase, the thing you do next is in the same place. It used
+       to move: the footer on the night, the middle of the page at settle. -->
   <footer id="actions">
     <button id="btn-open" class="primary" hidden>Open the doors</button>
+    <button id="btn-continue" class="primary" hidden>Lock up</button>
     <div id="tip"></div>
   </footer>
 

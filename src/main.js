@@ -118,6 +118,7 @@ function renderPanel() {
   const d = game.projection();
   const p = d.panel;
   const target = game.target(game.run.encounter);
+  $('vlabel').textContent = 'Today looks like';
   // Rolling, not snapping. A figure that snaps has to be re-read; one that
   // rolls tells you which way it moved without being read at all.
   roll($('p-footfall'), p.footfall, (v) => Math.round(v).toLocaleString('en-GB'));
@@ -139,6 +140,41 @@ function renderPanel() {
     void pel.offsetWidth;
     pel.classList.add('flip');
   }
+  lastShort = short;
+  const g = $('p-gap');
+  g.innerHTML = short
+    ? `against ${money(target)} — <b>${money(-gap)} short</b>`
+    : `against ${money(target)} — <b>${money(gap)} clear</b>`;
+  g.className = `vgap ${short ? 'short' : 'clear'}`;
+}
+
+/**
+ * The same panel, but reporting instead of predicting.
+ *
+ * Left alone it went on showing the morning's projection while the receipt
+ * beside it showed a different number — the screen contradicted itself at the
+ * exact moment the player is checking their working. It shows what actually
+ * happened, in the same four terms, so the plan and the outcome can be read
+ * against each other in one place.
+ */
+function renderPanelActual(s, target) {
+  const conv = s.served > 0 ? s.sales / s.served : 0;
+  const basket = s.sales > 0 ? s.revenue / s.sales : 0;
+  const margin = s.revenue > 0 ? s.tradingProfit / s.revenue : 0;
+  $('vlabel').textContent = 'Today came in at';
+  roll($('p-footfall'), s.footfall, (v) => Math.round(v).toLocaleString('en-GB'));
+  roll($('p-conv'), conv, (v) => pct(v));
+  roll($('p-basket'), basket, money);
+  roll($('p-margin'), margin, (v) => pct(v));
+  roll($('p-trading'), s.tradingProfit, money);
+  $('p-rent').textContent = `rent ${money(-s.rent)}`;
+  $('p-shrink').textContent = `shrink ${money(s.shrink)}`;
+  $('p-upkeep').textContent = `upkeep ${money(-(s.upkeep + s.ratchetUpkeep))}`;
+  const gap = s.profit - target;
+  const short = gap < 0;
+  const pel = $('p-profit');
+  roll(pel, s.profit, money, 520);
+  pel.className = `vprofit ${short ? 'short' : 'clear'}`;
   lastShort = short;
   const g = $('p-gap');
   g.innerHTML = short
@@ -511,19 +547,34 @@ function settle() {
   // is the best day it ever had, and a good run overshoots its last target
   // fifty times over.
   if (s.profit > peakDay) peakDay = s.profit;
-  showWiped('settle', () => maybeCoach('settle'));
+  showWiped('settle', () => { renderPanelActual(s, entry.target); maybeCoach('settle'); });
   $('tip').textContent = entry.fatal
     ? 'The landlord does not take instalments.'
     : 'Cash up, lock the door, order for tomorrow.';
   const row = (k, v, cls = '') => `<div class="r ${cls}"><span>${k}</span><span>${v}</span></div>`;
+  const n = (v) => Math.round(v).toLocaleString('en-GB');
+  const gap = s.profit - entry.target;
+  const plan = s.profit - s.projection.profit;
+  const ch = content.characterById.get(character);
+  // A day's trading, printed off the till. The gap is the only number on it
+  // that decides anything, so it is the only one set at size — the rest is
+  // the working that produced it, in the order a till roll would print it.
   $('receipt').innerHTML = `
-    <h3>FOOTFALL</h3>
-    <div class="r"><span>Day ${entry.encounter} of ${content.run.encounters}</span><span>Q${game.shop.quarter}</span></div>
+    <div class="rhead">
+      <div class="rmast">FOOTFALL</div>
+      <div class="rshop">${ch.name.toUpperCase()} &middot; NO. 24 HIGH STREET</div>
+    </div>
+    <div class="rmeta">
+      <span>DAY ${entry.encounter}/${content.run.encounters}</span>
+      <span>QUARTER ${game.shop.quarter}</span>
+      <span>${game.shop.tills} TILL${game.shop.tills > 1 ? 'S' : ''}</span>
+    </div>
+    ${game.boss() ? `<div class="rboss">${game.boss().name.toUpperCase()}</div>` : ''}
     <div class="rule"></div>
-    ${row('Footfall', s.footfall)}
-    ${row('Served', s.served)}
-    ${row('Sales', s.sales)}
-    ${row('Walkouts', s.walkouts + (s.rescued ? ` (${s.rescued} rescued)` : ''))}
+    ${row('Through the door', n(s.footfall))}
+    ${row('Served', n(s.served))}
+    ${row('Sales', n(s.sales))}
+    ${row('Walked out', n(s.walkouts) + (s.rescued ? ` (${n(s.rescued)} caught)` : ''))}
     <div class="rule"></div>
     ${row('Trading profit', money(s.tradingProfit))}
     ${row('Shrink', money(s.shrink))}
@@ -532,12 +583,21 @@ function settle() {
     ${row('Upkeep', money(-(s.upkeep + s.ratchetUpkeep)))}
     <div class="rule"></div>
     ${row('PROFIT', money(s.profit), 'big')}
-    ${row('You planned', money(s.projection.profit))}
     ${row('Target', money(entry.target))}
-    ${row('Gap', money(s.profit - entry.target), 'big')}
-    ${entry.interest ? row('Interest', money(entry.interest)) : ''}
-    <div class="verdict ${entry.fatal ? 'fail' : 'pass'}">
-      ${entry.fatal ? 'THE LANDLORD IS AT THE DOOR' : 'TARGET MET'}
+    <div class="rgap ${entry.fatal ? 'fail' : 'pass'}">
+      <i>${entry.fatal ? 'Short by' : 'Cleared by'}</i><b>${money(Math.abs(gap))}</b>
+    </div>
+    <div class="rplan">You planned ${money(s.projection.profit)} &mdash;
+      ${Math.abs(plan) < 1 ? 'called it exactly'
+    : `the day came in ${money(Math.abs(plan))} ${plan > 0 ? 'over' : 'under'}`}</div>
+    ${entry.interest ? row('Interest earned', money(entry.interest)) : ''}
+    <div class="stampline">
+      <span class="rstamp ${entry.fatal ? 'fail' : 'pass'}">
+        ${entry.fatal ? 'Closing down' : 'Target met'}</span>
+    </div>
+    <div class="rfoot">
+      <div class="barcode"></div>
+      ${entry.fatal ? 'NO REFUNDS &middot; NO EXCHANGES' : 'THANK YOU &middot; PLEASE CALL AGAIN'}
     </div>`;
   $('btn-continue').textContent = entry.fatal ? 'That was the run'
     : game.run.encounter >= content.run.encounters ? 'You did it' : 'Lock up';
@@ -558,6 +618,7 @@ function show(which) {
   closeInspect();
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
+  $('btn-continue').hidden = which !== 'settle';
   // The ledger and the projection panel are readouts of a run in progress.
   // On the title screen there is no run, and a row of zeroes above the logo
   // reads as a broken game rather than an empty one.
@@ -596,12 +657,15 @@ function endRun() {
     .map(({ inst }) => `${inst.def.name}${inst.level > 1 ? ` L${inst.level}` : ''}`);
   const ch = content.characterById.get(character);
 
-  $('receipt').innerHTML = `<h3>${won ? 'Eight quarters' : 'Closing down'}</h3>
+  $('receipt').innerHTML = `
+    <div class="rhead">
+      <div class="rmast">${won ? 'Eight quarters' : 'Closing down'}</div>
+      <div class="rshop">${ch.name.toUpperCase()} &middot; AUDIT ${roman(audit)}</div>
+    </div>
     <div class="headline ${won ? 'pass' : 'fail'}">${money(peakDay)}</div>
     <div class="sub">best day&rsquo;s profit${outcome.record ? ' &mdash; a personal record' : ''}</div>
     ${outcome.unlocked ? `<div class="unlock">Audit ${roman(outcome.unlocked)} unlocked</div>` : ''}
     <div class="rule"></div>
-    <div class="r"><span>${ch.name}, Audit ${roman(audit)}</span><span>${won ? 'survived' : `day ${days}`}</span></div>
     <div class="r"><span>Days traded</span><span>${days} / ${content.run.encounters}</span></div>
     <div class="r"><span>Climb, first day to last</span><span>${climb >= 1 ? `&times;${Math.round(climb).toLocaleString('en-GB')}` : '&mdash;'}</span></div>
     <div class="r"><span>Banked</span><span>${money(game.shop.cash)}</span></div>
@@ -609,7 +673,11 @@ function endRun() {
     <div class="rule"></div>
     ${game.run.log.slice(-5).map((e) => `<div class="r"><span>Day ${e.encounter}</span><span>${money(e.profit)} / ${money(e.target)}</span></div>`).join('')}
     <div class="build">${build.join(' &middot; ') || 'an empty shop'}</div>
-    <div class="verdict ${won ? 'pass' : 'fail'}">${won ? 'THE SHOP SURVIVES' : `IT ENDED ON DAY ${days}`}</div>`;
+    <div class="stampline">
+      <span class="rstamp ${won ? 'pass' : 'fail'}">${won ? 'The shop survives' : `Ended day ${days}`}</span>
+    </div>
+    <div class="rfoot"><div class="barcode"></div>
+      ${won ? 'TRADING CONTINUES' : 'FIXTURES &amp; FITTINGS TO BE SOLD'}</div>`;
   $('btn-continue').textContent = 'Open another shop';
   $('btn-continue').onclick = () => { showTitle(); };
 }

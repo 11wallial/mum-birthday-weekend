@@ -92,6 +92,9 @@ for (let i = 0; i < 60; i++) {
   if (onSettle) break;
   await page.waitForTimeout(700);
 }
+// The phase change happens at the half-way point of the page turn, so shooting
+// the instant it flips photographs the wipe rather than the receipt.
+await page.waitForTimeout(900);
 await shot('6-receipt');
 
 const stage = await page.evaluate(() => ['title', 'night', 'day', 'settle']

@@ -361,22 +361,97 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 /* ---------------------------------------------------------------- receipt */
 
-#settle { display: grid; place-items: center; padding: 10px 0 20px; }
+/* ---------------------------------------------------------------- receipt */
+/* The end of a day is the beat the whole loop is built towards, and it was a
+   flat list in a monospace font: a log file, not a moment. It comes off the
+   till now — masthead, meta line, torn edge, a rubber stamp for the verdict,
+   and a barcode — and the gap, the only figure on it that decides anything,
+   is the only one set at size. */
+
+#settle {
+  display: grid; place-items: center; padding: 14px 0 8px; align-content: start;
+  gap: 16px;
+}
 #receipt {
-  background: #fffdf6; width: min(420px, 94vw); padding: 18px 20px 26px;
+  background: #fffdf6; width: min(420px, 94vw); padding: 20px 22px 14px;
   font-family: "SFMono-Regular", ui-monospace, "Courier New", monospace;
-  font-size: 12.5px; line-height: 1.62;
-  box-shadow: 0 10px 26px rgba(0,0,0,.16);
+  font-size: 12.5px; line-height: 1.6; position: relative;
+  font-variant-numeric: tabular-nums;
+  transform: rotate(-.5deg);
+  box-shadow: 0 14px 34px rgba(25,20,16,.22), 0 2px 0 rgba(25,20,16,.1);
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 92% 100%, 84% calc(100% - 8px),
     76% 100%, 68% calc(100% - 8px), 60% 100%, 52% calc(100% - 8px), 44% 100%,
     36% calc(100% - 8px), 28% 100%, 20% calc(100% - 8px), 12% 100%, 4% calc(100% - 8px), 0 100%);
+  animation: receiptout .42s cubic-bezier(.2, .9, .3, 1.05);
 }
-#receipt h3 { font-family: var(--cond); font-size: 19px; letter-spacing: .08em; text-align: center; }
-#receipt .r { display: flex; justify-content: space-between; }
+/* It prints, rather than appearing. */
+@keyframes receiptout {
+  from { transform: translateY(-16px) rotate(-.5deg); opacity: 0; }
+  to   { transform: rotate(-.5deg); opacity: 1; }
+}
+/* Faint thermal banding, so the stock is paper rather than a white box. */
+#receipt::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    rgba(25,20,16,.028) 0 1px, transparent 1px 4px);
+}
+#receipt .rhead { text-align: center; margin-bottom: 6px; }
+#receipt .rmast {
+  font-family: var(--cond); font-size: 26px; letter-spacing: .17em;
+  text-transform: uppercase; line-height: 1;
+}
+#receipt .rshop {
+  font-size: 9px; letter-spacing: .16em; color: var(--ink-soft); margin-top: 3px;
+}
+#receipt .rmeta {
+  display: flex; justify-content: space-between; font-size: 9.5px;
+  letter-spacing: .1em; color: var(--ink-soft);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 3px 0; margin-bottom: 6px;
+}
+#receipt .rboss {
+  text-align: center; font-family: var(--cond); font-size: 13px;
+  letter-spacing: .14em; background: var(--red); color: #fff; margin-bottom: 6px;
+}
+#receipt .r { display: flex; justify-content: space-between; gap: 12px; }
+#receipt .r span:last-child { white-space: nowrap; }
 #receipt .rule { border-top: 1px dashed var(--rule); margin: 7px 0; }
-#receipt .big { font-size: 15px; font-weight: 700; }
-#receipt .verdict { text-align: center; margin-top: 12px; font-size: 14px; letter-spacing: .1em; }
-#receipt .pass { color: var(--money); } #receipt .fail { color: var(--magenta); }
+#receipt .big { font-family: var(--cond); font-size: 17px; letter-spacing: .04em; }
+
+/* The one number the day is actually about. */
+#receipt .rgap {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 9px 0 4px; padding: 6px 9px; border: 2px solid currentColor;
+}
+#receipt .rgap i {
+  font-style: normal; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase;
+}
+#receipt .rgap b { font-family: var(--cond); font-size: 30px; line-height: 1; letter-spacing: .01em; }
+#receipt .rplan { font-size: 10.5px; color: var(--ink-soft); line-height: 1.4; }
+
+/* The verdict as a rubber stamp, hit at an angle. */
+.stampline { display: grid; place-items: center; margin: 14px 0 6px; }
+.rstamp {
+  font-family: var(--cond); font-size: 21px; letter-spacing: .16em;
+  text-transform: uppercase; padding: 3px 15px 5px;
+  border: 3px double currentColor; transform: rotate(-4.5deg);
+  opacity: .82;
+}
+#receipt .pass, .rstamp.pass { color: var(--money); }
+#receipt .fail, .rstamp.fail { color: var(--red); }
+
+#receipt .rfoot {
+  text-align: center; font-size: 8.5px; letter-spacing: .2em;
+  color: var(--ink-soft); margin-top: 8px;
+}
+.barcode {
+  height: 26px; margin: 0 auto 6px; width: 74%;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 9px,
+    var(--ink) 9px 12px, transparent 12px 13px, var(--ink) 13px 14px, transparent 14px 18px);
+  opacity: .8;
+}
+@media (prefers-reduced-motion: reduce) { #receipt { animation: none; } }
 
 /* ------------------------------------------------------------------ title */
 
