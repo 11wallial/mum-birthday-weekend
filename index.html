@@ -82,11 +82,21 @@
     <!-- day -->
     <div id="day" hidden>
       <canvas id="floor"></canvas>
+      <!-- Five figures at one weight is five figures the eye has to sort.
+           Takings answers the question the panel asked, and the pace says
+           whether it is going to be enough — those two lead. -->
       <div id="daybar">
-        <div class="dstat"><b id="d-clock">0%</b><i>Day</i></div>
-        <div class="dstat"><b id="d-sales">0</b><i>Sales</i></div>
-        <div class="dstat"><b id="d-walk">0</b><i>Walkouts</i></div>
-        <div class="dstat"><b id="d-profit" class="money">£0</b><i>Takings</i></div>
+        <div class="clockblock">
+          <b id="d-clock">9:00</b>
+          <div class="dayprog"><span id="d-prog"></span></div>
+        </div>
+        <div class="dstat lead"><b id="d-profit" class="money">£0</b><i>Takings so far</i></div>
+        <div class="dstat lead"><b id="d-pace">&mdash;</b><i>On this pace</i></div>
+        <div class="dsmall">
+          <div><b id="d-sales">0</b> sales</div>
+          <div class="lost"><b id="d-walk">0</b> walked out</div>
+          <div class="lost" id="d-shrinkrow" hidden><b id="d-shrink">£0</b> stolen</div>
+        </div>
         <div class="dstat triage"><b id="d-triage">0</b><i>Next please</i></div>
         <div class="daybtns">
           <button id="btn-pause" class="ghost" title="Space">Pause</button>

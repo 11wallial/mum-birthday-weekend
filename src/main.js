@@ -488,7 +488,10 @@ function openDoors() {
   audio.tannoy();
   particles = createParticles();
   setPaused(false);
-  showWiped('day', () => maybeCoach('day'));
+  // Once the doors are open the panel is a record of the plan, not a live
+  // reading — the day bar is the live reading. Saying so stops the two
+  // disagreeing in a way that looks like a bug.
+  showWiped('day', () => { $('vlabel').textContent = 'Today was planned at'; maybeCoach('day'); });
   day = createTradingDay(content, game.shop, game.ctx(), game.run.rng);
   $('btn-open').hidden = true;
   $('tip').textContent = 'Someone waiting? Tap them and take them next.';
@@ -526,15 +529,43 @@ function openDoors() {
     particles.update();
     floor.draw(day, game.shop, particles);
     const n = (v) => Math.round(v).toLocaleString('en-GB');
-    roll($('d-clock'), Math.min(100, day.state.tick / day.state.ticks * 100), (v) => `${Math.round(v)}%`, 200);
-    roll($('d-sales'), day.state.sales, n, 300);
-    roll($('d-walk'), day.state.walkouts, n, 300);
-    roll($('d-profit'), day.state.tradingProfit + day.state.shrink, money, 300);
-    $('d-triage').textContent = day.state.triageLeft;
+    const st = day.state;
+    const through = Math.min(1, st.tick / st.ticks);
+    $('d-clock').textContent = shopClock(through);
+    $('d-prog').style.width = `${through * 100}%`;
+    roll($('d-sales'), st.sales, n, 300);
+    roll($('d-walk'), st.walkouts, n, 300);
+    // Takings is what went through the till. Theft is a separate line, because
+    // netting the two produced a "takings" figure that could read negative on
+    // a day the shop was busy — which is not what the word means.
+    roll($('d-profit'), st.tradingProfit, money, 300);
+    $('d-shrinkrow').hidden = st.shrink >= 0;
+    if (st.shrink < 0) roll($('d-shrink'), -st.shrink, money, 300);
+    // What the day is going to come to if it carries on like this. Without it
+    // the player watches a takings figure climb with no way to know whether it
+    // is climbing fast enough, which is the only question the day poses.
+    const pel = $('d-pace');
+    if (through < 0.12) { pel.textContent = '—'; pel.className = ''; } else {
+      const fixed = (st.projection.rent || 0) + (st.projection.ratchetUpkeep || 0)
+        + (game.shop.marketingUpkeep || 0);
+      const pace = (st.tradingProfit + st.shrink) / through - fixed;
+      const tgt = game.target(game.run.encounter);
+      roll(pel, pace, money, 260);
+      pel.className = pace < tgt ? 'short' : 'clear';
+    }
+    $('d-triage').textContent = st.triageLeft;
+    $('d-triage').parentElement.classList.toggle('spent', st.triageLeft <= 0);
     if (day.state.finished) { settle(); return; }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+
+/** Nine in the morning to half five, because "54% of the day" is not a time. */
+function shopClock(through) {
+  const mins = 9 * 60 + through * (17.5 * 60 - 9 * 60);
+  const h = Math.floor(mins / 60);
+  return `${h}:${String(Math.floor(mins % 60)).padStart(2, '0')}`;
 }
 
 function settle() {

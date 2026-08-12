@@ -97,13 +97,17 @@ export function inkRect(g, x, y, w, h, lw = 1.6, seed = 0) {
  * cheapest depth cue there is, and its absence is most of why flat shapes
  * float.
  */
-export function contact(g, x, y, w, alpha = 0.17) {
+export function contact(g, x, y, w, alpha = 0.17, squash = 0.15) {
   if (!(w > 0)) return;
   g.save();
   g.globalAlpha = alpha;
   g.fillStyle = INK;
   g.beginPath();
-  g.ellipse(x, y, w * 0.55, w * 0.15, 0, 0, Math.PI * 2);
+  // Squash matters more than it sounds. A shadow whose height is a fixed
+  // fraction of its width is fine under a person and a 60px-deep smudge under
+  // a four-hundred-pixel counter — wide furniture needs a thin band, not a
+  // scaled-up version of the same ellipse.
+  g.ellipse(x, y, w * 0.55, Math.min(w * squash, 9), 0, 0, Math.PI * 2);
   g.fill();
   g.restore();
 }

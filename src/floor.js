@@ -26,6 +26,21 @@ const COLOUR = {
   luxury: '#0f8a4a', tourist: '#f2b90c', browser: '#9a9086', shoplifter: '#2a2622',
 };
 
+// A shelf takes the colour of the TERM it feeds, not its rarity.
+//
+// Rarity was the wrong variable to paint with. Most of what a shop holds is
+// common, so most of the shop came out in one red — a monotone floor that told
+// the player nothing they could not read off the card, and that fought the
+// customers for attention. Term is the thing a build is actually made of, so
+// colouring by it turns the floor into a diagram of the shop: four cyan units
+// and one green one is a Footfall build with a Margin problem, seen at a
+// glance and without reading a word. Rarity still shows, as furniture — a
+// heavier barker and a gold star.
+const TERM_TONE = {
+  footfall: '#0e8fb5', conversion: '#d81e63', basket: '#e8a80c', margin: '#17703c',
+};
+const shelfTone = (def) => TERM_TONE[def.term] || '#8a5a3c';
+
 /**
  * A person, drawn as an illustration rather than as a rounded rectangle.
  *
@@ -181,6 +196,7 @@ export function createFloorRenderer(canvas) {
   function draw(day, shop, particles) {
     const { w, h } = resize();
     const s = day.state;
+    const t = s.tick;
     const frenzy = s.frenzy;
 
     g.clearRect(0, 0, w, h);
@@ -248,13 +264,15 @@ export function createFloorRenderer(canvas) {
         g.lineTo(px + 3, top + 9); g.lineTo(px - 3, top + 9);
         g.closePath(); g.fill();
         g.strokeStyle = INK; g.lineWidth = 1.2; g.stroke();
-        // The pool of light it throws.
+        // The pool of light it throws. Kept faint and wide: at the old value
+        // it read as a vertical streak down an empty lane rather than as
+        // light, which is the sort of thing that looks like a bug.
         g.save();
-        g.globalAlpha = 0.075;
+        g.globalAlpha = 0.045;
         g.fillStyle = '#f7c331';
         g.beginPath();
         g.moveTo(px - 6, top + 15); g.lineTo(px + 6, top + 15);
-        g.lineTo(px + 19, floorY); g.lineTo(px - 19, floorY);
+        g.lineTo(px + 34, floorY); g.lineTo(px - 34, floorY);
         g.closePath(); g.fill();
         g.restore();
       }
@@ -274,25 +292,31 @@ export function createFloorRenderer(canvas) {
         const uh = Math.max(22, Math.min(laneH - strip * 0.55 - 10, 82));
         const y0 = shelfBase - uh;
         if (!inst) {
-          // An empty bay: bare uprights, nothing on them. It should read as a
-          // gap in the shop rather than as a dashed UI affordance.
+          // An empty bay is a real thing in a real shop: a stripped unit with
+          // bare boards on it. It used to be three ghost lines at 30% alpha,
+          // which reads as an unfinished interface rather than as a gap in a
+          // shop — and two thirds of an early floor is empty.
+          const eh = uh * 0.72;
+          const ey = shelfBase - eh;
+          contact(g, x0 + uw / 2, shelfBase + 1, uw * 0.9, 0.12, 0.02);
           g.save();
-          g.globalAlpha = 0.3;
-          g.strokeStyle = 'rgba(25,20,16,.5)';
-          g.lineWidth = 1.4;
-          g.beginPath();
-          g.moveTo(x0 + 2, shelfBase); g.lineTo(x0 + 2, y0 + uh * 0.42);
-          g.moveTo(x0 + uw - 2, shelfBase); g.lineTo(x0 + uw - 2, y0 + uh * 0.42);
-          g.moveTo(x0 + 2, y0 + uh * 0.42); g.lineTo(x0 + uw - 2, y0 + uh * 0.42);
-          g.stroke();
+          g.fillStyle = '#e7dbbc';
+          g.fillRect(x0 + uw * 0.06, ey, uw * 0.88, eh);
+          g.strokeStyle = 'rgba(25,20,16,.4)';
+          g.lineWidth = 1.2;
+          g.strokeRect(x0 + uw * 0.06, ey, uw * 0.88, eh);
+          for (let r = 1; r < 3; r++) {
+            const sy = ey + (eh / 3) * r;
+            g.fillStyle = '#cdbb93';
+            g.fillRect(x0 + uw * 0.06, sy, uw * 0.88, 2.5);
+            g.strokeRect(x0 + uw * 0.06, sy, uw * 0.88, 2.5);
+          }
           g.restore();
           g.strokeStyle = INK;
           g.lineWidth = lw;
           continue;
         }
-        const tone = inst.def.rarity === 'flagship' ? '#f7c331'
-          : inst.def.rarity === 'rare' ? '#d81e63'
-            : inst.def.rarity === 'uncommon' ? '#0e8fb5' : '#d63426';
+        const tone = shelfTone(inst.def);
 
         // Carcass, with a plate offset behind it.
         g.save();
@@ -364,7 +388,15 @@ export function createFloorRenderer(canvas) {
         g.fillStyle = tone;
         g.fillRect(-uw / 2, -8, uw, 16);
         g.strokeRect(-uw / 2, -8, uw, 16);
-        g.fillStyle = inst.def.rarity === 'flagship' ? INK : '#fff';
+        // Rarity is furniture now that term has the colour: a rare line gets a
+        // second rule inside the barker, a flagship gets two.
+        if (inst.def.rarity === 'rare' || inst.def.rarity === 'flagship') {
+          g.lineWidth = 1;
+          g.strokeRect(-uw / 2 + 2.5, -5.5, uw - 5, 11);
+          if (inst.def.rarity === 'flagship') g.strokeRect(-uw / 2 + 4.5, -3.5, uw - 9, 7);
+          g.lineWidth = lw;
+        }
+        g.fillStyle = inst.def.term === 'basket' ? INK : '#fff';
         g.font = `700 ${Math.max(8, Math.min(11, uw * 0.105))}px Inter, sans-serif`;
         g.fillText(inst.def.name.toUpperCase().slice(0, 18), 0, 4);
         g.restore();
@@ -394,100 +426,228 @@ export function createFloorRenderer(canvas) {
     }
 
     // --- the front of shop -------------------------------------------------
-    // A shopfront: daylight through the window, the door, the counter and a
-    // till on it. This was a large empty tinted rectangle with a queue parked
-    // in it, which is most of why the day looked unfinished.
+    // The till hall. This was, in order down the screen: a window, a very
+    // large nothing, and a thin red band at the bottom that read as a rug.
+    // Three quarters of the only part of the screen the player can act on was
+    // empty, which is most of why the day looked unfinished.
     const frontW = w - tillX;
-    screenRect(g, tillX, padT, frontW, h - padT - padB, '#c2ac80', 4, 0.3);
+    const frontH = h - padT - padB;
+    screenRect(g, tillX, padT, frontW, frontH, '#c2ac80', 4, 0.3);
     g.fillStyle = '#efe2c0';
-    g.fillRect(tillX + 1, padT + 1, frontW - 2, h - padT - padB - 2);
+    g.fillRect(tillX + 1, padT + 1, frontW - 2, frontH - 2);
 
-    // The window wall, with daylight falling in.
-    const winY = padT + 14;
-    const winH = Math.min(150, (h - padT - padB) * 0.42);
-    g.fillStyle = '#cfe6ef';
+    const winY = padT + 20;
+    const winH = Math.min(132, frontH * 0.34);
+    const counterH = 30;
+    const counterY = h - padB - counterH - 26;
+
+    // Tiled floor. The aisles have boards; the till hall is tiled, which
+    // separates the two halves of the shop and — mostly — puts something
+    // under the queue's feet.
+    const tile = Math.max(20, Math.min(38, frontW / 6));
+    g.save();
+    g.beginPath();
+    g.rect(tillX + 1, winY + winH, frontW - 2, counterY - winY - winH);
+    g.clip();
+    for (let ty = winY + winH; ty < counterY; ty += tile) {
+      for (let tx = tillX; tx < w; tx += tile) {
+        const dark = (Math.round(tx / tile) + Math.round(ty / tile)) % 2 === 0;
+        g.fillStyle = dark ? '#e3d3ac' : '#f3e8cc';
+        g.fillRect(tx, ty, tile, tile);
+      }
+    }
+    g.strokeStyle = 'rgba(25,20,16,.09)';
+    g.lineWidth = 1;
+    for (let ty = winY + winH; ty < counterY; ty += tile) {
+      g.beginPath(); g.moveTo(tillX, ty); g.lineTo(w, ty); g.stroke();
+    }
+    g.restore();
+
+    // The window, and the street beyond it. A flat pale rectangle is a hole in
+    // the wall; a skyline is a shop that is somewhere.
+    g.fillStyle = '#bfdfec';
     g.fillRect(tillX + 14, winY, frontW - 28, winH);
+    g.save();
+    g.beginPath();
+    g.rect(tillX + 14, winY, frontW - 28, winH);
+    g.clip();
+    // Buildings across the road, in two planes so it has depth.
+    const base = winY + winH * 0.74;
+    g.fillStyle = 'rgba(25,20,16,.13)';
+    for (let bx = tillX + 8, k = 0; bx < w; bx += 34, k++) {
+      const bh = 34 + ((k * 37) % 5) * 9;
+      g.fillRect(bx, base - bh, 30, bh);
+    }
+    g.fillStyle = 'rgba(25,20,16,.24)';
+    for (let bx = tillX + 22, k = 0; bx < w; bx += 46, k++) {
+      const bh = 22 + ((k * 53) % 4) * 8;
+      g.fillRect(bx, base - bh, 40, bh);
+      g.fillStyle = 'rgba(247,239,219,.55)';       // lit windows
+      for (let wy = 0; wy < 2; wy++) {
+        for (let wx = 0; wx < 3; wx++) {
+          if ((k + wx + wy) % 3 === 0) g.fillRect(bx + 6 + wx * 11, base - bh + 7 + wy * 12, 6, 7);
+        }
+      }
+      g.fillStyle = 'rgba(25,20,16,.24)';
+    }
+    // The pavement, and someone going past on it.
+    g.fillStyle = 'rgba(25,20,16,.10)';
+    g.fillRect(tillX + 14, base, frontW - 28, winH);
+    const px = tillX + 20 + ((t * 0.7) % (frontW - 20));
+    g.fillStyle = 'rgba(25,20,16,.35)';
+    g.fillRect(px, base - 15, 5, 11);
+    g.beginPath(); g.arc(px + 2.5, base - 18, 3, 0, Math.PI * 2); g.fill();
+    g.restore();
+
     g.strokeStyle = INK;
     g.lineWidth = lw + 0.6;
     g.strokeRect(tillX + 14, winY, frontW - 28, winH);
-    // Glazing bars.
     g.lineWidth = 1.4;
     for (let k = 1; k < 3; k++) {
       const gx = tillX + 14 + ((frontW - 28) / 3) * k;
       g.beginPath(); g.moveTo(gx, winY); g.lineTo(gx, winY + winH); g.stroke();
     }
     g.beginPath();
-    g.moveTo(tillX + 14, winY + winH * 0.42);
-    g.lineTo(tillX + frontW - 14, winY + winH * 0.42);
+    g.moveTo(tillX + 14, winY + winH * 0.34);
+    g.lineTo(tillX + frontW - 14, winY + winH * 0.34);
     g.stroke();
-    // Reversed-out shop name across the glass, as a signwriter would.
-    g.fillStyle = 'rgba(25,20,16,.42)';
+    // Signwritten across the glass, reversed, as it would be from inside.
+    g.fillStyle = 'rgba(25,20,16,.34)';
     g.font = `700 ${Math.min(19, frontW * 0.075)}px Inter, sans-serif`;
-    g.fillText('OPEN', tillX + frontW / 2, winY + winH * 0.3);
-    // Daylight pooling on the floor below the window.
+    g.fillText('OPEN', tillX + frontW / 2, winY + winH * 0.24);
+
+    // A striped valance under the window head. One stripe of saturated colour
+    // is what the whole screen was missing.
+    const vh = 13;
+    for (let sx = tillX + 6, k = 0; sx < w - 6; sx += 15, k++) {
+      g.fillStyle = k % 2 ? '#d63426' : '#f7efdb';
+      g.beginPath();
+      g.moveTo(sx, winY + winH);
+      g.lineTo(Math.min(w - 6, sx + 15), winY + winH);
+      g.lineTo(Math.min(w - 6, sx + 15), winY + winH + vh * 0.6);
+      g.lineTo(Math.min(w - 6, sx + 7.5), winY + winH + vh);
+      g.lineTo(sx, winY + winH + vh * 0.6);
+      g.closePath(); g.fill();
+    }
+    g.strokeStyle = INK;
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(tillX + 6, winY + winH); g.lineTo(w - 6, winY + winH);
+    g.stroke();
+
+    // Daylight pooling on the tiles.
     g.save();
-    g.globalAlpha = 0.13;
+    g.globalAlpha = 0.16;
     g.fillStyle = '#cfe6ef';
     g.beginPath();
-    g.moveTo(tillX + 14, winY + winH);
-    g.lineTo(tillX + frontW - 14, winY + winH);
-    g.lineTo(tillX + frontW - 2, h - padB - 4);
-    g.lineTo(tillX + 2, h - padB - 4);
+    g.moveTo(tillX + 14, winY + winH + vh);
+    g.lineTo(tillX + frontW - 14, winY + winH + vh);
+    g.lineTo(tillX + frontW - 2, counterY);
+    g.lineTo(tillX + 2, counterY);
     g.closePath(); g.fill();
     g.restore();
 
-    // The counter, with a till machine standing on it.
+    // A rope barrier down the left of the hall, which is what makes it a
+    // queue rather than a crowd.
+    g.strokeStyle = 'rgba(25,20,16,.5)';
+    for (let ry = winY + winH + 34; ry < counterY - 10; ry += 64) {
+      g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(tillX + 7, ry); g.lineTo(tillX + 7, ry + 26); g.stroke();
+      g.fillStyle = '#c8452f';
+      g.beginPath(); g.arc(tillX + 7, ry - 2, 3.5, 0, Math.PI * 2); g.fill();
+      g.lineWidth = 1.6;                            // the rope, slack
+      g.beginPath();
+      g.moveTo(tillX + 7, ry + 2);
+      g.quadraticCurveTo(tillX + 13, ry + 30, tillX + 7, ry + 64);
+      g.stroke();
+    }
+
+    // --- the counter -------------------------------------------------------
+    // Waist-high joinery with a top you can put a till on, not a coloured band
+    // laid on the floor. It gets a plinth, a front face, a proper top surface
+    // and a contact shadow, and it stops short of the wall at each end so it
+    // reads as furniture standing in a room.
     const tills = Math.max(1, shop.tills);
-    const counterY = h - padB - 52;
-    g.save();
-    g.globalAlpha = 0.3;
+    const cLeft = tillX + 8;
+    const cW = frontW - 16;
+    contact(g, cLeft + cW / 2, counterY + counterH + 4, cW, 0.16, 0.012);
+    g.save();                                       // plate offset
+    g.globalAlpha = 0.32;
     g.fillStyle = '#8f2418';
-    g.fillRect(tillX + 3, counterY + 3, frontW - 4, 26);
+    g.fillRect(cLeft + 3, counterY + 3, cW, counterH);
     g.restore();
-    g.fillStyle = halftone(g, '#c8452f', 4, 1);
-    g.fillRect(tillX + 1, counterY, frontW - 2, 24);
+    g.fillStyle = halftone(g, '#c8452f', 4, 1);     // front face
+    g.fillRect(cLeft, counterY + 7, cW, counterH - 7);
     g.strokeStyle = INK;
     g.lineWidth = lw;
-    g.strokeRect(tillX + 1, counterY, frontW - 2, 24);
-    // Counter front panelling.
-    g.strokeStyle = 'rgba(25,20,16,.35)';
+    g.strokeRect(cLeft, counterY + 7, cW, counterH - 7);
+    g.strokeStyle = 'rgba(25,20,16,.3)';            // panelling
     g.lineWidth = 1;
-    for (let k = 1; k < 5; k++) {
-      const cx = tillX + (frontW / 5) * k;
-      g.beginPath(); g.moveTo(cx, counterY + 4); g.lineTo(cx, counterY + 20); g.stroke();
+    for (let k = 1; k < 6; k++) {
+      const cx = cLeft + (cW / 6) * k;
+      g.beginPath(); g.moveTo(cx, counterY + 11); g.lineTo(cx, counterY + counterH - 4); g.stroke();
     }
-    // A till per point of throughput, up to what fits.
-    // Tills occupy the right-hand third of the counter and the queue forms
-    // along it to the left. They used to be centred, which is exactly where
-    // the queue stood, so the machines were never once visible.
+    g.fillStyle = '#e8d7ae';                        // the top, seen slightly on
+    g.fillRect(cLeft - 4, counterY, cW + 8, 8);
+    g.strokeStyle = INK;
+    g.lineWidth = lw;
+    g.strokeRect(cLeft - 4, counterY, cW + 8, 8);
+    g.fillStyle = 'rgba(255,255,255,.5)';           // highlight along the edge
+    g.fillRect(cLeft - 3, counterY + 1, cW + 6, 2);
+
+    // A till per point of throughput, up to what fits. They occupy the right
+    // of the counter and the queue forms along it to the left — they used to
+    // be centred, which is exactly where the queue stood, so the machines were
+    // never once visible.
     const tillZone = Math.max(60, frontW * 0.34);
     const tillLeft = tillX + frontW - tillZone;
     const shown = Math.min(tills, Math.max(1, Math.floor(tillZone / 40)));
-    for (let t = 0; t < shown; t++) {
+    for (let ti = 0; ti < shown; ti++) {
       const cw = tillZone / shown;
-      const cx = tillLeft + t * cw + cw / 2;
-      const ty = counterY - 20;
+      const cx = tillLeft + ti * cw + cw / 2;
+      const ty = counterY - 22;
+      contact(g, cx, counterY + 1, 34, 0.16);
       g.fillStyle = '#efe2c0';
-      g.fillRect(cx - 15, ty, 30, 20);
+      g.fillRect(cx - 15, ty, 30, 22);
       g.strokeStyle = INK; g.lineWidth = lw;
-      g.strokeRect(cx - 15, ty, 30, 20);
-      g.fillStyle = '#191410';                     // the readout
+      g.strokeRect(cx - 15, ty, 30, 22);
+      g.fillStyle = '#191410';                      // the readout
       g.fillRect(cx - 11, ty + 3, 22, 7);
       g.fillStyle = '#7fe3a0';
       g.fillRect(cx - 9, ty + 5, 4, 3);
       g.fillRect(cx - 3, ty + 5, 4, 3);
-      g.fillStyle = 'rgba(25,20,16,.5)';           // keys
-      for (let kx = 0; kx < 3; kx++) g.fillRect(cx - 10 + kx * 7, ty + 13, 5, 4);
+      g.fillStyle = 'rgba(25,20,16,.5)';            // keys
+      for (let kx = 0; kx < 3; kx++) g.fillRect(cx - 10 + kx * 7, ty + 14, 5, 4);
     }
+    // A pair of scales and a bag stand at the quiet end, because a counter
+    // with nothing on it is a shelf.
+    if (tillLeft - cLeft > 110) {
+      const sx = cLeft + 32;
+      contact(g, sx, counterY + 1, 34, 0.14);
+      g.strokeStyle = INK; g.lineWidth = 1.4;
+      g.fillStyle = '#d8cba6';                      // scale pan and column
+      g.fillRect(sx - 15, counterY - 9, 30, 9);
+      g.strokeRect(sx - 15, counterY - 9, 30, 9);
+      g.beginPath(); g.moveTo(sx, counterY - 9); g.lineTo(sx, counterY - 21); g.stroke();
+      g.fillStyle = '#f7c331';                      // the dial
+      g.beginPath(); g.arc(sx, counterY - 26, 8, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(sx, counterY - 26); g.lineTo(sx + 4, counterY - 31); g.stroke();
+      g.fillStyle = '#c8a97a';                      // a stack of paper bags
+      g.fillRect(sx + 34, counterY - 13, 22, 13);
+      g.strokeRect(sx + 34, counterY - 13, 22, 13);
+      g.beginPath();
+      g.moveTo(sx + 34, counterY - 9); g.lineTo(sx + 56, counterY - 9);
+      g.stroke();
+    }
+
     g.fillStyle = INK;
     g.font = '700 10px Inter, sans-serif';
-    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, tillLeft + tillZone / 2, h - padB - 14);
-    till = { x: tillLeft + tillZone / 2, y: counterY - 14 };
+    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, tillLeft + tillZone / 2, h - padB - 8);
+    till = { x: tillLeft + tillZone / 2, y: counterY - 16 };
     queueRight = tillLeft - 6;
 
     // --- customers ---------------------------------------------------------
     hitboxes = [];
-    const t = s.tick;
     const qCols = Math.max(1, Math.floor((queueRight - tillX - 14) / Math.max(30, person * 1.05)));
     for (const c of s.customers) {
       if ((c.phase === PHASE.DONE || c.phase === PHASE.LOST) && t - (c.exitAt ?? 0) > 8) continue;

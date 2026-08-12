@@ -347,17 +347,39 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 #day { display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; }
 #floor { width: 100%; height: 100%; min-height: 260px; display: block; cursor: pointer; }
 #daybar {
-  display: flex; gap: clamp(10px, 3vw, 30px); align-items: center;
+  display: flex; gap: clamp(10px, 2.4vw, 26px); align-items: center;
   border-top: 3px solid var(--ink); padding-top: 8px; flex-wrap: wrap;
 }
 .dstat { display: flex; flex-direction: column; line-height: 1; }
-.dstat b { font-family: var(--cond); font-size: clamp(18px, 3vw, 28px); }
+.dstat b { font-family: var(--cond); font-size: clamp(16px, 2.2vw, 22px); }
 .dstat i {
-  font-style: normal; font-size: 9.5px; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--ink-soft);
+  font-style: normal; font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-soft); margin-top: 3px;
 }
+/* Takings and the pace lead; everything else is reference. */
+.dstat.lead b { font-size: clamp(22px, 3.4vw, 34px); }
+#d-pace.short { color: var(--red); }
+#d-pace.clear { color: var(--money); }
+.dsmall { font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.dsmall b { font-family: var(--cond); font-size: 14px; color: var(--ink); }
+.dsmall .lost b { color: var(--red); }
 .dstat.triage b { color: var(--cyan); }
-#btn-speed { margin-left: auto; }
+.dstat.triage.spent b { color: var(--ink-soft); }
+.dstat.triage.spent i { text-decoration: line-through; }
+
+/* The clock. "54% of the day" is not a time, and a shop that opens at nine
+   and shuts at half five is a shop rather than a progress bar. */
+.clockblock { display: grid; gap: 5px; min-width: 88px; }
+.clockblock b {
+  font-family: var(--cond); font-size: clamp(20px, 3vw, 28px);
+  font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1;
+}
+.dayprog { height: 8px; background: var(--paper-3); border: 1.5px solid var(--ink); }
+.dayprog span {
+  display: block; height: 100%; width: 0;
+  background: repeating-linear-gradient(-45deg, var(--ink) 0 3px, transparent 3px 6px);
+}
+#daybar .daybtns { margin-left: auto; }
 
 /* ---------------------------------------------------------------- receipt */
 
