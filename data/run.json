@@ -120,33 +120,33 @@
    "id": 2,
    "name": "Audit II",
    "modifiers": {
-    "rentMultiplier": 1.5
+    "rentMultiplier": 1.55
    }
   },
   {
    "id": 3,
    "name": "Audit III",
    "modifiers": {
-    "rentMultiplier": 1.5,
-    "targetMultiplier": 1.2
+    "rentMultiplier": 1.55,
+    "targetMultiplier": 1.1
    }
   },
   {
    "id": 4,
    "name": "Audit IV",
    "modifiers": {
-    "rentMultiplier": 1.5,
-    "targetMultiplier": 1.2,
-    "rerollCostMultiplier": 2
+    "rentMultiplier": 1.8,
+    "targetMultiplier": 1.14,
+    "rerollCostMultiplier": 2.5
    }
   },
   {
    "id": 5,
    "name": "Audit V",
    "modifiers": {
-    "rentMultiplier": 1.5,
+    "rentMultiplier": 2.0,
     "targetMultiplier": 1.2,
-    "rerollCostMultiplier": 2,
+    "rerollCostMultiplier": 2.5,
     "bossEvery": 2
    }
   },
@@ -154,9 +154,9 @@
    "id": 6,
    "name": "Audit VI",
    "modifiers": {
-    "rentMultiplier": 1.5,
-    "targetMultiplier": 1.2,
-    "rerollCostMultiplier": 2,
+    "rentMultiplier": 2.2,
+    "targetMultiplier": 1.26,
+    "rerollCostMultiplier": 2.5,
     "bossEvery": 2,
     "flagshipTwoDayCondition": true
    }
@@ -165,9 +165,9 @@
    "id": 7,
    "name": "Audit VII",
    "modifiers": {
-    "rentMultiplier": 1.5,
-    "targetMultiplier": 1.2,
-    "rerollCostMultiplier": 2,
+    "rentMultiplier": 2.5,
+    "targetMultiplier": 1.32,
+    "rerollCostMultiplier": 2.5,
     "bossEvery": 2,
     "flagshipTwoDayCondition": true,
     "supplierCostsFlat": true
@@ -177,14 +177,15 @@
    "id": 8,
    "name": "Audit VIII",
    "modifiers": {
-    "rentMultiplier": 1.5,
-    "targetMultiplier": 1.2,
-    "rerollCostMultiplier": 2,
+    "rentMultiplier": 2.2,
+    "targetMultiplier": 1.21,
+    "rerollCostMultiplier": 2.5,
     "bossEvery": 2,
     "flagshipTwoDayCondition": true,
     "supplierCostsFlat": true,
     "quarterlyAisleClosure": true
-   }
+   },
+   "$note": "Rent and targets step BACK from Audit VII here. The aisle closure is worth about 20pp on its own even delayed to quarter three, so stacking it on top of VII's numbers put the last rung at 4.0% against a band of 8-15. A ladder is a curve, not a heap: the last rung trades two numeric dials for a structural one, and the structural one is harder to play around."
   }
  ],
  "characters": [
@@ -295,5 +296,6 @@
     "freeRerolls": true
    }
   }
- ]
+ ],
+ "$auditNote": "Measured, each modifier alone against a 59.8% baseline: rent x1.5 -3.7pp, x2.2 -15.3pp, x3.0 -24.3pp; targets x1.10 -4.2pp, x1.20 -10.0pp, x1.35 -16.3pp, x1.55 -25.3pp; an inspection every two days -2.8pp; an aisle shut every quarter -29.5pp. Rerolls x2 and x6, the flagship two-day condition and flat supplier costs all measured at or ABOVE the baseline - the first two because the planner was overvaluing both purchases, which is now fixed, and the last two because they are simply too small to see. So the ladder descends on rent and targets, which are continuous and tunable, and the rule modifiers are layered on for texture rather than being asked to carry the difficulty. The old ladder was flat through four rungs - 42.0, 39.6, 39.8, 38.8 - and then fell off a cliff to 7.6."
 }

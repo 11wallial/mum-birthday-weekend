@@ -525,7 +525,7 @@ const AUDIT_WORDS = {
   bossEvery: (v) => `an inspection every ${v} days`,
   flagshipTwoDayCondition: () => 'flagships need two good days',
   supplierCostsFlat: () => 'supplier tiers cost full price',
-  quarterlyAisleClosure: () => 'an aisle shuts every quarter',
+  quarterlyAisleClosure: () => 'an aisle shuts for a day each quarter, from Q3',
 };
 
 function auditText(a) {

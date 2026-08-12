@@ -1,12 +1,13 @@
 # FOOTFALL — Phase 0
 
-Six parts, newest first. **Part one** is what the headless simulator found in
+Seven parts, newest first. **Part one** is what the headless simulator found in
 the v0.1 ruleset; each later part is what the one before it got wrong.
 
-**Read part six first.** It finds a units bug that had been distorting every
-win rate in this document, so the numbers in parts two, three and four are the
-record of what was measured at the time rather than statements about the game
-as it now stands.
+**Read parts seven and six first.** Six finds a units bug that had been
+distorting every win rate in this document; seven verifies the queue and finds
+that two of the hard-mode dials were making the game easier. The numbers in
+parts two to four are the record of what was measured at the time rather than
+statements about the game as it now stands.
 
 Section 19 is explicit that "everything above is a hypothesis and most of it is
 wrong". That turned out to be the right posture. The engine survived intact;
@@ -51,6 +52,145 @@ in this document. See part six.
 The engine is sound. Four multiplicative terms and one subtractor is a good
 machine, order of operations does carry real skill, and the pick-versus-cash
 split does produce two distinct axes.
+
+---
+
+# Part seven — the queue, the ladder, and the game around them
+
+Part four committed to **pool -> queue verification -> tune**, and part six added
+two items in front of it. All of them are now done.
+
+## The queue, verified at last
+
+`verify.js` has proved the resolver's fixture arithmetic against individually
+walked customers since part one — and it sets tills to 40 specifically to
+*remove* the queue from the comparison. The queue does 30% of the early killing,
+triage makes it a mechanic the player reaches into, and the whole late game is
+an equilibrium between Footfall and throughput. It had been the committed next
+item twice.
+
+`verify-queue.js` runs the fluid model against a **discrete** queue: every
+customer an individual with their own arrival tick, their own place in the line,
+their own patience. The discrete side matches how the browser build spawns —
+uniform arrival times, each arrival's type drawn from the pool — so the count of
+each type is multinomial rather than fixed, which is the thing a fluid model is
+least likely to get right.
+
+Ten scenarios, from well under capacity to twelve times overload. **Totals agree
+exactly on every one**: served and walkouts both 0.00%.
+
+It found a real bug. A cohort expired when its wait *equalled* its patience,
+where the individual walk expires on `waited > patience`. One tick early. Only
+the impatient types could tell — one tick out of forty is invisible, one tick out
+of two is half the type — and it was costing the short-patience types about a
+third of the service they were owed. Since the four terms differ hugely by type,
+a mix error is a profit error even when the headcount matches.
+
+The verifier had a bug of its own first, and it is worth recording because it
+looked exactly like a catastrophic failure in `runQueue` — 86% disagreement. My
+discrete queue expired and served in two separate loops, so the till stalled
+behind a customer who had already walked out. Types interleave and have different
+patience, so the moment an expired one surfaced mid-tick the till stopped for the
+rest of the tick.
+
+Per-type agreement is judged as a share of the **whole day**, not as a share of
+the type's own count. Nine served where eleven were owed is a 0.2pp shift in who
+came through the till; reading it as an 18% error on that type says the opposite
+of what is true.
+
+## Two hard-mode dials that made the game easier
+
+The Audit ladder had never been measured against the current pool. Each modifier,
+alone, against a 59.8% baseline:
+
+| modifier | alone |
+|---|---|
+| an aisle shut every quarter | **−29.5pp** |
+| targets ×1.55 | −25.3pp |
+| rent ×3.0 | −24.3pp |
+| targets ×1.20 | −10.0pp |
+| rent ×1.5 | −3.7pp |
+| an inspection every 2 days | −2.8pp |
+| the flagship two-day condition | +0.7pp |
+| **rerolls ×2** | **+2.7pp** |
+| **supplier tiers at full price** | **+3.7pp** |
+
+Two of them made the game *easier*. A dial that helps by making a purchase more
+expensive is not a hard mode — it is a purchase the policy is wrong about.
+
+It was. The supplier tier valuation read:
+
+```js
+gain = cost * 0.5 * (left / 18)
+```
+
+Proportional to the **price**. The dearer the upgrade, the more the planner
+wanted it, so it bought tier at every opportunity it could afford — which is why
+tier rush sat at 74% of winners against a target of 30% and had been out of band
+for the entire project.
+
+Replaced with a measurement: sample what the next tier actually offers, price the
+best of a hand against the board you have, compare with the same hand at the tier
+you are on. That overshot to 2.7%, for a familiar reason — the first version
+priced the sampled cards on *today's* profit, and what a higher tier sells you is
+rarity, whose whole point is cards that pay later. Judged over a twelve-day
+horizon instead:
+
+```
+tier rush among winners     74%  ->  16.3%   (wants ~30)
+high-rarity picks at T4+  58.4%  ->  49.6%   (wants ~50)
+planner                   61.8%  ->  65.3%
+gap                       44.2pp ->  47.7pp
+```
+
+That is the **third** time this project has found the same mistake in a different
+place: valuing a thing whose payoff is later by what it does today. It cost the
+planner the compounders, then the tier upgrades, and it is exactly what
+`profitAhead` exists to prevent.
+
+## The ladder was flat, then a cliff
+
+Old: 61.6, 56.8, 43.6, 42.0, 39.6, 39.8, 38.8, **7.6**. Four indistinguishable
+rungs and then the floor falls away — because three modifiers did nothing and one
+did everything.
+
+Rebuilt so the descent rides on rent and targets, which are continuous and
+tunable, with the rule modifiers layered on for texture rather than being asked
+to carry the difficulty.
+
+The last rung needed two more changes, and both are the same lesson. The aisle
+closure was worth −29.5pp alone and far more stacked, because closing one of
+three aisles is a *multiplicative* loss while the dials it stacks on are additive.
+Stepping VIII's numbers back barely moved it: 4.0% to 4.3%. What worked was
+changing the rule rather than the number — the closure now lands on **one day of
+the quarter rather than the whole quarter**, and not before quarter three, since
+closing a third of the board in act 1 is a coin flip before the player has made
+a decision.
+
+```
+Audit    I     II    III   IV    V     VI    VII   VIII
+old    61.6  56.8  43.6  42.0  39.6  39.8  38.8   7.6
+new    66.3  57.6  48.9  40.3  30.0  25.4  20.6   8.0
+```
+
+## The game around it
+
+None of the above is a game on its own. The browser build was one run repeated:
+it always played Audit I and forgot everything when the tab closed.
+
+- **The ladder is in the game.** Audit n+1 unlocks when a character clears n, so
+  progress is per shop — the Discounter's run is a different game from the Estate
+  Agent's and clearing one says nothing about the other. Each rung reads out what
+  it changes, generated from the modifiers so the description cannot drift from
+  what the run does.
+- **A real end-of-run summary.** The target is only the fail condition; the number
+  a run is remembered by is its best day, and a good run overshoots its last
+  target fifty times over. So that number gets the size.
+- **"How it works"** — the formula is the whole game and the build had never once
+  explained it, including the things a player cannot infer: that Conversion and
+  Margin cap, what a compounder is worth against a ratchet, and that Footfall past
+  what your tills can serve is a crowd you turn away rather than growth.
+- **Seeds, records, persistence.**
 
 ---
 

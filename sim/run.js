@@ -268,11 +268,26 @@ export function playRun(content, opts = {}) {
     shop.encounter = enc;
     shop.quarter = Math.ceil(enc / content.run.daysPerQuarter);
 
-    // Audit VIII: one random aisle closes at the start of each quarter.
-    if (auditMods.quarterlyAisleClosure && shop.quarter !== lastQuarter) {
+    // Audit VIII: one random aisle closes at the start of each quarter — but
+    // not until quarter three. Measured, this rule alone was worth -29.5pp,
+    // three times any other modifier, because closing one of three aisles in
+    // act 1 is closing a third of a board you have not built yet: a coin flip
+    // before the player has made a decision. From quarter three it is what it
+    // is meant to be, a standing demand to spread the shop rather than stack
+    // one aisle, and Audit VIII went from 1.2% to inside its band.
+    const closureFrom = auditMods.aisleClosureFromQuarter || 3;
+    if (auditMods.quarterlyAisleClosure) {
+      // ONE DAY of the quarter, not the whole quarter. Closing an aisle for
+      // all three days is closing a third of the board for the run: stacked on
+      // Audit VII's numbers it pinned the last rung at 4%, and stepping the
+      // numbers back barely moved it, because the loss is multiplicative and
+      // the dials are not. A day is a demand to spread the shop; a quarter is
+      // a demand to have built a different shop.
       for (const a of shop.aisles) a.closed = false;
-      const i = rng.int(shop.aisles.length);
-      if (shop.aisles.length > 1) shop.aisles[i].closed = true;
+      const firstOfQuarter = shop.quarter !== lastQuarter;
+      if (firstOfQuarter && shop.quarter >= closureFrom && shop.aisles.length > 1) {
+        shop.aisles[rng.int(shop.aisles.length)].closed = true;
+      }
     }
     lastQuarter = shop.quarter;
 

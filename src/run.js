@@ -70,9 +70,15 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     shop.encounter = run.encounter;
     shop.quarter = Math.ceil(run.encounter / content.run.daysPerQuarter);
 
-    if (auditMods.quarterlyAisleClosure && run.encounter % content.run.daysPerQuarter === 1) {
+    // Audit VIII: one aisle, one day of the quarter, from quarter three.
+    // See the note in sim/run.js for why it is a day and not a quarter.
+    if (auditMods.quarterlyAisleClosure) {
       for (const a of shop.aisles) a.closed = false;
-      if (shop.aisles.length > 1) shop.aisles[rng.int(shop.aisles.length)].closed = true;
+      const from = auditMods.aisleClosureFromQuarter || 3;
+      const firstOfQuarter = run.encounter % content.run.daysPerQuarter === 1;
+      if (firstOfQuarter && shop.quarter >= from && shop.aisles.length > 1) {
+        shop.aisles[rng.int(shop.aisles.length)].closed = true;
+      }
     }
     if (shop.flags.wipeFloorNightly) {
       const all = [];
