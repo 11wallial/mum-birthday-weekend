@@ -31,6 +31,7 @@ let particles = null;
 let lastShort = null;
 let paused = false;
 let landed = null; // the slot a fixture just went into, so it can land
+let bossHeard = false; // the inspection stab fires once a night, not per render
 
 // ---------------------------------------------------------------- copy ----
 
@@ -584,6 +585,7 @@ function renderNight() {
   renderBuys();
   renderBossChoice();
   renderBossToday();
+  if (game.boss() && !bossHeard) { bossHeard = true; audio.boss(); }
   $('cat-tier').textContent = `Tier ${game.shop.supplierTier}`;
   const ready = game.run.picked && !game.run.pendingBossChoice;
   const open = $('btn-open');
@@ -710,6 +712,9 @@ function settle() {
   audio.receipt();
   const s = day.state;
   const entry = game.settle(s);
+  // The cadence lands under the printer, so the verdict is heard a beat before
+  // it is read.
+  audio.verdict(!entry.fatal);
   // The target is only the fail condition. The number the run is remembered by
   // is the best day it ever had, and a good run overshoots its last target
   // fifty times over.
@@ -783,6 +788,9 @@ function showWiped(which, after) {
 
 function show(which) {
   closeInspect();
+  // The tune never stops or restarts; the mix moves. Doing it here means every
+  // route into a phase gets it, including the ones that skip showWiped.
+  if (audio) audio.setPhase(which);
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
   $('btn-continue').hidden = which !== 'settle';
@@ -801,6 +809,7 @@ function nextEncounter() {
   game.beginNight();
   if (game.run.over) return endRun();
   pending = null;
+  bossHeard = false;
   showWiped('night', () => { renderNight(); maybeCoach('night'); });
 }
 
@@ -1295,6 +1304,14 @@ async function boot() {
       + `${t.basket ? `${money(t.basket)} basket` : 'no basket'}, `
       + `${PATIENCE_WORD[t.patience] || t.patience}`;
   };
+  // The first touch anywhere is the gesture the audio context is waiting for,
+  // and every button press after it gets a click. Silence on a press reads as
+  // a broken control.
+  document.addEventListener('pointerdown', (e) => {
+    audio.unlock();
+    if (e.target instanceof Element && e.target.closest('button')) audio.ui();
+  }, { capture: true });
+
   // Anywhere off the card closes it, except the slots themselves — those
   // re-open it on the thing you just clicked.
   document.addEventListener('click', (e) => {
