@@ -19,7 +19,7 @@ import {
   addFixture, autoSign, emptySlots, findInstance, fixtureInstances, ownedIds,
   projectRatchets, totalSlots,
 } from './shop.js';
-import { rerollCost, supplierUpgradeCost, tillCost } from './offers.js';
+import { rerollCost, rollFixture, supplierUpgradeCost, tillCost } from './offers.js';
 
 export function cloneShop(shop) {
   return {
@@ -138,7 +138,66 @@ function spendGreedy(nc, rounds = 3) {
   }
 }
 
+/**
+ * What a supplier tier is worth.
+ *
+ * It buys nothing today — it buys a better catalogue for the rest of the run —
+ * so it needs a valuation rather than a resolve. The old one was
+ * `cost * 0.5 * (left / 18)`, which is proportional to the PRICE: the dearer
+ * the upgrade, the more the planner wanted it. It bought tier at every
+ * opportunity, tier rush sat at 74% of winners against a target of 30%, and
+ * making tiers permanently more expensive measured as a 3.7pp IMPROVEMENT in
+ * the win rate. A dial that makes the game easier by making a purchase dearer
+ * is not a hard mode; it is a purchase the policy is wrong about.
+ *
+ * So: sample what the next tier actually offers, price the best of a hand
+ * against the board you have, and compare it with the same hand at the tier
+ * you are on. The difference is what you are buying.
+ */
+function tierValue(nc, base) {
+  const { content, shop, ctx, rng } = nc;
+  const left = content.run.encounters - nc.encounter;
+  // A catalogue you will only see three more times cannot repay itself.
+  if (left < 4) return -1;
+
+  const picks = content.economy.offers.picks || 3;
+  const samples = 3;
+  // Judged on what the card is worth by the END of the run, not today. What a
+  // higher tier actually sells you is rarity, and the whole point of the rare
+  // and flagship bands is cards that pay later — a compounder adds nothing at
+  // all on the day you install it. Priced on today's profit, the better
+  // catalogue looked worthless and tier rush fell from 74% of winners to 2.7%,
+  // straight past the 30% it wants. This is the same error, in a third place.
+  const horizon = Math.min(left, 12);
+  const aheadBase = profitAhead(content, shop, ctx, horizon);
+  const bestAt = (tier) => {
+    const probe = cloneShop(shop);
+    probe.supplierTier = tier;
+    let total = 0;
+    for (let s = 0; s < samples; s++) {
+      let best = 0;
+      for (let i = 0; i < picks; i++) {
+        const fx = rollFixture(content, probe, rng);
+        const trial = cloneShop(shop);
+        addFixture(content, trial, fx.id, emptySlots(trial)[0] || null);
+        best = Math.max(best, profitAhead(content, trial, ctx, horizon) - aheadBase);
+      }
+      total += best;
+    }
+    return total / samples;
+  };
+
+  const step = bestAt(shop.supplierTier + 1) - bestAt(shop.supplierTier);
+  if (step <= 0) return -1;
+  // Every remaining pick is better by `step`, and those gains land one at a
+  // time, so the uplift averaged over the rest of the run is about half of the
+  // final one. Returned as a per-day figure, because that is what the caller
+  // compares every other purchase in.
+  return step / 2;
+}
+
 /** Buy against a payback horizon, and value Supplier Tier over the run. */
+
 function spendPlanned(nc, rounds = 4, paybackDays = 3) {
   const { content, shop, ctx } = nc;
   const target = nc.target;
@@ -152,9 +211,7 @@ function spendPlanned(nc, rounds = 4, paybackDays = 3) {
       const cost = nc.costOf(opt);
       let gain = profitOf(content, s, ctx) - base;
       if (opt === 'tier') {
-        // Tier buys nothing today; it buys a better catalogue for the rest.
-        const left = content.run.encounters - nc.encounter;
-        gain = left >= 6 ? cost * 0.5 * (left / 18) : -1;
+        gain = tierValue(nc, base);
       }
       if (opt === 'till' && bal.walkoutRate > 0.06) gain += target * 0.1;
       const value = gain * paybackDays - cost * 0.15;
