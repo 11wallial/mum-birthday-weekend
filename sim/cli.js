@@ -272,8 +272,14 @@ function fit() {
 function bossimpact() {
   const n = num('n', 400);
   const character = str('character', 'default_shop');
-  // Run on an easy curve so runs survive far enough to meet every boss.
-  const easy = loadContent({ targetCurve: new Array(24).fill(50) });
+  // Easy enough that runs survive to meet every boss, but the SHAPE of the real
+  // curve — rent is a declining fraction of the target, so a flat probe curve
+  // makes every rent-based effect inaudible and every capacity-based one free.
+  // Rate Review kept 97.4% of a clean day under a flat 50 and that was the
+  // probe, not the boss.
+  const easy = loadContent({
+    targetCurve: content.targets.map((t) => t * 0.10),
+  });
   const acc = {};
   for (let i = 0; i < n; i++) {
     const r = playRun(easy, {

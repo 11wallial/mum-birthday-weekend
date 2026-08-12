@@ -8,7 +8,7 @@
  },
  "targets": {
   "$comment": "Generated as base * growth^(n-1). Measured at 1,200 runs per policy: random 0.0%, greedy 20.6%, planner 62.9%, gap 42.3pp - all three section 19 bands holding at once, which had never happened before. The base matters far more than the growth because early deaths dominate: at growth 1.18, moving the base from 120 to 220 costs the planner 50pp, while moving the growth from 1.18 to 1.28 at base 120 costs 32pp. Retune this WITH economy.payout.flatGrowth, which must track it.",
-  "base": 88,
+  "base": 76,
   "growth": 1.24,
   "$specified": {
    "base": 450,
@@ -27,16 +27,18 @@
    "id": "competitor_opens",
    "name": "Competitor Opens",
    "effect": "footfall_multiply",
-   "value": 0.5
+   "value": 0.4
   },
   {
    "id": "heatwave",
    "name": "Heatwave",
    "effect": "basket_multiply_patience_multiply",
    "value": [
-    2.0,
-    0.25
-   ]
+    1.7,
+    0.15,
+    0.45
+   ],
+   "$comment": "Nobody wants to shop, and the few who do buy drinks. Basket x1.7, Patience x0.15, Footfall x0.45. It was Basket x2 against Patience x0.25 and killed 0 of 1,817 runs: patience is only a cost on a day that already has a queue, and a well-run shop does not have one, so the boss was a straight bonus. A boss needs a downside that lands whatever board you brought."
   },
   {
    "id": "card_terminal_down",
@@ -57,9 +59,10 @@
    "name": "Bank Holiday",
    "effect": "footfall_multiply_till_disable",
    "value": [
-    3.0,
-    1
-   ]
+    5,
+    3
+   ],
+   "$comment": "x3 Footfall and one till was worth 3.1%. Footfall you cannot serve is walkouts and a quieter tomorrow, so the till count is the whole boss."
   },
   {
    "id": "supply_shortage",
@@ -67,8 +70,9 @@
    "effect": "disable_term_class",
    "value": [
     "basket",
-    "additive"
-   ]
+    "any"
+   ],
+   "$comment": "Restricted to additive Basket it took 1.6%, because almost none of a modern board’s Basket is additive - the compounders and the multipliers carry it."
   },
   {
    "id": "mystery_shopper",
@@ -88,7 +92,9 @@
    "id": "roadworks",
    "name": "Roadworks",
    "effect": "close_aisle",
-   "value": 1
+   "value": 1,
+   "$comment": "Closes the BUSIEST aisle, and the crowd it displaces lands in the queue — Patience x0.55. Closing an aisle alone kept 100.2% of a clean day, because signage simply reroutes everyone into the next one. That is the \"routing is uncontested\" hole from part one showing up as a boss that does nothing.",
+   "value2": 0.55
   },
   {
    "id": "refund_day",
@@ -101,13 +107,20 @@
    "id": "rate_review",
    "name": "Rate Review",
    "effect": "rent_multiply",
-   "value": 10
+   "value": 10,
+   "floorShare": 0.55,
+   "$comment": "Rent x10, or 55% of the target, whichever is worse. Rent is a DECLINING fraction of the target by design, so multiplying it alone is brutal in act 1 and inaudible by act 5 — it kept 97.4% of a clean day."
   },
   {
    "id": "trading_standards",
    "name": "Trading Standards",
    "effect": "disable_rarity",
-   "value": "flagship"
+   "value": [
+    "uncommon",
+    "rare",
+    "flagship"
+   ],
+   "$comment": "Everything but the commons. Disabling flagships alone killed 0.1% of runs and rare-and-flagship only 0.6% - and it was the MOST OFTEN FACED boss in the deck, because the planner chooses it. A boss that is picked because it is harmless is the free pass that makes the choice itself trivial."
   }
  ],
  "audits": [
@@ -219,7 +232,7 @@
   {
    "id": "discounter",
    "name": "Discounter",
-   "rule": "COGS halved (+20pp Margin), duplicates level twice, always counts as committed — but you may hold only seven fixture types.",
+   "rule": "COGS halved (+20pp Margin), duplicates level twice, shopfitting at 40% off — but you may hold only seven fixture types.",
    "aisles": 2,
    "slotsPerAisle": 4,
    "tills": 1,
@@ -231,7 +244,8 @@
     "marginBonus": 0.2,
     "maxFixtureTypes": 7,
     "levelStep": 2,
-    "alwaysCommitted": true
+    "alwaysCommitted": true,
+    "structuralCostMultiplier": 0.6
    },
    "$note": "Margin is the wrong compensation for this shop: it caps at 70% and the +20pp already puts it there, so sweeping the bonus from 0.20 to 0.38 moved the win rate by 8pp. The real problem was structural. Holding few fixtures is punished TWICE by the commitment mechanics - it can rarely reach the threshold, and per-fixture upkeep falls with the number you hold, so it pays near full price on every one. That is the opposite of what its rule promises."
   },
@@ -288,14 +302,15 @@
   {
    "id": "market_stall",
    "name": "Market Stall",
-   "rule": "The floor wipes every morning. Rebuild from your owned pool each night.",
+   "rule": "The floor wipes every morning. Rebuild from your owned pool each night — with free rerolls and a fourth card on the page.",
    "aisles": 3,
    "slotsPerAisle": 2,
    "tills": 1,
    "startingFixtures": [],
    "flags": {
     "wipeFloorNightly": true,
-    "freeRerolls": true
+    "freeRerolls": true,
+    "extraPicks": 1
    }
   }
  ],

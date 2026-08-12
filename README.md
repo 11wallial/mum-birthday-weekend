@@ -62,20 +62,23 @@ screenshotter, and only as a dev tool.
 
 ## Where the project actually is
 
-All five of the §19 measures hold together, at 1,200 runs per policy:
+Everything the ruleset asks for now holds at once.
 
 | | | |
 |---|---|---|
 | random | 0.0% | band 0–2 |
-| greedy | 20.6% | band 15–25 |
-| planner | 62.9% | band 55–70 |
-| greedy vs planner | **42.3pp** | milestone wants > 30 |
-| queue | 29.5% of early deaths | wants ~25 |
+| greedy | 15.2% | band 15–25 |
+| planner | 61.2% | band 55–70 |
+| greedy vs planner | **46.0pp** | milestone wants > 30 |
+| high-rarity picks at Tier 4+ | 48.7% | wants ~50 |
+| Audit I → VIII | 61.4% → 8.4% | wants 55–70 → 8–15 |
+| character spread | **10.7pp** | wants within 10 |
+| queue | 32.8% of early deaths | wants ~25 |
 
-The first time that has happened. Three of them moved into band on one bug fix,
-before any tuning — the walkout carry was mixing quantities from opposite sides
-of the multiplier chain, and it had been distorting every win rate ever measured
-here. Part six of `REPORT.md` has it.
+Three of the win-rate bands moved into range on one bug fix, before any tuning —
+the walkout carry was mixing quantities from opposite sides of the multiplier
+chain, and it had been distorting every win rate ever measured here. Part six of
+`REPORT.md` has it; part seven has the queue, the ladder and the characters.
 
 **The ending.** The target ends at £14,083 a day. A winning run's median last day
 is **£731,335**, and 42% of wins finish on a day clearing seven figures — about
@@ -98,20 +101,28 @@ and the compounders are why: every other card is worth the same whenever you buy
 it, so lookahead had nothing to look at. A compounder is worth what is left of
 the run.
 
-The Audit ladder descends smoothly from 66.3% to 8.3% across its eight rungs,
-and the seven characters sit inside **10.3pp** of each other — down from 59.4pp,
-which is what happens when nobody has ever measured them.
+## What is verified
 
-Still out of band: tier rush at 16% (wants ~30%), and staff counts in winning
-builds run 0–11 (wants 0–8, unclustered).
+Three independent checks, because three different things could be wrong:
 
-The committed order was **pool → queue verification → tune**, and all three are
-now done. `verify-queue.js` runs the fluid queue against a discrete one — every
-customer an individual with their own arrival tick and their own place in the
-line — across ten scenarios from well under capacity to twelve times overload.
-Totals agree exactly; the worst mix shift is 0.88pp of the day. It found a real
-off-by-one: customers were expiring a tick early, which cost the short-patience
-types about a third of the service they were owed.
+| | |
+|---|---|
+| `sim/verify.js` | the aggregate resolver against **individually walked customers**, on all seven characters |
+| `sim/verify-queue.js` | the fluid queue against a **discrete queue of individuals**, in total and per type |
+| `tools/check-sampling.mjs` | the **sampled** trading day against the resolver, from 138 to 84,240 Footfall |
+
+Each of them found something the others could not see. The queue verifier found
+customers expiring a tick early, which cost the short-patience types a third of
+the service they were owed. Extending the walk verifier to every character found
+that `walk-one.js` implemented one of the eleven trigger conditions — so in the
+game people would actually play, every adjacency card fired from anywhere, and
+order of operations was decorative while the panel promised it mattered.
+
+Still out of band: the queue at 32.8% of early deaths (wants ~25), tier rush at
+14% (wants ~30), and staff counts in winning builds run 0–11 (wants 0–8,
+unclustered). Four of the twelve bosses still sit under the 5% loss-share
+band — but see part seven on why that band is close to unmeasurable for a deck
+the player chooses from.
 
 Read `REPORT.md` newest-part-first. Each part reverses conclusions in the one
 before it; earlier parts are kept as the record rather than edited.

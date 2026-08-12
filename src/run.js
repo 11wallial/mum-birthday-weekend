@@ -8,6 +8,22 @@ import {
 } from './engine.js';
 import { growAll } from '../sim/ratchets.js';
 
+
+/**
+ * Roadworks shuts the aisle you actually use. A random one is usually an empty
+ * one — signage funnels everybody into the fullest aisle, so closing at random
+ * cost 3.4% of runs and closing the busiest is a real question about whether
+ * your shop is one aisle wearing three hats.
+ */
+function busiestAisle(shop) {
+  let best = 0; let bestN = -1;
+  for (let i = 0; i < shop.aisles.length; i++) {
+    const n = shop.aisles[i].slots.filter(Boolean).length;
+    if (n > bestN) { bestN = n; best = i; }
+  }
+  return best;
+}
+
 const STAFF_SINGLETON = new Set(['security', 'buyer', 'cleaner']);
 
 export function createRun(content, { characterId = 'default_shop', audit = 1, seed } = {}) {
@@ -108,7 +124,7 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     }
 
     const boss = run.encounter % bossEvery === 0 ? bossFor.get(run.encounter) || null : null;
-    run.closedAisle = boss && boss.effect === 'close_aisle' ? rng.int(shop.aisles.length) : -1;
+    run.closedAisle = boss && boss.effect === 'close_aisle' ? busiestAisle(shop) : -1;
 
     run.rerolls = 0;
     run.picked = false;
@@ -116,7 +132,8 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
     autoSign(content, shop);
   }
 
-  const pickCount = () => (shop.staff.some((s) => s.id === 'buyer') ? 4 : content.economy.offers.picks);
+  const pickCount = () => (shop.staff.some((s) => s.id === 'buyer')
+    ? 4 : content.economy.offers.picks) + (shop.flags.extraPicks || 0);
 
   function chooseBoss(index) {
     const p = run.pendingBossChoice;

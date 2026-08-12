@@ -13,6 +13,22 @@ import {
 import { policies } from './policies.js';
 import { growAll } from './ratchets.js';
 
+
+/**
+ * Roadworks shuts the aisle you actually use. A random one is usually an empty
+ * one — signage funnels everybody into the fullest aisle, so closing at random
+ * cost 3.4% of runs and closing the busiest is a real question about whether
+ * your shop is one aisle wearing three hats.
+ */
+function busiestAisle(shop) {
+  let best = 0; let bestN = -1;
+  for (let i = 0; i < shop.aisles.length; i++) {
+    const n = shop.aisles[i].slots.filter(Boolean).length;
+    if (n > bestN) { bestN = n; best = i; }
+  }
+  return best;
+}
+
 const STAFF_SINGLETON = new Set(['security', 'buyer', 'cleaner']);
 
 function costOf(content, shop, opt, auditMods) {
@@ -147,9 +163,11 @@ function affordableOptions(content, shop, auditMods) {
 }
 
 function makeNightContext(content, shop, rng, ctx, target, encounter, record) {
-  const pickCount = shop.staff.some((s) => s.id === 'buyer')
+  // The Market Stall rebuilds its floor from scratch every morning, so what it
+  // needs is choice, not cash: an extra card on the page every night.
+  const pickCount = (shop.staff.some((s) => s.id === 'buyer')
     ? 4
-    : content.economy.offers.picks;
+    : content.economy.offers.picks) + (shop.flags.extraPicks || 0);
   let rerolls = 0;
   let offers = makeOffer(content, shop, rng, pickCount);
 
@@ -339,7 +357,7 @@ export function playRun(content, opts = {}) {
       target,
       // Rolled here, once, so resolveDay stays deterministic under repeated
       // policy evaluation.
-      closedAisle: boss && boss.effect === 'close_aisle' ? rng.int(shop.aisles.length) : -1,
+      closedAisle: boss && boss.effect === 'close_aisle' ? busiestAisle(shop) : -1,
     };
 
     autoSign(content, shop); // signage is free to reassign every night

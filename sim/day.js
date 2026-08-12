@@ -155,10 +155,13 @@ export function collectFlags(content, shop, ctx) {
     walkoutsToFootfall: false,
     onlyTypesConvert: null,
     disableBasketAdditive: false,
+    disableTerm: null,
+    disableClass: null,
     globalEffects: [],
     disabled: new Set(),
     closedAisle: -1,
     rentMul: 1,
+    rentFloorShare: 0,
     poolOverride: null,
     conversionFlat: 0,
     basketFlat: 0,
@@ -182,25 +185,50 @@ export function collectFlags(content, shop, ctx) {
     switch (boss.effect) {
       case 'footfall_multiply': f.footfallMul *= boss.value; break;
       case 'basket_multiply_patience_multiply':
-        f.basketMul *= boss.value[0]; f.patienceMul *= boss.value[1]; break;
+        f.basketMul *= boss.value[0];
+        f.patienceMul *= boss.value[1];
+        // A third value, optional: Footfall. Patience alone is only a cost on a
+        // day that already has a queue, and a well-run shop does not — so
+        // Heatwave was a straight Basket bonus and killed 0 of 1,817 runs. A
+        // boss needs a downside that lands whatever board you brought.
+        if (boss.value[2] != null) f.footfallMul *= boss.value[2];
+        break;
       case 'only_types_convert': f.onlyTypesConvert = new Set(boss.value); break;
       case 'health_inspection': break; // handled per fixture below
       case 'disable_unstaffed': break;
       case 'footfall_multiply_till_disable':
         f.footfallMul *= boss.value[0]; f.tillDelta -= boss.value[1]; break;
-      case 'disable_term_class': f.disableBasketAdditive = true; break;
+      case 'disable_term_class':
+        f.disableTerm = boss.value[0];
+        f.disableClass = boss.value[1];
+        f.disableBasketAdditive = boss.value[0] === 'basket' && boss.value[1] === 'additive';
+        break;
       case 'margin_halved_unless_staffed_aisles': break;
       case 'footfall_multiply_margin_flat':
         f.footfallMul *= boss.value[0]; f.marginFlat += boss.value[1]; break;
       // Which aisle closes is rolled once per encounter in run.js: resolveDay
       // must stay free of RNG, because policies call it hundreds of times.
-      case 'close_aisle': f.closedAisle = ctx.closedAisle ?? 0; break;
+      case 'close_aisle':
+        f.closedAisle = ctx.closedAisle ?? 0;
+        // Closing an aisle on its own is nearly free, because signage simply
+        // reroutes everyone into the next one — the "routing is uncontested"
+        // hole from part one, showing up as a boss that kept 100.2% of a clean
+        // day. The crowd has to land somewhere, and it lands in the queue.
+        f.patienceMul *= boss.value2 ?? 0.6;
+        break;
       case 'force_pool': f.poolOverride = boss.value; break;
       // Refunds land directly on yesterday's trading profit. Returners as a
       // customer type were cut: see data/customers.json.
       case 'refund_previous': f.refundShare = boss.value; break;
       case 'pool_blend': f.poolBlend = { pool: boss.value, blend: boss.blend }; break;
-      case 'rent_multiply': f.rentMul *= boss.value; break;
+      // Rent is a DECLINING fraction of the target by design, so multiplying it
+      // is brutal in act 1 and inaudible by act 5 — this kept 97.4% of a clean
+      // day. Floored as a share of the target, it stays a bill you have to
+      // trade your way out of at every scale.
+      case 'rent_multiply':
+        f.rentMul *= boss.value;
+        f.rentFloorShare = Math.max(f.rentFloorShare || 0, boss.floorShare || 0);
+        break;
       case 'disable_rarity': break;
       default: break;
     }
@@ -212,9 +240,22 @@ export function collectFlags(content, shop, ctx) {
   if (boss && boss.effect === 'disable_unstaffed') {
     for (const { inst } of placed) if (!inst.staff) f.disabled.add(inst);
   }
-  if (boss && boss.effect === 'disable_rarity') {
+  // "any" disables every fixture on that term whatever its class. Restricted to
+  // additive it took out 1.6% of runs, because almost none of a modern board's
+  // Basket is additive any more — the compounders and the multipliers carry it.
+  if (boss && boss.effect === 'disable_term_class' && f.disableClass === 'any') {
     for (const { inst } of placed) {
-      if (inst.def.rarity === boss.value) f.disabled.add(inst);
+      if (inst.def.term === f.disableTerm) f.disabled.add(inst);
+    }
+  }
+  if (boss && boss.effect === 'disable_rarity') {
+    // A list, not one band. Disabling flagships alone killed 0.1% of runs
+    // because most boards hold none: a boss that cannot lose you the day is a
+    // free pass, and with two offered every time, a deck half full of free
+    // passes makes the choice itself trivial.
+    const bands = Array.isArray(boss.value) ? boss.value : [boss.value];
+    for (const { inst } of placed) {
+      if (bands.includes(inst.def.rarity)) f.disabled.add(inst);
     }
   }
   if (ctx.auditMods && ctx.auditMods.flagshipTwoDayCondition) {
@@ -986,7 +1027,10 @@ export function resolveDay(content, shop, ctx = {}) {
   }
 
   const totalWalkouts = walkouts.reduce((a, b) => a + b, 0);
-  const rent = rentFor(content, shop, auditMods, ctx.target) * flags.rentMul;
+  let rent = rentFor(content, shop, auditMods, ctx.target) * flags.rentMul;
+  if (flags.rentFloorShare && ctx.target) {
+    rent = Math.max(rent, ctx.target * flags.rentFloorShare);
+  }
   const upkeepRatchet = ratchetUpkeep(content, shop, ctx.target);
   profit -= rent;
   profit -= shop.marketingUpkeep || 0; // marketing persists and costs upkeep

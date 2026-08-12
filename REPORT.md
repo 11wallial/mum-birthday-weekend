@@ -170,8 +170,56 @@ a decision.
 ```
 Audit    I     II    III   IV    V     VI    VII   VIII
 old    61.6  56.8  43.6  42.0  39.6  39.8  38.8   7.6
-new    66.3  57.6  48.9  40.3  30.0  25.4  20.6   8.0
+new    61.4  49.2  47.6  41.2  26.8  20.0  14.0   8.4
 ```
+
+## The bosses, and two instruments that disagree
+
+Six of the twelve bosses were below the 5% loss-share band and two killed
+nobody at all. With two offered every encounter and the player taking one, a
+deck half full of free passes makes the *choice* trivial as well as the day.
+
+Fixing them turned up a methodological problem worth more than the fixes.
+There are two ways to measure a boss and they say different things:
+
+| | measures | blind to |
+|---|---|---|
+| loss share, on the real curve | the **tail** — how often it ends a run | confounded by choice: the safest boss is picked most, so it looks safest |
+| profit kept, on an easy curve | the **median** — how much of a clean day survives | anything priced against the target, because on an easy curve a target-proportional cost is noise |
+
+Black Friday keeps **125.8%** of a clean day and still ends 10.1% of the runs
+that meet it. Both numbers are true: it is a windfall if you have the tills and
+a drowning if you do not. That is a good card, and neither instrument alone
+would tell you so.
+
+The second row's blindness bit me directly. Rate Review multiplies rent by ten
+and measured at 97.4% kept — so I gave it a floor as a share of the target, and
+it measured 96.5%. The probe curve was flat, and rent is a *declining fraction*
+of the target by design, so a flat curve makes every rent-based effect
+inaudible. Giving the probe the real curve's shape at a tenth of its height
+barely helped, because on any easy curve a cost quoted against the target is
+small next to the profit. **A target-proportional cost cannot be measured on a
+curve you are beating comfortably**, and that is a property of the measurement,
+not the boss.
+
+The fixes themselves were all the same shape — a boss that does nothing usually
+does nothing for a *structural* reason:
+
+- **Heatwave** was Basket ×2 against Patience ×0.25 and killed 0 of 1,817 runs.
+  Patience is only a cost on a day that already has a queue, and a well-run shop
+  does not have one, so the boss was a straight bonus. It now takes Footfall too.
+- **Trading Standards** disabled flagships, which most boards do not hold — and
+  it was the *most often faced* boss in the deck, because the planner chose it.
+  A boss picked because it is harmless is the free pass.
+- **Supply Shortage** disabled *additive* Basket, and almost none of a modern
+  board's Basket is additive any more; the compounders carry it.
+- **Roadworks** closed a random aisle, which is usually an empty one, because
+  signage funnels everybody into the fullest. It closes the busiest now, and the
+  crowd it displaces lands in the queue — which is part one's "routing is
+  uncontested" hole reappearing as a boss that kept 100.2% of a clean day.
+
+Strengthening six bosses cost the planner 12pp, so the curve came back to meet
+them: base 88 → 76.
 
 ## The game around it
 
