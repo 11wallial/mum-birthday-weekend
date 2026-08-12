@@ -79,6 +79,12 @@ export function ratchetCount(shop) {
 export function commitMultiplier(content, shop) {
   const cfg = content.economy.ratchets;
   if (!cfg || !cfg.commitThreshold) return 1;
+  // A shop that may hold only a handful of fixture types is structurally
+  // punished twice by the commitment mechanics: it can rarely reach the
+  // threshold, and per-fixture upkeep falls with the number you hold, so it
+  // pays close to full price on every one. That is the opposite of what its
+  // rule promises. It counts as committed by construction instead.
+  if (shop.flags.alwaysCommitted) return 1 + cfg.commitBonus;
   return ratchetCount(shop) >= cfg.commitThreshold ? 1 + cfg.commitBonus : 1;
 }
 
@@ -87,7 +93,10 @@ export function ratchetUpkeep(content, shop, target) {
   if (!cfg || !target) return 0;
   // Per-fixture upkeep falls as you hold more, so one or two ratchets is the
   // worst place to stand: full price each, and not enough of them to matter.
-  const scale = Math.pow(cfg.upkeepScalePerExtra ?? 1, Math.max(0, ratchetCount(shop) - 1));
+  const held = shop.flags.alwaysCommitted
+    ? Math.max(ratchetCount(shop), cfg.commitThreshold)
+    : ratchetCount(shop);
+  const scale = Math.pow(cfg.upkeepScalePerExtra ?? 1, Math.max(0, held - 1));
   let total = 0;
   for (const { inst } of fixtureInstances(shop)) {
     if (!isRatchet(inst.def)) continue;
@@ -551,7 +560,15 @@ export function walkAisle(content, shop, aisleIdx, type, flags, baseMargin) {
   if (flags.marginSet != null) terms.margin = flags.marginSet;
   if (shop.flags.marginFixed != null) terms.margin = shop.flags.marginFixed;
   if (flags.marginHalved) terms.margin *= 0.5;
-  terms.margin += flags.marginFlat;
+  if (shop.flags.marginFixed != null) {
+    // A margin cost is quoted in points against a NORMAL margin. The Estate
+    // Agent's is fixed at 3.5%, so one assistant's -3pp took 86% of the
+    // shop's profit and hiring anybody at all was fatal — which is not a
+    // character rule, it is a unit mismatch. Charged proportionally instead.
+    terms.margin *= 1 + flags.marginFlat / content.economy.start.margin;
+  } else {
+    terms.margin += flags.marginFlat;
+  }
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
   if (flags.onlyTypesConvert && !flags.onlyTypesConvert.has(type.id)) terms.conversion = 0;
 
@@ -715,6 +732,15 @@ export function resolveDay(content, shop, ctx = {}) {
     const serveable = ((shop.tills + flags.tillDelta) * content.economy.day.tillRate
       + flags.throughputBonus) * content.economy.day.ticks;
     if (serveable > 0) footfall = Math.min(footfall, serveable * overloadCap);
+  }
+  // A divisor, not an override. Pinning Footfall at a constant killed the term
+  // outright — it could never grow, so a quarter of the pool was dead weight in
+  // every catalogue and the shop had three terms to carry a curve that
+  // multiplies by 1.24 an encounter. Divided instead, the Car Dealership keeps
+  // its identity — a handful of customers, each worth a fortune — and every
+  // Footfall card still does something.
+  if (shop.flags.footfallDivisor) {
+    footfall = Math.max(1, footfall / shop.flags.footfallDivisor);
   }
   if (shop.flags.footfallOverride) {
     const [lo, hi] = shop.flags.footfallOverride;

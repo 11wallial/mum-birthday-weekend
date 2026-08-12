@@ -150,7 +150,11 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
   if (flags.marginSet != null) terms.margin = flags.marginSet;
   if (shop.flags.marginFixed != null) terms.margin = shop.flags.marginFixed;
   if (flags.marginHalved) terms.margin *= 0.5;
-  terms.margin += flags.marginFlat;
+  if (shop.flags.marginFixed != null) {
+    terms.margin *= 1 + flags.marginFlat / content.economy.start.margin;
+  } else {
+    terms.margin += flags.marginFlat;
+  }
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
   if (flags.onlyTypesConvert && !flags.onlyTypesConvert.has(type.id)) terms.conversion = 0;
   const caps = content.economy.caps || {};

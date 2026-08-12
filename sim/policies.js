@@ -57,7 +57,7 @@ function candidateSlots(shop, limit) {
   // Once the board is full, the only placement left is on top of something.
   // Offering those slots as candidates is what lets a build pivot in act 3
   // instead of being frozen at whatever it happened to draft in act 1.
-  if (empty.length === 0) {
+  if (empty.length === 0 && !shop.flags.fixturesPermanent) {
     const held = fixtureInstances(shop)
       .map(({ aisle, slot, inst }) => ({ aisle, slot, inst }))
       // Never scrap something that has been accumulating: a ratchet's value is

@@ -30,8 +30,11 @@ export function createTradingDay(content, shop, ctx, rng) {
   const footfall = Math.max(0, Math.round(projection.footfall));
   const traversals = shop.flags.traversals || 1;
 
-  // Who turns up is a draw, not a quota.
-  const pool = shop.pool;
+  // Who turns up is a draw, not a quota — and it is the same pool the resolver
+  // drew from. The Car Dealership's forced all-Luxury pool was applied in
+  // day.js and ignored here, so the browser build was sending it families and
+  // shoplifters while the panel promised nothing but Luxury.
+  const pool = flags.poolOverride || shop.flags.forcedPool || shop.pool;
   const entries = content.types
     .map((t) => [t, pool[t.id] || 0])
     .filter(([, w]) => w > 0);

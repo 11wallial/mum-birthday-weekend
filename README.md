@@ -98,8 +98,12 @@ and the compounders are why: every other card is worth the same whenever you buy
 it, so lookahead had nothing to look at. A compounder is worth what is left of
 the run.
 
-Still out of band: tier rush at 74% (wants ~30%), and staff counts in winning
-builds run 0–14 (wants 0–8, unclustered).
+The Audit ladder descends smoothly from 66.3% to 8.3% across its eight rungs,
+and the seven characters sit inside **10.3pp** of each other — down from 59.4pp,
+which is what happens when nobody has ever measured them.
+
+Still out of band: tier rush at 16% (wants ~30%), and staff counts in winning
+builds run 0–11 (wants 0–8, unclustered).
 
 The committed order was **pool → queue verification → tune**, and all three are
 now done. `verify-queue.js` runs the fluid queue against a discrete one — every

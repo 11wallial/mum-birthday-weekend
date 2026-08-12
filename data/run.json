@@ -219,7 +219,7 @@
   {
    "id": "discounter",
    "name": "Discounter",
-   "rule": "COGS halved (+20pp Margin), but you may hold only five fixture types.",
+   "rule": "COGS halved (+20pp Margin), duplicates level twice, always counts as committed — but you may hold only seven fixture types.",
    "aisles": 2,
    "slotsPerAisle": 4,
    "tills": 1,
@@ -229,13 +229,16 @@
    ],
    "flags": {
     "marginBonus": 0.2,
-    "maxFixtureTypes": 5
-   }
+    "maxFixtureTypes": 7,
+    "levelStep": 2,
+    "alwaysCommitted": true
+   },
+   "$note": "Margin is the wrong compensation for this shop: it caps at 70% and the +20pp already puts it there, so sweeping the bonus from 0.20 to 0.38 moved the win rate by 8pp. The real problem was structural. Holding few fixtures is punished TWICE by the commitment mechanics - it can rarely reach the threshold, and per-fixture upkeep falls with the number you hold, so it pays near full price on every one. That is the opposite of what its rule promises."
   },
   {
    "id": "car_dealership",
    "name": "Car Dealership",
-   "rule": "1 to 3 customers per day, all Luxury, vast wallets. Conversion is the entire game.",
+   "rule": "A dozen customers a day, all Luxury, vast wallets. Conversion is the entire game.",
    "aisles": 1,
    "slotsPerAisle": 6,
    "tills": 99,
@@ -246,13 +249,11 @@
     "forcedPool": {
      "luxury": 100
     },
-    "footfallOverride": [
-     1,
-     3
-    ],
     "noQueue": true,
-    "basketMultiplier": 320
-   }
+    "basketMultiplier": 6.5,
+    "footfallDivisor": 12
+   },
+   "$note": "Was footfallOverride [1,3] with basketMultiplier 320. Two customers a day against a hard fail condition is not a design, it is a coin flip: one trace made GBP 62,270 on day one and GBP 0 on day two because both customers happened to be Browsers. And a pinned Footfall cannot grow, so the shop had three terms to carry a curve that multiplies by 1.24 an encounter while a quarter of every catalogue was dead weight. A divisor keeps the identity and gives the term back."
   },
   {
    "id": "estate_agent",
@@ -267,8 +268,9 @@
    "flags": {
     "basketFixed": 1400,
     "marginFixed": 0.035,
-    "footfallMultiplier": 0.35
-   }
+    "footfallMultiplier": 0.07
+   },
+   "$note": "Margin fixed at 3.5% meant one assistant, at -3pp, took 86% of the shop. Margin costs are now charged proportionally against the normal margin wherever a character fixes it."
   },
   {
    "id": "corner_shop",

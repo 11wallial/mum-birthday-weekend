@@ -95,7 +95,11 @@ export function addFixture(content, shop, fixtureId, placement = null) {
 
   const existing = findInstance(shop, fixtureId);
   if (existing) {
-    existing.inst.level = Math.min(3, existing.inst.level + 1);
+    // The Discounter may hold only five fixture types, so its duplicates are
+    // worth more: two copies reach level 3. Without that its board simply
+    // stops growing — it survived to encounter 21 and then met a curve it had
+    // no way left to answer.
+    existing.inst.level = Math.min(3, existing.inst.level + (shop.flags.levelStep || 1));
     existing.inst.copies += 1;
     applyOnAcquire(content, shop, existing.inst);
     return existing.inst;
@@ -117,6 +121,15 @@ export function addFixture(content, shop, fixtureId, placement = null) {
     // bench where they compound nothing. What you throw out to make room is
     // the decision the second half of the run is made of.
     const displaced = shop.aisles[target.aisle].slots[target.slot];
+    // ...unless this shop cannot clear a slot. The Superstore's whole rule is
+    // "floorspace is free, but a placed fixture can never be removed", and
+    // replacement had quietly repealed it — sixteen slots AND the freedom to
+    // churn them is not a drawback, it is the best character in the game.
+    if (displaced && shop.flags.fixturesPermanent) {
+      shop.bench.push(inst);
+      applyOnAcquire(content, shop, inst);
+      return inst;
+    }
     if (displaced) shop.scrapped = (shop.scrapped || 0) + 1;
     shop.aisles[target.aisle].slots[target.slot] = inst;
   } else {

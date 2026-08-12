@@ -187,7 +187,9 @@ function beginPlace(def) {
   pending = def;
   $('place-hint').textContent = emptySlots(game.shop).length
     ? `Placing ${def.name} — pick a slot. Order matters.`
-    : `Placing ${def.name} — the shop is full. Pick what it goes on top of.`;
+    : game.shop.flags.fixturesPermanent
+      ? `Placing ${def.name} — the shop is full, and nothing here can be removed.`
+      : `Placing ${def.name} — the shop is full. Pick what it goes on top of.`;
   renderNight();
 }
 
@@ -205,7 +207,7 @@ function renderFloorplan() {
       // A full shop does not end the run's decisions, it sharpens them: the
       // pick lands on top of something, and choosing what to clear out is the
       // whole of the back half of the game.
-      const takeable = pending && (free || full);
+      const takeable = pending && (free || (full && !game.shop.flags.fixturesPermanent));
       cell.className = `slot${inst ? ' filled' : ''}${takeable ? ' target' : ''}`
         + `${takeable && !free ? ' scrap' : ''}`;
       cell.innerHTML = inst
