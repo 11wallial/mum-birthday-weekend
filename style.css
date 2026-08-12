@@ -421,7 +421,34 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 /* -------------------------------------------------------------- the floor */
 
 #day { display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; }
+#floorwrap { position: relative; overflow: hidden; min-height: 260px; }
 #floor { width: 100%; height: 100%; min-height: 260px; display: block; cursor: pointer; }
+
+/* The roller shutter. A trading day used simply to be there — the wipe
+   finished and a shop full of people existed. Opening up is the beat the
+   whole night has been building to, and it costs one element. */
+#shutter {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  display: grid; place-items: center;
+  background:
+    repeating-linear-gradient(180deg,
+      #9a927f 0 7px, #b6ad96 7px 9px, #857e6d 9px 11px);
+  border-bottom: 5px solid var(--ink);
+  box-shadow: 0 8px 18px rgba(25,20,16,.35);
+  animation: rollup .95s cubic-bezier(.55, .06, .32, 1) forwards;
+}
+#shutter span {
+  font-family: var(--cond); font-size: clamp(28px, 5vw, 54px);
+  letter-spacing: .3em; text-transform: uppercase; color: var(--paper);
+  background: var(--red); padding: 4px 22px 8px; box-shadow: 5px 5px 0 var(--ink);
+  transform: rotate(-2deg);
+}
+@keyframes rollup {
+  0%   { transform: translateY(0); }
+  18%  { transform: translateY(2%); }        /* it catches, then goes */
+  100% { transform: translateY(-101%); }
+}
+@media (prefers-reduced-motion: reduce) { #shutter { display: none; } }
 #daybar {
   display: flex; gap: clamp(10px, 2.4vw, 26px); align-items: center;
   border-top: 3px solid var(--ink); padding-top: 8px; flex-wrap: wrap;
@@ -877,6 +904,33 @@ button { font-family: var(--body); }
   100% { transform: scale(1); }
 }
 .vprofit.flip { animation: verdictflip .42s cubic-bezier(.3, 1.5, .5, 1); }
+
+/* The term a decision just moved. The card says "×1.42 Basket" and the panel
+   silently becomes a different number; marking which term changed is what
+   joins the two, and joining them is why the formula is on screen. */
+@keyframes termup {
+  0%   { transform: none; }
+  35%  { transform: translateY(-4px); }
+  100% { transform: none; }
+}
+.term.moved, .term.moved-down { animation: termup .5s cubic-bezier(.3, 1.4, .5, 1); }
+.term.moved b { color: var(--money); }
+.term.moved-down b { color: var(--red); }
+.term.moved::after, .term.moved-down::after {
+  content: ""; position: absolute; inset: -4px -6px; border: 2px solid currentColor;
+  color: var(--money); opacity: 0; animation: termring .6s ease-out;
+  pointer-events: none;
+}
+.term.moved-down::after { color: var(--red); }
+@keyframes termring {
+  0%   { opacity: .75; transform: scale(.9); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+.term { position: relative; }
+@media (prefers-reduced-motion: reduce) {
+  .term.moved, .term.moved-down { animation: none; }
+  .term.moved::after, .term.moved-down::after { display: none; }
+}
 
 /* Buttons get a press. Nothing in the build had one. */
 button { transition: transform .07s ease, background .12s ease, color .12s ease; }

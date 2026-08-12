@@ -127,6 +127,16 @@ function renderPanel() {
   roll($('p-basket'), p.basket, money);
   roll($('p-margin'), p.margin, (v) => pct(v));
   roll($('p-trading'), p.trading, money);
+  // Which term did that decision actually move? The card says "×1.42 Basket"
+  // and the panel silently becomes a different number; marking the term that
+  // changed is what joins the two, and it is the whole reason the formula is
+  // on screen at all.
+  markMovedTerms({
+    'p-footfall': p.footfall,
+    'p-conv': p.conversion,
+    'p-basket': p.basket,
+    'p-margin': p.margin,
+  });
   showCosts(p.rent, -p.shrink, p.upkeep + (d.ratchetUpkeep || 0));
   const gap = d.profit - target;
   const short = gap < 0;
@@ -145,6 +155,22 @@ function renderPanel() {
     ? `against ${money(target)} — <b>${money(-gap)} short</b>`
     : `against ${money(target)} — <b>${money(gap)} clear</b>`;
   g.className = `vgap ${short ? 'short' : 'clear'}`;
+}
+
+const lastTerms = new Map();
+
+/** Flash the terms whose value moved since the panel last rendered. */
+function markMovedTerms(values) {
+  for (const [id, v] of Object.entries(values)) {
+    const el = $(id);
+    const was = lastTerms.get(id);
+    lastTerms.set(id, v);
+    if (was === undefined || Math.abs(v - was) < 1e-9) continue;
+    const term = el.parentElement;
+    term.classList.remove('moved', 'moved-down');
+    void term.offsetWidth;
+    term.classList.add(v > was ? 'moved' : 'moved-down');
+  }
 }
 
 /**
@@ -480,6 +506,11 @@ function renderBuys() {
   for (const row of wrap.querySelectorAll('.deptrow')) {
     if (!row.children.length) { row.previousElementSibling.remove(); row.remove(); }
   }
+  // What you have to spend, where you spend it. It was in the ledger, at the
+  // top of a different part of the screen.
+  const affordable = wrap.querySelectorAll('.buy:not(:disabled)').length;
+  $('purse').innerHTML = `<b class="money">${money(shop.cash)}</b> to spend &middot; `
+    + (affordable ? `${affordable} within reach` : 'nothing within reach yet');
 }
 
 function renderBossChoice() {
@@ -584,10 +615,19 @@ function openDoors() {
   // Once the doors are open the panel is a record of the plan, not a live
   // reading — the day bar is the live reading. Saying so stops the two
   // disagreeing in a way that looks like a bug.
-  showWiped('day', () => { $('vlabel').textContent = 'Today was planned at'; maybeCoach('day'); });
+  showWiped('day', () => {
+    $('vlabel').textContent = 'Today was planned at';
+    // Restart the shutter: an element that is already in the DOM will not
+    // replay its animation without being taken out of the flow first.
+    const sh = $('shutter');
+    sh.hidden = true;
+    void sh.offsetWidth;
+    sh.hidden = false;
+    maybeCoach('day');
+  });
   day = createTradingDay(content, game.shop, game.ctx(), game.run.rng);
   $('btn-open').hidden = true;
-  $('tip').textContent = 'Someone waiting? Tap them and take them next.';
+  $('tip').textContent = 'Tap anyone waiting to take them next. Tap anybody to see who they are.';
   let acc = 0;
   let last = performance.now();
 
@@ -825,8 +865,8 @@ function setPaused(v) {
   const b = $('btn-pause');
   if (b) b.textContent = paused ? 'Resume' : 'Pause';
   $('tip').textContent = paused
-    ? 'Paused. You can still take someone to the till.'
-    : 'Someone waiting? Tap them and take them next.';
+    ? 'Paused. You can still take someone to the till, or tap anyone to see who they are.'
+    : 'Tap anyone waiting to take them next. Tap anybody to see who they are.';
 }
 
 // ------------------------------------------------------------- coaching ----
@@ -1176,6 +1216,7 @@ function runMapHtml() {
 }
 
 function showTitle() {
+  lastTerms.clear();     // a new run is not a change to the last one
   game = null;
   day = null;
   pending = null;
@@ -1243,8 +1284,16 @@ async function boot() {
   $('floor').onclick = (e) => {
     if (!day || day.state.finished) return;
     const r = $('floor').getBoundingClientRect();
-    const id = floor.pick(e.clientX - r.left, e.clientY - r.top);
-    if (id && day.triage(id)) audio.triage();
+    const hit = floor.pick(e.clientX - r.left, e.clientY - r.top);
+    if (!hit) return;
+    if (hit.queued && day.triage(hit.id)) { audio.triage(); return; }
+    // Not servable, or out of triage: say who they are instead. Eight
+    // silhouettes on the floor and eight names on the cards that single them
+    // out, and until now nothing connected the two mid-day.
+    const t = hit.type;
+    $('tip').textContent = `${t.name} — ${Math.round(t.conversion * 100)}% convert, `
+      + `${t.basket ? `${money(t.basket)} basket` : 'no basket'}, `
+      + `${PATIENCE_WORD[t.patience] || t.patience}`;
   };
   // Anywhere off the card closes it, except the slots themselves — those
   // re-open it on the thing you just clicked.

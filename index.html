@@ -78,14 +78,18 @@
         <div id="aisles"></div>
       </div>
       <div id="shopfitting">
-        <h2>Shopfitting &amp; staff</h2>
+        <h2>Shopfitting &amp; staff <span class="hint" id="purse"></span></h2>
         <div id="buys"></div>
       </div>
     </div>
 
     <!-- day -->
     <div id="day" hidden>
-      <canvas id="floor"></canvas>
+      <div id="floorwrap">
+        <canvas id="floor"></canvas>
+        <!-- The doors open. The day used to simply be there. -->
+        <div id="shutter" hidden><span>Open</span></div>
+      </div>
       <!-- Five figures at one weight is five figures the eye has to sort.
            Takings answers the question the panel asked, and the pace says
            whether it is going to be enough — those two lead. -->

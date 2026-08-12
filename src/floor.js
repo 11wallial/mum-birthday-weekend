@@ -869,6 +869,15 @@ export function createFloorRenderer(canvas) {
     placed.sort((a, b) => a.y - b.y);
 
     for (const { c, x, y, alpha } of placed) {
+      // A hitbox for everyone, not only the queue. Tapping a queued customer
+      // takes them next; tapping anybody says who they are, which is the only
+      // way the eight silhouettes on the floor ever connect to the eight names
+      // on the cards that single them out.
+      const hs = c.phase === PHASE.QUEUE ? qPerson : person;
+      hitboxes.push({
+        id: c.id, type: c.type, queued: c.phase === PHASE.QUEUE,
+        x, y: y - hs * 0.6, r: Math.max(16, hs * 0.7),
+      });
       g.globalAlpha = alpha;
       // Walking figures stride; standing ones sway. Perfectly still figures
       // are what made a shop full of people look like a paused screenshot.
@@ -886,7 +895,6 @@ export function createFloorRenderer(canvas) {
         g.lineWidth = 1;
         g.strokeRect(x - bw2 / 2, y - qPerson * 1.68, bw2, 4);
         g.lineWidth = lw;
-        hitboxes.push({ id: c.id, x, y: y - qPerson * 0.6, r: Math.max(18, qPerson * 0.8) });
       }
       if (c.phase === PHASE.DONE && c.bought) {
         g.fillStyle = '#1c7a3e';
@@ -908,14 +916,19 @@ export function createFloorRenderer(canvas) {
     g.fillRect(0, h - 3, w * Math.min(1, s.tick / s.ticks), 3);
   }
 
-  /** Which queued customer did the player tap? */
+  /**
+   * Who did the player tap? Queued customers win ties, because pulling one to
+   * the till is an action and identifying somebody is only a label.
+   */
   function pick(px, py) {
     let best = null;
     for (const b of hitboxes) {
       const d = Math.hypot(b.x - px, b.y - py);
-      if (d < b.r && (!best || d < best.d)) best = { id: b.id, d };
+      if (d >= b.r) continue;
+      const score = d - (b.queued ? 1000 : 0);
+      if (!best || score < best.score) best = { ...b, d, score };
     }
-    return best ? best.id : null;
+    return best;
   }
 
   return { draw, pick, tillPoint: () => till };
