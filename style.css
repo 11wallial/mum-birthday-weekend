@@ -1,0 +1,1056 @@
+/* FOOTFALL — two registers, one lineage.
+   Night is a 1980s cash-and-carry catalogue page. Day is a cutaway
+   illustration. Both are mid-century print, so one paper-and-ink treatment
+   unifies them: newsprint cream, CMYK at full saturation, halftone, condensed
+   caps for prices and headlines, a humanist sans for everything else. */
+
+:root {
+  /* A 1950s wholesale catalogue page: cheap warm stock, four plates hit hard,
+     and a red reserved for shouting. The palette was drifting towards muted
+     newsprint, which is the wrong reference — a catalogue is not a broadsheet.
+     It is an advert, printed loud, on paper that cost nothing. */
+  --paper: #f7efdb;
+  --paper-2: #efe4c8;
+  --paper-3: #e6d8b4;      /* the tint block behind a boxed offer */
+  --ink: #191410;
+  --ink-soft: #6a6154;
+  --cyan: #0e8fb5;
+  --magenta: #d81e63;
+  --yellow: #f7c331;
+  --red: #d63426;          /* SALE, starbursts, the word NEW */
+  --blue: #1c5fa8;
+  --money: #17703c;        /* one accent reserved exclusively for money */
+  --rule: rgba(25, 20, 16, 0.28);
+  --frenzy: 0;
+  --cond: "Haettenschweiler", "Arial Narrow", "Oswald", system-ui, sans-serif;
+  --body: "Inter", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Phases set display:grid, which beats the hidden attribute's default
+   display:none. Without this every phase renders at once, stacked. */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--body);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The paper treatment everything passes through. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  opacity: calc(0.5 + var(--frenzy) * 0.4);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(25,20,16,.13) 1px, transparent 0),
+    radial-gradient(circle at 3px 3px, rgba(214,52,38,.07) 1.2px, transparent 0),
+    radial-gradient(circle at 5px 2px, rgba(14,143,181,.05) 1.2px, transparent 0);
+  background-size: 5px 5px, 9px 9px, 13px 13px;
+  mix-blend-mode: multiply;
+}
+
+#app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 clamp(8px, 2vw, 22px);
+}
+/* Explicit rows, because a hidden child is removed from the grid entirely and
+   auto-placement then shifts every later child up one. With the ledger and the
+   panel hidden on the title screen, the stage inherited the `auto` row and the
+   1fr fell to an empty row below the footer — so the title sat in the top half
+   of the window with three hundred pixels of nothing under the buttons. */
+#ledger  { grid-row: 1; }
+#panel   { grid-row: 2; }
+#stage   { grid-row: 3; }
+#coach   { grid-row: 4; }
+#actions { grid-row: 5; }
+
+/* ---------------------------------------------------------------- ledger */
+
+/* Reference, not headline. Six figures at the same weight as the profit is
+   six figures the eye has to sort before it can find the one that matters. */
+#ledger {
+  display: flex; gap: 7px; align-items: center;
+  padding: 7px 2px 6px;
+  border-bottom: 2px solid var(--ink);
+  flex-wrap: wrap;
+}
+.chip {
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft); border: 1px solid var(--rule); padding: 2px 7px;
+  background: var(--paper-2); white-space: nowrap;
+}
+.chip b {
+  font-family: var(--cond); font-size: 14px; letter-spacing: .02em;
+  color: var(--ink); font-weight: 400;
+}
+.chip.money b { color: var(--money); }
+.chip.warn { border-color: var(--red); color: var(--red); background: rgba(214,52,38,.07); }
+.chip.warn b { color: var(--red); }
+.chipbtn {
+  font: inherit; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink);
+  padding: 3px 9px; cursor: pointer;
+}
+.chipbtn:hover { background: var(--ink); color: var(--paper); }
+.chipbtn.off { color: var(--ink-soft); border-color: var(--rule); }
+#ledger .grow { margin-left: auto; }
+.money { color: var(--money); }
+.boss-flag {
+  font-family: var(--cond); font-size: clamp(13px, 1.8vw, 17px);
+  background: var(--red); color: #fff;
+  padding: 3px 10px; text-transform: uppercase; letter-spacing: .06em;
+}
+
+/* ------------------------------------------------------- projection panel */
+/* Section 17: the most important piece of UI in the game. Never hidden. */
+
+/* One question — will today clear the target — asked once, at size. The four
+   terms are how you answer it, so they are the working: legible, secondary,
+   and visibly subordinate to the number they produce. */
+#panel {
+  border-bottom: 2px solid var(--ink);
+  padding: 9px 2px 10px;
+  display: grid; grid-template-columns: auto 1fr; gap: clamp(10px, 3vw, 28px);
+  align-items: center;
+}
+@media (max-width: 720px) { #panel { grid-template-columns: 1fr; gap: 6px; } }
+
+.verdict-block { line-height: 1; }
+.vlabel {
+  font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 2px;
+}
+.vprofit {
+  font-family: var(--cond); font-size: clamp(38px, 6.5vw, 62px);
+  letter-spacing: -.01em; line-height: .92;
+}
+.vprofit.short { color: var(--red); }
+.vprofit.clear { color: var(--money); }
+.vgap {
+  font-size: 11.5px; letter-spacing: .04em; margin-top: 4px; color: var(--ink-soft);
+}
+.vgap b { font-family: var(--cond); font-size: 15px; letter-spacing: .02em; }
+.vgap.short b { color: var(--red); }
+.vgap.clear b { color: var(--money); }
+
+.working { min-width: 0; }
+.terms {
+  display: flex; align-items: baseline; gap: clamp(3px, 1vw, 11px); flex-wrap: wrap;
+}
+.term { display: flex; flex-direction: column; line-height: 1.05; }
+.term b {
+  font-family: var(--cond); font-size: clamp(16px, 2.1vw, 22px); font-weight: 400;
+}
+.term i {
+  font-style: normal; font-size: 8.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.term.wide b { color: var(--money); font-size: clamp(19px, 2.5vw, 26px); }
+.op { font-family: var(--cond); font-size: 13px; color: var(--ink-soft); }
+.costs {
+  display: flex; gap: 11px; margin-top: 3px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--ink-soft); letter-spacing: .03em;
+}
+/* Three costs set identically read the same on a day theft takes £243 out of
+   £245 as on a day it takes nothing. */
+.costs .worst { color: var(--red); font-weight: 600; }
+
+/* ----------------------------------------------------------------- stage */
+
+#stage { overflow-y: auto; padding: 12px 0 6px; scrollbar-width: thin; }
+h2 {
+  font-family: var(--cond); font-size: clamp(15px, 2vw, 19px);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; color: var(--ink-soft); letter-spacing: 0; text-transform: none; }
+.stamp {
+  font-size: 10px; letter-spacing: .1em; border: 2px solid var(--magenta);
+  color: var(--magenta); padding: 2px 7px; transform: rotate(-2deg);
+}
+
+#night { display: grid; gap: 16px; }
+@media (min-width: 900px) {
+  #night {
+    grid-template-columns: 1.15fr 1fr;
+    grid-template-areas: "today today" "boss boss" "cat floor" "cat fit";
+  }
+  #catalogue { grid-area: cat; } #floorplan { grid-area: floor; }
+  #shopfitting { grid-area: fit; } #bosschoice { grid-area: boss; }
+  #bosstoday { grid-area: today; }
+}
+
+/* The inspection, and what it does. A name is not something you can plan
+   against, and rebuilding the night around the landlord is the point. */
+#bosstoday {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding: 7px 12px 8px; border: 2px solid var(--red);
+}
+#bosstoday.today { background: var(--red); border-color: var(--ink); color: #fff; }
+/* It arrives. A landlord who is already on the page when you get there is a
+   landlord you scroll past. */
+#bosstoday { animation: bossin .34s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes bossin {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { #bosstoday { animation: none; } }
+#bosstoday.soon { background: rgba(214,52,38,.07); }
+.bt-when {
+  font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; opacity: .85;
+}
+.bt-name {
+  font-family: var(--cond); font-size: 21px; text-transform: uppercase;
+  letter-spacing: .04em; line-height: 1;
+}
+#bosstoday.soon .bt-name { color: var(--red); }
+.bt-eff { font-size: 12.5px; margin-left: auto; }
+
+/* --------------------------------------------------------- catalogue page */
+/* Section 31: rarity is page real estate, not a coloured border. */
+
+/* A catalogue page sets in columns once there is width for it — one column of
+   700px-wide boxed offers is a line of billboards, not a page. Inside the
+   left-hand column, so the floor stays beside it: putting the catalogue full
+   width pushed the aisles you have to place the card into below the fold. */
+#offers { display: grid; gap: 12px; }
+@media (min-width: 1240px) {
+  #offers { grid-template-columns: 1fr 1fr; }
+  .entry.r-flagship { grid-column: 1 / -1; }
+  .entry .name { font-size: 20px; }
+  .entry.r-rare .name { font-size: 23px; }
+  .entry.r-flagship .name { font-size: 28px; }
+  .entry .eff { font-size: 15px; }
+}
+
+/* Every entry is a boxed offer on an advert page: heavy rule, tint block,
+   the name shouted in condensed caps, and the effect set as the price flash
+   because the effect IS the price. Rarity is page real estate — more space,
+   heavier furniture, and at the top of the page a starburst. */
+.entry {
+  border: 2px solid var(--ink); background: var(--paper-2);
+  padding: 11px 13px 12px; cursor: pointer; position: relative;
+  display: grid; grid-template-columns: 1fr; gap: 3px 10px;
+  box-shadow: 3px 3px 0 rgba(25,20,16,.16);
+  transition: transform .07s ease, box-shadow .07s ease;
+}
+.entry:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+.entry:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+.entry.chosen { outline: 3px solid var(--money); outline-offset: 2px; }
+.entry .name {
+  font-family: var(--cond); font-size: 23px; letter-spacing: .015em;
+  text-transform: uppercase; line-height: 1;
+}
+.entry .code {
+  font-size: 9.5px; letter-spacing: .14em; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.entry .copy { font-size: 11px; color: var(--ink-soft); letter-spacing: .02em; }
+.entry .byline { display: flex; align-items: center; gap: 7px; margin-top: 1px; }
+
+/* The effect line is the price flash. Red, condensed, oversized. */
+.entry .eff {
+  font-family: var(--cond); font-size: 17px;
+  letter-spacing: .01em; color: var(--red); line-height: 1.15; margin-top: 1px;
+}
+.entry .eff .code { color: var(--ink-soft); font-family: var(--body); }
+
+/* Rarity sits with the stock code, not in the corner — the corner belongs to
+   the starburst, and two things fighting for it is how a catalogue page stops
+   looking designed. */
+.entry .tier {
+  font-family: var(--cond); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .12em; padding: 1px 5px; border: 1.5px solid currentColor;
+  align-self: center; justify-self: start;
+}
+.entry.r-common .tier { color: var(--ink-soft); }
+.entry.r-uncommon { background: linear-gradient(180deg, #e2f0f5 0 34px, var(--paper-2) 34px); }
+.entry.r-uncommon .tier { color: var(--cyan); background: #fff; }
+.entry.r-rare {
+  padding-block: 15px 16px;
+  background: linear-gradient(180deg, #fbdfe9 0 40px, var(--paper-2) 40px);
+}
+.entry.r-rare .tier { color: var(--magenta); background: #fff; }
+.entry.r-rare .name { font-size: 27px; }
+
+/* Flagship: the full-page treatment. Yellow ground, double rule, and a
+   starburst, because a 1950s catalogue never once let a hero line go quiet. */
+.entry.r-flagship {
+  border: 3px solid var(--ink); padding: 17px 15px 18px;
+  background:
+    repeating-linear-gradient(-45deg, rgba(247,195,49,.5) 0 9px, rgba(247,195,49,.22) 9px 18px);
+  box-shadow: inset 0 0 0 3px var(--paper-2), 4px 4px 0 var(--ink);
+}
+.entry.r-flagship .name { font-size: 31px; }
+.entry.r-flagship .tier { color: #8a5a00; background: #fff; border-color: #8a5a00; }
+.entry.r-flagship .eff { color: #a8241a; }
+/* After the pick: one card is the order, the others are lines you passed on.
+   Dimming all four equally made a settled page read as a broken one. */
+.entry.passed { opacity: .42; filter: saturate(.35); pointer-events: none; }
+.entry.ordered { pointer-events: none; box-shadow: 5px 5px 0 var(--money); }
+.entry.ordered::after {
+  content: ""; position: absolute; inset: 0; background: rgba(23,112,60,.07);
+}
+/* Bottom right, where the card carries only its tag line. An authentic
+   overlapping stamp that hides what the card says costs you the card. */
+.ordered-stamp {
+  position: absolute; right: 12px; bottom: 8px; z-index: 4;
+  transform: rotate(-7deg);
+  font-family: var(--cond); font-size: clamp(15px, 2.2vw, 21px);
+  letter-spacing: .15em; text-transform: uppercase;
+  color: rgba(23,112,60,.75); border: 3px double rgba(23,112,60,.75);
+  padding: 1px 11px 3px; pointer-events: none; white-space: nowrap;
+  animation: stamped .3s cubic-bezier(.3, 1.5, .5, 1) backwards;
+}
+/* It comes down on the page rather than fading up out of it. */
+@keyframes stamped {
+  0%   { opacity: 0; transform: rotate(-16deg) scale(2.4); }
+  60%  { opacity: 1; transform: rotate(-7deg) scale(.94); }
+  100% { opacity: 1; transform: rotate(-7deg) scale(1); }
+}
+.entry.ordered .burst { display: none; }
+@media (prefers-reduced-motion: reduce) { .ordered-stamp { animation: none; } }
+.entry .combine {
+  position: absolute; right: 9px; bottom: 7px; font-size: 10px;
+  font-family: var(--cond); letter-spacing: .1em; color: var(--money);
+  text-transform: uppercase;
+}
+
+/* The starburst. A real one: twenty points, drawn with a conic gradient mask
+   so it costs nothing and scales cleanly. */
+.burst {
+  position: absolute; top: -15px; right: -13px; width: 64px; height: 64px;
+  display: grid; place-items: center; transform: rotate(-13deg);
+  pointer-events: none; z-index: 3;
+}
+.burst::before {
+  content: ""; position: absolute; inset: 0; background: var(--red);
+  clip-path: polygon(
+    50% 0%, 58% 13%, 71% 5%, 73% 20%, 87% 17%, 84% 31%, 98% 34%, 89% 45%,
+    100% 55%, 88% 62%, 96% 74%, 82% 77%, 85% 91%, 71% 87%, 68% 100%, 57% 91%,
+    50% 100%, 43% 91%, 32% 100%, 29% 87%, 15% 91%, 18% 77%, 4% 74%, 12% 62%,
+    0% 55%, 11% 45%, 2% 34%, 16% 31%, 13% 17%, 27% 20%, 29% 5%, 42% 13%);
+}
+.burst b {
+  position: relative; font-family: var(--cond); font-size: 12px; color: #fff;
+  text-align: center; line-height: .92; letter-spacing: .04em; text-transform: uppercase;
+}
+.burst.gold::before { background: var(--yellow); }
+.burst.gold b { color: var(--ink); }
+#offer-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ------------------------------------------------------------- floorplan */
+
+#aisles { display: grid; gap: 8px; }
+.aisle { display: flex; align-items: stretch; gap: 6px; }
+.aisle .lbl {
+  font-family: var(--cond); font-size: 11px; writing-mode: vertical-rl;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+  display: grid; place-items: center; min-width: 16px;
+}
+.aisle.closed { opacity: .35; }
+.slot {
+  flex: 1; min-height: 62px; min-width: 44px;
+  border: 1px dashed var(--rule); background: rgba(255,255,255,.4);
+  display: grid; place-content: center; text-align: center; padding: 4px;
+  cursor: pointer; position: relative;
+}
+.slot.filled { border-style: solid; background: var(--paper-2); }
+.slot.target { border-color: var(--money); background: rgba(28,122,62,.12); }
+/* Placing onto a full shop clears the slot out. Red, because it is a loss. */
+.slot.target.scrap { border-color: var(--magenta); background: rgba(214,32,106,.12); }
+.slot.target.scrap .fx { text-decoration: line-through; }
+.slot .fx { font-family: var(--cond); font-size: 13px; line-height: 1.05; }
+.slot .lv {
+  position: absolute; top: 2px; right: 4px; font-size: 9px;
+  font-family: var(--cond); color: var(--magenta);
+}
+.slot .st { position: absolute; bottom: 2px; left: 4px; font-size: 9px; color: var(--cyan); }
+.slot .tm { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ------------------------------------------------------------ shopfitting */
+
+#buys { display: grid; gap: 4px; }
+.dept {
+  font-family: var(--cond); font-size: 10.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 400;
+  border-bottom: 1px solid var(--rule); padding-bottom: 2px; margin-top: 7px;
+}
+.dept:first-child { margin-top: 0; }
+.deptrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+/* Short lines stay quiet rather than turning the page red — on an early night
+   everything is short, and a column of red prices is not information. What it
+   is short BY is on the hover. */
+.buy.short .c { color: var(--ink-soft); }
+.buy {
+  border: 1px solid var(--rule); background: var(--paper-2);
+  padding: 7px 9px; text-align: left; cursor: pointer; font: inherit;
+  display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+  min-height: 44px;
+}
+.buy:hover:not(:disabled) { box-shadow: 2px 2px 0 var(--ink); }
+.buy:disabled { opacity: .4; cursor: default; }
+.buy .n { font-size: 12.5px; }
+.buy .c { font-family: var(--cond); font-size: 14px; color: var(--money); white-space: nowrap; }
+
+/* ------------------------------------------------------------- boss cards */
+
+#bosschoice { border: 2px solid var(--magenta); padding: 12px; background: rgba(214,32,106,.06); }
+#boss-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bosscard {
+  border: 1px solid var(--rule); background: var(--paper); padding: 10px;
+  cursor: pointer; text-align: left; font: inherit; min-height: 44px;
+}
+.bosscard:hover { box-shadow: 3px 3px 0 var(--magenta); }
+.bosscard .bn { font-family: var(--cond); font-size: 18px; text-transform: uppercase; }
+.bosscard .bd { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+
+/* -------------------------------------------------------------- the floor */
+
+#day { display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; }
+#floorwrap { position: relative; overflow: hidden; min-height: 260px; }
+#floor { width: 100%; height: 100%; min-height: 260px; display: block; cursor: pointer; }
+
+/* The roller shutter. A trading day used simply to be there — the wipe
+   finished and a shop full of people existed. Opening up is the beat the
+   whole night has been building to, and it costs one element. */
+#shutter {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  display: grid; place-items: center;
+  background:
+    repeating-linear-gradient(180deg,
+      #9a927f 0 7px, #b6ad96 7px 9px, #857e6d 9px 11px);
+  border-bottom: 5px solid var(--ink);
+  box-shadow: 0 8px 18px rgba(25,20,16,.35);
+  animation: rollup .95s cubic-bezier(.55, .06, .32, 1) forwards;
+}
+#shutter span {
+  font-family: var(--cond); font-size: clamp(28px, 5vw, 54px);
+  letter-spacing: .3em; text-transform: uppercase; color: var(--paper);
+  background: var(--red); padding: 4px 22px 8px; box-shadow: 5px 5px 0 var(--ink);
+  transform: rotate(-2deg);
+}
+@keyframes rollup {
+  0%   { transform: translateY(0); }
+  18%  { transform: translateY(2%); }        /* it catches, then goes */
+  100% { transform: translateY(-101%); }
+}
+@media (prefers-reduced-motion: reduce) { #shutter { display: none; } }
+#daybar {
+  display: flex; gap: clamp(10px, 2.4vw, 26px); align-items: center;
+  border-top: 3px solid var(--ink); padding-top: 8px; flex-wrap: wrap;
+}
+.dstat { display: flex; flex-direction: column; line-height: 1; }
+.dstat b { font-family: var(--cond); font-size: clamp(16px, 2.2vw, 22px); }
+.dstat i {
+  font-style: normal; font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-soft); margin-top: 3px;
+}
+/* Takings and the pace lead; everything else is reference. */
+.dstat.lead b { font-size: clamp(22px, 3.4vw, 34px); }
+#d-pace.short { color: var(--red); }
+#d-pace.clear { color: var(--money); }
+.dsmall { font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.dsmall b { font-family: var(--cond); font-size: 14px; color: var(--ink); }
+.dsmall .lost b { color: var(--red); }
+.dstat.triage b { color: var(--cyan); }
+.dstat.triage.spent b { color: var(--ink-soft); }
+.dstat.triage.spent i { text-decoration: line-through; }
+
+/* The clock. "54% of the day" is not a time, and a shop that opens at nine
+   and shuts at half five is a shop rather than a progress bar. */
+.clockblock { display: grid; gap: 5px; min-width: 88px; }
+.clockblock b {
+  font-family: var(--cond); font-size: clamp(20px, 3vw, 28px);
+  font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1;
+}
+.dayprog { height: 8px; background: var(--paper-3); border: 1.5px solid var(--ink); }
+.dayprog span {
+  display: block; height: 100%; width: 0;
+  background: repeating-linear-gradient(-45deg, var(--ink) 0 3px, transparent 3px 6px);
+}
+#daybar .daybtns { margin-left: auto; }
+
+/* ---------------------------------------------------------------- receipt */
+
+/* ---------------------------------------------------------------- receipt */
+/* The end of a day is the beat the whole loop is built towards, and it was a
+   flat list in a monospace font: a log file, not a moment. It comes off the
+   till now — masthead, meta line, torn edge, a rubber stamp for the verdict,
+   and a barcode — and the gap, the only figure on it that decides anything,
+   is the only one set at size. */
+
+#settle {
+  display: grid; place-items: center; padding: 14px 0 8px; align-content: start;
+  gap: 16px;
+}
+#receipt {
+  background: #fffdf6; width: min(420px, 94vw); padding: 20px 22px 14px;
+  font-family: "SFMono-Regular", ui-monospace, "Courier New", monospace;
+  font-size: 12.5px; line-height: 1.6; position: relative;
+  font-variant-numeric: tabular-nums;
+  transform: rotate(-.5deg);
+  box-shadow: 0 14px 34px rgba(25,20,16,.22), 0 2px 0 rgba(25,20,16,.1);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 92% 100%, 84% calc(100% - 8px),
+    76% 100%, 68% calc(100% - 8px), 60% 100%, 52% calc(100% - 8px), 44% 100%,
+    36% calc(100% - 8px), 28% 100%, 20% calc(100% - 8px), 12% 100%, 4% calc(100% - 8px), 0 100%);
+  animation: receiptout .42s cubic-bezier(.2, .9, .3, 1.05);
+}
+/* It prints, rather than appearing. */
+@keyframes receiptout {
+  from { transform: translateY(-16px) rotate(-.5deg); opacity: 0; }
+  to   { transform: rotate(-.5deg); opacity: 1; }
+}
+/* Faint thermal banding, so the stock is paper rather than a white box. */
+#receipt::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    rgba(25,20,16,.028) 0 1px, transparent 1px 4px);
+}
+#receipt .rhead { text-align: center; margin-bottom: 6px; }
+#receipt .rmast {
+  font-family: var(--cond); font-size: 26px; letter-spacing: .17em;
+  text-transform: uppercase; line-height: 1;
+}
+#receipt .rshop {
+  font-size: 9px; letter-spacing: .16em; color: var(--ink-soft); margin-top: 3px;
+}
+#receipt .rmeta {
+  display: flex; justify-content: space-between; font-size: 9.5px;
+  letter-spacing: .1em; color: var(--ink-soft);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 3px 0; margin-bottom: 6px;
+}
+#receipt .rboss {
+  text-align: center; font-family: var(--cond); font-size: 13px;
+  letter-spacing: .14em; background: var(--red); color: #fff; margin-bottom: 6px;
+}
+#receipt .r { display: flex; justify-content: space-between; gap: 12px; }
+#receipt .r span:last-child { white-space: nowrap; }
+#receipt .rule { border-top: 1px dashed var(--rule); margin: 7px 0; }
+#receipt .big { font-family: var(--cond); font-size: 17px; letter-spacing: .04em; }
+
+/* The one number the day is actually about. */
+#receipt .rgap {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 9px 0 4px; padding: 6px 9px; border: 2px solid currentColor;
+}
+#receipt .rgap i {
+  font-style: normal; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase;
+}
+#receipt .rgap b { font-family: var(--cond); font-size: 30px; line-height: 1; letter-spacing: .01em; }
+#receipt .rplan { font-size: 10.5px; color: var(--ink-soft); line-height: 1.4; }
+
+/* The verdict as a rubber stamp, hit at an angle. */
+.stampline { display: grid; place-items: center; margin: 14px 0 6px; }
+.rstamp {
+  font-family: var(--cond); font-size: 21px; letter-spacing: .16em;
+  text-transform: uppercase; padding: 3px 15px 5px;
+  border: 3px double currentColor; transform: rotate(-4.5deg);
+  opacity: .82;
+}
+#receipt .pass, .rstamp.pass { color: var(--money); }
+#receipt .fail, .rstamp.fail { color: var(--red); }
+
+#receipt .rfoot {
+  text-align: center; font-size: 8.5px; letter-spacing: .2em;
+  color: var(--ink-soft); margin-top: 8px;
+}
+.barcode {
+  height: 26px; margin: 0 auto 6px; width: 74%;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 9px,
+    var(--ink) 9px 12px, transparent 12px 13px, var(--ink) 13px 14px, transparent 14px 18px);
+  opacity: .8;
+}
+@media (prefers-reduced-motion: reduce) { #receipt { animation: none; } }
+
+/* ------------------------------------------------------------------ title */
+
+/* Cover on the left, order form on the right. As one centred column the
+   masthead ate a third of the screen and pushed the button that starts the
+   game below the fold — on the very first screen of the game. */
+#title {
+  display: grid; gap: clamp(14px, 3vw, 34px);
+  padding: 2vh 0 3vh; position: relative;
+  /* min-height plus centred content: the box never shrinks below the stage,
+     so on a tall window the cover sits in the middle, and on a short one the
+     box grows past it and there is no free space left to centre — which is
+     what stops the masthead being clipped off the top of a scroll. */
+  min-height: 100%; align-content: center;
+}
+@media (min-width: 940px) {
+  #title { grid-template-columns: 1.05fr .95fr; align-items: start; }
+}
+.cover { display: grid; justify-items: center; gap: 11px; text-align: center; }
+.setup { display: grid; gap: 16px; align-content: start; }
+/* A catalogue cover: issue number, season, a rule top and bottom, and the
+   masthead reversed out of a red band. */
+.cover-top {
+  display: flex; gap: 14px; align-items: baseline; justify-content: center;
+  width: 100%; max-width: 640px; padding-bottom: 5px;
+  border-bottom: 2px solid var(--ink);
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.cover-top .mid { margin: 0 auto; color: var(--ink); font-weight: 600; }
+.cover-burst { position: static; transform: rotate(-9deg) translateY(-8px); }
+#title h1 {
+  background: var(--red); color: var(--paper); padding: 2px 22px 8px;
+  box-shadow: 5px 5px 0 var(--ink);
+  font-family: var(--cond); font-size: clamp(52px, 9vw, 108px); line-height: .85;
+  letter-spacing: -.01em;
+  text-shadow: none;
+}
+#title .tag {
+  font-size: 14px; color: var(--ink); max-width: 40ch; line-height: 1.5;
+  font-style: italic;
+}
+#title .terms-line {
+  font-style: normal; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+#title .fine {
+  font-family: var(--cond); font-size: 15px; letter-spacing: .04em;
+  color: var(--ink); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  padding: 5px 14px; margin-top: 4px;
+}
+#charpick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+/* Shop cards are stock lines on the cover page, so they get the same
+   furniture as a catalogue entry: heavy rule, tint, a drop shadow. */
+.charbtn {
+  box-shadow: 3px 3px 0 rgba(25,20,16,.15);
+  border-width: 2px !important; border-color: var(--ink) !important;
+  border: 1px solid var(--rule); background: var(--paper-2); padding: 8px 12px;
+  font: inherit; cursor: pointer; text-align: left; min-height: 44px;
+}
+.charbtn.on {
+  outline: 3px solid var(--red); outline-offset: 2px; background: #fff;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.charbtn .cn { color: var(--ink); }
+.charbtn:disabled { opacity: .4; cursor: not-allowed; }
+.charbtn .lock { font-size: 10px; letter-spacing: .1em; color: var(--magenta); }
+.charbtn .cn { font-family: var(--cond); font-size: 16px; text-transform: uppercase; }
+.charbtn .cr { font-size: 10.5px; color: var(--ink-soft); }
+
+/* ---------------------------------------------------------------- buttons */
+
+#actions { display: flex; gap: 12px; align-items: center; padding: 8px 0 12px; border-top: 1px solid var(--rule); }
+#tip { font-size: 11.5px; color: var(--ink-soft); }
+button { font-family: var(--body); }
+.primary {
+  font-family: var(--cond); font-size: clamp(16px, 2.4vw, 21px); text-transform: uppercase;
+  letter-spacing: .06em; background: var(--ink); color: var(--paper);
+  border: none; padding: 11px 26px; cursor: pointer; min-height: 44px;
+}
+.primary:hover { background: var(--magenta); }
+.primary:disabled { opacity: .35; cursor: default; }
+/* Committing to a day the panel says you lose should not look like committing
+   to a day you win. */
+.primary.danger { background: var(--red); }
+.primary.danger:hover { background: #a8241a; }
+.primary em {
+  font-style: normal; font-size: .62em; letter-spacing: .1em; opacity: .85;
+  margin-left: 10px;
+}
+.ghost {
+  border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  padding: 8px 13px; cursor: pointer; font-size: 12.5px; min-height: 44px;
+}
+.ghost:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.ghost:disabled { opacity: .35; cursor: default; }
+.ghost em { font-style: normal; color: var(--money); margin-left: 5px; }
+.ghost:hover:not(:disabled) em { color: var(--yellow); }
+
+@media (max-width: 620px) {
+  #ledger { gap: 10px; }
+  .term b { font-size: 20px; }
+  #boss-options { grid-template-columns: 1fr; }
+}
+
+
+/* ---------------------------------------------------------------- title ---
+   The ladder, the records and the rules. A roguelike without a ladder is one
+   run repeated, and none of this existed in the browser build: it always
+   played Audit I and forgot everything when the tab closed. */
+
+#title .pick { display: grid; gap: 7px; justify-items: stretch; }
+#title .pick h2 {
+  font-family: var(--cond); font-size: 12px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+#title .pick h2 .hint { letter-spacing: 0; text-transform: none; font-family: var(--body); }
+/* The shops are stock lines on an order form: one grid, equal cells, so the
+   seventh does not sit alone on a row of its own. */
+#charpick {
+  display: grid; gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+#auditpick { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.auditbtn {
+  font-family: var(--cond); font-size: 14px; letter-spacing: .06em;
+  padding: 5px 11px; border: 1.5px solid var(--rule); background: var(--paper-2);
+  cursor: pointer; color: var(--ink);
+}
+.auditbtn.on { outline: 3px solid var(--ink); background: var(--paper); }
+.auditbtn.done { border-color: var(--money); color: var(--money); }
+.auditbtn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* The season ahead. A curve that multiplies by 1.24 for twenty-four days is
+   140x end to end, so a linear axis draws day one as a hairline; the bars are
+   log-scaled and the two ends are printed as figures underneath. */
+#season { display: grid; gap: 7px; }
+.sbars {
+  display: flex; align-items: flex-end; gap: 2px; height: 42px;
+  border-bottom: 2px solid var(--ink); padding-bottom: 0;
+}
+.sbar {
+  flex: 1; background: var(--ink); opacity: .32; display: block;
+  transition: height .3s cubic-bezier(.2, .9, .3, 1.1);
+}
+.sbar.qstart { margin-left: 7px; }
+.sbar.boss { background: var(--red); opacity: .62; }
+.sends {
+  display: flex; justify-content: space-between; font-size: 11px;
+  color: var(--ink-soft); letter-spacing: .02em;
+}
+.sends b { font-family: var(--cond); font-size: 15px; color: var(--ink); }
+.sends .red b { color: var(--red); }
+.snote { font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.snote b { font-family: var(--cond); font-size: 13px; color: var(--ink); }
+
+#titlestats {
+  display: flex; gap: 18px; font-size: 11.5px; color: var(--ink-soft);
+  flex-wrap: wrap;
+  border-top: 1px solid var(--rule); padding-top: 9px;
+}
+#titlestats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.titlerow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.seedbox { font-size: 11px; color: var(--ink-soft); letter-spacing: .06em; }
+.seedbox input {
+  font: inherit; font-size: 12px; padding: 4px 6px; margin-left: 5px;
+  border: 1.5px solid var(--rule); background: var(--paper-2); color: var(--ink);
+}
+
+/* The sheet covers the stage rather than replacing a phase, so opening the
+   rules mid-run does not disturb the run. */
+#sheet {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
+  background: rgba(22, 19, 15, .55); padding: 3vh 3vw;
+}
+.sheetinner {
+  background: var(--paper); border: 2px solid var(--ink); max-width: 62ch;
+  max-height: 92vh; overflow-y: auto; padding: 22px 24px; position: relative;
+}
+.sheetinner .close { position: absolute; top: 12px; right: 12px; }
+.sheetinner h3 {
+  font-family: var(--cond); font-size: 19px; letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.sheetinner h4 {
+  font-family: var(--cond); font-size: 13px; letter-spacing: .14em;
+  text-transform: uppercase; margin: 16px 0 5px; color: var(--ink-soft);
+}
+.sheetinner p, .sheetinner li { font-size: 13px; line-height: 1.65; }
+.sheetinner ul { padding-left: 18px; }
+.sheetinner .formula {
+  font-family: var(--cond); font-size: 17px; letter-spacing: .04em;
+  text-align: center; padding: 10px; border: 1.5px dashed var(--rule); margin: 10px 0;
+}
+.sheetinner .hrow {
+  display: flex; justify-content: space-between; gap: 10px; font-size: 12px;
+  padding: 4px 0; border-bottom: 1px dashed var(--rule);
+}
+.sheetinner .hrow .w { color: var(--money); } .sheetinner .hrow .l { color: var(--magenta); }
+
+/* The customer legend. The day draws eight silhouettes in eight colours and
+   nothing in the game said what any of them were, so "Pensioners never
+   convert" on a card connected to nobody on your own floor. */
+#whoswho { display: grid; gap: 5px; margin-top: 6px; }
+.who {
+  display: grid; grid-template-columns: 13px 8.5em 1fr; gap: 4px 9px;
+  align-items: baseline; padding: 4px 0; border-bottom: 1px dashed var(--rule);
+}
+.who i { width: 13px; height: 13px; border: 1.5px solid var(--ink); display: block; }
+.who .wn { font-family: var(--cond); font-size: 15px; text-transform: uppercase; }
+.who .wd { font-size: 11.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.who .wnote { grid-column: 2 / -1; font-size: 11px; font-style: italic; color: var(--ink-soft); }
+
+/* End-of-run summary: the number you finish on is what the game is for, so it
+   gets the size. */
+#receipt .headline {
+  font-family: var(--cond); font-size: 34px; text-align: center; line-height: 1;
+  margin: 6px 0 2px; font-variant-numeric: tabular-nums;
+}
+#receipt .headline.pass { color: var(--money); }
+#receipt .headline.fail { color: var(--magenta); }
+#receipt .sub { text-align: center; font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+#receipt .unlock {
+  text-align: center; font-family: var(--cond); font-size: 15px; letter-spacing: .1em;
+  color: var(--money); border: 1.5px solid var(--money); padding: 6px; margin: 10px 0;
+}
+#receipt .build { font-size: 11px; color: var(--ink-soft); line-height: 1.7; margin-top: 6px; }
+
+
+/* ------------------------------------------------------------- the run map */
+/* Twenty-four days on one page. One round tells a player almost nothing about
+   the shape of a run, and the shape is the game: a curve that multiplies, an
+   inspection every third day, and eight quarters of it. */
+
+.mkey { display: flex; gap: 14px; font-size: 11px; color: var(--ink-soft); margin: 10px 0 12px; }
+.mkey span { display: flex; align-items: center; gap: 5px; }
+.sw { width: 11px; height: 11px; border: 1.5px solid var(--ink); display: inline-block; }
+.sw.now { background: var(--yellow); }
+.sw.won { background: var(--money); }
+.sw.todo { background: var(--paper-2); }
+.sw.boss { background: var(--red); border-radius: 50%; }
+
+/* One continuous strip, not eight rows of three. Split into quarters, every
+   row restarted at the left and the climb — the entire subject of the chart —
+   was invisible. */
+.mmap { padding-bottom: 16px; }
+.rmchart {
+  display: flex; align-items: flex-end; gap: 2px;
+  border-bottom: 2px solid var(--ink);
+}
+.rmday { flex: 1; position: relative; height: 100%; }
+.rmday.qstart { margin-left: 8px; }
+/* The target, and what you actually traded against it, on one axis. */
+.rmt {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--ink); opacity: .22;
+}
+.rmday.now .rmt { background: var(--yellow); opacity: 1; outline: 1.5px solid var(--ink); }
+.rma { position: absolute; bottom: 0; left: 26%; right: 26%; }
+.rma.won { background: var(--money); }
+.rma.lost { background: var(--red); }
+.rmover {
+  position: absolute; top: -3px; left: 0; right: 0; text-align: center;
+  font-size: 8px; color: var(--money); line-height: 1;
+}
+.rmboss {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+}
+.rmn {
+  position: absolute; bottom: -14px; left: 0; right: 0; text-align: center;
+  font-size: 8.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.mfoot {
+  display: flex; justify-content: space-between; font-size: 10.5px;
+  color: var(--ink-soft); margin-top: 4px;
+}
+
+
+/* ------------------------------------------------------------ transitions */
+/* A hard cut between the catalogue and the floor gives the eye nothing to
+   follow and makes two screens feel like two programs. These are two registers
+   of one publication, so the transition is a page turning. */
+
+.wipe {
+  position: fixed; inset: 0; z-index: 80; pointer-events: none;
+  background:
+    repeating-linear-gradient(-8deg, var(--paper-2) 0 26px, var(--paper) 26px 52px);
+  border-right: 4px solid var(--ink);
+  transform: translateX(-102%);
+}
+.wipe.go { animation: pageturn .68s cubic-bezier(.66, 0, .3, 1) forwards; }
+@keyframes pageturn {
+  0%   { transform: translateX(-102%); }
+  45%  { transform: translateX(0); }
+  55%  { transform: translateX(0); }
+  100% { transform: translateX(102%); }
+}
+
+/* Cards deal onto the page rather than appearing on it. */
+@keyframes dealin {
+  from { opacity: 0; transform: translateY(14px) rotate(-1.2deg); }
+  to   { opacity: 1; transform: none; }
+}
+.entry { animation: dealin .34s cubic-bezier(.2, .9, .3, 1.2) backwards; }
+.entry:nth-child(2) { animation-delay: .06s; }
+.entry:nth-child(3) { animation-delay: .12s; }
+.entry:nth-child(4) { animation-delay: .18s; }
+
+/* A slot receiving a fixture should land, not blink. */
+@keyframes slotland {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+.slot.landed { animation: slotland .38s cubic-bezier(.3, 1.4, .5, 1); }
+
+/* The headline number pulses when the verdict flips between short and clear —
+   the one state change on the panel worth interrupting someone for. */
+@keyframes verdictflip {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+.vprofit.flip { animation: verdictflip .42s cubic-bezier(.3, 1.5, .5, 1); }
+
+/* The term a decision just moved. The card says "×1.42 Basket" and the panel
+   silently becomes a different number; marking which term changed is what
+   joins the two, and joining them is why the formula is on screen. */
+@keyframes termup {
+  0%   { transform: none; }
+  35%  { transform: translateY(-4px); }
+  100% { transform: none; }
+}
+.term.moved, .term.moved-down { animation: termup .5s cubic-bezier(.3, 1.4, .5, 1); }
+.term.moved b { color: var(--money); }
+.term.moved-down b { color: var(--red); }
+.term.moved::after, .term.moved-down::after {
+  content: ""; position: absolute; inset: -4px -6px; border: 2px solid currentColor;
+  color: var(--money); opacity: 0; animation: termring .6s ease-out;
+  pointer-events: none;
+}
+.term.moved-down::after { color: var(--red); }
+@keyframes termring {
+  0%   { opacity: .75; transform: scale(.9); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+.term { position: relative; }
+@media (prefers-reduced-motion: reduce) {
+  .term.moved, .term.moved-down { animation: none; }
+  .term.moved::after, .term.moved-down::after { display: none; }
+}
+
+/* Buttons get a press. Nothing in the build had one. */
+button { transition: transform .07s ease, background .12s ease, color .12s ease; }
+button:active { transform: translateY(1px) scale(.985); }
+button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.entry:focus-visible, .slot:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* The sheet arrives rather than appearing. */
+@keyframes sheetin {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+#sheet .sheetinner { animation: sheetin .26s cubic-bezier(.2, .9, .3, 1.1); }
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+#sheet { animation: fadein .2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wipe, .entry, .slot.landed, .vprofit.flip, #sheet, #sheet .sheetinner {
+    animation: none !important;
+  }
+  button { transition: none; }
+}
+
+
+/* --------------------------------------------------------------- day bar */
+/* Was a flat row of five figures. Takings is the one that answers the
+   question the panel asked, so it gets the weight, and the triage count is
+   the one you can act on, so it gets the colour. */
+
+.daybtns { margin-left: auto; display: flex; gap: 6px; }
+
+/* -------------------------------------------------------------- coaching */
+/* A rules sheet nobody opens is not onboarding. One line, at the moment it is
+   needed, on the first run only. */
+
+#coach {
+  background: var(--yellow); border-top: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--ink);
+  padding: 9px 14px 10px; margin-top: 6px;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px;
+  align-items: center;
+  animation: coachin .3s cubic-bezier(.2, .9, .3, 1.2);
+}
+@keyframes coachin {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+#coach b {
+  font-family: var(--cond); font-size: 16px; letter-spacing: .07em;
+  text-transform: uppercase; white-space: nowrap;
+}
+#coach span { font-size: 12.5px; line-height: 1.4; }
+#coach button { min-height: 36px; padding: 6px 12px; }
+@media (max-width: 700px) {
+  #coach { grid-template-columns: 1fr; }
+  #coach button { justify-self: end; }
+}
+@media (prefers-reduced-motion: reduce) { #coach { animation: none; } }
+
+/* ------------------------------------------------------------- inspection */
+/* A placed fixture was a name in a 62px box. Everything that made it worth
+   taking lived on a catalogue card that no longer existed — so the back half
+   of the run asked a player to choose what to scrap from four names they
+   could not read. This is that card, put back. */
+
+#inspect {
+  position: fixed; z-index: 75; width: min(340px, 92vw);
+  background: var(--paper); border: 2.5px solid var(--ink);
+  box-shadow: 6px 6px 0 rgba(25,20,16,.35);
+  padding: 11px 13px 11px; display: grid; gap: 5px;
+  animation: inspectin .18s cubic-bezier(.2, .9, .3, 1.15);
+}
+@keyframes inspectin { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; } }
+#inspect .ihead { border-bottom: 1.5px solid var(--ink); padding-bottom: 4px; }
+#inspect .iname {
+  font-family: var(--cond); font-size: 21px; text-transform: uppercase;
+  line-height: 1; letter-spacing: .015em;
+}
+#inspect .ilv { color: var(--magenta); }
+#inspect .iwhere {
+  font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-soft); margin-top: 3px;
+}
+#inspect .ieff {
+  font-family: var(--cond); font-size: 16px; color: var(--red); line-height: 1.2;
+}
+#inspect .icond { font-size: 11px; color: var(--ink-soft); font-style: italic; }
+#inspect .grown {
+  font-size: 11.5px; background: var(--paper-3); padding: 4px 7px;
+  border-left: 3px solid var(--money);
+}
+#inspect .grown b { font-family: var(--cond); font-size: 14px; color: var(--money); }
+#inspect .cost { font-size: 11px; color: var(--ink-soft); }
+#inspect .cost b { font-family: var(--cond); font-size: 13px; color: var(--red); }
+#inspect .iact { display: flex; gap: 6px; margin-top: 3px; justify-content: flex-end; }
+#inspect .iact .ghost { padding: 6px 10px; font-size: 11.5px; min-height: 36px; }
+.ghost.danger { border-color: var(--red); color: var(--red); }
+.ghost.danger:hover:not(:disabled) { background: var(--red); color: #fff; }
+
+/* A growing fixture is marked on the plan, because which of your four is
+   compounding is the single thing you most need to see at a glance. */
+.slot .gr { position: absolute; bottom: 2px; right: 4px; font-size: 8px; color: var(--money); }
+.slot.filled:hover { box-shadow: inset 0 0 0 2px var(--ink); }
+
+/* The same list, but reachable at any time — the floorplan only exists on the
+   night screen, so mid-day there was no way to answer "what have I got?". */
+.shoplist { display: grid; gap: 8px; }
+.saisle h5 {
+  font-family: var(--cond); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 2px;
+}
+.srow {
+  display: grid; grid-template-columns: 18px 1fr auto; gap: 8px;
+  padding: 3px 0; border-bottom: 1px dashed var(--rule); align-items: baseline;
+}
+.srow.empty { color: var(--ink-soft); font-size: 11px; }
+.srow .sn { font-family: var(--cond); font-size: 12px; color: var(--ink-soft); }
+.srow b { font-family: var(--cond); font-size: 14px; font-weight: 400; display: block; }
+.srow i { font-style: normal; font-size: 11px; color: var(--red); display: block; }
+.srow em { font-style: normal; font-size: 10.5px; color: var(--money); display: block; }
+.srow em b { display: inline; font-size: 11.5px; color: var(--money); }
+.srow .su { font-family: var(--cond); font-size: 12px; color: var(--red); }
+.sublead { font-size: 11.5px !important; color: var(--ink-soft); margin-bottom: 6px; }

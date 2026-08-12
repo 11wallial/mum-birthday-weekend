@@ -1,1191 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inner Weather — visit the inside of a mind</title>
-<meta name="description" content="Tune the dials to match your inner world, send the link, and let someone stand inside it for ninety seconds.">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,900;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --bg: #23262a;
-  --bg-soft: #2c3036;
-  --accent: #aab4bd;
-  --ink: #e8eaee;
-  --ink-dim: #9aa3ad;
-  --panel: rgba(16, 18, 22, 0.72);
-  --line: rgba(255,255,255,0.10);
-}
-
-body[data-weather="golden"] { --bg:#2a2114; --bg-soft:#382d1c; --accent:#ffd27d; }
-body[data-weather="fog"]    { --bg:#23262a; --bg-soft:#2c3036; --accent:#aab4bd; }
-body[data-weather="rain"]   { --bg:#161c24; --bg-soft:#1d2530; --accent:#7da4c4; }
-body[data-weather="storm"]  { --bg:#1a1622; --bg-soft:#241e30; --accent:#c4b5fd; }
-body[data-weather="deep"]   { --bg:#0a1420; --bg-soft:#102030; --accent:#67e8f9; }
-body[data-weather="neon"]   { --bg:#14101e; --bg-soft:#1e1730; --accent:#f472b6; }
-
-html, body { height: 100%; }
-
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  overflow-x: hidden;
-  transition: background 1.6s ease;
-}
-
-#atmosphere {
-  position: fixed; inset: 0;
-  width: 100%; height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-#vignette {
-  position: fixed; inset: 0; z-index: 2; pointer-events: none;
-  box-shadow: inset 0 0 120px rgba(0,0,0,0);
-  transition: box-shadow .4s ease;
-}
-
-#spotlight { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
-
-#flash {
-  position: fixed; inset: 0; z-index: 8; pointer-events: none;
-  background: #fff; opacity: 0; transition: opacity .5s ease;
-}
-
-#thoughts { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
-
-.thought {
-  position: absolute;
-  max-width: 320px;
-  font-size: 17px;
-  line-height: 1.45;
-  color: var(--ink);
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 1.1s ease, transform 6s ease-out;
-  text-shadow: 0 2px 18px rgba(0,0,0,0.55);
-  will-change: opacity, transform;
-}
-.thought.show { opacity: .92; transform: translateY(-16px); }
-.thought.fade { opacity: 0; }
-.thought.everyday  { color: var(--ink); }
-.thought.anxious   { color: #fca5a5; font-weight: 500; }
-.thought.critic    { color: #f87171; font-weight: 600; letter-spacing: .2px; }
-.thought.kind      { color: #86efac; }
-.thought.wonder    { color: var(--accent); font-style: italic; }
-.thought.memory    {
-  color: #e7d3ae; font-family: 'Playfair Display', serif; font-style: italic;
-  font-size: 19px; background: rgba(60,48,28,.45); padding: 10px 16px;
-  border-radius: 4px; border-left: 2px solid #c8a86a;
-}
-.thought.sensory   {
-  color: #fde68a; font-size: 15px; letter-spacing: 1.5px; font-weight: 600;
-  text-transform: lowercase;
-}
-.thought.shape     { color: var(--ink-dim); font-style: italic; font-size: 16px; }
-.thought.aphant    { color: var(--ink-dim); font-style: italic; font-size: 15px; max-width: 300px; }
-.thought.image-flash {
-  font-family: 'Playfair Display', serif; font-size: 20px; color: #fff;
-  padding: 18px 22px; border-radius: 14px; max-width: 280px;
-  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--accent) 55%, transparent), rgba(255,255,255,0.06) 70%);
-  backdrop-filter: blur(2px);
-  box-shadow: 0 8px 40px rgba(0,0,0,.4);
-}
-
-#monologue {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
-  padding: 18px 22px 26px;
-  text-align: center; pointer-events: none;
-  background: linear-gradient(to top, rgba(0,0,0,.55), transparent);
-  display: none;
-}
-#monologue.on { display: block; }
-#monologue .who {
-  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--ink-dim); margin-bottom: 6px;
-}
-#monologue .line {
-  font-size: 18px; font-weight: 500; min-height: 26px;
-  color: var(--ink); opacity: 0; transition: opacity .8s ease;
-  text-shadow: 0 2px 14px rgba(0,0,0,.7);
-}
-#monologue .line.show { opacity: 1; }
-#monologue.critic .line { color: #fca5a5; }
-#monologue.gentle .line { color: #bbf7d0; }
-#monologue.silent .line { color: var(--ink-dim); font-style: italic; font-weight: 400; }
-
-#caption {
-  position: fixed; top: 14%; left: 50%; transform: translateX(-50%);
-  z-index: 6; max-width: 520px; width: calc(100% - 48px);
-  text-align: center; pointer-events: none;
-  font-family: 'Playfair Display', serif; font-size: 21px; font-style: italic;
-  color: var(--accent); opacity: 0; transition: opacity 1s ease;
-  text-shadow: 0 2px 20px rgba(0,0,0,.8);
-}
-#caption.show { opacity: 1; }
-
-#hud {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-  display: none; justify-content: space-between; align-items: flex-start;
-  padding: 16px 18px; pointer-events: none;
-}
-#hud.on { display: flex; }
-.hud-left { display: flex; flex-direction: column; gap: 8px; }
-.hud-chip {
-  pointer-events: auto; cursor: pointer;
-  font-size: 12px; font-weight: 600; letter-spacing: .5px;
-  color: var(--ink); background: rgba(0,0,0,.45);
-  border: 1px solid var(--line); border-radius: 20px;
-  padding: 7px 14px; backdrop-filter: blur(6px);
-  transition: background .2s;
-  user-select: none;
-}
-.hud-chip:hover { background: rgba(0,0,0,.7); }
-#clock {
-  font-size: 11px; color: var(--ink-dim); background: rgba(0,0,0,.45);
-  border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px;
-  line-height: 1.6; backdrop-filter: blur(6px);
-}
-#clock b { color: var(--accent); font-weight: 600; }
-
-/* ---------- screens ---------- */
-.screen {
-  position: relative; z-index: 7;
-  min-height: 100vh; display: none;
-  align-items: center; justify-content: center;
-  padding: 40px 20px;
-}
-.screen.on { display: flex; }
-
-.panel {
-  width: 100%; max-width: 640px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 36px 34px;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 30px 80px rgba(0,0,0,.5);
-}
-
-h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 40px; font-weight: 900; letter-spacing: -.5px;
-  margin-bottom: 6px;
-}
-h1 .tint { color: var(--accent); }
-.kicker {
-  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--accent); font-weight: 600; margin-bottom: 14px;
-}
-.lede { font-size: 16px; line-height: 1.65; color: var(--ink-dim); margin-bottom: 8px; }
-.lede b { color: var(--ink); font-weight: 600; }
-
-.btn {
-  display: inline-block; cursor: pointer; border: none;
-  font-family: inherit; font-size: 15px; font-weight: 600;
-  padding: 13px 26px; border-radius: 14px;
-  background: var(--accent); color: #0b0d12;
-  transition: transform .15s ease, filter .15s ease;
-}
-.btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
-.btn.ghost {
-  background: transparent; color: var(--ink);
-  border: 1px solid var(--line);
-}
-.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
-
-.preset-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.preset {
-  cursor: pointer; font-size: 13px; font-weight: 500;
-  color: var(--ink); background: var(--bg-soft);
-  border: 1px solid var(--line); border-radius: 20px;
-  padding: 8px 15px; transition: border-color .2s, color .2s;
-}
-.preset:hover { border-color: var(--accent); color: var(--accent); }
-.small-print {
-  font-size: 12px; color: var(--ink-dim); line-height: 1.6; margin-top: 18px;
-}
-.small-print a { color: var(--accent); text-decoration: none; }
-
-/* ---------- builder ---------- */
-.dial { margin: 22px 0; }
-.dial-label {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 14px; font-weight: 600; margin-bottom: 8px;
-}
-.dial-value { font-size: 12px; color: var(--accent); font-weight: 500; }
-.dial-ends {
-  display: flex; justify-content: space-between;
-  font-size: 11px; color: var(--ink-dim); margin-top: 6px;
-}
-input[type="range"] {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 4px; border-radius: 2px;
-  background: var(--bg-soft); outline: none; cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent); border: 3px solid #0b0d12;
-  box-shadow: 0 0 0 1px var(--line);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--accent); border: 3px solid #0b0d12;
-}
-
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.chip {
-  cursor: pointer; font-size: 13px; font-weight: 500;
-  color: var(--ink-dim); background: transparent;
-  border: 1px solid var(--line); border-radius: 20px;
-  padding: 7px 14px; transition: all .2s; font-family: inherit;
-}
-.chip:hover { color: var(--ink); }
-.chip.sel { color: #0b0d12; background: var(--accent); border-color: var(--accent); font-weight: 600; }
-
-.text-field { margin-top: 14px; }
-.text-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-.text-field input {
-  width: 100%; font-family: inherit; font-size: 14px;
-  color: var(--ink); background: var(--bg-soft);
-  border: 1px solid var(--line); border-radius: 12px;
-  padding: 11px 14px; outline: none;
-}
-.text-field input:focus { border-color: var(--accent); }
-.section-head {
-  font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
-  color: var(--accent); font-weight: 700; margin: 30px 0 4px;
-}
-.copied-note { font-size: 13px; color: #86efac; margin-top: 10px; min-height: 18px; }
-
-/* ---------- reading task ---------- */
-#task {
-  position: fixed; z-index: 5; left: 50%; top: 46%;
-  transform: translate(-50%,-50%);
-  width: calc(100% - 44px); max-width: 440px;
-  background: #f5f2ea; color: #262524;
-  border-radius: 18px; padding: 22px 24px 18px;
-  box-shadow: 0 30px 90px rgba(0,0,0,.6);
-  opacity: 0; pointer-events: none; visibility: hidden;
-  transition: opacity .9s ease, filter .3s ease, visibility 0s linear .9s;
-}
-#task.on { opacity: 1; pointer-events: auto; visibility: visible; transition: opacity .9s ease, filter .3s ease; }
-#task .from {
-  font-size: 12px; font-weight: 700; letter-spacing: .5px;
-  color: #8a7f6a; margin-bottom: 10px;
-}
-#task .msg { font-size: 15.5px; line-height: 1.65; }
-#task .task-btns { display: flex; gap: 10px; margin-top: 16px; }
-#task .task-btns button {
-  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600;
-  border: none; border-radius: 10px; padding: 9px 16px;
-}
-#task .read-it { background: #262524; color: #f5f2ea; }
-#task .gave-up { background: transparent; color: #8a7f6a; border: 1px solid #d8d2c4 !important; }
-
-/* ---------- end card ---------- */
-#endcard {
-  position: fixed; inset: 0; z-index: 11;
-  display: none; align-items: center; justify-content: center;
-  padding: 24px; background: rgba(4,6,10,.55); backdrop-filter: blur(4px);
-}
-#endcard.on { display: flex; }
-#endcard .panel { max-width: 520px; text-align: center; }
-#endcard h2 {
-  font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700;
-  line-height: 1.35; margin-bottom: 14px;
-}
-#endcard h2 .tint { color: var(--accent); }
-#endcard p { font-size: 15px; line-height: 1.7; color: var(--ink-dim); margin-bottom: 6px; }
-#endcard .btn-row { justify-content: center; }
-
-.share-note {
-  font-family: 'Playfair Display', serif; font-style: italic;
-  font-size: 18px; line-height: 1.6; color: var(--ink);
-  border-left: 2px solid var(--accent);
-  padding-left: 16px; margin: 18px 0; text-align: left;
-}
-
-@media (max-width: 540px) {
-  h1 { font-size: 32px; }
-  .panel { padding: 28px 22px; }
-  .thought { max-width: 240px; font-size: 15px; }
-  #caption { font-size: 18px; top: 11%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .thought { transition: opacity 1.1s ease; transform: none !important; }
-}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FOOTFALL</title>
+<meta name="description" content="A roguelike where you run a shop. Customers walk your aisles, fixtures fire as they pass, and a quarterly target eats you alive.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4ead6'/%3E%3Crect x='4' y='7' width='24' height='4' fill='%230aa3c2'/%3E%3Crect x='4' y='14' width='24' height='4' fill='%23d6206a'/%3E%3Crect x='4' y='21' width='24' height='4' fill='%23f2b90c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script src="data-bundle.js"></script>
 </head>
-<body data-weather="fog">
+<body>
+<div id="app">
 
-<canvas id="atmosphere"></canvas>
-<div id="vignette"></div>
-<div id="spotlight"></div>
-<div id="thoughts"></div>
-<div id="flash"></div>
-<div id="caption"></div>
+  <!-- The ledger is reference, not headline: a thin strip of small chips. -->
+  <header id="ledger">
+    <span class="chip"><b id="l-day">1/24</b> day</span>
+    <span class="chip"><b id="l-quarter">1</b>/8 qtr</span>
+    <span class="chip money"><b id="l-cash">£0</b> cash</span>
+    <span class="chip"><b id="l-tills">1</b> till</span>
+    <span class="chip">tier <b id="l-tier">1</b></span>
+    <span class="grow" id="l-boss"></span>
+    <button id="btn-map" class="chipbtn">The run</button>
+    <button id="btn-help" class="chipbtn" title="How it works">?</button>
+    <button id="btn-mute" class="chipbtn" title="Sound (M)">&#9835;</button>
+  </header>
 
-<div id="monologue">
-  <div class="who">the voice in here</div>
-  <div class="line"></div>
-</div>
-
-<div id="hud">
-  <div class="hud-left">
-    <div class="hud-chip" id="btn-exit">step out &#10005;</div>
-    <div class="hud-chip" id="btn-sound">sound: off</div>
-  </div>
-  <div id="clock">out there: <b id="clock-real">0:00</b><br>in here: <b id="clock-felt">0:00</b></div>
-</div>
-
-<div id="task">
-  <div class="from">JESS &#10022; 21:14</div>
-  <div class="msg">hey!! ok so change of plan for saturday &mdash; Cara can't do the morning any more, so we're thinking <b>2pm at the place by the bridge</b> instead (the one with the <b>green door</b>, not the other one). can you bring the charger you borrowed + tell your mum i said hi. also BIG news about work but i'll tell you in person. don't be late this time &#128514; xx</div>
-  <div class="task-btns">
-    <button class="read-it" id="btn-read">I read it &mdash; all of it</button>
-    <button class="gave-up" id="btn-gaveup">I gave up</button>
-  </div>
-</div>
-
-<!-- ============ LANDING ============ -->
-<div class="screen on" id="scr-landing">
-  <div class="panel">
-    <div class="kicker">Inner Weather</div>
-    <h1>You can't lend someone <span class="tint">your head.</span></h1>
-    <p class="lede" style="margin-top:10px">
-      This is the next best thing. Tune the dials until they match the inside of your mind
-      &mdash; the pace of it, the voice in it, the weather of it &mdash; then send the link.
-      Whoever opens it doesn't get a description. <b>They get ninety seconds of living there.</b>
-    </p>
-    <div class="btn-row">
-      <button class="btn" id="btn-build">Build my inner world</button>
+  <!-- The verdict is the headline. Everything else on this panel is the
+       working that leads to it, and is sized like working. -->
+  <section id="panel" aria-label="Projection">
+    <div class="verdict-block">
+      <div class="vlabel" id="vlabel">Today looks like</div>
+      <div class="vprofit" id="p-profit">£0</div>
+      <div class="vgap" id="p-gap">against £0</div>
     </div>
-    <div class="section-head">or visit an example mind</div>
-    <div class="preset-grid" id="presets"></div>
-    <p class="small-print">
-      Example minds are textures, not diagnoses &mdash; every real head is its own place.
-      Nothing you set here is uploaded anywhere: your inner world lives entirely inside the
-      link you choose to share.
-    </p>
-  </div>
-</div>
-
-<!-- ============ INVITED (shared link) ============ -->
-<div class="screen" id="scr-invited">
-  <div class="panel">
-    <div class="kicker">Inner Weather &mdash; an invitation</div>
-    <h1 id="inv-title">Someone wants to show you <span class="tint">the inside of their head.</span></h1>
-    <div class="share-note" id="inv-note" style="display:none"></div>
-    <p class="lede">
-      Words like &ldquo;anxious&rdquo; or &ldquo;scattered&rdquo; or &ldquo;quiet&rdquo; never
-      quite carry it. So instead of telling you, they built it.
-      For the next minute and a half, their weather is your weather.
-    </p>
-    <div class="btn-row">
-      <button class="btn" id="btn-enter-shared">Step inside</button>
-      <button class="btn ghost" id="btn-build-instead">Build my own instead</button>
+    <div class="working">
+      <div class="terms">
+        <div class="term"><b id="p-footfall">0</b><i>Footfall</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-conv">0%</b><i>Conversion</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-basket">£0</b><i>Basket</i></div>
+        <span class="op">&times;</span>
+        <div class="term"><b id="p-margin">0%</b><i>Margin</i></div>
+        <span class="op">=</span>
+        <div class="term wide"><b id="p-trading">£0</b><i>Takings</i></div>
+      </div>
+      <div class="costs">
+        less
+        <span id="p-rent">rent £0</span>
+        <span id="p-shrink">shrink £0</span>
+        <span id="p-upkeep">upkeep £0</span>
+      </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- ============ BUILDER ============ -->
-<div class="screen" id="scr-builder">
-  <div class="panel">
-    <div class="kicker">The dials</div>
-    <h1 style="font-size:30px">Tune it until it's <span class="tint">true.</span></h1>
-    <p class="lede">There are no right answers &mdash; only accurate ones. The background is already listening to your settings.</p>
-
-    <div id="dials"></div>
-
-    <div class="section-head">the voice in your head</div>
-    <div class="chip-row" id="voice-chips"></div>
-
-    <div class="section-head">emotional weather</div>
-    <div class="chip-row" id="weather-chips"></div>
-
-    <div class="section-head">signing it</div>
-    <div class="text-field">
-      <label for="f-name">Your name <span style="color:var(--ink-dim);font-weight:400">(optional)</span></label>
-      <input id="f-name" maxlength="40" placeholder="so they know whose weather this is">
-    </div>
-    <div class="text-field">
-      <label for="f-note">A line to them <span style="color:var(--ink-dim);font-weight:400">(optional)</span></label>
-      <input id="f-note" maxlength="140" placeholder="e.g. &ldquo;this is why I go quiet at parties&rdquo;">
+  <main id="stage">
+    <!-- night -->
+    <div id="night" hidden>
+      <!-- An inspection arrives and the ledger names it. Naming it is not
+           telling you what it does, and you cannot plan against a name. -->
+      <div id="bosstoday" hidden></div>
+      <div id="bosschoice" hidden>
+        <h2>The landlord's diary</h2>
+        <p class="sub">Two of these are coming. Take one — the other goes back.</p>
+        <div id="boss-options"></div>
+      </div>
+      <div id="catalogue">
+        <h2>Wholesale catalogue <span class="stamp" id="cat-tier">Tier 1</span></h2>
+        <div id="offers"></div>
+        <div id="offer-actions">
+          <button id="btn-reroll" class="ghost">Fresh flyer <em>£0</em></button>
+          <button id="btn-skip" class="ghost">Take the cash instead <em>£0</em></button>
+        </div>
+      </div>
+      <div id="floorplan">
+        <h2>The floor <span class="hint" id="place-hint"></span></h2>
+        <div id="aisles"></div>
+      </div>
+      <div id="shopfitting">
+        <h2>Shopfitting &amp; staff <span class="hint" id="purse"></span></h2>
+        <div id="buys"></div>
+      </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn" id="btn-preview">Step inside my world</button>
-      <button class="btn ghost" id="btn-copy">Copy the link to share</button>
+    <!-- day -->
+    <div id="day" hidden>
+      <div id="floorwrap">
+        <canvas id="floor"></canvas>
+        <!-- The doors open. The day used to simply be there. -->
+        <div id="shutter" hidden><span>Open</span></div>
+      </div>
+      <!-- Five figures at one weight is five figures the eye has to sort.
+           Takings answers the question the panel asked, and the pace says
+           whether it is going to be enough — those two lead. -->
+      <div id="daybar">
+        <div class="clockblock">
+          <b id="d-clock">9:00</b>
+          <div class="dayprog"><span id="d-prog"></span></div>
+        </div>
+        <div class="dstat lead"><b id="d-profit" class="money">£0</b><i>Takings so far</i></div>
+        <div class="dstat lead"><b id="d-pace">&mdash;</b><i>On this pace</i></div>
+        <div class="dsmall">
+          <div><b id="d-sales">0</b> sales</div>
+          <div class="lost"><b id="d-walk">0</b> walked out</div>
+          <div class="lost" id="d-shrinkrow" hidden><b id="d-shrink">£0</b> stolen</div>
+        </div>
+        <div class="dstat triage"><b id="d-triage">0</b><i>Next please</i></div>
+        <div class="daybtns">
+          <button id="btn-pause" class="ghost" title="Space">Pause</button>
+          <button id="btn-speed" class="ghost">&raquo; 1&times;</button>
+        </div>
+      </div>
     </div>
-    <div class="copied-note" id="copied-note"></div>
-    <p class="small-print">The whole configuration is packed into the link itself &mdash; no accounts, no storage, no server.</p>
-  </div>
-</div>
 
-<div id="endcard">
-  <div class="panel">
-    <h2 id="end-title"></h2>
-    <p id="end-body"></p>
-    <div class="btn-row">
-      <button class="btn" id="btn-stay">Stay a little longer</button>
-      <button class="btn ghost" id="btn-again">Replay</button>
-      <button class="btn ghost" id="btn-yours">Build yours</button>
+    <!-- receipt -->
+    <div id="settle" hidden>
+      <div id="receipt"></div>
     </div>
+
+    <!-- title -->
+    <!-- The cover of the catalogue on the left, the order form on the right.
+         Stacked in one centred column the masthead ate a third of the screen
+         and pushed the button that starts the game below the fold. -->
+    <div id="title">
+      <div class="cover">
+        <div class="cover-top">
+          <span>No. 24</span><span class="mid">Wholesale &amp; Retail</span><span>Season 1954</span>
+        </div>
+        <h1>FOOTFALL</h1>
+        <div class="burst cover-burst"><b>89<br>lines</b></div>
+        <p class="tag">Fixtures, fittings &amp; stock for the modern retail premises.<br>
+        <span class="terms-line">Terms strictly cash &middot; rent due Friday &middot; no goods on approval</span></p>
+        <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</p>
+        <div class="titlerow">
+          <button id="btn-rules" class="ghost">How it works</button>
+          <button id="btn-records" class="ghost">Records</button>
+          <label class="seedbox">Seed <input id="seed" type="text" inputmode="numeric"
+            placeholder="random" size="8" autocomplete="off"></label>
+        </div>
+      </div>
+
+      <div class="setup">
+        <div class="pick">
+          <h2>The shop</h2>
+          <div id="charpick"></div>
+        </div>
+
+        <div class="pick">
+          <h2>The audit <span class="hint" id="audit-hint"></span></h2>
+          <div id="auditpick"></div>
+        </div>
+
+        <!-- What you are signing up for, before you sign up for it. It moves
+             when you change the audit, which is the only place the ladder's
+             cost is visible rather than described. -->
+        <div id="season"></div>
+
+        <div id="titlestats"></div>
+      </div>
+    </div>
+
+    <!-- What a fixture you already own actually does, and what it has grown
+         into. Placing a card is a permanent decision made from a card you can
+         no longer read. -->
+    <div id="inspect" hidden></div>
+
+    <!-- rules / records, over the top of whatever is behind -->
+    <div id="sheet" hidden>
+      <div class="sheetinner">
+        <button id="btn-sheet-close" class="ghost close">Close</button>
+        <div id="sheetbody"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- First run only: one line at a time, at the moment it is needed. A rules
+       sheet nobody opens is not onboarding. It is a row of the page rather
+       than a floating box, so it never covers the thing it is talking about. -->
+  <div id="coach" hidden>
+    <b id="coach-t"></b><span id="coach-b"></span>
+    <button id="coach-x" class="ghost">Got it</button>
   </div>
+
+  <!-- Whatever the phase, the thing you do next is in the same place. It used
+       to move: the footer on the night, the middle of the page at settle. -->
+  <footer id="actions">
+    <button id="btn-start" class="primary" hidden>Open the shop</button>
+    <button id="btn-open" class="primary" hidden>Open the doors</button>
+    <button id="btn-continue" class="primary" hidden>Lock up</button>
+    <div id="tip"></div>
+  </footer>
+
 </div>
-
-<script>
-'use strict';
-
-/* ================= state ================= */
-
-const P = {
-  pace: 40,      // thought pace: still water -> racing
-  volume: 50,    // inner voice volume: whisper -> can't hear over it
-  voice: 'narrator', // silent | gentle | narrator | restless | critic
-  imagery: 50,   // mind's eye: blank -> private cinema
-  senses: 35,    // outside world: dimmed -> everything gets in
-  hum: 25,       // background worry: quiet -> constant alarm
-  focus: 50,     // attention: grips one thing -> flits everywhere
-  memory: 30,    // the past: stays put -> replays uninvited
-  clock: 50,     // time in here: syrup -> fast-forward
-  weather: 'fog',
-  name: '',
-  note: ''
-};
-
-const DIALS = [
-  { k:'pace',    label:'Thought pace',        lo:'still water',        hi:'racing, always racing',        los:'still',    his:'racing' },
-  { k:'volume',  label:'Inner voice volume',  lo:'a whisper, if that', hi:"can't hear the room over it",  los:'quiet',    his:'loud' },
-  { k:'imagery', label:"The mind's eye",      lo:'blank — no pictures at all', hi:'a private cinema, uninvited', los:'blank', his:'vivid' },
-  { k:'senses',  label:'The outside world',   lo:'politely dimmed',    hi:'everything gets in',           los:'dimmed',   his:'flooding in' },
-  { k:'hum',     label:'The background worry',lo:'quiet, mostly',      hi:'an alarm with no label',       los:'quiet',    his:'alarmed' },
-  { k:'focus',   label:'Attention',           lo:'grips one thing for hours', hi:'flits before it lands', los:'gripping', his:'flitting' },
-  { k:'memory',  label:'The past',            lo:'stays where you left it', hi:'replays, uninvited, word for word', los:'settled', his:'replaying' },
-  { k:'clock',   label:'Time in here',        lo:'syrup-slow',         hi:'fast-forward with no pause button', los:'slow', his:'fast' },
-];
-
-const VOICES = [
-  { id:'silent',   label:'mostly silent — shapes, not sentences' },
-  { id:'gentle',   label:'a gentle narrator' },
-  { id:'narrator', label:'a running commentary' },
-  { id:'restless', label:'six commentators, all live' },
-  { id:'critic',   label:'a harsh critic' },
-];
-
-const WEATHERS = [
-  { id:'golden', label:'clear & golden' },
-  { id:'fog',    label:'grey fog' },
-  { id:'rain',   label:'long rain' },
-  { id:'storm',  label:'static storm' },
-  { id:'deep',   label:'deep water' },
-  { id:'neon',   label:'neon night' },
-];
-
-const PRESETS = [
-  { label:'⚡ the racing bright one', p:{ pace:85, volume:80, voice:'restless', imagery:70, senses:55, hum:45, focus:85, memory:40, clock:80, weather:'neon',
-      note:'everything is interesting and nothing will hold still' } },
-  { label:'🌫 the heavy fog', p:{ pace:22, volume:55, voice:'critic', imagery:30, senses:20, hum:55, focus:60, memory:75, clock:15, weather:'fog',
-      note:'not sad exactly. just far away from everything, including myself' } },
-  { label:'🕳 wordless & pictureless', p:{ pace:35, volume:10, voice:'silent', imagery:4, senses:35, hum:20, focus:45, memory:25, clock:45, weather:'deep',
-      note:'people say "picture it" and "what are you telling yourself" — there is nothing to report' } },
-  { label:'🔔 the loud world', p:{ pace:60, volume:50, voice:'narrator', imagery:45, senses:95, hum:60, focus:80, memory:35, clock:60, weather:'storm',
-      note:'the fridge hum, the label in my collar, someone chewing. all of it, always, at full volume' } },
-  { label:'🌅 the deep calm', p:{ pace:25, volume:35, voice:'gentle', imagery:60, senses:25, hum:8, focus:35, memory:30, clock:40, weather:'golden',
-      note:'honestly? it is mostly nice in here. I know how lucky that is' } },
-];
-
-/* ================= word pools ================= */
-
-const POOL = {
-  everyday: [
-    'did i lock the door', 'reply to Sam', 'what WAS that song', 'drink some water',
-    'the washing is still in the machine', 'is it tuesday or wednesday', 'milk. remember milk.',
-    "phone's at 12%", 'should call home', 'that thing is due. which thing?'
-  ],
-  anxious: [
-    'check it again', 'what if it was the wrong tone', 'sent 21:14 · read 21:15 · no reply',
-    "everyone's waiting on you", 'you forgot something. what. WHAT.', 'did that sound rude?',
-    "it's probably nothing. probably.", "you're behind again"
-  ],
-  critic: [
-    'you talk too much', 'they were being polite, that’s all', 'you ruined that', 'everyone noticed',
-    'why can’t you just be normal about things', 'you should be better at this by now'
-  ],
-  kind: [
-    "you're doing okay", 'rest counts', 'one thing at a time', 'that was hard and you did it anyway'
-  ],
-  wonder: [
-    'do fish know they’re wet', 'why do we say ‘o’clock’', 'what does this room look like to a bird',
-    'the word ‘yes’ looks wrong if you stare', 'somewhere it’s already tomorrow', 'clouds are just shy rivers'
-  ],
-  memory: [
-    'the lake, that summer. the cold sand exactly.', 'year nine. word for word. again.',
-    'her laugh in the kitchen, from the hallway.', 'the smell of the old car, out of nowhere.',
-    'the goodbye at the station. the coat they wore.', 'that door. the exact colour of that one door.'
-  ],
-  sensory: [
-    '— a chair scrapes —', '— keys jangle, two rooms away —', '— the fridge hum you can’t unhear —',
-    '— a laugh from another table —', '— someone is chewing —', '— a phone buzzes. not yours. it doesn’t matter. —',
-    '— the light just flickered. did it? —', '— the fabric label, back of your neck —'
-  ],
-  shape: [
-    '( a pressure that means ‘kitchen’ )', '( a leaning, like weather about to change )',
-    '( the whole plan, as one solid shape )', '( an unworded no )', '( something the size of Tuesday )'
-  ],
-  aphant: [
-    '(try to picture the beach. nothing. just the word ‘beach’, doing its best.)',
-    '(their face won’t render. you’d know it anywhere. you just can’t see it.)',
-    '(you count on your fingers because the numbers have nowhere to stand.)',
-    '(people say ‘picture this’ and you’ve been bluffing for years.)'
-  ],
-  imageFlash: [
-    'an entire beach arrives, uninvited', 'her face, in more detail than the room in front of you',
-    'the route home, replayed door to door', 'a cathedral you saw once, ceiling first',
-    'the exact blue of a car from 2009', 'tomorrow’s conversation, pre-rendered, both parts'
-  ]
-};
-
-const MONOLOGUE = {
-  narrator: [
-    'okay. next thing. what is the next thing.', 'that went fine. i think that went fine.',
-    'remember the charger. charger. charger.', 'we’re doing this now, apparently.',
-    'note to self. self does not take notes.', 'this is the third time you’ve read that line.'
-  ],
-  gentle: [
-    'no rush. the day has room in it.', 'you did the hard thing already.',
-    'it’s allowed to be enough.', 'breathe out longer than in.',
-    'later-you can handle later. this is now.', 'that was kind, what you did. noted.'
-  ],
-  restless: [
-    'ooh — what’s that — no, back, focus —', 'three thoughts at once, pick one, pick — four now.',
-    'this reminds me of a thing that reminds me of a thing.', 'new idea!! shelve it. NEW idea. shelve it —',
-    'wait, what were we doing before this?', 'tab seventeen of the mind is playing music somewhere.'
-  ],
-  critic: [
-    'you’re doing it wrong. you always start wrong.', 'they saw. of course they saw.',
-    'other people don’t need this long.', 'that message you sent? read it again. worse this time.',
-    'this will go badly, and it will be your fault.'
-  ],
-  silent: [
-    '( no words in here — just a leaning, like weather about to change )',
-    '( the plan exists as one shape, not sentences )',
-    '( someone asks what you’re thinking. honestly: nothing. shapes. )',
-    '( quiet. not empty — quiet. )'
-  ]
-};
-
-/* ================= helpers ================= */
-
-const $ = s => document.querySelector(s);
-const lerp = (a, b, t) => a + (b - a) * t;
-const rand = (a, b) => a + Math.random() * (b - a);
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function encodeWorld() {
-  const o = { p:P.pace, u:P.volume, v:P.voice, i:P.imagery, s:P.senses, h:P.hum,
-              f:P.focus, m:P.memory, c:P.clock, w:P.weather, n:P.name, t:P.note };
-  const json = JSON.stringify(o);
-  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-
-function decodeWorld(hash) {
-  try {
-    const b64 = hash.replace(/-/g,'+').replace(/_/g,'/');
-    const o = JSON.parse(decodeURIComponent(escape(atob(b64))));
-    P.pace = clamp(+o.p || 0, 0, 100);  P.volume = clamp(+o.u || 0, 0, 100);
-    P.imagery = clamp(+o.i || 0, 0, 100); P.senses = clamp(+o.s || 0, 0, 100);
-    P.hum = clamp(+o.h || 0, 0, 100);   P.focus = clamp(+o.f || 0, 0, 100);
-    P.memory = clamp(+o.m || 0, 0, 100); P.clock = clamp(+o.c || 0, 0, 100);
-    P.voice = VOICES.some(v => v.id === o.v) ? o.v : 'narrator';
-    P.weather = WEATHERS.some(w => w.id === o.w) ? o.w : 'fog';
-    P.name = String(o.n || '').slice(0, 40);
-    P.note = String(o.t || '').slice(0, 140);
-    return true;
-  } catch (e) { return false; }
-}
-
-function applyWeather() { document.body.dataset.weather = P.weather; }
-
-/* ================= atmosphere canvas ================= */
-
-const canvas = $('#atmosphere');
-const ctx = canvas.getContext('2d');
-let particles = [];
-let intensity = 0.35;      // ambient by default; 1 in full experience
-let timeScale = 1;
-let lightningAt = 0, lightningAlpha = 0;
-
-function sizeCanvas() {
-  canvas.width = innerWidth * devicePixelRatio;
-  canvas.height = innerHeight * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-}
-addEventListener('resize', sizeCanvas);
-sizeCanvas();
-
-function accentColor() {
-  return getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#aab4bd';
-}
-
-function seedParticles() {
-  const n = reducedMotion ? 40 : 90;
-  particles = [];
-  for (let i = 0; i < n; i++) {
-    particles.push({
-      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-      r: rand(0.6, 3.2), s: rand(0.15, 1), a: rand(0.05, 0.4), ph: rand(0, Math.PI * 2)
-    });
-  }
-}
-seedParticles();
-
-let lastT = performance.now();
-function drawAtmosphere(now) {
-  const dt = Math.min(50, now - lastT) / 1000; lastT = now;
-  timeScale = lerp(0.55, 2.0, P.clock / 100) * (reducedMotion ? 0.6 : 1);
-  ctx.clearRect(0, 0, innerWidth, innerHeight);
-  const w = P.weather, ac = accentColor(), t = now / 1000;
-
-  for (const p of particles) {
-    let dx = 0, dy = 0, alpha = p.a * intensity, r = p.r;
-    if (w === 'golden')      { dy = -8 * p.s;  dx = Math.sin(t * 0.4 + p.ph) * 6; }
-    else if (w === 'fog')    { dx = 5 * p.s;   dy = Math.sin(t * 0.25 + p.ph) * 2; r = p.r * 14; alpha *= 0.16; }
-    else if (w === 'rain')   { dy = 190 * p.s; dx = 12; }
-    else if (w === 'storm')  { dx = Math.sin(t * 3.1 + p.ph) * 26 * p.s; dy = Math.cos(t * 2.3 + p.ph) * 20 * p.s; }
-    else if (w === 'deep')   { dy = -5 * p.s;  dx = Math.sin(t * 0.3 + p.ph) * 3; alpha *= 0.8; }
-    else if (w === 'neon')   { dx = 9 * p.s;   dy = -4 * p.s; r = p.r * 2.2; }
-
-    p.x += dx * dt * timeScale; p.y += dy * dt * timeScale;
-    if (p.x > innerWidth + 40) p.x = -30;   if (p.x < -40) p.x = innerWidth + 30;
-    if (p.y > innerHeight + 40) p.y = -30;  if (p.y < -40) p.y = innerHeight + 30;
-
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = ac;
-    if (w === 'rain') {
-      ctx.fillRect(p.x, p.y, 1, 10 + p.s * 10);
-    } else if (w === 'neon') {
-      ctx.fillRect(p.x, p.y, r * 2, r * 2);
-    } else {
-      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-  ctx.globalAlpha = 1;
-
-  // soft lightning for storm weather
-  if (w === 'storm' && !reducedMotion) {
-    if (now > lightningAt) { lightningAt = now + rand(9000, 22000); lightningAlpha = 0.20; }
-    if (lightningAlpha > 0.003) {
-      ctx.globalAlpha = lightningAlpha * intensity;
-      ctx.fillStyle = '#e9e3ff';
-      ctx.fillRect(0, 0, innerWidth, innerHeight);
-      ctx.globalAlpha = 1;
-      lightningAlpha *= 0.86;
-    }
-  }
-
-  updateSpotlight(dt, now);
-  updateVignette(now);
-  updateClocks(dt);
-  requestAnimationFrame(drawAtmosphere);
-}
-requestAnimationFrame(drawAtmosphere);
-
-/* ================= spotlight (attention) ================= */
-
-const spotlight = $('#spotlight');
-let spot = { x: 50, y: 46, tx: 50, ty: 46, nextJump: 0 };
-
-function updateSpotlight(dt, now) {
-  if (mode !== 'full') { spotlight.style.background = 'none'; return; }
-  const f = P.focus / 100;
-  if (now > spot.nextJump) {
-    if (f > 0.62) {           // scattered: attention lands somewhere new, often
-      spot.tx = rand(12, 88); spot.ty = rand(15, 80);
-      spot.nextJump = now + lerp(6000, 1300, f) / timeScale;
-    } else if (f < 0.35) {    // hyperfocus: locked near the centre / the task
-      spot.tx = 50 + rand(-3, 3); spot.ty = 46 + rand(-3, 3);
-      spot.nextJump = now + 3000;
-    } else {
-      spot.tx = 50 + rand(-16, 16); spot.ty = 46 + rand(-14, 14);
-      spot.nextJump = now + 5000;
-    }
-  }
-  const ease = 1 - Math.pow(0.0018, dt);
-  spot.x += (spot.tx - spot.x) * ease;
-  spot.y += (spot.ty - spot.y) * ease;
-
-  let dim, radius;
-  if (f < 0.35)      { dim = lerp(0.72, 0.3, f / 0.35);  radius = '34vmax'; }
-  else if (f > 0.62) { dim = lerp(0.30, 0.55, (f - 0.62) / 0.38); radius = '46vmax'; }
-  else               { dim = 0.14; radius = '60vmax'; }
-
-  spotlight.style.background =
-    `radial-gradient(circle ${radius} at ${spot.x}% ${spot.y}%, transparent 0%, transparent 38%, rgba(2,5,12,${dim}) 100%)`;
-}
-
-/* ================= vignette (background worry) ================= */
-
-function updateVignette(now) {
-  if (mode !== 'full' || P.hum < 12) { $('#vignette').style.boxShadow = 'inset 0 0 120px rgba(0,0,0,0)'; return; }
-  const h = P.hum / 100;
-  const bpm = lerp(28, 78, h);
-  const pulse = 0.5 + 0.5 * Math.sin(now / 1000 * bpm / 60 * Math.PI * 2);
-  const strength = lerp(30, 190, h) * (0.7 + 0.3 * pulse);
-  const red = h > 0.55 ? lerp(0, 42, (h - 0.55) / 0.45) : 0;
-  $('#vignette').style.boxShadow = `inset 0 0 ${strength}px rgba(${20 + red},4,10,${lerp(0.25, 0.8, h)})`;
-}
-
-/* ================= clocks (time perception) ================= */
-
-let realElapsed = 0, feltElapsed = 0, clocksRunning = false;
-function updateClocks(dt) {
-  if (!clocksRunning) return;
-  realElapsed += dt;
-  feltElapsed += dt * lerp(0.45, 2.4, P.clock / 100);
-  $('#clock-real').textContent = fmt(realElapsed);
-  $('#clock-felt').textContent = fmt(feltElapsed);
-}
-function fmt(s) { const m = Math.floor(s / 60); return m + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
-
-/* ================= thought engine ================= */
-
-const thoughtLayer = $('#thoughts');
-let mode = 'idle';           // idle | ambient | full
-let thoughtTimer = null, monoTimer = null, sensoryTimer = null;
-
-function weightedPools() {
-  const w = [];
-  const add = (pool, weight) => { if (weight > 0.02) w.push([pool, weight]); };
-  if (P.voice === 'silent') {
-    add('shape', 1.6); add('everyday', 0.15);
-  } else {
-    add('everyday', 1);
-    add('wonder', P.voice === 'restless' ? 1.5 : 0.45);
-    add('critic', P.voice === 'critic' ? 2.4 : 0.1);
-    add('kind',   P.voice === 'gentle' ? 1.3 : 0.08);
-  }
-  add('anxious', P.hum / 38);
-  add('memory',  P.memory / 42);
-  if (P.imagery >= 70) add('imageFlash', (P.imagery - 70) / 22);
-  if (P.imagery <= 18) add('aphant', (18 - P.imagery) / 14);
-  return w;
-}
-
-function pickPool() {
-  const w = weightedPools();
-  let total = 0; for (const [, wt] of w) total += wt;
-  let r = Math.random() * total;
-  for (const [pool, wt] of w) { r -= wt; if (r <= 0) return pool; }
-  return 'everyday';
-}
-
-const POOL_CLASS = { everyday:'everyday', anxious:'anxious', critic:'critic', kind:'kind',
-  wonder:'wonder', memory:'memory', sensory:'sensory', shape:'shape', aphant:'aphant', imageFlash:'image-flash' };
-
-function spawnThought(pool, opts = {}) {
-  const el = document.createElement('div');
-  el.className = 'thought ' + (POOL_CLASS[pool] || 'everyday');
-  el.textContent = pick(POOL[pool]);
-  if (opts.onTask) {   // land on top of the message the visitor is trying to read
-    el.style.left = rand(22, 58) + '%';
-    el.style.top = rand(34, 56) + '%';
-    el.style.zIndex = 6;
-  } else {
-    el.style.left = rand(4, 72) + '%';
-    el.style.top = rand(8, 68) + '%';
-  }
-  const scale = rand(0.85, P.pace > 65 ? 1.25 : 1.05);
-  el.style.fontSize = '';
-  el.style.transform += ` scale(${scale})`;
-  thoughtLayer.appendChild(el);
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-  const life = lerp(8500, 3200, P.pace / 100) / (mode === 'ambient' ? 0.7 : 1);
-  setTimeout(() => el.classList.add('fade'), life);
-  setTimeout(() => el.remove(), life + 1400);
-  // cap the layer so extreme settings stay renderable
-  while (thoughtLayer.children.length > 26) thoughtLayer.firstChild.remove();
-}
-
-function thoughtLoop() {
-  if (mode === 'idle') return;
-  const base = lerp(4600, 850, P.pace / 100);
-  const interval = (mode === 'ambient' ? base * 2.6 : base) / (timeScale * 0.6 + 0.4);
-  thoughtTimer = setTimeout(() => {
-    spawnThought(pickPool(), { onTask: taskActive && Math.random() < 0.45 });
-    thoughtLoop();
-  }, interval * rand(0.6, 1.4));
-}
-
-function sensoryLoop() {
-  if (mode !== 'full') return;
-  const interval = lerp(34000, 5200, P.senses / 100);
-  sensoryTimer = setTimeout(() => {
-    if (P.senses > 12) {
-      spawnThought('sensory', { onTask: taskActive && Math.random() < 0.5 });
-      if (P.senses > 55 && !reducedMotion) shiver();
-      audio.ping(0.05 + P.senses / 100 * 0.1);
-    }
-    sensoryLoop();
-  }, interval * rand(0.65, 1.4));
-}
-
-function monologueLoop() {
-  if (mode !== 'full') return;
-  const box = $('#monologue');
-  const tone = P.voice === 'critic' ? 'critic' : P.voice === 'gentle' ? 'gentle' : P.voice === 'silent' ? 'silent' : '';
-  box.className = ('on ' + tone).trim();
-  const line = box.querySelector('.line');
-  const interval = P.voice === 'silent' ? 14000 : lerp(11000, 2700, P.volume / 100);
-  monoTimer = setTimeout(() => {
-    line.textContent = pick(MONOLOGUE[P.voice]);
-    line.classList.add('show');
-    setTimeout(() => line.classList.remove('show'), Math.min(interval * 0.8, 5200));
-    monologueLoop();
-  }, interval * rand(0.75, 1.3));
-}
-
-function shiver() {
-  document.body.animate(
-    [ { transform:'translate(0,0)' }, { transform:'translate(2px,-1px)' },
-      { transform:'translate(-2px,1px)' }, { transform:'translate(0,0)' } ],
-    { duration: 220 });
-}
-
-function clearEngine() {
-  clearTimeout(thoughtTimer); clearTimeout(monoTimer); clearTimeout(sensoryTimer);
-  captionTimers.forEach(clearTimeout); captionTimers = [];
-  thoughtLayer.innerHTML = '';
-  $('#monologue .line').classList.remove('show');
-  $('#caption').classList.remove('show');
-  $('#task').classList.remove('on');
-  taskActive = false;
-}
-
-/* ================= audio (opt-in) ================= */
-
-const audio = (() => {
-  let ac = null, master = null, on = false;
-  let nodes = [];
-  function ensure() {
-    if (ac) return;
-    ac = new (window.AudioContext || window.webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
-  }
-  function start() {
-    ensure(); ac.resume();
-    stopLayers();
-    // soft pad
-    const padGain = ac.createGain();
-    padGain.gain.value = 0.05 * (1 - P.hum / 220);
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 480;
-    [110, 165.2].forEach(f => {
-      const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f;
-      o.connect(lp); o.start(); nodes.push(o);
-    });
-    lp.connect(padGain); padGain.connect(master); nodes.push(padGain, lp);
-    // worry drone
-    if (P.hum > 18) {
-      const dGain = ac.createGain(); dGain.gain.value = 0.028 * (P.hum / 100);
-      const dlp = ac.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 190;
-      const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 47;
-      const lfo = ac.createOscillator(); lfo.frequency.value = 0.11;
-      const lfoG = ac.createGain(); lfoG.gain.value = 60;
-      lfo.connect(lfoG); lfoG.connect(dlp.frequency); lfo.start();
-      o.connect(dlp); dlp.connect(dGain); dGain.connect(master); o.start();
-      nodes.push(o, lfo, lfoG, dGain, dlp);
-    }
-    master.gain.linearRampToValueAtTime(0.9, ac.currentTime + 1.2);
-    on = true;
-  }
-  function stopLayers() { nodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} }); nodes = []; }
-  function stop() {
-    if (!ac) return;
-    master.gain.linearRampToValueAtTime(0, ac.currentTime + 0.5);
-    setTimeout(stopLayers, 600);
-    on = false;
-  }
-  function ping(vol) {
-    if (!on || !ac) return;
-    const o = ac.createOscillator(); o.type = 'triangle';
-    o.frequency.value = rand(700, 1500);
-    const g = ac.createGain(); g.gain.value = vol;
-    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.35);
-    o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + 0.4);
-  }
-  function thump() {
-    if (!on || !ac) return;
-    const o = ac.createOscillator(); o.frequency.value = 62;
-    const g = ac.createGain(); g.gain.value = 0.16;
-    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.28);
-    o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + 0.3);
-  }
-  return { start, stop, ping, thump, get on() { return on; } };
-})();
-
-// heartbeat, only while sound is on and worry is high
-setInterval(() => {
-  if (mode === 'full' && audio.on && P.hum > 40) audio.thump();
-}, 900);
-
-$('#btn-sound').addEventListener('click', () => {
-  if (audio.on) { audio.stop(); $('#btn-sound').textContent = 'sound: off'; }
-  else { audio.start(); $('#btn-sound').textContent = 'sound: on'; }
-});
-
-/* ================= captions & the scripted visit ================= */
-
-let captionTimers = [];
-let taskActive = false;
-let taskShownAt = 0;
-let visitStartedAt = 0;
-
-function caption(text, holdMs) {
-  const c = $('#caption');
-  c.textContent = text;
-  c.classList.add('show');
-  captionTimers.push(setTimeout(() => c.classList.remove('show'), holdMs));
-}
-function at(ms, fn) { captionTimers.push(setTimeout(fn, ms)); }
-
-function startExperience() {
-  clearEngine();
-  applyWeather();
-  showScreen(null);
-  $('#hud').classList.add('on');
-  $('#monologue').classList.add('on');
-  $('#endcard').classList.remove('on');
-  mode = 'full'; intensity = 1;
-  realElapsed = 0; feltElapsed = 0; clocksRunning = true;
-  visitStartedAt = performance.now();
-  spot.nextJump = 0;
-
-  thoughtLoop(); sensoryLoop(); monologueLoop();
-
-  caption('you’re inside now.', 3200);
-  at(4200, () => caption('this is the baseline — the hum that never quite switches off.', 4600));
-  at(15000, () => caption('now try to actually live here for a minute.', 3800));
-  at(21000, showTask);
-
-  if (P.senses >= 45) at(33000, () => {
-    $('#flash').style.opacity = 0.5;
-    setTimeout(() => $('#flash').style.opacity = 0, 160);
-    if (!reducedMotion) shiver();
-    audio.ping(0.22);
-    spawnThought('sensory', { onTask: true });
-    caption('— a cup breaks, two tables away. everything else leaves. —', 4200);
-  });
-
-  if (P.hum >= 55) at(43000, () =>
-    caption('meanwhile, underneath everything: the alarm with no label.', 4200));
-
-  // if the reader never resolves the message, it resolves itself
-  at(74000, () => { if (taskActive) resolveTask(null); });
-}
-
-function showTask() {
-  taskActive = true; taskShownAt = performance.now();
-  $('#task').classList.add('on');
-  caption('a friend messages. try to actually read it — all of it.', 4600);
-  wobbleTask();
-}
-
-function wobbleTask() {
-  if (!taskActive) { $('#task').style.filter = 'none'; return; }
-  const f = P.focus / 100;
-  const blur = f > 0.55 ? rand(0, lerp(0, 2.2, (f - 0.55) / 0.45)) : 0;
-  $('#task').style.filter = blur > 0.15 ? `blur(${blur.toFixed(2)}px)` : 'none';
-  captionTimers.push(setTimeout(wobbleTask, rand(700, 1600)));
-}
-
-function resolveTask(read) {
-  const secs = Math.round((performance.now() - taskShownAt) / 1000);
-  taskActive = false;
-  $('#task').classList.remove('on');
-  if (read === true) {
-    caption(`that took ${secs} seconds. it’s a fifteen-second message. quick — what time, and which door?`, 6000);
-  } else if (read === false) {
-    caption('it joins the pile of half-read things. the pile hums quietly forever.', 5200);
-  } else {
-    caption('the message is still there, unread. it joins the pile.', 4800);
-  }
-  at(6800, () => caption('it’s like this most days. louder on some, quieter on others.', 5000));
-  at(13200, showEndcard);
-}
-
-$('#btn-read').addEventListener('click', () => resolveTask(true));
-$('#btn-gaveup').addEventListener('click', () => resolveTask(false));
-
-function showEndcard() {
-  const mins = fmt(realElapsed);
-  const who = P.name ? P.name : 'someone';
-  $('#end-title').innerHTML =
-    `you visited for <span class="tint">${mins}</span>.<br>${escapeHtml(who)} lives here.`;
-  $('#end-body').textContent =
-    'a simulation is a translation, and translations lose things. but it’s closer than the word '
-    + '‘fine’ ever got. if this was sent to you — now you know a little of their weather.';
-  $('#endcard').classList.add('on');
-}
-
-function escapeHtml(s) {
-  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
-}
-
-function exitExperience(toScreen) {
-  mode = 'ambient'; intensity = 0.35;
-  clocksRunning = false;
-  clearEngine();
-  audio.stop(); $('#btn-sound').textContent = 'sound: off';
-  $('#hud').classList.remove('on');
-  $('#monologue').classList.remove('on');
-  $('#endcard').classList.remove('on');
-  $('#spotlight').style.background = 'none';
-  $('#vignette').style.boxShadow = 'inset 0 0 120px rgba(0,0,0,0)';
-  showScreen(toScreen || (sharedWorld ? 'scr-invited' : 'scr-landing'));
-  mode = 'ambient'; thoughtLoop();
-}
-
-$('#btn-exit').addEventListener('click', () => exitExperience());
-addEventListener('keydown', e => { if (e.key === 'Escape' && mode === 'full') exitExperience(); });
-
-$('#btn-stay').addEventListener('click', () => {
-  $('#endcard').classList.remove('on');
-  caption('stay as long as you like. the door is top-left.', 4200);
-});
-$('#btn-again').addEventListener('click', startExperience);
-$('#btn-yours').addEventListener('click', () => exitExperience('scr-builder'));
-
-/* ================= screens ================= */
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
-  if (id) $('#' + id).classList.add('on');
-}
-
-/* ================= builder UI ================= */
-
-const dialsBox = $('#dials');
-for (const d of DIALS) {
-  const row = document.createElement('div');
-  row.className = 'dial';
-  row.innerHTML =
-    `<div class="dial-label"><span>${d.label}</span><span class="dial-value" id="val-${d.k}"></span></div>
-     <input type="range" min="0" max="100" value="${P[d.k]}" id="in-${d.k}">
-     <div class="dial-ends"><span>${d.lo}</span><span>${d.hi}</span></div>`;
-  dialsBox.appendChild(row);
-}
-
-function dialWord(k, v) {
-  const d = DIALS.find(x => x.k === k);
-  if (v <= 18) return d.lo;
-  if (v >= 82) return d.hi;
-  if (v < 45)  return 'leaning ' + d.los;
-  if (v > 55)  return 'leaning ' + d.his;
-  return 'somewhere in between';
-}
-
-for (const d of DIALS) {
-  const input = $('#in-' + d.k);
-  const label = $('#val-' + d.k);
-  const sync = () => { P[d.k] = +input.value; label.textContent = dialWord(d.k, P[d.k]); };
-  input.addEventListener('input', sync);
-  sync();
-}
-
-function buildChips(containerId, defs, key, onSel) {
-  const box = $('#' + containerId);
-  box.innerHTML = '';
-  for (const def of defs) {
-    const b = document.createElement('button');
-    b.className = 'chip' + (P[key] === def.id ? ' sel' : '');
-    b.textContent = def.label;
-    b.addEventListener('click', () => {
-      P[key] = def.id;
-      box.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
-      b.classList.add('sel');
-      if (onSel) onSel();
-    });
-    box.appendChild(b);
-  }
-}
-buildChips('voice-chips', VOICES, 'voice');
-buildChips('weather-chips', WEATHERS, 'weather', applyWeather);
-
-function syncBuilderFromP() {
-  for (const d of DIALS) { $('#in-' + d.k).value = P[d.k]; $('#in-' + d.k).dispatchEvent(new Event('input')); }
-  buildChips('voice-chips', VOICES, 'voice');
-  buildChips('weather-chips', WEATHERS, 'weather', applyWeather);
-  $('#f-name').value = P.name; $('#f-note').value = P.note;
-  applyWeather();
-}
-
-$('#f-name').addEventListener('input', e => P.name = e.target.value);
-$('#f-note').addEventListener('input', e => P.note = e.target.value);
-
-$('#btn-preview').addEventListener('click', startExperience);
-
-$('#btn-copy').addEventListener('click', async () => {
-  const url = location.origin + location.pathname + '#w=' + encodeWorld();
-  try {
-    await navigator.clipboard.writeText(url);
-    $('#copied-note').textContent = 'copied — send it to someone who should see the inside.';
-  } catch (e) {
-    $('#copied-note').textContent = url;
-  }
-  setTimeout(() => { $('#copied-note').textContent = ''; }, 6000);
-});
-
-/* ================= landing & presets ================= */
-
-const presetBox = $('#presets');
-for (const pr of PRESETS) {
-  const b = document.createElement('button');
-  b.className = 'preset';
-  b.textContent = pr.label;
-  b.addEventListener('click', () => {
-    Object.assign(P, pr.p, { name: '' });
-    applyWeather();
-    startExperience();
-  });
-  presetBox.appendChild(b);
-}
-
-$('#btn-build').addEventListener('click', () => { syncBuilderFromP(); showScreen('scr-builder'); });
-$('#btn-build-instead').addEventListener('click', () => { syncBuilderFromP(); showScreen('scr-builder'); });
-$('#btn-enter-shared').addEventListener('click', startExperience);
-
-/* ================= boot ================= */
-
-let sharedWorld = false;
-const m = location.hash.match(/#w=([A-Za-z0-9\-_]+)/);
-if (m && decodeWorld(m[1])) {
-  sharedWorld = true;
-  applyWeather();
-  if (P.name) {
-    $('#inv-title').innerHTML =
-      `<span class="tint">${escapeHtml(P.name)}</span> wants to show you the inside of their head.`;
-  }
-  if (P.note) {
-    const noteEl = $('#inv-note');
-    noteEl.textContent = '“' + P.note + '”';
-    noteEl.style.display = 'block';
-  }
-  showScreen('scr-invited');
-}
-
-mode = 'ambient';
-thoughtLoop();
-</script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

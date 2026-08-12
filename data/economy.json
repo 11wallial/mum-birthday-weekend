@@ -1,0 +1,341 @@
+{
+ "$comment": "Starting values, rent, interest, supplier tiers, offers. Sections 10-14.",
+ "start": {
+  "footfall": 120,
+  "conversion": 0.45,
+  "basket": 18,
+  "margin": 0.3,
+  "rent": 150,
+  "cash": 0,
+  "tills": 1,
+  "supplierTier": 1,
+  "startingFixtures": 3,
+  "$startingKitNote": "Back to 3. At 5 with only 6 commons every run opened holding 5 of 6, so Security Tag was present in 83% of runs and shrink was neutralised before encounter 1 — which silently deleted Finding 5 rather than solving it. The starting kit must stay well under the size of the common pool."
+ },
+ "rent": {
+  "$comment": "Rent is pegged to the target curve as a declining fraction, so section 13's 'brutal in act 1, noise by act 5' is true by construction and survives any later retune of the curve. Footprint still costs: the fraction is for a baseline shop and scales with slots and tills owned.",
+  "mode": "fraction_of_target",
+  "fractionByQuarter": [
+   0.62,
+   0.46,
+   0.33,
+   0.23,
+   0.16,
+   0.11,
+   0.075,
+   0.05
+  ],
+  "baselineSlots": 9,
+  "baselineTills": 1,
+  "tillWeight": 2.0,
+  "legacy": {
+   "mode": "per_slot",
+   "perSlot": 10,
+   "perTill": 30,
+   "quarterMultiplier": 1.4
+  }
+ },
+ "interest": {
+  "$comment": "Banked cash compounds hard enough to be a strategy in its own right. If tempo has no long tail there is nothing to over-commit to on that side, and the whole tension collapses into one axis.",
+  "ratePerEncounter": 0.08,
+  "capFractionOfTarget": 0.9,
+  "capFloor": 300
+ },
+ "payout": {
+  "$comment": "Cash is decoupled from the target so the target can be tuned purely as a fail condition - but it has to GROW with the economy or the late game cannot buy throughput. flatGrowth TRACKS THE TARGET CURVE and must be retuned with it. Left at 1.47 while the curve was refitted to 1.24, the faucet paid GBP 150 x 1.47^23 = GBP 1.06m for the final encounter alone, so every single winning run finished holding seven figures whether it had played well or not - the ending was being handed out by the payout formula rather than earned. Matched to the curve, banked cash is dominated by OVERSHOOT, which is skill.",
+  "mode": "flat",
+  "flatBase": 150,
+  "flatGrowth": 1.24,
+  "overshootShare": 0.22,
+  "skipPickReward": 2.0,
+  "$flatGrowthWas": 1.47,
+  "overshootCapTargets": 6
+ },
+ "congestion": {
+  "$comment": "Kept at zero. Measured: charging crowding against Patience does nothing because Patience only bites once a queue exists, and charging it against Conversion is a flat difficulty tax that narrows the skill gap. Routing is not uncosted, it is uncontested - the fix is a fuller board and aisle identity.",
+  "strength": 0.0,
+  "floor": 0.35,
+  "mode": "patience"
+ },
+ "day": {
+  "$comment": "One trading day is this many ticks. Each till serves one customer per tick. This is the throughput knob from tuning step 5.",
+  "ticks": 180,
+  "tillRate": 1.0,
+  "walkTicksPerSlot": 5,
+  "$walkNote": "Raised from 1 for the playable build: at 1 a customer spent three ticks of a hundred and eighty on the floor, so the walk - the centrepiece - was visually empty. This shortens the service window by the same amount (ticks minus aisle length times this), so it moves throughput by about 8% and wants re-measuring with the rest of the tuning.",
+  "maxWalkers": 1400,
+  "$maxWalkersNote": "Above this many arrivals the walk becomes a weighted sample: each sprite stands for several people and every total it touches is counted in those units, so the day still adds up. Footfall is now bounded at twelve times throughput and reaches 80,000 in a strong late run - a shop that size cannot draw a sprite per customer and should not try. The arithmetic is settled by the aggregate resolver either way; the walk exists so the player can read the shop and reach into the queue."
+ },
+ "walkouts": {
+  "$comment": "Everything that carries into tomorrow's Footfall is a SHARE of today, not a count of people. Footfall is a product - a base of 120 multiplied up through every ratchet and compounder on the board - so an absolute carry taken from post-multiplier quantities and added to the pre-multiplier base is a units error. It was fatal in both directions. As an absolute penalty capped against today's Footfall, a 73%-walkout day cost 1,700 against a base pool of 120, and a run sitting 160x over its target died the next morning at zero Footfall with no way back. Feeding walkouts the other way, through Warehouse Club, compounded instead. As shares, both read plainly and neither can zero a term: a bad queue costs you a slice of tomorrow, it does not end you.",
+  "$commentEquilibrium": "The brake is quoted against OVERLOAD - how far past capacity you are - not against the walkout share. A share saturates at 1, so a penalty built from it saturates too, and a saturated penalty is a constant factor that a compounder eventually outruns. It did: 3.5e12 customers, 0% of whom reached a till, because the accumulated carry had a floor and the floor is where the authority ran out. Overload does not saturate - serve one in twenty-five and it is 25. Tomorrow's pull is allowedOverload x the fraction you actually served, which at equilibrium equals 1/(your daily growth), so Footfall settles a little above what the tills can take and the only way up is more tills. That is the intended shape of the Footfall build: throughput is the growth purchase.",
+  "maxCarryMul": 1.6,
+  "healthyWalkoutShare": 0.1,
+  "recoverPerDay": 0.12,
+  "allowedOverload": 1.6,
+  "minDailyCarry": 0.18,
+  "hardOverloadCap": 12,
+  "$commentHardCap": "A hard ceiling at 12x what the tills could physically serve in a day. The carry brake creates the tension; this guarantees the bound, because the brake's per-day authority is finite and a stack of compounders under two rate multipliers is not - Manager's Office and Stocktake each multiply a compounder's growth FACTOR and also multiply each other, which took Footfall to 1.6e27 on 4.5% of trading days. It costs the player nothing they wanted: Footfall past what you can serve is walkouts, and a walkout is a lost sale and a quieter tomorrow. Growing the crowd beyond the tills should do nothing, and now it does nothing instead of doing something broken."
+ },
+ "slots": {
+  "$comment": "Customers may skip slots unless a rule-breaking fixture or One-Way Barriers stops them.",
+  "basePassChance": 0.75
+ },
+ "supplierTier": {
+  "weights": {
+   "1": {
+    "common": 1.0,
+    "uncommon": 0.0,
+    "rare": 0.0,
+    "flagship": 0.0
+   },
+   "2": {
+    "common": 0.6,
+    "uncommon": 0.4,
+    "rare": 0.0,
+    "flagship": 0.0
+   },
+   "3": {
+    "common": 0.35,
+    "uncommon": 0.45,
+    "rare": 0.2,
+    "flagship": 0.0
+   },
+   "4": {
+    "common": 0.2,
+    "uncommon": 0.35,
+    "rare": 0.35,
+    "flagship": 0.1
+   },
+   "5": {
+    "common": 0.1,
+    "uncommon": 0.25,
+    "rare": 0.4,
+    "flagship": 0.25
+   }
+  },
+  "costs": {
+   "$comment": "Indexed by quarter 1-8, and falling each quarter (section 10). Halved from the v0.1 table: measured against the decoupled cash economy, the original prices put the Tier 3 rush rate at 0% of winners. At these prices it is about 30%, which is what tuning step 3 asks for.",
+   "1->2": [
+    450,
+    360,
+    275,
+    210,
+    150,
+    110,
+    75,
+    75
+   ],
+   "2->3": [
+    2000,
+    1550,
+    1200,
+    900,
+    650,
+    475,
+    350,
+    350
+   ],
+   "3->4": [
+    11000,
+    8500,
+    6500,
+    4900,
+    3500,
+    2600,
+    1900,
+    1900
+   ],
+   "4->5": [
+    70000,
+    54000,
+    41000,
+    30500,
+    22500,
+    16500,
+    12000,
+    12000
+   ]
+  },
+  "freePickOnUpgrade": true
+ },
+ "rarityEv": {
+  "$comment": "Relative expected value per tier (section 7). Tuning step 4 sweeps this spread. Authored fixture values are assumed to sit at this baseline.",
+  "common": 100,
+  "uncommon": 115,
+  "rare": 135,
+  "flagship": 160
+ },
+ "offers": {
+  "picks": 3,
+  "rerollBaseCost": 60,
+  "rerollGrowth": 2.0,
+  "lockCost": 0
+ },
+ "levels": {
+  "$comment": "Tuning step 1. Scalars are applied per class; see fixtures.json for the authored per-level arrays.",
+  "maxLevel": 3,
+  "additiveScalar": [
+   1.0,
+   2.5,
+   5.5
+  ],
+  "multiplicativeBreadth": [
+   1,
+   2,
+   3
+  ],
+  "drawbackScalar": [
+   1.0,
+   0.5,
+   0.0
+  ],
+  "$flagshipNote": "Rule-breaking fixtures shrink their drawback as they level, which on a flagship would undo the commitment entirely. Flagship drawbacks are therefore authored per level in fixtures.json and barely move."
+ },
+ "structural": [
+  {
+   "id": "aisle_extension",
+   "name": "Aisle Extension",
+   "cost": 400,
+   "effect": "add_slot"
+  },
+  {
+   "id": "fourth_aisle",
+   "name": "Fourth Aisle",
+   "cost": 3200,
+   "effect": "add_aisle",
+   "slots": 3
+  },
+  {
+   "id": "second_entrance",
+   "name": "Second Entrance",
+   "cost": 1500,
+   "effect": "footfall_add",
+   "value": 40
+  },
+  {
+   "id": "mezzanine",
+   "name": "Mezzanine",
+   "cost": 4000,
+   "effect": "add_aisle",
+   "slots": 3,
+   "restrictTypes": [
+    "luxury",
+    "trade"
+   ]
+  },
+  {
+   "id": "one_way_barriers",
+   "name": "One-Way Barriers",
+   "cost": 500,
+   "effect": "no_skip"
+  },
+  {
+   "id": "wide_aisle",
+   "name": "Wide Aisle",
+   "cost": 900,
+   "effect": "aisle_patience",
+   "value": 2
+  },
+  {
+   "id": "extra_till",
+   "name": "Extra Till",
+   "cost": 700,
+   "effect": "add_till",
+   "repeatable": true,
+   "costGrowth": 1.22,
+   "$note": "Was 1.6, which capped a run at about six tills and made throughput the hard ceiling on the whole game. Section 6 wants tills to be the limiter, not the wall."
+  }
+ ],
+ "staff": [
+  {
+   "id": "assistant",
+   "name": "Assistant",
+   "marginCost": 0.03,
+   "effect": "fires_twice",
+   "attaches": true
+  },
+  {
+   "id": "security",
+   "name": "Security",
+   "marginCost": 0.02,
+   "effect": "block_shoplifters",
+   "attaches": false
+  },
+  {
+   "id": "buyer",
+   "name": "Buyer",
+   "marginCost": 0.04,
+   "effect": "pick_four",
+   "attaches": false
+  },
+  {
+   "id": "manager",
+   "name": "Manager",
+   "marginCost": 0.05,
+   "effect": "aisle_half_strength",
+   "attaches": true
+  },
+  {
+   "id": "cleaner",
+   "name": "Cleaner",
+   "marginCost": 0.02,
+   "effect": "patience",
+   "value": 3,
+   "attaches": false
+  }
+ ],
+ "caps": {
+  "$comment": "Footfall and Basket are quantities and scale forever. Conversion and Margin are rates: they cap, so they are a floor you defend rather than an axis you grow. Making the ceiling explicit and visible is the point - a player should read these as 'hold this up', not 'push this higher'.",
+  "conversion": 0.9,
+  "margin": 0.7
+ },
+ "bossChoice": {
+  "$comment": "Two bosses are offered and the player takes one, revealed this many encounters ahead. Every boss attacks a term, so choosing which term to be attacked on is the purest read of your own build - and it converts boss variance into a decision.",
+  "options": 2,
+  "revealLead": 2
+ },
+ "variance": {
+  "$comment": "Sampling noise on the trading day. Applied only when the day is actually played, never when a policy evaluates a candidate board: the player plans against the projection panel's expectation and the day rolls around it. Without this every headline win rate is measured in a game where no day ever rolls badly, which is most of what difficulty is.",
+  "enabled": true,
+  "arrivals": true,
+  "conversion": true,
+  "walletCv": 0.38
+ },
+ "ratchets": {
+  "$comment": "A ratchet pays off later, so it has to hurt now, or scaling is free and there is no decision. Upkeep is a fraction of TODAY'S TARGET, not a flat cash sum, so the strain stays real at every scale; it decays as the fixture matures. A flagship ratchet costs a whole target on the day you install it. Taking three at once in act 1 is how you die.",
+  "upkeepDecay": 0.78,
+  "upkeepFractionOfTarget": {
+   "common": 0.3,
+   "uncommon": 0.45,
+   "rare": 0.65,
+   "flagship": 1.0
+  },
+  "$commentCommitment": "Economies of scale, and a threshold. 'Overcommitting to either kills you' makes the payoff concave in the mix, and a concave payoff has its optimum in the MIDDLE by definition — which is the opposite of what we want. To make the middle mediocre you have to pay people for being committed. Two mechanisms do that: per-fixture upkeep falls as you hold more, so holding one or two is the worst place to stand; and holding the threshold count makes every ratchet stronger, which a hedged build never reaches.",
+  "$commentCompound": "Compounders are billed on their own line, and their charge RAMPS where a linear ratchet's decays - same curve, reversed. A linear ratchet is worth most, relative to its own ceiling, on the day you install it; a compounder is worth almost nothing for its first week and then carries the run. Billed flat from birth it punished the player twice for one card, in the act where two thirds of runs already die. Quoted against the target, so a mature compounder's charge climbs with the economy for as long as you hold it.",
+  "upkeepFractionCompound": {
+   "common": 0.16,
+   "uncommon": 0.27,
+   "rare": 0.42,
+   "flagship": 0.66
+  },
+  "upkeepRampCompound": 0.82,
+  "upkeepScalePerExtra": 0.72,
+  "commitThreshold": 4,
+  "commitBonus": 0.55
+ },
+ "micro": {
+  "$comment": "The trading day currently contains no decisions: the walk resolves and the player watches. That matters more now that days can roll badly, because the failure mode is 'you set up correctly, the day rolled against you, you watched'. These are two candidate counterplays, measured before being built.",
+  "triage": {
+   "$comment": "A few 'next please' taps per day, pulling customers out of the queue before their patience runs out. Budget is a fraction of Footfall with a floor, so one tap is a burst rather than one person and the lever stays relevant as the shop grows.",
+   "fractionOfFootfall": 0.05,
+   "floor": 6
+  },
+  "sale": {
+   "$comment": "Flip the SALE sign. More people through the door and more of them buy, at a worse Margin — and the extra Footfall can drown your tills, which is what makes it a decision rather than a margin threshold.",
+   "footfallMul": 1.25,
+   "conversionMul": 1.18,
+   "marginDelta": -0.06
+  }
+ }
+}

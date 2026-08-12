@@ -1,0 +1,318 @@
+{
+ "$comment": "Run structure, targets, bosses, audit ladder, characters. Sections 14-16 and 18.",
+ "structure": {
+  "quarters": 8,
+  "daysPerQuarter": 3,
+  "encounters": 24,
+  "bossEvery": 3
+ },
+ "targets": {
+  "$comment": "Generated as base * growth^(n-1). Measured at 1,200 runs per policy: random 0.0%, greedy 20.6%, planner 62.9%, gap 42.3pp - all three section 19 bands holding at once, which had never happened before. The base matters far more than the growth because early deaths dominate: at growth 1.18, moving the base from 120 to 220 costs the planner 50pp, while moving the growth from 1.18 to 1.28 at base 120 costs 32pp. Retune this WITH economy.payout.flatGrowth, which must track it.",
+  "base": 76,
+  "growth": 1.24,
+  "$specified": {
+   "base": 450,
+   "growth": 1.47,
+   "$comment": "The v0.1 values. Day one produces about £200 against a £450 target, so every policy dies on encounter 1 and no metric is measurable. The achievable profit curve climbs about x98 across 24 encounters; 1.47 asks for x7,052. See REPORT.md."
+  },
+  "$previous": {
+   "base": 120,
+   "growth": 1.18,
+   "$comment": "Fitted against the 40-card pool and a walkout carry that could zero Footfall. Both are gone."
+  },
+  "$endingNote": "The target ENDS at GBP 14,083 a day; a winning run does not. Median last day is GBP 731,335, a 52x overshoot, and 42% of winning runs finish on a day clearing seven figures - about one run in four overall. The seven-figure ending is real and it is earned, rather than being the number on the tin. Asking the TARGET to reach seven figures meant multiplying by 1.47 for twenty-four straight encounters, which no pool of 89 cards drawn three at a time can carry from a standing start; asking a good run to overshoot a reachable target by fifty times gets the same screenshot and a game underneath it."
+ },
+ "bosses": [
+  {
+   "id": "competitor_opens",
+   "name": "Competitor Opens",
+   "effect": "footfall_multiply",
+   "value": 0.4
+  },
+  {
+   "id": "heatwave",
+   "name": "Heatwave",
+   "effect": "basket_multiply_patience_multiply",
+   "value": [
+    1.7,
+    0.15,
+    0.45
+   ],
+   "$comment": "Nobody wants to shop, and the few who do buy drinks. Basket x1.7, Patience x0.15, Footfall x0.45. It was Basket x2 against Patience x0.25 and killed 0 of 1,817 runs: patience is only a cost on a day that already has a queue, and a well-run shop does not have one, so the boss was a straight bonus. A boss needs a downside that lands whatever board you brought."
+  },
+  {
+   "id": "card_terminal_down",
+   "name": "Card Terminal Down",
+   "effect": "only_types_convert",
+   "value": [
+    "trade",
+    "pensioner"
+   ]
+  },
+  {
+   "id": "health_inspection",
+   "name": "Health Inspection",
+   "effect": "disable_unstaffed"
+  },
+  {
+   "id": "bank_holiday",
+   "name": "Bank Holiday",
+   "effect": "footfall_multiply_till_disable",
+   "value": [
+    5,
+    3
+   ],
+   "$comment": "x3 Footfall and one till was worth 3.1%. Footfall you cannot serve is walkouts and a quieter tomorrow, so the till count is the whole boss."
+  },
+  {
+   "id": "supply_shortage",
+   "name": "Supply Shortage",
+   "effect": "disable_term_class",
+   "value": [
+    "basket",
+    "any"
+   ],
+   "$comment": "Restricted to additive Basket it took 1.6%, because almost none of a modern board’s Basket is additive - the compounders and the multipliers carry it."
+  },
+  {
+   "id": "mystery_shopper",
+   "name": "Mystery Shopper",
+   "effect": "margin_halved_unless_staffed_aisles"
+  },
+  {
+   "id": "black_friday",
+   "name": "Black Friday",
+   "effect": "footfall_multiply_margin_flat",
+   "value": [
+    4.0,
+    -0.25
+   ]
+  },
+  {
+   "id": "roadworks",
+   "name": "Roadworks",
+   "effect": "close_aisle",
+   "value": 1,
+   "$comment": "Closes the BUSIEST aisle, and the crowd it displaces lands in the queue — Patience x0.55. Closing an aisle alone kept 100.2% of a clean day, because signage simply reroutes everyone into the next one. That is the \"routing is uncontested\" hole from part one showing up as a boss that does nothing.",
+   "value2": 0.55
+  },
+  {
+   "id": "refund_day",
+   "name": "Refund Day",
+   "effect": "refund_previous",
+   "value": 0.55,
+   "$comment": "Reverses a share of yesterday's trading profit directly. Previously spawned nothing but Returners, which left no buyers in the shop and made the day unwinnable on any board; Returners have since been cut as a type entirely."
+  },
+  {
+   "id": "rate_review",
+   "name": "Rate Review",
+   "effect": "rent_multiply",
+   "value": 10,
+   "floorShare": 0.55,
+   "$comment": "Rent x10, or 55% of the target, whichever is worse. Rent is a DECLINING fraction of the target by design, so multiplying it alone is brutal in act 1 and inaudible by act 5 — it kept 97.4% of a clean day."
+  },
+  {
+   "id": "trading_standards",
+   "name": "Trading Standards",
+   "effect": "disable_rarity",
+   "value": [
+    "uncommon",
+    "rare",
+    "flagship"
+   ],
+   "$comment": "Everything but the commons. Disabling flagships alone killed 0.1% of runs and rare-and-flagship only 0.6% - and it was the MOST OFTEN FACED boss in the deck, because the planner chooses it. A boss that is picked because it is harmless is the free pass that makes the choice itself trivial."
+  }
+ ],
+ "audits": [
+  {
+   "id": 1,
+   "name": "Audit I",
+   "modifiers": {}
+  },
+  {
+   "id": 2,
+   "name": "Audit II",
+   "modifiers": {
+    "rentMultiplier": 1.55
+   }
+  },
+  {
+   "id": 3,
+   "name": "Audit III",
+   "modifiers": {
+    "rentMultiplier": 1.55,
+    "targetMultiplier": 1.1
+   }
+  },
+  {
+   "id": 4,
+   "name": "Audit IV",
+   "modifiers": {
+    "rentMultiplier": 1.8,
+    "targetMultiplier": 1.14,
+    "rerollCostMultiplier": 2.5
+   }
+  },
+  {
+   "id": 5,
+   "name": "Audit V",
+   "modifiers": {
+    "rentMultiplier": 2.0,
+    "targetMultiplier": 1.2,
+    "rerollCostMultiplier": 2.5,
+    "bossEvery": 2
+   }
+  },
+  {
+   "id": 6,
+   "name": "Audit VI",
+   "modifiers": {
+    "rentMultiplier": 2.2,
+    "targetMultiplier": 1.26,
+    "rerollCostMultiplier": 2.5,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true
+   }
+  },
+  {
+   "id": 7,
+   "name": "Audit VII",
+   "modifiers": {
+    "rentMultiplier": 2.5,
+    "targetMultiplier": 1.32,
+    "rerollCostMultiplier": 2.5,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true,
+    "supplierCostsFlat": true
+   }
+  },
+  {
+   "id": 8,
+   "name": "Audit VIII",
+   "modifiers": {
+    "rentMultiplier": 2.2,
+    "targetMultiplier": 1.21,
+    "rerollCostMultiplier": 2.5,
+    "bossEvery": 2,
+    "flagshipTwoDayCondition": true,
+    "supplierCostsFlat": true,
+    "quarterlyAisleClosure": true
+   },
+   "$note": "Rent and targets step BACK from Audit VII here. The aisle closure is worth about 20pp on its own even delayed to quarter three, so stacking it on top of VII's numbers put the last rung at 4.0% against a band of 8-15. A ladder is a curve, not a heap: the last rung trades two numeric dials for a structural one, and the structural one is harder to play around."
+  }
+ ],
+ "characters": [
+  {
+   "id": "default_shop",
+   "name": "The Shop",
+   "rule": "A shop. Three aisles, one till, and the rent to find. Nothing is bent in your favour and nothing is bent against you.",
+   "baseGame": true,
+   "aisles": 3,
+   "slotsPerAisle": 3,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {},
+   "$note": "3x3 rather than 3x4. A half-empty board makes routing uncontested and End Cap adjacency rare."
+  },
+  {
+   "id": "superstore",
+   "name": "Superstore",
+   "rule": "Four aisles of four, floorspace thrown in — but a fixture, once placed, stays placed. Choose slowly.",
+   "aisles": 4,
+   "slotsPerAisle": 4,
+   "tills": 2,
+   "startingFixtures": [
+    "bargain_bin"
+   ],
+   "flags": {
+    "fixturesPermanent": true,
+    "structuralCostMultiplier": 0.0
+   }
+  },
+  {
+   "id": "discounter",
+   "name": "Discounter",
+   "rule": "Cost of goods halved, shopfitting at 40% off, and duplicates level twice. You may stock seven lines. Not eight.",
+   "aisles": 2,
+   "slotsPerAisle": 4,
+   "tills": 1,
+   "startingFixtures": [
+    "own_brand",
+    "bulk_buy"
+   ],
+   "flags": {
+    "marginBonus": 0.2,
+    "maxFixtureTypes": 7,
+    "levelStep": 2,
+    "alwaysCommitted": true,
+    "structuralCostMultiplier": 0.6
+   },
+   "$note": "Margin is the wrong compensation for this shop: it caps at 70% and the +20pp already puts it there, so sweeping the bonus from 0.20 to 0.38 moved the win rate by 8pp. The real problem was structural. Holding few fixtures is punished TWICE by the commitment mechanics - it can rarely reach the threshold, and per-fixture upkeep falls with the number you hold, so it pays near full price on every one. That is the opposite of what its rule promises."
+  },
+  {
+   "id": "car_dealership",
+   "name": "Car Dealership",
+   "rule": "A dozen callers a day, every one of them monied. Sell to them or the day is a loss.",
+   "aisles": 1,
+   "slotsPerAisle": 6,
+   "tills": 99,
+   "startingFixtures": [
+    "concierge"
+   ],
+   "flags": {
+    "forcedPool": {
+     "luxury": 100
+    },
+    "noQueue": true,
+    "basketMultiplier": 6.5,
+    "footfallDivisor": 12
+   },
+   "$note": "Was footfallOverride [1,3] with basketMultiplier 320. Two customers a day against a hard fail condition is not a design, it is a coin flip: one trace made GBP 62,270 on day one and GBP 0 on day two because both customers happened to be Browsers. And a pinned Footfall cannot grow, so the shop had three terms to carry a curve that multiplies by 1.24 an encounter while a quarter of every catalogue was dead weight. A divisor keeps the identity and gives the term back."
+  },
+  {
+   "id": "estate_agent",
+   "name": "Estate Agent",
+   "rule": "No stock, no shelves, no basket. A fee on every completion, and nothing but bodies through the door to grow.",
+   "aisles": 2,
+   "slotsPerAisle": 4,
+   "tills": 4,
+   "startingFixtures": [
+    "appointment_book"
+   ],
+   "flags": {
+    "basketFixed": 1400,
+    "marginFixed": 0.035,
+    "footfallMultiplier": 0.07
+   },
+   "$note": "Margin fixed at 3.5% meant one assistant, at -3pp, took 86% of the shop. Margin costs are now charged proportionally against the normal margin wherever a character fixes it."
+  },
+  {
+   "id": "corner_shop",
+   "name": "Corner Shop",
+   "rule": "One aisle, three feet of it — and the same faces past it three times before teatime.",
+   "aisles": 1,
+   "slotsPerAisle": 3,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {
+    "traversals": 3,
+    "footfallMultiplier": 0.6
+   }
+  },
+  {
+   "id": "market_stall",
+   "name": "Market Stall",
+   "rule": "Down at dusk, up at dawn. Rebuild the pitch nightly from what you own, with a fourth card on the page and rerolls free.",
+   "aisles": 3,
+   "slotsPerAisle": 2,
+   "tills": 1,
+   "startingFixtures": [],
+   "flags": {
+    "wipeFloorNightly": true,
+    "freeRerolls": true,
+    "extraPicks": 1
+   }
+  }
+ ],
+ "$auditNote": "Measured, each modifier alone against a 59.8% baseline: rent x1.5 -3.7pp, x2.2 -15.3pp, x3.0 -24.3pp; targets x1.10 -4.2pp, x1.20 -10.0pp, x1.35 -16.3pp, x1.55 -25.3pp; an inspection every two days -2.8pp; an aisle shut every quarter -29.5pp. Rerolls x2 and x6, the flagship two-day condition and flat supplier costs all measured at or ABOVE the baseline - the first two because the planner was overvaluing both purchases, which is now fixed, and the last two because they are simply too small to see. So the ladder descends on rent and targets, which are continuous and tunable, and the rule modifiers are layered on for texture rather than being asked to carry the difficulty. The old ladder was flat through four rungs - 42.0, 39.6, 39.8, 38.8 - and then fell off a cliff to 7.6."
+}

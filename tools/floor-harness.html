@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>FOOTFALL — floor renderer harness</title>
+<!--
+  The day renderer, driven directly, on a shop that is FULL.
+
+  Playing to a full board through the interface needs a bot that can actually
+  play FOOTFALL, and sim/cli.js check says a random policy dies on day three —
+  so screenshotting the interesting case that way is not a test of the
+  renderer, it is a test of the bot. This builds the state instead: five
+  aisles, every bay stocked, several tills, a target from late in the run, and
+  a day stepped forward far enough for the queue to stack.
+-->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../style.css">
+<script src="../data-bundle.js"></script>
+<style>
+  body { overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: grid; grid-template-rows: 1fr auto; }
+  #floor { width: 100%; height: 100%; display: block; }
+  #note { font: 12px var(--body); padding: 6px 10px; border-top: 2px solid var(--ink); }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="floor"></canvas><div id="note">loading…</div></div>
+<script type="module">
+import { buildContent, loadRawData, createShop, addFixture, makeRng, emptySlots } from '../src/engine.js';
+import { createTradingDay } from '../src/trading-day.js';
+import { createFloorRenderer } from '../src/floor.js';
+import { createParticles } from '../src/motion.js';
+
+const q = new URLSearchParams(location.search);
+const content = buildContent(await loadRawData());
+const shop = createShop(content, q.get('char') || 'default_shop');
+
+// Widen the floor the way a long run does, then stock every bay with a spread
+// of terms and rarities so the colour coding has something to say.
+const extra = Number(q.get('aisles') || 2);
+for (let i = 0; i < extra; i++) {
+  shop.aisles.push({
+    slots: new Array(shop.character.slotsPerAisle).fill(null),
+    closed: false, patienceBonus: 0, restrictTypes: null,
+  });
+}
+shop.tills = Number(q.get('tills') || 4);
+
+const rng = makeRng(Number(q.get('seed') || 7));
+const pool = content.fixtures.filter((f) => f.effect.op !== 'rule');
+let guard = 0;
+while (emptySlots(shop).length && guard++ < 400) {
+  const f = rng.pick(pool);
+  const at = emptySlots(shop)[0];
+  addFixture(content, shop, f.id, at);
+}
+// A couple of levelled lines, because a mature shop has them.
+let bumped = 0;
+for (const a of shop.aisles) {
+  for (const inst of a.slots) if (inst && bumped < 3) { inst.level = 2 + (bumped % 2); bumped++; }
+}
+// And some maturity on the ratchets, so the barkers carry stars and the
+// figures are late-run sized.
+for (const a of shop.aisles) for (const inst of a.slots) if (inst) inst.age = 11;
+
+const target = content.targets[Number(q.get('day') || 14) - 1];
+const day = createTradingDay(content, shop, {
+  boss: null, auditMods: {}, target, closedAisle: -1,
+}, rng);
+
+const floor = createFloorRenderer(document.getElementById('floor'));
+const particles = createParticles();
+const steps = Number(q.get('steps') || 60);
+for (let i = 0; i < steps && !day.state.finished; i++) day.step();
+particles.emit('coin', 0, 0);
+
+function frame() {
+  particles.update();
+  floor.draw(day, shop, particles);
+  requestAnimationFrame(frame);
+}
+frame();
+
+document.getElementById('note').textContent =
+  `${shop.aisles.length} aisles · ${shop.tills} tills · footfall ${Math.round(day.state.footfall)}`
+  + ` · queue ${day.state.queue.length} · served ${day.state.served} · tick ${day.state.tick}/${day.state.ticks}`;
+window.HARNESS_READY = true;
+</script>
+</body>
+</html>

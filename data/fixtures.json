@@ -1,0 +1,3176 @@
+{
+ "$comment": "Fixtures as pure data (section 21). Arrays index by level. Conditions are declarative and evaluated against a shop-state object.",
+ "$schema_notes": {
+  "class": "additive | multiplicative | rule_breaking",
+  "term": "footfall | conversion | basket | margin | none",
+  "trigger.scope": "customer (fires as a customer passes this slot) | shop (evaluated at day start) | next_slots (amplifies same-term effects in the following N slots of this aisle) | exit (fires on exit)",
+  "effect.op": "add | multiply | set | rule",
+  "conditions": "list of { check, value }, all must hold",
+  "ratchet": "effect.op 'ratchet' grows a stored value by effect.value each trading day and then applies the accumulated total to its term. Ratchets are the only unbounded scalers in the pool, and they are deliberately confined to Footfall and Basket: Conversion and Margin are rates and cap out, so they cannot carry a 24-encounter curve.",
+  "clauses": "Extra effects a fixture gains at a level, as data rather than a branch in the resolver. Each clause is { minLevel, term, op, value, conditions? } and is applied by the same machinery as the main effect. A clause that touches a term other than the fixture's own rolls its own trigger — see ruling 8 in sim/README.md.",
+  "position": "Conditions slot_is_first, slot_is_last, slot_index_min, prev_slot_class and prev_slot_term make WHERE a fixture sits matter. The ablation measured reordering the whole board at 0.0pp because End Cap was the only adjacency effect in the pool; section 2 calls order of operations the primary skill expression, so the catalogue has to express it.",
+  "purity": "aisle_all_share_tag and shop_holds_at_least_tag pay for commitment. A concave payoff has its optimum in the middle by definition, so making a hedged build merely mediocre needs effects that reward being pure, not just penalties for going too far.",
+  "ratchet_growth": "A ratchet may be fed per day, per sale, per sale to one customer type, per walkout, or per boss survived, and may carry `accel` which grows the per-day amount itself. Flat-per-day is linear and linear cannot carry a 24-encounter exponential; `accel` and the per-sale feeds are where the exponent actually lives. See sim/ratchets.js.",
+  "ratchet_mult": "effect.op 'ratchet_mult' accumulates a MULTIPLIER rather than an addend: the term is multiplied by (1 + accumulated). The only genuinely exponential object in the pool, so there are three of them, all flagship, all expensive to keep and slow to start."
+ },
+ "fixtures": [
+  {
+   "id": "bargain_bin",
+   "name": "Bargain Bin",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     20,
+     50,
+     110
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "check": "none",
+    "text": "Also +10% Conversion for Family and Student."
+   },
+   "tags": [
+    "value",
+    "display"
+   ],
+   "cost": 0,
+   "clauses": [
+    {
+     "minLevel": 3,
+     "term": "conversion",
+     "op": "add",
+     "value": 0.1,
+     "conditions": [
+      {
+       "check": "customer_type_in",
+       "value": [
+        "family",
+        "student"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sample_table",
+   "name": "Sample Table",
+   "class": "additive",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     3,
+     7.5,
+     16.5
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also +5% Conversion to each customer passing."
+   },
+   "tags": [
+    "fresh",
+    "display"
+   ],
+   "cost": 0,
+   "clauses": [
+    {
+     "minLevel": 3,
+     "term": "conversion",
+     "op": "add",
+     "value": 0.05
+    }
+   ]
+  },
+  {
+   "id": "greeter",
+   "name": "Greeter",
+   "class": "additive",
+   "rarity": "common",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.08,
+     0.2,
+     0.44
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also +2 Patience."
+   },
+   "tags": [
+    "service"
+   ],
+   "cost": 0,
+   "clauses": [
+    {
+     "minLevel": 3,
+     "term": "patience",
+     "op": "add",
+     "value": 2
+    }
+   ]
+  },
+  {
+   "id": "own_brand",
+   "name": "Own Brand",
+   "class": "additive",
+   "rarity": "common",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.06,
+     0.15,
+     0.33
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also -£2 Basket, which is usually worth it."
+   },
+   "tags": [
+    "value",
+    "stock"
+   ],
+   "cost": 0,
+   "clauses": [
+    {
+     "minLevel": 3,
+     "term": "basket",
+     "op": "add",
+     "value": -2
+    }
+   ]
+  },
+  {
+   "id": "security_tag",
+   "name": "Security Tag",
+   "class": "rule_breaking",
+   "rarity": "common",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "shoplifters_become_browsers",
+    "value": [
+     1,
+     1,
+     1
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "margin_cost",
+    "value": [
+     0.03,
+     0.015,
+     0.0
+    ]
+   },
+   "l3Clause": {
+    "text": "No Margin cost, and Shoplifters become Family instead."
+   },
+   "tags": [
+    "loss_prevention"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "end_cap",
+   "name": "End Cap",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     1,
+     2,
+     3
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.5,
+     1.5,
+     1.5
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also applies to the slot it sits in."
+   },
+   "tags": [
+    "display",
+    "grocery"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "loss_leader",
+   "name": "Loss Leader",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.0,
+     2.0,
+     2.0
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.12,
+     -0.06,
+     0.0
+    ]
+   },
+   "l3Clause": {
+    "text": "No Margin cost."
+   },
+   "tags": [
+    "value",
+    "promo"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "concierge",
+   "name": "Concierge",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "customer_type_in",
+      "value": [
+       "luxury"
+      ]
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.3,
+     1.3,
+     1.3
+    ]
+   },
+   "levels": 3,
+   "breadth": {
+    "$comment": "Multiplicative levelling scales breadth, never the multiplier.",
+    "check": "customer_type_in",
+    "value": [
+     [
+      "luxury"
+     ],
+     [
+      "luxury",
+      "trade"
+     ],
+     [
+      "luxury",
+      "trade",
+      "family"
+     ]
+    ]
+   },
+   "tags": [
+    "service",
+    "luxury"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "maze",
+   "name": "Maze",
+   "class": "rule_breaking",
+   "rarity": "uncommon",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "no_skip",
+    "value": [
+     1,
+     1,
+     1
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "patience_cost",
+    "value": [
+     -3,
+     -1.5,
+     0
+    ]
+   },
+   "l3Clause": {
+    "text": "No Patience cost, and +1 slot of walking value."
+   },
+   "tags": [
+    "layout"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "self_checkout",
+   "name": "Self-Checkout",
+   "class": "rule_breaking",
+   "rarity": "uncommon",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "throughput",
+    "value": [
+     2,
+     2,
+     2
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "block_type_conversion",
+    "type": "pensioner",
+    "value": [
+     1.0,
+     0.5,
+     0.0
+    ]
+   },
+   "l3Clause": {
+    "text": "Pensioners convert normally."
+   },
+   "tags": [
+    "till"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "clearance",
+   "name": "Clearance",
+   "class": "rule_breaking",
+   "rarity": "uncommon",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "unsold_to_footfall",
+    "value": [
+     0.25,
+     0.4,
+     0.6
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Walkouts also carry over as Footfall instead of a penalty."
+   },
+   "tags": [
+    "promo",
+    "stock"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "bulk_buy",
+   "name": "Bulk Buy",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "shop_holds_no_tag",
+      "value": "fresh"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.4,
+     1.4,
+     1.4
+    ]
+   },
+   "levels": 3,
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "shop"
+    ]
+   },
+   "tags": [
+    "value",
+    "stock"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "appointment_book",
+   "name": "Appointment Book",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_holds_no_rarity",
+      "value": "common"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.6,
+     1.6,
+     1.6
+    ]
+   },
+   "levels": 3,
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "shop"
+    ]
+   },
+   "tags": [
+    "service",
+    "luxury"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "loyalty_card",
+   "name": "Loyalty Card",
+   "class": "rule_breaking",
+   "rarity": "rare",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "buyers_return",
+    "value": [
+     1,
+     1,
+     1
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "return_conversion_penalty",
+    "value": [
+     0.2,
+     0.3,
+     0.4
+    ],
+    "$was": [
+     0.5,
+     0.75,
+     1.0
+    ],
+    "$note": "Returning customers convert at a much lower rate; pick rate was 55% at Tier 3+, against a 40% ceiling."
+   },
+   "l3Clause": {
+    "text": "Returning customers convert at full rate."
+   },
+   "tags": [
+    "service",
+    "promo"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "private_client_suite",
+   "name": "Private Client Suite",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "conversion",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "conversion_certain",
+    "value": [
+     1,
+     1,
+     1
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "footfall_cap",
+    "value": [
+     3,
+     4,
+     5
+    ],
+    "$was": [
+     3,
+     5,
+     8
+    ],
+    "$note": "Flagship drawbacks barely shrink with level; see REPORT.md."
+   },
+   "l3Clause": {
+    "text": "Footfall cap rises to 8."
+   },
+   "tags": [
+    "service",
+    "luxury",
+    "commitment"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "warehouse_club",
+   "name": "Warehouse Club",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "footfall_multiply_flat_basket",
+    "value": [
+     2.5,
+     2.5,
+     2.5
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "basket_fixed",
+    "value": [
+     25,
+     27,
+     30
+    ],
+    "$was": [
+     25,
+     32,
+     40
+    ],
+    "$note": "Flagship drawbacks barely shrink with level; see REPORT.md."
+   },
+   "l3Clause": {
+    "text": "Fixed Basket rises to £40."
+   },
+   "tags": [
+    "value",
+    "commitment"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "personal_shopper",
+   "name": "Personal Shopper",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "basket",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "basket_multiply_single_till",
+    "value": [
+     1.9,
+     1.9,
+     1.9
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "throughput_cap",
+    "value": [
+     1,
+     1,
+     2
+    ],
+    "$was": [
+     1,
+     2,
+     3
+    ],
+    "$note": "Flagship drawbacks barely shrink with level; see REPORT.md."
+   },
+   "l3Clause": {
+    "text": "Throughput cap rises to 3."
+   },
+   "tags": [
+    "service",
+    "commitment"
+   ],
+   "cost": 0,
+   "$retuned": "was x2.5; pick rate 62-81% at Tier 3+, against a 40% ceiling"
+  },
+  {
+   "id": "vertical_integration",
+   "name": "Vertical Integration",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "margin",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "margin_set",
+    "value": [
+     0.75,
+     0.75,
+     0.75
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "max_fixtures",
+    "value": [
+     4,
+     5,
+     5
+    ],
+    "$was": [
+     4,
+     6,
+     8
+    ],
+    "$note": "Flagship drawbacks barely shrink with level; see REPORT.md."
+   },
+   "l3Clause": {
+    "text": "Fixture cap rises to 8."
+   },
+   "tags": [
+    "stock",
+    "commitment"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "regulars_book",
+   "name": "Regulars Book",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     2.5,
+     6,
+     13
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also +4 Footfall for every Loyalty fixture you hold."
+   },
+   "tags": [
+    "service",
+    "ratchet"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "range_extension",
+   "name": "Range Extension",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.45,
+     1.1,
+     2.4
+    ]
+   },
+   "levels": 3,
+   "l3Clause": {
+    "text": "Also gains double on boss days."
+   },
+   "tags": [
+    "stock",
+    "ratchet"
+   ],
+   "cost": 0,
+   "ratchetBonus": {
+    "minLevel": 3,
+    "when": "boss_day",
+    "multiply": 2
+   }
+  },
+  {
+   "id": "word_of_mouth",
+   "name": "Word of Mouth",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.055,
+     1.075,
+     1.1
+    ],
+    "$was": {
+     "op": "ratchet",
+     "value": [
+      4,
+      10,
+      22
+     ],
+     "why": "The most literally exponential idea in the pool was a flat +4 a day. Word of mouth is people telling people; it multiplies or it is not word of mouth."
+    }
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "reset_on_walkouts",
+    "value": [
+     0.35,
+     0.2,
+     0.1
+    ]
+   },
+   "l3Clause": {
+    "text": "A bad day barely dents it."
+   },
+   "tags": [
+    "promo",
+    "ratchet"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "trade_account",
+   "name": "Trade Account",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "customer_type_in",
+      "value": [
+       "trade",
+       "luxury"
+      ]
+     }
+    ]
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     1.6,
+     3.8,
+     8.5
+    ]
+   },
+   "levels": 3,
+   "breadth": {
+    "check": "customer_type_in",
+    "value": [
+     [
+      "trade",
+      "luxury"
+     ],
+     [
+      "trade",
+      "luxury",
+      "family"
+     ],
+     [
+      "trade",
+      "luxury",
+      "family",
+      "tourist"
+     ]
+    ]
+   },
+   "tags": [
+    "stock",
+    "ratchet"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "second_branch",
+   "name": "Second Branch",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     14,
+     20,
+     28
+    ]
+   },
+   "levels": 3,
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.8,
+     1.75,
+     1.7
+    ],
+    "$was": [
+     1.8,
+     1.65,
+     1.5
+    ],
+    "$note": "Flagship drawbacks barely shrink with level; see REPORT.md."
+   },
+   "l3Clause": {
+    "text": "The rent on the second branch finally settles down."
+   },
+   "tags": [
+    "commitment",
+    "ratchet"
+   ],
+   "cost": 0
+  },
+  {
+   "id": "hero_display",
+   "name": "Hero Display",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     1,
+     2,
+     3
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.45,
+     1.45,
+     1.45
+    ]
+   },
+   "l3Clause": {
+    "text": "Also applies to the slot it sits in."
+   },
+   "tags": [
+    "display",
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "margin_rail",
+   "name": "Margin Rail",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "margin",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     1,
+     2,
+     3
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.5,
+     1.5,
+     1.5
+    ]
+   },
+   "l3Clause": {
+    "text": "Also applies to the slot it sits in."
+   },
+   "tags": [
+    "stock",
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "impulse_shelf",
+   "name": "Impulse Shelf",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "prev_slot_class",
+      "value": "additive"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.7,
+     1.7,
+     1.7
+    ]
+   },
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "aisle"
+    ]
+   },
+   "tags": [
+    "display",
+    "grocery"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "upsell_counter",
+   "name": "Upsell Counter",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "prev_slot_term",
+      "value": "basket"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.9,
+     1.9,
+     1.9
+    ]
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "window_dressing",
+   "name": "Window Dressing",
+   "class": "additive",
+   "rarity": "common",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "slot_is_first"
+     }
+    ]
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.16,
+     0.4,
+     0.88
+    ]
+   },
+   "l3Clause": {
+    "text": "Also +2 Patience."
+   },
+   "tags": [
+    "display",
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "queue_bait",
+   "name": "Queue Bait",
+   "class": "additive",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "slot_is_last"
+     }
+    ]
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     7,
+     17.5,
+     38.5
+    ]
+   },
+   "tags": [
+    "display",
+    "grocery"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "deep_aisle_stock",
+   "name": "Deep Aisle Stock",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "slot_index_min",
+      "value": 2
+     }
+    ]
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.13,
+     0.32,
+     0.72
+    ]
+   },
+   "tags": [
+    "stock"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "clean_lines",
+   "name": "Clean Lines",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_holds_no_class",
+      "value": "rule_breaking"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.55,
+     1.55,
+     1.55
+    ]
+   },
+   "tags": [
+    "service",
+    "display"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "loyalty_scheme",
+   "name": "Loyalty Scheme",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     2.0,
+     4.8,
+     10.5
+    ]
+   },
+   "tags": [
+    "service",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "reputation",
+   "name": "Reputation",
+   "class": "additive",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.35,
+     0.85,
+     1.9
+    ]
+   },
+   "tags": [
+    "service",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "supplier_deal",
+   "name": "Supplier Deal",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.6,
+     1.45,
+     3.2
+    ]
+   },
+   "tags": [
+    "stock",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "passing_trade",
+   "name": "Passing Trade",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     3.2,
+     7.7,
+     17
+    ]
+   },
+   "tags": [
+    "promo",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "catalogue_mailer",
+   "name": "Catalogue Mailer",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     6,
+     14,
+     31
+    ]
+   },
+   "tags": [
+    "promo",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "specialist",
+   "name": "Specialist",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_all_share_tag",
+      "value": "service",
+      "min": 3
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.2,
+     2.2,
+     2.2
+    ]
+   },
+   "tags": [
+    "service",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "warehouse_discipline",
+   "name": "Warehouse Discipline",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_all_share_tag",
+      "value": "stock",
+      "min": 3
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.8,
+     1.8,
+     1.8
+    ]
+   },
+   "tags": [
+    "stock",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "the_full_range",
+   "name": "The Full Range",
+   "class": "multiplicative",
+   "rarity": "flagship",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "shop_holds_at_least_tag",
+      "value": "ratchet",
+      "count": 4
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.6,
+     2.6,
+     2.6
+    ]
+   },
+   "tags": [
+    "commitment",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "pile_it_high",
+   "name": "Pile It High",
+   "class": "multiplicative",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": [
+     {
+      "check": "shop_holds_at_least_tag",
+      "value": "value",
+      "count": 4
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.4,
+     2.4,
+     2.4
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.14,
+     -0.12,
+     -0.1
+    ]
+   },
+   "tags": [
+    "value",
+    "keystone",
+    "commitment"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "bus_route",
+   "name": "Bus Route",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     9,
+     21,
+     46
+    ]
+   },
+   "l3Clause": {
+    "text": "The stop moves right outside."
+   },
+   "tags": [
+    "promo",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "delivery_round",
+   "name": "Delivery Round",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.12,
+     0.28,
+     0.62
+    ],
+    "per": "sale"
+   },
+   "l3Clause": {
+    "text": "The van does two runs."
+   },
+   "tags": [
+    "service",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "school_opposite",
+   "name": "School Opposite",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     1.1,
+     2.6,
+     5.8
+    ],
+    "per": "type_sale",
+    "perType": "family"
+   },
+   "tags": [
+    "promo",
+    "ratchet",
+    "family"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "trade_directory",
+   "name": "Trade Directory",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     2.0,
+     4.7,
+     10.4
+    ],
+    "per": "type_sale",
+    "perType": "trade"
+   },
+   "tags": [
+    "stock",
+    "ratchet",
+    "trade"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "queue_outside",
+   "name": "Queue Outside",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     2.2,
+     5.2,
+     11.5
+    ],
+    "per": "walkout"
+   },
+   "l3Clause": {
+    "text": "A queue out the door is the best advert there is."
+   },
+   "tags": [
+    "promo",
+    "ratchet",
+    "perverse"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$brake": "Fed by walkouts, but never more than the number you served. Uncapped, footfall fed walkouts fed footfall with nothing in the loop to stop it: the strongest seed found 2,187,426 customers, a 0% conversion rate and GBP 450m of profit."
+  },
+  {
+   "id": "christmas_lights",
+   "name": "Christmas Lights",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     4,
+     9,
+     20
+    ],
+    "accel": [
+     3.0,
+     4.5,
+     7.0
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.35,
+     1.32,
+     1.28
+    ]
+   },
+   "l3Clause": {
+    "text": "They go up in October now."
+   },
+   "tags": [
+    "promo",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "bank_holiday_trade",
+   "name": "Bank Holiday Trade",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     85,
+     200,
+     440
+    ],
+    "per": "boss"
+   },
+   "l3Clause": {
+    "text": "You are the shop that stayed open."
+   },
+   "tags": [
+    "promo",
+    "ratchet",
+    "patient"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "car_park",
+   "name": "Car Park Extension",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     13,
+     30,
+     66
+    ]
+   },
+   "drawback": {
+    "id": "throughput_cost",
+    "value": [
+     1,
+     1,
+     0
+    ]
+   },
+   "tags": [
+    "value",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "franchise",
+   "name": "Franchise Agreement",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     11,
+     15,
+     20
+    ],
+    "accel": [
+     5.5,
+     6.5,
+     8.0
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     2.2,
+     2.1,
+     2.0
+    ]
+   },
+   "l3Clause": {
+    "text": "Head office stops asking questions."
+   },
+   "tags": [
+    "commitment",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "retail_park",
+   "name": "Retail Park",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.105,
+     1.125,
+     1.15
+    ],
+    "$was": {
+     "op": "ratchet_mult",
+     "value": [
+      0.055,
+      0.065,
+      0.08
+     ],
+     "why": "ratchet_mult grows its multiplier by ADDITION, so over 24 days it reached x2.3 — linear, and a linear flagship cannot be the ceiling of the game."
+    }
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.1,
+     -0.09,
+     -0.08
+    ]
+   },
+   "l3Clause": {
+    "text": "The whole park is yours."
+   },
+   "tags": [
+    "commitment",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "weighing_scales",
+   "name": "Weighing Scales",
+   "class": "additive",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.8,
+     1.9,
+     4.2
+    ]
+   },
+   "tags": [
+    "stock",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "gift_wrapping",
+   "name": "Gift Wrapping",
+   "class": "additive",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     0.02,
+     0.05,
+     0.11
+    ],
+    "per": "sale"
+   },
+   "tags": [
+    "service",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "deli_counter",
+   "name": "The Deli Counter",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     2.1,
+     4.9,
+     10.8
+    ]
+   },
+   "drawback": {
+    "id": "conversion_cost",
+    "value": [
+     0.08,
+     0.06,
+     0.04
+    ]
+   },
+   "l3Clause": {
+    "text": "They stop minding the wait."
+   },
+   "tags": [
+    "fresh",
+    "ratchet"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "premium_own_label",
+   "name": "Premium Own Label",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     3.2,
+     7.5,
+     16.6
+    ],
+    "per": "type_sale",
+    "perType": "luxury"
+   },
+   "tags": [
+    "stock",
+    "ratchet",
+    "luxury"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "bulk_pallets",
+   "name": "Bulk Pallets",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     1.1,
+     2.2,
+     4.4
+    ],
+    "accel": [
+     0.45,
+     0.7,
+     1.1
+    ]
+   },
+   "drawback": {
+    "id": "reset_on_walkouts",
+    "value": [
+     0.25,
+     0.15,
+     0.06
+    ]
+   },
+   "l3Clause": {
+    "text": "The pallets stop toppling."
+   },
+   "tags": [
+    "stock",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "wine_aisle",
+   "name": "Wine Aisle",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_all_share_tag",
+      "value": "stock",
+      "min": 2
+     }
+    ]
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     3.0,
+     7.0,
+     15.5
+    ]
+   },
+   "tags": [
+    "stock",
+    "ratchet",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "christmas_club",
+   "name": "The Christmas Club",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "ratchet",
+    "value": [
+     24,
+     56,
+     124
+    ],
+    "per": "boss"
+   },
+   "tags": [
+    "service",
+    "ratchet",
+    "patient"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "concession_stand",
+   "name": "Concession Stand",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.1,
+     1.12,
+     1.145
+    ],
+    "$was": {
+     "op": "ratchet_mult",
+     "value": [
+      0.05,
+      0.06,
+      0.075
+     ],
+     "why": "As Retail Park."
+    }
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.7,
+     1.6,
+     1.5
+    ]
+   },
+   "l3Clause": {
+    "text": "Three concessions, and all of them pay you."
+   },
+   "tags": [
+    "commitment",
+    "ratchet",
+    "compounding"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "anchor_tenant",
+   "name": "Anchor Tenant",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "footfall_ratchets_feed_basket",
+    "value": [
+     0.09,
+     0.12,
+     0.16
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.08,
+     -0.07,
+     -0.06
+    ]
+   },
+   "l3Clause": {
+    "text": "Everything that brings them in also makes them spend."
+   },
+   "tags": [
+    "commitment",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "stocktake",
+   "name": "Stocktake",
+   "class": "rule_breaking",
+   "rarity": "rare",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "reset_ratchets_double_rate",
+    "value": [
+     2.0,
+     2.3,
+     2.7
+    ]
+   },
+   "l3Clause": {
+    "text": "The write-off is worth more every time."
+   },
+   "tags": [
+    "stock",
+    "gamble"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "managers_office",
+   "name": "The Manager's Office",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "ratchet_rate_multiply",
+    "value": [
+     1.9,
+     2.1,
+     2.4
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.17,
+     -0.15,
+     -0.13
+    ]
+   },
+   "l3Clause": {
+    "text": "You stop doing the rotas yourself."
+   },
+   "tags": [
+    "commitment",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "conveyor_belt",
+   "name": "Conveyor Belt",
+   "class": "rule_breaking",
+   "rarity": "uncommon",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "throughput",
+    "value": [
+     3,
+     5,
+     8
+    ]
+   },
+   "drawback": {
+    "id": "block_type_conversion",
+    "type": "pensioner",
+    "value": [
+     0.35,
+     0.2,
+     0.0
+    ]
+   },
+   "tags": [
+    "till"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "second_storey",
+   "name": "Second Storey",
+   "class": "rule_breaking",
+   "rarity": "rare",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "add_aisle_on_acquire",
+    "value": [
+     3,
+     4,
+     5
+    ]
+   },
+   "tags": [
+    "layout"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "price_architecture",
+   "name": "Price Architecture",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "shop_holds_at_least_tag",
+      "value": "ratchet",
+      "count": 3
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.4,
+     1.4,
+     1.4
+    ]
+   },
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "shop"
+    ]
+   },
+   "tags": [
+    "value",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "staff_training",
+   "name": "Staff Training",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.13,
+     0.32,
+     0.72
+    ]
+   },
+   "l3Clause": {
+    "text": "Also +3 Patience."
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "clauses": [
+    {
+     "minLevel": 3,
+     "term": "patience",
+     "op": "add",
+     "value": 3
+    }
+   ]
+  },
+  {
+   "id": "long_life_stock",
+   "name": "Long Life Stock",
+   "class": "additive",
+   "rarity": "rare",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.16,
+     0.4,
+     0.88
+    ]
+   },
+   "drawback": {
+    "id": "basket_flat",
+    "value": [
+     -3,
+     -2,
+     -1
+    ]
+   },
+   "tags": [
+    "stock",
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "shrinkage_audit",
+   "name": "Shrinkage Audit",
+   "class": "rule_breaking",
+   "rarity": "uncommon",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "shrink_reduce",
+    "value": [
+     0.5,
+     0.72,
+     1.0
+    ]
+   },
+   "tags": [
+    "loss_prevention"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "overnight_delivery",
+   "name": "Overnight Delivery",
+   "class": "rule_breaking",
+   "rarity": "rare",
+   "term": "none",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "rule",
+    "rule": "ratchet_rate_multiply",
+    "value": [
+     1.45,
+     1.6,
+     1.8
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.4,
+     1.35,
+     1.3
+    ]
+   },
+   "tags": [
+    "stock",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "penny_rounding",
+   "name": "Penny Rounding",
+   "class": "multiplicative",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.05,
+     1.068,
+     1.09
+    ]
+   },
+   "drawback": {
+    "id": "conversion_cost",
+    "value": [
+     0.035,
+     0.03,
+     0.025
+    ]
+   },
+   "l3Clause": {
+    "text": "Nobody has ever queried a penny."
+   },
+   "tags": [
+    "value",
+    "compound"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The floor of the compounding class, and deliberately the one card that makes the ending reachable without a rare. Small enough that taking it alone is not a plan."
+  },
+  {
+   "id": "standing_order",
+   "name": "The Standing Order",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.075,
+     1.095,
+     1.12
+    ]
+   },
+   "drawback": {
+    "id": "basket_flat",
+    "value": [
+     -9,
+     -7.5,
+     -6
+    ]
+   },
+   "l3Clause": {
+    "text": "Same box, same day, and they never cancel."
+   },
+   "tags": [
+    "service",
+    "compound"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Negative for its first several days: the sign-up discount is flat and the growth is a factor, so the card literally loses you money until the compounding overtakes it. The purest statement of the brief on one card."
+  },
+  {
+   "id": "refer_a_friend",
+   "name": "Refer a Friend",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.0009,
+     1.0014,
+     1.0021
+    ],
+    "per": "sale"
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.05,
+     -0.045,
+     -0.04
+    ]
+   },
+   "l3Clause": {
+    "text": "Both of you get the voucher."
+   },
+   "tags": [
+    "promo",
+    "compound"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Compounds per SALE, so its exponent is your throughput. It is dead in a shop that cannot serve people and it is the best card in the pool in a shop that can - which makes tills, the one purchase with no same-day payoff, into a growth investment."
+  },
+  {
+   "id": "high_street_pull",
+   "name": "High Street Pull",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.115,
+     1.14,
+     1.175
+    ]
+   },
+   "drawback": {
+    "id": "reset_on_walkouts",
+    "value": [
+     0.3,
+     0.2,
+     0.11
+    ]
+   },
+   "l3Clause": {
+    "text": "The reputation survives one bad Saturday."
+   },
+   "tags": [
+    "promo",
+    "compound"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Exponential footfall that a queue knocks back. The two halves fight: the card grows the very thing that breaks it, so holding it is a standing commitment to buy throughput at the same rate."
+  },
+  {
+   "id": "interest_free_credit",
+   "name": "Interest-Free Credit",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.11,
+     1.135,
+     1.165
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.12,
+     -0.105,
+     -0.09
+    ]
+   },
+   "l3Clause": {
+    "text": "Nothing to pay until April."
+   },
+   "tags": [
+    "value",
+    "compound"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Enormous baskets at a margin you have to repair from somewhere else. Margin caps at 70%, so this card is a standing demand on the term you cannot grow your way out of."
+  },
+  {
+   "id": "press_cutting",
+   "name": "The Press Cutting",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.62,
+     1.85,
+     2.2
+    ],
+    "per": "boss"
+   },
+   "l3Clause": {
+    "text": "They run the photograph as well."
+   },
+   "tags": [
+    "promo",
+    "compound",
+    "patient"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Does nothing at all for two encounters out of every three, then nearly doubles you. Bought in act 1 it is the run; bought in act 4 it fires twice and you have paid a rare slot for x3. No other card in the pool has a payoff this dependent on the clock."
+  },
+  {
+   "id": "going_concern",
+   "name": "Going Concern",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.16,
+     1.2,
+     1.26
+    ],
+    "per": "win"
+   },
+   "drawback": {
+    "id": "reset_unless_target",
+    "value": [
+     0.45,
+     0.35,
+     0.25
+    ]
+   },
+   "l3Clause": {
+    "text": "The bank stops ringing."
+   },
+   "tags": [
+    "value",
+    "compound",
+    "patient"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Grows only on days you beat the target, and is knocked back on days you do not. Rich get richer: it is the strongest card in a run that is already winning and dead weight in the run that needs saving, which makes taking it a bet on your own build rather than a hedge against it."
+  },
+  {
+   "id": "the_brand",
+   "name": "The Brand",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.145,
+     1.17,
+     1.2
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     2.2,
+     2.0,
+     1.8
+    ]
+   },
+   "l3Clause": {
+    "text": "The name is worth more than the shop."
+   },
+   "tags": [
+    "commitment",
+    "compound",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The highest basket ceiling in the pool, against double rent - which is a fixed cost, so it is at its most lethal in act 1 and noise by act 5. Survive the installation and it wins the run."
+  },
+  {
+   "id": "catchment_area",
+   "name": "The Catchment Area",
+   "class": "rule_breaking",
+   "rarity": "flagship",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "compound",
+    "value": [
+     1.13,
+     1.155,
+     1.185
+    ]
+   },
+   "drawback": {
+    "id": "throughput_cost",
+    "value": [
+     2,
+     2,
+     1
+    ]
+   },
+   "l3Clause": {
+    "text": "Three postcodes, and all of them yours."
+   },
+   "tags": [
+    "commitment",
+    "compound",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Exponential footfall bought by giving up throughput - the one drawback that attacks the card directly. It asks the question the footfall build always has to answer, and asks it harder every day."
+  },
+  {
+   "id": "pavement_sign",
+   "name": "The Pavement Sign",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     16,
+     30,
+     52
+    ]
+   },
+   "l3Clause": {
+    "text": "It gets a second board, and an arrow."
+   },
+   "tags": [
+    "promo"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The plainest card in the pool and it needs to exist. Act 1 offers were half scaling cards, which pay nothing on the day you buy them and charge upkeep while they wait; a player cannot CHOOSE to overcommit if the draw commits for them."
+  },
+  {
+   "id": "two_for_one",
+   "name": "Two for One",
+   "class": "multiplicative",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.42,
+     1.62,
+     1.95
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.1,
+     -0.085,
+     -0.07
+    ]
+   },
+   "l3Clause": {
+    "text": "Nobody has ever bought one."
+   },
+   "tags": [
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Immediate, large, and pointed straight at the term that caps. Trading Margin for Basket is the first real decision a new player meets."
+  },
+  {
+   "id": "hand_baskets",
+   "name": "Hand Baskets",
+   "class": "multiplicative",
+   "rarity": "common",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "slot_is_first",
+      "value": true
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.38,
+     1.55,
+     1.8
+    ]
+   },
+   "l3Clause": {
+    "text": "Stacked where they cannot miss them."
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Strong, free of drawback, and only from the front of an aisle - so the cost is a slot you wanted for something else. Teaches order of operations with no text to read."
+  },
+  {
+   "id": "cash_only",
+   "name": "Cash Only",
+   "class": "additive",
+   "rarity": "common",
+   "term": "margin",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.15,
+     0.2,
+     0.27
+    ]
+   },
+   "drawback": {
+    "id": "conversion_cost",
+    "value": [
+     0.14,
+     0.12,
+     0.1
+    ]
+   },
+   "l3Clause": {
+    "text": "There is a machine now, for emergencies."
+   },
+   "tags": [
+    "value"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Two-sided on the two capped terms, which makes it a positional card rather than a good or bad one: excellent in a build already pressing Conversion against its ceiling, poison in one that is not."
+  },
+  {
+   "id": "open_late",
+   "name": "Open Late",
+   "class": "additive",
+   "rarity": "common",
+   "term": "footfall",
+   "trigger": {
+    "scope": "shop",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     26,
+     46,
+     78
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.06,
+     -0.05,
+     -0.04
+    ]
+   },
+   "l3Clause": {
+    "text": "The overtime pays for itself."
+   },
+   "tags": [
+    "service"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "meal_deal",
+   "name": "The Meal Deal",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "customer_type_in",
+      "value": [
+       "worker",
+       "family"
+      ]
+     }
+    ]
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     14,
+     26,
+     44
+    ]
+   },
+   "breadth": {
+    "check": "customer_type_in",
+    "value": [
+     [
+      "worker",
+      "family"
+     ],
+     [
+      "worker",
+      "family",
+      "student"
+     ],
+     [
+      "worker",
+      "family",
+      "student",
+      "trade"
+     ]
+    ]
+   },
+   "l3Clause": {
+    "text": "The queue at one o’clock goes round the corner."
+   },
+   "tags": [
+    "fresh",
+    "specialist"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Specialist that widens as it levels rather than simply growing - the reward for committing to a marketing identity is that the identity stops being narrow."
+  },
+  {
+   "id": "trolley_park",
+   "name": "The Trolley Park",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "prev_slot_term",
+      "value": "footfall"
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.55,
+     1.8,
+     2.15
+    ]
+   },
+   "l3Clause": {
+    "text": "They take one without thinking."
+   },
+   "tags": [
+    "service",
+    "adjacency"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Adjacency: worth nothing in the wrong slot and a keystone in the right one. Part four found order-of-operations was worth 0.0pp because no card rewarded it; this is that lesson, written as a common-tier decision."
+  },
+  {
+   "id": "the_bell",
+   "name": "The Bell",
+   "class": "multiplicative",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     2,
+     3,
+     4
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.3,
+     1.42,
+     1.55
+    ]
+   },
+   "drawback": {
+    "id": "basket_flat",
+    "value": [
+     -4,
+     -3,
+     -2
+    ]
+   },
+   "l3Clause": {
+    "text": "It rings for the slot it stands in as well."
+   },
+   "tags": [
+    "service",
+    "amplifier"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "An amplifier, so its value is entirely in what stands behind it. Put it last and it does nothing at all."
+  },
+  {
+   "id": "the_free_sample",
+   "name": "The Free Sample",
+   "class": "additive",
+   "rarity": "uncommon",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "add",
+    "value": [
+     0.16,
+     0.22,
+     0.3
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.07,
+     -0.06,
+     -0.05
+    ]
+   },
+   "clauses": [
+    {
+     "minLevel": 2,
+     "term": "conversion",
+     "op": "add",
+     "value": -0.25,
+     "conditions": [
+      {
+       "check": "customer_type_in",
+       "value": [
+        "shoplifter"
+       ]
+      }
+     ]
+    }
+   ],
+   "l3Clause": {
+    "text": "Shoplifters take two and leave."
+   },
+   "tags": [
+    "fresh"
+   ],
+   "levels": 3,
+   "cost": 0
+  },
+  {
+   "id": "everything_must_go",
+   "name": "Everything Must Go",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "customer",
+    "conditions": [
+     {
+      "check": "aisle_all_share_tag",
+      "value": "value",
+      "min": 2
+     }
+    ]
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     2.3,
+     2.9,
+     3.7
+    ]
+   },
+   "drawback": {
+    "id": "margin_flat",
+    "value": [
+     -0.16,
+     -0.14,
+     -0.12
+    ]
+   },
+   "l3Clause": {
+    "text": "The sign has been up for four years."
+   },
+   "tags": [
+    "value",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "The largest single multiplier in the pool, and it demands a whole aisle share one tag. A payoff for building an aisle with an identity rather than a shelf of best cards."
+  },
+  {
+   "id": "the_managers_round",
+   "name": "The Manager’s Round",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "conversion",
+   "trigger": {
+    "scope": "customer",
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.45,
+     1.62,
+     1.85
+    ]
+   },
+   "drawback": {
+    "id": "throughput_cost",
+    "value": [
+     2,
+     2,
+     1
+    ]
+   },
+   "l3Clause": {
+    "text": "Nobody in the aisle goes unasked."
+   },
+   "tags": [
+    "service",
+    "keystone"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "Conversion bought with throughput, and from level 2 it stops caring whether the customer walked past it. Conversion caps at 90%, so this fills a shop it then cannot serve - the tension the queue exists to create.",
+   "breadth": {
+    "check": "scope_widen",
+    "value": [
+     "customer",
+     "aisle",
+     "aisle"
+    ]
+   }
+  },
+  {
+   "id": "the_gondola_end",
+   "name": "The Gondola End",
+   "class": "multiplicative",
+   "rarity": "rare",
+   "term": "basket",
+   "trigger": {
+    "scope": "next_slots",
+    "count": [
+     3,
+     4,
+     5
+    ],
+    "conditions": []
+   },
+   "effect": {
+    "op": "multiply",
+    "value": [
+     1.55,
+     1.75,
+     2.0
+    ]
+   },
+   "drawback": {
+    "id": "rent_multiplier",
+    "value": [
+     1.3,
+     1.25,
+     1.2
+    ]
+   },
+   "l3Clause": {
+    "text": "It amplifies its own slot too."
+   },
+   "tags": [
+    "stock",
+    "amplifier"
+   ],
+   "levels": 3,
+   "cost": 0,
+   "$design": "A long amplifier: it wants to stand at the front of a deep aisle, which is exactly the slot every other strong card wants. Competing for position IS the puzzle."
+  }
+ ]
+}

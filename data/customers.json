@@ -1,0 +1,196 @@
+{
+  "$comment": "Customer types (suits) and wallets (ranks). Section 3 of the ruleset.",
+  "patienceBands": {
+    "very_low": 3,
+    "low": 5,
+    "medium": 8,
+    "high": 14,
+    "very_high": 20
+  },
+  "wallet": {
+    "$comment": "Rank 1-10 mapped linearly onto a Basket multiplier. Mean 1.25.",
+    "ranks": 10,
+    "min": 0.5,
+    "max": 2.0
+  },
+  "types": [
+    {
+      "id": "family",
+      "name": "Family",
+      "sign": "positive",
+      "conversion": 0.55,
+      "basket": 24,
+      "marginDelta": 0.0,
+      "patience": "low",
+      "note": "High volume, impatient"
+    },
+    {
+      "id": "student",
+      "name": "Student",
+      "sign": "positive",
+      "conversion": 0.4,
+      "basket": 9,
+      "marginDelta": 0.02,
+      "patience": "high",
+      "note": "Cheap, tolerant of queues"
+    },
+    {
+      "id": "pensioner",
+      "name": "Pensioner",
+      "sign": "positive",
+      "conversion": 0.7,
+      "basket": 14,
+      "marginDelta": 0.0,
+      "patience": "very_low",
+      "note": "Converts easily, hates waiting"
+    },
+    {
+      "id": "trade",
+      "name": "Trade",
+      "sign": "positive",
+      "conversion": 0.65,
+      "basket": 40,
+      "marginDelta": -0.1,
+      "patience": "medium",
+      "note": "Bulk, low margin"
+    },
+    {
+      "id": "luxury",
+      "name": "Luxury",
+      "sign": "positive",
+      "conversion": 0.25,
+      "basket": 180,
+      "marginDelta": 0.1,
+      "patience": "high",
+      "note": "Hard to convert, enormous basket"
+    },
+    {
+      "id": "tourist",
+      "name": "Tourist",
+      "sign": "positive",
+      "conversion": 0.45,
+      "basket": 30,
+      "marginDelta": 0.0,
+      "patience": "medium",
+      "routing": "random",
+      "note": "Ignores signage, routes randomly"
+    },
+    {
+      "id": "browser",
+      "name": "Browser",
+      "sign": "negative",
+      "conversion": 0.05,
+      "basket": 4,
+      "marginDelta": 0.0,
+      "patience": "high",
+      "note": "Occupies till time, buys nothing"
+    },
+    {
+      "id": "shoplifter",
+      "name": "Shoplifter",
+      "sign": "negative",
+      "conversion": 0.0,
+      "basket": -30,
+      "marginDelta": 0.0,
+      "patience": "very_high",
+      "special": "steals",
+      "note": "Flat loss on entry unless blocked; never queues"
+    }
+  ],
+  "defaultPool": {
+    "family": 20,
+    "student": 26,
+    "pensioner": 18,
+    "trade": 8,
+    "luxury": 1,
+    "tourist": 12,
+    "browser": 10,
+    "shoplifter": 5
+  },
+  "marketing": {
+    "$comment": "Marketing is deck editing, and it is the replayability engine: it is what makes Concierge broken in one run and dead in another. Campaigns are large, expensive and capped, so choosing who shops here is a commitment rather than a shopping list.",
+    "maxHeld": 3,
+    "campaigns": [
+      {
+        "id": "family_shop",
+        "name": "The Family Shop",
+        "cost": 700,
+        "upkeep": 90,
+        "add": {
+          "family": 34
+        },
+        "remove": {
+          "student": 16,
+          "browser": 10,
+          "luxury": 1
+        }
+      },
+      {
+        "id": "trade_counter",
+        "name": "Trade Counter",
+        "cost": 1100,
+        "upkeep": 140,
+        "add": {
+          "trade": 30
+        },
+        "remove": {
+          "student": 18,
+          "browser": 10,
+          "pensioner": 6
+        }
+      },
+      {
+        "id": "by_appointment",
+        "name": "By Appointment",
+        "cost": 3200,
+        "upkeep": 420,
+        "add": {
+          "luxury": 16
+        },
+        "remove": {
+          "student": 20,
+          "browser": 12,
+          "family": 8
+        }
+      },
+      {
+        "id": "on_the_tourist_trail",
+        "name": "On the Tourist Trail",
+        "cost": 900,
+        "upkeep": 110,
+        "add": {
+          "tourist": 30
+        },
+        "remove": {
+          "pensioner": 14,
+          "browser": 10
+        }
+      },
+      {
+        "id": "the_local",
+        "name": "The Local",
+        "cost": 600,
+        "upkeep": 70,
+        "add": {
+          "pensioner": 26
+        },
+        "remove": {
+          "student": 14,
+          "tourist": 8
+        }
+      },
+      {
+        "id": "clean_high_street",
+        "name": "Clean High Street",
+        "cost": 800,
+        "upkeep": 80,
+        "add": {},
+        "remove": {
+          "shoplifter": 5,
+          "browser": 14
+        }
+      }
+    ]
+  },
+  "$returnerNote": "Returners were cut. Reversing a previous day's sale is unreadable during the walk, and a Returner reverses a full average sale while only about half of customers convert, which made an all-Returner boss mathematically unwinnable. The refund fantasy now lives only on the Refund Day boss."
+}
