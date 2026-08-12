@@ -8,6 +8,7 @@ import { createRun } from './run.js';
 import { createTradingDay } from './trading-day.js';
 import { createFloorRenderer } from './floor.js';
 import { createAudio } from './audio.js';
+import { save } from './save.js';
 
 const $ = (id) => document.getElementById(id);
 const money = (v) => `${v < 0 ? '−' : ''}£${Math.abs(Math.round(v)).toLocaleString('en-GB')}`;
@@ -21,6 +22,10 @@ let audio = null;
 let pending = null; // fixture awaiting placement
 let speed = 1;
 let character = 'default_shop';
+let audit = 1;
+// Peak day of the current run. The target is the fail condition; this is the
+// number the run is actually about, and a good one overshoots it fifty times.
+let peakDay = 0;
 
 // ---------------------------------------------------------------- copy ----
 
@@ -365,6 +370,10 @@ function settle() {
   audio.receipt();
   const s = day.state;
   const entry = game.settle(s);
+  // The target is only the fail condition. The number the run is remembered by
+  // is the best day it ever had, and a good run overshoots its last target
+  // fifty times over.
+  if (s.profit > peakDay) peakDay = s.profit;
   show('settle');
   $('tip').textContent = entry.fatal ? 'The gap was the term you did not cover.'
     : 'The panel is the plan. The day is the roll.';
@@ -401,6 +410,12 @@ function settle() {
 function show(which) {
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
+  // The ledger and the projection panel are readouts of a run in progress.
+  // On the title screen there is no run, and a row of zeroes above the logo
+  // reads as a broken game rather than an empty one.
+  const inRun = which !== 'title';
+  $('ledger').hidden = !inRun;
+  $('panel').hidden = !inRun;
 }
 
 function nextEncounter() {
@@ -415,28 +430,205 @@ function nextEncounter() {
 function endRun() {
   show('settle');
   const won = game.run.won;
-  const best = game.run.log.length;
-  $('receipt').innerHTML = `<h3>${won ? 'EIGHT QUARTERS' : 'CLOSING DOWN'}</h3>
+  const days = game.run.log.length;
+  const first = game.run.log[0] ? game.run.log[0].profit : 0;
+  const last = game.run.log[days - 1];
+  const climb = first > 0 ? Math.max(0, (last ? last.profit : 0) / first) : 0;
+
+  const outcome = save.record({
+    characterId: character,
+    audit,
+    won,
+    days,
+    bestDay: peakDay,
+    climb,
+    seed: game.run.seed,
+  });
+
+  const build = fixtureInstances(game.shop)
+    .map(({ inst }) => `${inst.def.name}${inst.level > 1 ? ` L${inst.level}` : ''}`);
+  const ch = content.characterById.get(character);
+
+  $('receipt').innerHTML = `<h3>${won ? 'Eight quarters' : 'Closing down'}</h3>
+    <div class="headline ${won ? 'pass' : 'fail'}">${money(peakDay)}</div>
+    <div class="sub">best day&rsquo;s profit${outcome.record ? ' &mdash; a personal record' : ''}</div>
+    ${outcome.unlocked ? `<div class="unlock">Audit ${roman(outcome.unlocked)} unlocked</div>` : ''}
     <div class="rule"></div>
-    <div class="r"><span>Days traded</span><span>${best}</span></div>
+    <div class="r"><span>${ch.name}, Audit ${roman(audit)}</span><span>${won ? 'survived' : `day ${days}`}</span></div>
+    <div class="r"><span>Days traded</span><span>${days} / ${content.run.encounters}</span></div>
+    <div class="r"><span>Climb, first day to last</span><span>${climb >= 1 ? `&times;${Math.round(climb).toLocaleString('en-GB')}` : '&mdash;'}</span></div>
+    <div class="r"><span>Banked</span><span>${money(game.shop.cash)}</span></div>
     <div class="r"><span>Seed</span><span>${game.run.seed}</span></div>
     <div class="rule"></div>
-    ${game.run.log.slice(-6).map((e) => `<div class="r"><span>Day ${e.encounter}</span><span>${money(e.profit)} / ${money(e.target)}</span></div>`).join('')}
-    <div class="verdict ${won ? 'pass' : 'fail'}">${won ? 'THE SHOP SURVIVES' : `IT ENDED ON DAY ${best}`}</div>`;
+    ${game.run.log.slice(-5).map((e) => `<div class="r"><span>Day ${e.encounter}</span><span>${money(e.profit)} / ${money(e.target)}</span></div>`).join('')}
+    <div class="build">${build.join(' &middot; ') || 'an empty shop'}</div>
+    <div class="verdict ${won ? 'pass' : 'fail'}">${won ? 'THE SHOP SURVIVES' : `IT ENDED ON DAY ${days}`}</div>`;
   $('btn-continue').textContent = 'Open another shop';
-  $('btn-continue').onclick = () => location.reload();
+  $('btn-continue').onclick = () => { showTitle(); };
 }
+
+function hashSeed(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 1;
+}
+
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+const roman = (n) => ROMAN[n] || String(n);
 
 function renderCharacters() {
   const wrap = $('charpick');
   wrap.innerHTML = '';
   for (const c of content.characters) {
+    const cleared = save.clearedFor(c.id);
     const b = document.createElement('button');
     b.className = `charbtn${c.id === character ? ' on' : ''}`;
-    b.innerHTML = `<div class="cn">${c.name}</div><div class="cr">${c.rule}</div>`;
-    b.onclick = () => { character = c.id; renderCharacters(); };
+    b.innerHTML = `<div class="cn">${c.name}</div><div class="cr">${c.rule}</div>`
+      + (cleared ? `<div class="lock">cleared to Audit ${roman(cleared)}</div>` : '');
+    b.onclick = () => { character = c.id; renderTitle(); };
     wrap.appendChild(b);
   }
+}
+
+/**
+ * The ladder. Audit n+1 unlocks when this character clears n, so progress is
+ * per shop rather than global — the Discounter's run is a different game from
+ * the Estate Agent's and clearing one says nothing about the other.
+ */
+function renderAudits() {
+  const wrap = $('auditpick');
+  wrap.innerHTML = '';
+  const max = content.audits.length;
+  const unlocked = save.unlockedFor(character, max);
+  if (audit > unlocked) audit = unlocked;
+  for (const a of content.audits) {
+    const b = document.createElement('button');
+    const done = a.id <= save.clearedFor(character);
+    b.className = `auditbtn${a.id === audit ? ' on' : ''}${done ? ' done' : ''}`;
+    b.textContent = roman(a.id);
+    b.disabled = a.id > unlocked;
+    b.title = auditText(a);
+    b.onclick = () => { audit = a.id; renderTitle(); };
+    wrap.appendChild(b);
+  }
+  const cur = content.audits.find((a) => a.id === audit);
+  $('audit-hint').textContent = auditText(cur);
+}
+
+const AUDIT_WORDS = {
+  rentMultiplier: (v) => `rent ×${v}`,
+  targetMultiplier: (v) => `targets ×${v}`,
+  rerollCostMultiplier: (v) => `rerolls ×${v}`,
+  bossEvery: (v) => `an inspection every ${v} days`,
+  flagshipTwoDayCondition: () => 'flagships need two good days',
+  supplierCostsFlat: () => 'supplier tiers cost full price',
+  quarterlyAisleClosure: () => 'an aisle shuts every quarter',
+};
+
+function auditText(a) {
+  if (!a) return '';
+  const bits = Object.entries(a.modifiers || {})
+    .map(([k, v]) => (AUDIT_WORDS[k] ? AUDIT_WORDS[k](v) : k));
+  return bits.length ? bits.join(', ') : 'the shop as written';
+}
+
+function renderTitle() {
+  renderCharacters();
+  renderAudits();
+  const s = save.get();
+  $('titlestats').innerHTML = [
+    `Runs <b>${s.runs}</b>`,
+    `Survived <b>${s.wins}</b>`,
+    `Best day <b>${money(s.bestDay)}</b>`,
+    s.bestClimb >= 1 ? `Best climb <b>×${Math.round(s.bestClimb).toLocaleString('en-GB')}</b>` : '',
+  ].filter(Boolean).join('');
+}
+
+// ---------------------------------------------------------------- sheet ----
+
+function openSheet(html) {
+  $('sheetbody').innerHTML = html;
+  $('sheet').hidden = false;
+}
+
+const RULES = `
+  <h3>How it works</h3>
+  <p>You have eight quarters and twenty-four trading days. Every day has a
+  profit target. Miss one and the run is over.</p>
+  <div class="formula">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</div>
+  <p>Four terms that multiply and one cost that does not. A zero anywhere is a
+  zero everywhere, so a run is worth roughly its weakest term.</p>
+
+  <h4>The night</h4>
+  <ul>
+    <li>Take <b>one fixture</b> from the catalogue and place it in an aisle.
+      Order matters: customers walk front to back and each fixture fires as
+      they pass, so an amplifier is worth nothing behind the thing it
+      amplifies.</li>
+    <li>Two copies of a fixture combine to level 2, three to level 3.</li>
+    <li>Once the floor is full, a new fixture <b>lands on top of one you
+      already own</b>. What you clear out is the decision the back half of the
+      run is made of.</li>
+    <li>Or decline the pick and take the cash. Cash buys tills, supplier tiers,
+      staff, floorspace and marketing &mdash; none of which you can also spend
+      on a fixture.</li>
+  </ul>
+
+  <h4>The two terms that cap</h4>
+  <p>Conversion stops at 90% and Margin at 70%. They are rates: floors you
+  defend, not axes you grow. Footfall and Basket have no ceiling, and the whole
+  late game lives in those two.</p>
+
+  <h4>Growth</h4>
+  <ul>
+    <li>A <b>ratchet</b> gains a fixed amount every day. Reliable, and linear.</li>
+    <li>A <b>compounder</b> multiplies. It is nearly worthless for its first
+      week and then carries the run &mdash; so it is worth whatever is left of
+      the run, and buying one on day twenty is a waste.</li>
+    <li>Both charge upkeep against the target while you hold them. Scaling is
+      never free, and three of them at once in act one is how you die.</li>
+  </ul>
+
+  <h4>The day</h4>
+  <p>Customers walk in, cross an aisle and join the till queue. Patience drains
+  while they wait; at zero they walk out, which is a lost sale <em>and</em> a
+  quieter tomorrow. Click anyone in the queue to pull them straight to the
+  till &mdash; you get a limited number of those a day.</p>
+  <p>Footfall past what your tills can serve is not growth. It is a crowd you
+  turn away.</p>
+
+  <h4>The audit ladder</h4>
+  <p>Survive all twenty-four days to unlock the next Audit for that shop. Each
+  one changes a rule permanently, and each shop climbs its own ladder.</p>`;
+
+function recordsHtml() {
+  const s = save.get();
+  const rows = s.history.map((h) => {
+    const ch = content.characterById.get(h.characterId);
+    return `<div class="hrow"><span>${ch ? ch.name : h.characterId} &middot; Audit ${roman(h.audit)}</span>
+      <span class="${h.won ? 'w' : 'l'}">${h.won ? 'survived' : `day ${h.days}`} &middot; ${money(h.bestDay)}</span></div>`;
+  }).join('');
+  return `<h3>Records</h3>
+    <div class="hrow"><span>Runs</span><span>${s.runs}</span></div>
+    <div class="hrow"><span>Survived</span><span>${s.wins}</span></div>
+    <div class="hrow"><span>Best day</span><span>${money(s.bestDay)}</span></div>
+    <div class="hrow"><span>Best climb</span><span>${s.bestClimb >= 1 ? `&times;${Math.round(s.bestClimb).toLocaleString('en-GB')}` : '&mdash;'}</span></div>
+    <h4>Recent runs</h4>
+    ${rows || '<p>Nothing yet.</p>'}
+    <h4>&nbsp;</h4>
+    <button class="ghost" id="btn-wipe">Wipe everything</button>`;
+}
+
+function showTitle() {
+  game = null;
+  day = null;
+  pending = null;
+  peakDay = 0;
+  show('title');
+  renderTitle();
 }
 
 async function boot() {
@@ -444,13 +636,32 @@ async function boot() {
   content = buildContent(raw);
   audio = createAudio();
   floor = createFloorRenderer($('floor'));
-  renderCharacters();
+  if (save.get().muted) audio.toggleMute();
+  showTitle();
 
   $('btn-start').onclick = () => {
     audio.unlock();
-    game = createRun(content, { characterId: character });
+    // A typed seed makes a run repeatable, which is how anyone compares a
+    // decision against the alternative they did not take.
+    const typed = $('seed').value.trim();
+    const seed = typed === '' ? undefined : (Number(typed) || hashSeed(typed));
+    peakDay = 0;
+    game = createRun(content, { characterId: character, audit, seed });
     nextEncounter();
   };
+  $('btn-rules').onclick = () => openSheet(RULES);
+  $('btn-records').onclick = () => {
+    openSheet(recordsHtml());
+    const wipe = $('btn-wipe');
+    if (wipe) {
+      wipe.onclick = () => {
+        wipe.textContent = 'Tap again to confirm';
+        wipe.onclick = () => { save.clear(); $('sheet').hidden = true; renderTitle(); };
+      };
+    }
+  };
+  $('btn-sheet-close').onclick = () => { $('sheet').hidden = true; };
+  $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').hidden = true; };
   $('btn-open').onclick = openDoors;
   $('btn-continue').onclick = () => nextEncounter();
   $('btn-reroll').onclick = () => { if (game.reroll()) { audio.place(); renderNight(); } };
@@ -466,7 +677,18 @@ async function boot() {
     if (id && day.triage(id)) audio.triage();
   };
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'm') audio.toggleMute();
+    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.key === 'm') save.setMuted(audio.toggleMute());
+    if (e.key === 'Escape') $('sheet').hidden = true;
+    if (e.key === '?') openSheet(RULES);
+    // Space is the one action the current phase wants, whatever it is.
+    if (e.key === ' ') {
+      e.preventDefault();
+      for (const id of ['btn-open', 'btn-continue', 'btn-start']) {
+        const b = $(id);
+        if (b && !b.hidden && b.offsetParent !== null) { b.click(); break; }
+      }
+    }
   });
 }
 

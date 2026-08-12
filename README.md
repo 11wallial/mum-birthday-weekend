@@ -101,12 +101,13 @@ the run.
 Still out of band: tier rush at 74% (wants ~30%), and staff counts in winning
 builds run 0–14 (wants 0–8, unclustered).
 
-The committed order was **pool → queue verification → tune**. The pool is done
-(89 cards, three growth classes) and the tuning has been redone on top of the
-fix. **The queue is still unverified and it is still next** — `verify.js` proves
-the resolver against 100k individually walked customers but excludes the queue
-entirely, which is the one part of the day that decides how much of your Footfall
-is real.
+The committed order was **pool → queue verification → tune**, and all three are
+now done. `verify-queue.js` runs the fluid queue against a discrete one — every
+customer an individual with their own arrival tick and their own place in the
+line — across ten scenarios from well under capacity to twelve times overload.
+Totals agree exactly; the worst mix shift is 0.88pp of the day. It found a real
+off-by-one: customers were expiring a tick early, which cost the short-patience
+types about a third of the service they were owed.
 
 Read `REPORT.md` newest-part-first. Each part reverses conclusions in the one
 before it; earlier parts are kept as the record rather than edited.

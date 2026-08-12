@@ -271,6 +271,8 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
   font: inherit; cursor: pointer; text-align: left; max-width: 210px; min-height: 44px;
 }
 .charbtn.on { outline: 3px solid var(--ink); background: var(--paper); }
+.charbtn:disabled { opacity: .4; cursor: not-allowed; }
+.charbtn .lock { font-size: 10px; letter-spacing: .1em; color: var(--magenta); }
 .charbtn .cn { font-family: var(--cond); font-size: 16px; text-transform: uppercase; }
 .charbtn .cr { font-size: 10.5px; color: var(--ink-soft); }
 
@@ -300,3 +302,85 @@ button { font-family: var(--body); }
   .term b { font-size: 20px; }
   #boss-options { grid-template-columns: 1fr; }
 }
+
+
+/* ---------------------------------------------------------------- title ---
+   The ladder, the records and the rules. A roguelike without a ladder is one
+   run repeated, and none of this existed in the browser build: it always
+   played Audit I and forgot everything when the tab closed. */
+
+#title .pick { display: grid; gap: 7px; justify-items: center; }
+#title .pick h2 {
+  font-family: var(--cond); font-size: 12px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+#title .pick h2 .hint { letter-spacing: 0; text-transform: none; font-family: var(--body); }
+#charpick, #auditpick { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+
+.auditbtn {
+  font-family: var(--cond); font-size: 14px; letter-spacing: .06em;
+  padding: 5px 11px; border: 1.5px solid var(--rule); background: var(--paper-2);
+  cursor: pointer; color: var(--ink);
+}
+.auditbtn.on { outline: 3px solid var(--ink); background: var(--paper); }
+.auditbtn.done { border-color: var(--money); color: var(--money); }
+.auditbtn:disabled { opacity: .35; cursor: not-allowed; }
+
+#titlestats {
+  display: flex; gap: 18px; font-size: 11.5px; color: var(--ink-soft);
+  flex-wrap: wrap; justify-content: center;
+}
+#titlestats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.titlerow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.seedbox { font-size: 11px; color: var(--ink-soft); letter-spacing: .06em; }
+.seedbox input {
+  font: inherit; font-size: 12px; padding: 4px 6px; margin-left: 5px;
+  border: 1.5px solid var(--rule); background: var(--paper-2); color: var(--ink);
+}
+
+/* The sheet covers the stage rather than replacing a phase, so opening the
+   rules mid-run does not disturb the run. */
+#sheet {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
+  background: rgba(22, 19, 15, .55); padding: 3vh 3vw;
+}
+.sheetinner {
+  background: var(--paper); border: 2px solid var(--ink); max-width: 62ch;
+  max-height: 92vh; overflow-y: auto; padding: 22px 24px; position: relative;
+}
+.sheetinner .close { position: absolute; top: 12px; right: 12px; }
+.sheetinner h3 {
+  font-family: var(--cond); font-size: 19px; letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.sheetinner h4 {
+  font-family: var(--cond); font-size: 13px; letter-spacing: .14em;
+  text-transform: uppercase; margin: 16px 0 5px; color: var(--ink-soft);
+}
+.sheetinner p, .sheetinner li { font-size: 13px; line-height: 1.65; }
+.sheetinner ul { padding-left: 18px; }
+.sheetinner .formula {
+  font-family: var(--cond); font-size: 17px; letter-spacing: .04em;
+  text-align: center; padding: 10px; border: 1.5px dashed var(--rule); margin: 10px 0;
+}
+.sheetinner .hrow {
+  display: flex; justify-content: space-between; gap: 10px; font-size: 12px;
+  padding: 4px 0; border-bottom: 1px dashed var(--rule);
+}
+.sheetinner .hrow .w { color: var(--money); } .sheetinner .hrow .l { color: var(--magenta); }
+
+/* End-of-run summary: the number you finish on is what the game is for, so it
+   gets the size. */
+#receipt .headline {
+  font-family: var(--cond); font-size: 34px; text-align: center; line-height: 1;
+  margin: 6px 0 2px; font-variant-numeric: tabular-nums;
+}
+#receipt .headline.pass { color: var(--money); }
+#receipt .headline.fail { color: var(--magenta); }
+#receipt .sub { text-align: center; font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+#receipt .unlock {
+  text-align: center; font-family: var(--cond); font-size: 15px; letter-spacing: .1em;
+  color: var(--money); border: 1.5px solid var(--money); padding: 6px; margin: 10px 0;
+}
+#receipt .build { font-size: 11px; color: var(--ink-soft); line-height: 1.7; margin-top: 6px; }

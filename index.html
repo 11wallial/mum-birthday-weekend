@@ -92,10 +92,38 @@
     <div id="title">
       <h1>FOOTFALL</h1>
       <p class="tag">Eight quarters. Twenty-four trading days. A target that does not care.</p>
-      <div id="charpick"></div>
+
+      <div class="pick">
+        <h2>The shop</h2>
+        <div id="charpick"></div>
+      </div>
+
+      <div class="pick">
+        <h2>The audit <span class="hint" id="audit-hint"></span></h2>
+        <div id="auditpick"></div>
+      </div>
+
+      <div id="titlestats"></div>
+
       <button id="btn-start" class="primary">Open the shop</button>
+
+      <div class="titlerow">
+        <button id="btn-rules" class="ghost">How it works</button>
+        <button id="btn-records" class="ghost">Records</button>
+        <label class="seedbox">Seed <input id="seed" type="text" inputmode="numeric"
+          placeholder="random" size="10" autocomplete="off"></label>
+      </div>
+
       <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent.<br>
       Never add a fifth term.</p>
+    </div>
+
+    <!-- rules / records, over the top of whatever is behind -->
+    <div id="sheet" hidden>
+      <div class="sheetinner">
+        <button id="btn-sheet-close" class="ghost close">Close</button>
+        <div id="sheetbody"></div>
+      </div>
     </div>
   </main>
 
