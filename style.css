@@ -164,6 +164,9 @@ body::after {
   display: flex; gap: 11px; margin-top: 3px; flex-wrap: wrap;
   font-size: 10.5px; color: var(--ink-soft); letter-spacing: .03em;
 }
+/* Three costs set identically read the same on a day theft takes £243 out of
+   £245 as on a day it takes nothing. */
+.costs .worst { color: var(--red); font-weight: 600; }
 
 /* ----------------------------------------------------------------- stage */
 

@@ -127,9 +127,7 @@ function renderPanel() {
   roll($('p-basket'), p.basket, money);
   roll($('p-margin'), p.margin, (v) => pct(v));
   roll($('p-trading'), p.trading, money);
-  $('p-rent').textContent = `rent ${money(-p.rent)}`;
-  $('p-shrink').textContent = `shrink ${money(p.shrink)}`;
-  $('p-upkeep').textContent = `upkeep ${money(-(p.upkeep + (d.ratchetUpkeep || 0)))}`;
+  showCosts(p.rent, -p.shrink, p.upkeep + (d.ratchetUpkeep || 0));
   const gap = d.profit - target;
   const short = gap < 0;
   const pel = $('p-profit');
@@ -147,6 +145,25 @@ function renderPanel() {
     ? `against ${money(target)} — <b>${money(-gap)} short</b>`
     : `against ${money(target)} — <b>${money(gap)} clear</b>`;
   g.className = `vgap ${short ? 'short' : 'clear'}`;
+}
+
+/**
+ * The three costs, with the one that is hurting you marked.
+ *
+ * They were set identically, which on a day where theft takes £243 out of £245
+ * of takings reads exactly like a day where it takes nothing. The biggest of
+ * the three is the one the night's decision should be about, so it says so.
+ */
+function showCosts(rent, shrink, upkeep) {
+  const worst = Math.max(rent, shrink, upkeep);
+  const set = (id, label, v) => {
+    const el = $(id);
+    el.textContent = `${label} ${money(-v)}`;
+    el.classList.toggle('worst', v > 0 && v === worst);
+  };
+  set('p-rent', 'rent', rent);
+  set('p-shrink', 'shrink', shrink);
+  set('p-upkeep', 'upkeep', upkeep);
 }
 
 /**
@@ -168,9 +185,7 @@ function renderPanelActual(s, target) {
   roll($('p-basket'), basket, money);
   roll($('p-margin'), margin, (v) => pct(v));
   roll($('p-trading'), s.tradingProfit, money);
-  $('p-rent').textContent = `rent ${money(-s.rent)}`;
-  $('p-shrink').textContent = `shrink ${money(s.shrink)}`;
-  $('p-upkeep').textContent = `upkeep ${money(-(s.upkeep + s.ratchetUpkeep))}`;
+  showCosts(s.rent, -s.shrink, s.upkeep + s.ratchetUpkeep);
   const gap = s.profit - target;
   const short = gap < 0;
   const pel = $('p-profit');
