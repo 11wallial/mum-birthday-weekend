@@ -29,6 +29,7 @@ let audit = 1;
 let peakDay = 0;
 let particles = null;
 let lastShort = null;
+let paused = false;
 
 // ---------------------------------------------------------------- copy ----
 
@@ -356,7 +357,8 @@ function openDoors() {
   audio.unlock();
   audio.tannoy();
   particles = createParticles();
-  showWiped('day');
+  setPaused(false);
+  showWiped('day', () => maybeCoach('day'));
   day = createTradingDay(content, game.shop, game.ctx(), game.run.rng);
   $('btn-open').hidden = true;
   $('tip').textContent = 'Someone waiting? Tap them and take them next.';
@@ -369,7 +371,8 @@ function openDoors() {
     acc += dt;
     const msPerTick = 90 / speed;
     let guard = 0;
-    while (acc >= msPerTick && !day.state.finished && guard++ < 40) {
+    if (paused) acc = 0;
+    while (!paused && acc >= msPerTick && !day.state.finished && guard++ < 40) {
       const before = day.state.sales;
       const beforeLost = day.state.walkouts;
       day.step();
@@ -414,7 +417,7 @@ function settle() {
   // is the best day it ever had, and a good run overshoots its last target
   // fifty times over.
   if (s.profit > peakDay) peakDay = s.profit;
-  showWiped('settle');
+  showWiped('settle', () => maybeCoach('settle'));
   $('tip').textContent = entry.fatal
     ? 'The landlord does not take instalments.'
     : 'Cash up, lock the door, order for tomorrow.';
@@ -473,7 +476,7 @@ function nextEncounter() {
   game.beginNight();
   if (game.run.over) return endRun();
   pending = null;
-  showWiped('night', renderNight);
+  showWiped('night', () => { renderNight(); maybeCoach('night'); });
 }
 
 function endRun() {
@@ -524,6 +527,37 @@ function hashSeed(text) {
   }
   return h >>> 1;
 }
+
+function setPaused(v) {
+  paused = v;
+  const b = $('btn-pause');
+  if (b) b.textContent = paused ? 'Resume' : 'Pause';
+  $('tip').textContent = paused
+    ? 'Paused. You can still take someone to the till.'
+    : 'Someone waiting? Tap them and take them next.';
+}
+
+// ------------------------------------------------------------- coaching ----
+// Shown once each, on a first run only. A rules sheet nobody opens is not
+// onboarding; a line that arrives at the moment it is needed is.
+
+const COACH = [
+  ['night', 'Take one line', 'Pick a card from the catalogue and put it in an aisle. Customers walk front to back, and every fixture fires as they pass — so where it goes matters as much as what it is.'],
+  ['day', 'Watch the queue', 'They cross the floor, then they wait. Patience runs down while they do; at nothing, they leave — a lost sale AND a quieter tomorrow. Tap anyone waiting to take them next.'],
+  ['settle', 'Mind the gap', 'Beat the target and you trade again tomorrow. Miss it once and that is the run. The target climbs every single day, so standing still is losing slowly.'],
+];
+
+function maybeCoach(phase) {
+  if (save.get().runs > 0) return;            // not on a second run
+  const seen = coachSeen;
+  const item = COACH.find(([p]) => p === phase && !seen.has(p));
+  if (!item) return;
+  seen.add(phase);
+  $('coach-t').textContent = item[1];
+  $('coach-b').textContent = item[2];
+  $('coach').hidden = false;
+}
+const coachSeen = new Set();
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 const roman = (n) => ROMAN[n] || String(n);
@@ -770,6 +804,7 @@ async function boot() {
   // The rules used to live only on the title screen, so the moment a run
   // started there was no way to look anything up.
   $('btn-help').onclick = () => openSheet(RULES);
+  $('coach-x').onclick = () => { $('coach').hidden = true; };
   $('btn-records').onclick = () => {
     openSheet(recordsHtml());
     const wipe = $('btn-wipe');
@@ -790,6 +825,10 @@ async function boot() {
     speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
     $('btn-speed').innerHTML = `&raquo; ${speed}&times;`;
   };
+  // Pause. The day is the only part of the game with a clock, and there was no
+  // way to stop it — including no way to stop it and think about who to serve,
+  // which is the one decision the day contains.
+  $('btn-pause').onclick = () => setPaused(!paused);
   $('floor').onclick = (e) => {
     if (!day || day.state.finished) return;
     const r = $('floor').getBoundingClientRect();
@@ -804,6 +843,7 @@ async function boot() {
     // Space is the one action the current phase wants, whatever it is.
     if (e.key === ' ') {
       e.preventDefault();
+      if (day && !day.state.finished && !$('day').hidden) { setPaused(!paused); return; }
       for (const id of ['btn-open', 'btn-continue', 'btn-start']) {
         const b = $(id);
         if (b && !b.hidden && b.offsetParent !== null) { b.click(); break; }

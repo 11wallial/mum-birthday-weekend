@@ -647,3 +647,34 @@ button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
   }
   button { transition: none; }
 }
+
+
+/* --------------------------------------------------------------- day bar */
+/* Was a flat row of five figures. Takings is the one that answers the
+   question the panel asked, so it gets the weight, and the triage count is
+   the one you can act on, so it gets the colour. */
+
+.daybtns { margin-left: auto; display: flex; gap: 6px; }
+
+/* -------------------------------------------------------------- coaching */
+/* A rules sheet nobody opens is not onboarding. One line, at the moment it is
+   needed, on the first run only. */
+
+#coach {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
+  z-index: 70; max-width: 44ch; background: var(--yellow);
+  border: 2.5px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+  padding: 11px 14px 12px; display: grid; gap: 4px;
+  animation: coachin .3s cubic-bezier(.2, .9, .3, 1.2);
+}
+@keyframes coachin {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+#coach b {
+  font-family: var(--cond); font-size: 15px; letter-spacing: .06em;
+  text-transform: uppercase;
+}
+#coach span { font-size: 12.5px; line-height: 1.45; }
+#coach button { justify-self: end; margin-top: 3px; }
+@media (prefers-reduced-motion: reduce) { #coach { animation: none; } }

@@ -88,7 +88,10 @@
         <div class="dstat"><b id="d-walk">0</b><i>Walkouts</i></div>
         <div class="dstat"><b id="d-profit" class="money">£0</b><i>Takings</i></div>
         <div class="dstat triage"><b id="d-triage">0</b><i>Next please</i></div>
-        <button id="btn-speed" class="ghost">&raquo; 1&times;</button>
+        <div class="daybtns">
+          <button id="btn-pause" class="ghost" title="Space">Pause</button>
+          <button id="btn-speed" class="ghost">&raquo; 1&times;</button>
+        </div>
       </div>
     </div>
 
@@ -131,6 +134,11 @@
 
       <p class="fine">Profit = Footfall &times; Conversion &times; Basket &times; Margin &minus; Rent</p>
     </div>
+
+    <!-- First run only: one line at a time, at the moment it is needed. A
+         rules sheet nobody opens is not onboarding. -->
+    <div id="coach" hidden><b id="coach-t"></b><span id="coach-b"></span>
+      <button id="coach-x" class="ghost">Got it</button></div>
 
     <!-- rules / records, over the top of whatever is behind -->
     <div id="sheet" hidden>
