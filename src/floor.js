@@ -41,6 +41,13 @@ const TERM_TONE = {
 };
 const shelfTone = (def) => TERM_TONE[def.term] || '#8a5a3c';
 
+/** Stable pseudo-random in 0..1 from three integers. No allocation, no state. */
+function hash(a, b, c) {
+  let n = (a * 73856093) ^ (b * 19349663) ^ (c * 83492791);
+  n = (n ^ (n >>> 13)) >>> 0;
+  return ((n * 1274126177) >>> 0) / 4294967296;
+}
+
 /**
  * A person, drawn as an illustration rather than as a rounded rectangle.
  *
@@ -247,6 +254,14 @@ export function createFloorRenderer(canvas) {
       const top = padT + li * laneH;
       const floorY = top + laneH - 6;
       const shelfBase = floorY - strip * 0.5;
+      // Shelf height is a property of the lane, not of the bay, so it is
+      // settled before anything in the lane is drawn — the pendant lights hang
+      // from a rod down to it, which is both what a shop looks like and what
+      // stops the lamps colliding with the barkers on a five-aisle floor.
+      // Never negative: at five aisles the lane is short enough that the
+      // derived height went below zero and every stock item drew inside out.
+      const uh = Math.max(22, Math.min(laneH - strip * 0.55 - 30, 150));
+      const y0 = shelfBase - uh;
 
       // --- the room ----------------------------------------------------
       // Back wall, skirting, floor. Three tones instead of one flat fill is
@@ -269,25 +284,29 @@ export function createFloorRenderer(canvas) {
       g.moveTo(0, floorY); g.lineTo(tillX, floorY);
       g.stroke();
 
-      // Pendant lights along the ceiling of the lane.
+      // Pendant lights, hung on a rod that reaches down to just above the
+      // shelving. They used to be pinned 9px under the ceiling whatever the
+      // lane height, which on a tall lane left them stranded in blank wall and
+      // on a short one put them through the shelf barkers.
+      const lampY = Math.max(top + 8, y0 - 22);
       for (let px = bwSpacing(tillX); px < tillX; px += bwSpacing(tillX)) {
-        g.strokeStyle = 'rgba(25,20,16,.45)';
-        g.lineWidth = 1;
-        g.beginPath(); g.moveTo(px, top); g.lineTo(px, top + 9); g.stroke();
+        g.strokeStyle = 'rgba(25,20,16,.55)';
+        g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(px, top); g.lineTo(px, lampY); g.stroke();
         g.fillStyle = '#f7c331';
         g.beginPath();
-        g.moveTo(px - 7, top + 15); g.lineTo(px + 7, top + 15);
-        g.lineTo(px + 3, top + 9); g.lineTo(px - 3, top + 9);
+        g.moveTo(px - 8, lampY + 7); g.lineTo(px + 8, lampY + 7);
+        g.lineTo(px + 3, lampY); g.lineTo(px - 3, lampY);
         g.closePath(); g.fill();
         g.strokeStyle = INK; g.lineWidth = 1.2; g.stroke();
         // The pool of light it throws. Kept faint and wide: at the old value
         // it read as a vertical streak down an empty lane rather than as
         // light, which is the sort of thing that looks like a bug.
         g.save();
-        g.globalAlpha = 0.045;
+        g.globalAlpha = 0.05;
         g.fillStyle = '#f7c331';
         g.beginPath();
-        g.moveTo(px - 6, top + 15); g.lineTo(px + 6, top + 15);
+        g.moveTo(px - 7, lampY + 7); g.lineTo(px + 7, lampY + 7);
         g.lineTo(px + 34, floorY); g.lineTo(px - 34, floorY);
         g.closePath(); g.fill();
         g.restore();
@@ -302,11 +321,6 @@ export function createFloorRenderer(canvas) {
         const inst = aisle.slots[i];
         const x0 = i * bw + bw * 0.08;
         const uw = bw * 0.84;
-        // Never negative: at five aisles the lane is short enough that the
-        // derived shelf height goes below zero and every stock item is drawn
-        // inside out.
-        const uh = Math.max(22, Math.min(laneH - strip * 0.55 - 10, 82));
-        const y0 = shelfBase - uh;
         if (!inst) {
           // An empty bay is a real thing in a real shop: a stripped unit with
           // bare boards on it. It used to be three ghost lines at 30% alpha,
@@ -350,18 +364,25 @@ export function createFloorRenderer(canvas) {
         for (let r = 0; r < rows; r++) {
           const sy = y0 + (uh / rows) * (r + 1);
           const cell = uh / rows;
-          const items = 3 + ((i + r) % 3);
+          // Varied, and not full. Fifteen identically-sized marks per unit
+          // across fifteen units reads as wallpaper — a real shelf has gaps
+          // where things have sold, sizes that disagree, and the odd thing
+          // stacked two high. All of it comes off one hash so it is stable
+          // frame to frame and costs nothing.
+          const items = 3 + (hash(i, r, 1) * 3 | 0);
           for (let k = 0; k < items; k++) {
+            const seed = hash(i * 31 + k, r, 7);
+            if (seed < 0.13) continue;            // a gap where stock has gone
             const slotW = uw / items;
-            const iw = slotW * 0.66;
+            const iw = slotW * (0.44 + seed * 0.34);
             const kind = (i * 7 + r * 3 + k) % 3;
-            const ih = cell * (kind === 0 ? 0.62 : kind === 1 ? 0.48 : 0.55);
+            const ih = cell * (0.36 + hash(k, i + r, 3) * 0.4);
             const ix = x0 + slotW * k + (slotW - iw) / 2;
             // Solid at this size. A dot screen only reads as a screen when
             // there is room for several dots across the shape; on a 12px tin
             // it reads as damage.
             g.fillStyle = tone;
-            g.globalAlpha = 0.72 + ((i + r + k) % 3) * 0.12;
+            g.globalAlpha = 0.6 + seed * 0.4;
             if (kind === 2) {                     // bottles
               rr(g, ix + iw * 0.2, sy - ih, iw * 0.6, ih, 1.5);
               g.fill();
@@ -376,6 +397,14 @@ export function createFloorRenderer(canvas) {
             g.lineWidth = 1;
             g.globalAlpha = 1;
             if (kind === 0) g.strokeRect(ix, sy - ih, iw, ih); else g.stroke();
+            // Something stacked on top, now and then.
+            if (seed > 0.82 && ih < cell * 0.55) {
+              g.fillStyle = tone;
+              g.globalAlpha = 0.5 + seed * 0.3;
+              g.fillRect(ix + iw * 0.12, sy - ih - cell * 0.2, iw * 0.76, cell * 0.19);
+              g.globalAlpha = 1;
+              g.strokeRect(ix + iw * 0.12, sy - ih - cell * 0.2, iw * 0.76, cell * 0.19);
+            }
           }
           // The board itself.
           g.fillStyle = '#c8b285';
@@ -574,6 +603,63 @@ export function createFloorRenderer(canvas) {
     g.closePath(); g.fill();
     g.restore();
 
+    // --- the wall the queue faces ------------------------------------------
+    // On a tall canvas with five aisles the hall is six hundred pixels of
+    // empty tiling, because everything in it was pinned to the window at the
+    // top or the counter at the bottom. A shop puts things on that wall.
+    const wallY = winY + winH + vh + 12;
+    if (counterY - wallY > 120) {
+      // A price board: TODAY, and a few ruled lines of nothing in particular.
+      const bw2 = Math.min(190, frontW * 0.46);
+      const bx = tillX + frontW - bw2 - 16;
+      contact(g, bx + bw2 / 2, wallY + 78, bw2, 0.1, 0.02);
+      g.fillStyle = '#26221c';
+      g.fillRect(bx, wallY, bw2, 74);
+      g.strokeStyle = INK; g.lineWidth = lw;
+      g.strokeRect(bx, wallY, bw2, 74);
+      g.fillStyle = '#f7c331';
+      g.font = '700 13px Inter, sans-serif';
+      g.fillText('TODAY', bx + bw2 / 2, wallY + 18);
+      g.fillStyle = 'rgba(247,239,219,.5)';
+      for (let r = 0; r < 3; r++) {
+        g.fillRect(bx + 12, wallY + 30 + r * 13, bw2 * (0.42 + (r % 2) * 0.2), 3);
+        g.fillRect(bx + bw2 - 40, wallY + 30 + r * 13, 26, 3);
+      }
+
+      // A clock, because a shop that opens at nine has one on the wall.
+      const cx2 = tillX + 46;
+      g.fillStyle = '#efe2c0';
+      g.beginPath(); g.arc(cx2, wallY + 30, 21, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = INK; g.lineWidth = lw + 0.5; g.stroke();
+      g.lineWidth = 2;
+      const mins = (s.tick / Math.max(1, s.ticks)) * (8.5 * 60) + 9 * 60;
+      g.beginPath();
+      g.moveTo(cx2, wallY + 30);
+      g.lineTo(cx2 + Math.sin((mins / 720) * Math.PI * 2) * 11,
+        wallY + 30 - Math.cos((mins / 720) * Math.PI * 2) * 11);
+      g.moveTo(cx2, wallY + 30);
+      g.lineTo(cx2 + Math.sin((mins / 60) * Math.PI * 2) * 15,
+        wallY + 30 - Math.cos((mins / 60) * Math.PI * 2) * 15);
+      g.stroke();
+
+      // Crates on the floor, stacked against the wall — up by the clock, not
+      // down at the counter where the scales already stand.
+      const kx = tillX + 22;
+      const ky = wallY + 96;
+      contact(g, kx + 22, ky + 20, 58, 0.14, 0.05);
+      for (let k = 0; k < 3; k++) {
+        const ox = k === 2 ? 11 : k * 24;
+        const oy = k === 2 ? -17 : 0;
+        g.fillStyle = halftone(g, '#b4772f', 3, 1);
+        g.fillRect(kx + ox, ky + oy, 22, 18);
+        g.strokeStyle = INK; g.lineWidth = 1.4;
+        g.strokeRect(kx + ox, ky + oy, 22, 18);
+        g.beginPath();
+        g.moveTo(kx + ox, ky + oy + 6); g.lineTo(kx + ox + 22, ky + oy + 6);
+        g.stroke();
+      }
+    }
+
     // A rope barrier down the left of the hall, which is what makes it a
     // queue rather than a crowd.
     g.strokeStyle = 'rgba(25,20,16,.5)';
@@ -626,7 +712,10 @@ export function createFloorRenderer(canvas) {
     // of the counter and the queue forms along it to the left — they used to
     // be centred, which is exactly where the queue stood, so the machines were
     // never once visible.
-    const tillZone = Math.max(60, frontW * 0.34);
+    // The till end is sized to the tills, not to a fixed third of the counter:
+    // one machine used to sit alone in a hundred and fifty pixels of counter
+    // while the queue was squeezed into what was left.
+    const tillZone = Math.min(frontW * 0.52, Math.max(70, Math.min(tills, 6) * 48));
     const tillLeft = tillX + frontW - tillZone;
     const shown = Math.min(tills, Math.max(1, Math.floor(tillZone / 40)));
     for (let ti = 0; ti < shown; ti++) {
@@ -675,7 +764,11 @@ export function createFloorRenderer(canvas) {
 
     // --- customers ---------------------------------------------------------
     hitboxes = [];
-    const qCols = Math.max(1, Math.floor((queueRight - tillX - 14) / Math.max(30, person * 1.05)));
+    // People in a queue stand closer together than people browsing, but not
+    // inside one another: at 1.05 the columns were narrower than a Family with
+    // a child alongside, so the front of the queue was a pile.
+    const qPerson = person * 0.86;
+    const qCols = Math.max(1, Math.floor((queueRight - tillX - 14) / Math.max(30, qPerson * 1.3)));
     for (const c of s.customers) {
       if ((c.phase === PHASE.DONE || c.phase === PHASE.LOST) && t - (c.exitAt ?? 0) > 8) continue;
       const li = c.lane;
@@ -712,13 +805,18 @@ export function createFloorRenderer(canvas) {
         // touching the tills and the shop visibly fills from the front. The
         // old version stacked downward from the top of an empty box, which
         // read as a waiting room rather than a queue.
+        // Fill from the till end. Index 0 is the person being served next, so
+        // filling left-to-right put the front of the queue at the far end of
+        // the counter from the machines — and parked the whole queue on top of
+        // the scales, which stand at the quiet end precisely because it is
+        // quiet.
         const qi = Math.max(0, s.queue.indexOf(c));
-        const col = qi % qCols;
+        const col = qCols - 1 - (qi % qCols);
         const row = Math.floor(qi / qCols);
         const colW = (queueRight - tillX - 14) / qCols;
         x = tillX + 10 + col * colW + colW / 2;
-        y = counterY - 8 - row * Math.max(26, person * 0.72);
-        if (y < padT + person * 1.3) y = padT + person * 1.3;
+        y = counterY - 8 - row * Math.max(26, qPerson * 0.8);
+        if (y < padT + qPerson * 1.3) y = padT + qPerson * 1.3;
       } else {
         x = tillX + frontW / 2;
         y = counterY - 4;
@@ -729,19 +827,20 @@ export function createFloorRenderer(canvas) {
       // Walking figures stride; standing ones sway. Perfectly still figures
       // are what made a shop full of people look like a paused screenshot.
       const walking = c.phase === PHASE.WALKING;
-      drawPerson(g, c.type, x, y, person, walking ? c.stridePhase || 0 : 0,
+      const size = c.phase === PHASE.QUEUE ? qPerson : person;
+      drawPerson(g, c.type, x, y, size, walking ? c.stridePhase || 0 : 0,
         walking, t * 0.09 + c.id * 1.7);
 
       if (c.phase === PHASE.QUEUE) {
         const left = Math.max(0, 1 - c.waited / c.patience);
-        const bw2 = person * 0.78;
+        const bw2 = qPerson * 0.7;
         g.fillStyle = left < 0.34 ? '#d6206a' : left < 0.66 ? '#f2b90c' : '#1c7a3e';
-        g.fillRect(x - bw2 / 2, y - person * 1.62, bw2 * left, 4);
+        g.fillRect(x - bw2 / 2, y - qPerson * 1.68, bw2 * left, 4);
         g.strokeStyle = '#16130f';
         g.lineWidth = 1;
-        g.strokeRect(x - bw2 / 2, y - person * 1.62, bw2, 4);
+        g.strokeRect(x - bw2 / 2, y - qPerson * 1.68, bw2, 4);
         g.lineWidth = lw;
-        hitboxes.push({ id: c.id, x, y: y - person * 0.6, r: Math.max(18, person * 0.8) });
+        hitboxes.push({ id: c.id, x, y: y - qPerson * 0.6, r: Math.max(18, qPerson * 0.8) });
       }
       if (c.phase === PHASE.DONE && c.bought) {
         g.fillStyle = '#1c7a3e';

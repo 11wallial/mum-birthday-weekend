@@ -540,12 +540,23 @@ function renderNight() {
   renderBossToday();
   $('cat-tier').textContent = `Tier ${game.shop.supplierTier}`;
   const ready = game.run.picked && !game.run.pendingBossChoice;
-  $('btn-open').hidden = false;
-  $('btn-open').disabled = !ready;
+  const open = $('btn-open');
+  open.hidden = false;
+  open.disabled = !ready;
+  // The panel has said all night that today does not clear, and then the
+  // button that commits you to it looked exactly like the button on a day you
+  // were winning. It is the last moment anything can be changed, so it says so.
+  const gap = game.projection().profit - game.target(game.run.encounter);
+  const doomed = ready && gap < 0;
+  open.classList.toggle('danger', doomed);
+  open.innerHTML = doomed
+    ? `Open the doors <em>${money(-gap)} short</em>`
+    : 'Open the doors';
   $('tip').textContent = pending
     ? 'Pick a slot. An additive bump placed before a multiplier gets multiplied.'
     : game.run.pendingBossChoice ? 'Choose which day is coming.'
-      : ready ? 'Doors when you are ready.' : 'Take one from the catalogue.';
+      : doomed ? 'As it stands this is a losing day. Spend, re-place, or open anyway.'
+        : ready ? 'Doors when you are ready.' : 'Take one from the catalogue.';
 }
 
 // ----------------------------------------------------------------- day ----

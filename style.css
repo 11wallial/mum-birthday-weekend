@@ -608,6 +608,14 @@ button { font-family: var(--body); }
 }
 .primary:hover { background: var(--magenta); }
 .primary:disabled { opacity: .35; cursor: default; }
+/* Committing to a day the panel says you lose should not look like committing
+   to a day you win. */
+.primary.danger { background: var(--red); }
+.primary.danger:hover { background: #a8241a; }
+.primary em {
+  font-style: normal; font-size: .62em; letter-spacing: .1em; opacity: .85;
+  margin-left: 10px;
+}
 .ghost {
   border: 1px solid var(--ink); background: transparent; color: var(--ink);
   padding: 8px 13px; cursor: pointer; font-size: 12.5px; min-height: 44px;
