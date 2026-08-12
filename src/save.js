@@ -90,9 +90,11 @@ export const save = {
     return { unlocked: unlocked ? audit + 1 : null, record };
   },
 
+  /** Returns what was stored, so a caller can drive its own button off it. */
   setMuted(muted) {
     read().muted = !!muted;
     write();
+    return !!muted;
   },
 
   clear() {

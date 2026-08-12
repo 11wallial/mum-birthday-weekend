@@ -1187,6 +1187,14 @@ async function boot() {
     game = createRun(content, { characterId: character, audit, seed });
     nextEncounter();
   };
+  // Sound was on the M key and nowhere else, which is not a control, it is a
+  // secret.
+  const showMute = (m) => {
+    $('btn-mute').innerHTML = m ? '&#9834;&#8202;&#10005;' : '&#9835;';
+    $('btn-mute').classList.toggle('off', m);
+  };
+  showMute(save.get().muted);
+  $('btn-mute').onclick = () => showMute(save.setMuted(audio.toggleMute()));
   $('btn-rules').onclick = () => openSheet(RULES);
   $('btn-map').onclick = () => { if (game) openSheet(runMapHtml()); };
   // The rules used to live only on the title screen, so the moment a run
@@ -1233,7 +1241,7 @@ async function boot() {
   });
   window.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'INPUT') return;
-    if (e.key === 'm') save.setMuted(audio.toggleMute());
+    if (e.key === 'm') showMute(save.setMuted(audio.toggleMute()));
     if (e.key === 'Escape') { $('sheet').hidden = true; closeInspect(); }
     if (e.key === '?') openSheet(RULES);
     // Space is the one action the current phase wants, whatever it is.

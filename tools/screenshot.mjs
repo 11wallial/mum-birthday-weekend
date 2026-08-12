@@ -32,7 +32,9 @@ await page.waitForTimeout(600);
 await shot('1-title');
 
 await page.click('#btn-start');
-await page.waitForTimeout(400);
+// The page turn runs for 680ms and the phase swaps at its half-way point, so
+// a shorter wait photographs the wipe.
+await page.waitForTimeout(900);
 await shot('2-night');
 
 // Take an offer and place it, then settle any boss choice.

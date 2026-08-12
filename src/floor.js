@@ -90,33 +90,63 @@ function drawPerson(g, t, x, y, s, walkPhase, onFloor = false, idle = 0) {
   g.stroke();
 
   // Coat: a screened body, misregistered a hair so it reads as printed.
-  const bw = t.id === 'trade' ? s * 0.62 : s * 0.5;
-  const bh = H * 0.66;
+  //
+  // Two changes after looking at a figure at eight times size. The coat is
+  // bigger, because at forty pixels the outline and the accessory were eating
+  // most of it and every customer came out a dark blob with a stripe of colour
+  // in the middle — which defeats the entire point of eight silhouettes in
+  // eight colours. And the dot screen sits over a solid ground of the same
+  // ink: a 29%-coverage screen on a 20px shape is not a tint, it is confetti.
+  const bw = t.id === 'trade' ? s * 0.66 : s * 0.56;
+  const bh = H * 0.72;
+  const bt = -H * 1.02;
   g.save();
-  g.globalAlpha *= 0.45;
+  g.globalAlpha *= 0.42;
   g.fillStyle = c;
-  rr(g, -bw / 2 + 1.2, -H * 0.98 + 1.2, bw, bh, s * 0.12);
+  rr(g, -bw / 2 + 1.3, bt + 1.3, bw, bh, s * 0.12);
+  g.fill();
+  g.restore();
+  rr(g, -bw / 2, bt, bw, bh, s * 0.12);
+  g.save();
+  g.globalAlpha *= 0.5;
+  g.fillStyle = c;
   g.fill();
   g.restore();
   g.fillStyle = halftone(g, c, Math.max(2, s * 0.09), 0.95);
-  rr(g, -bw / 2, -H * 0.98, bw, bh, s * 0.12);
   g.fill();
   g.strokeStyle = line;
-  g.lineWidth = Math.max(1, s * 0.075);
+  g.lineWidth = Math.max(1, s * 0.055);
   g.stroke();
 
   // Arm, swinging opposite the leading leg.
   g.beginPath();
-  g.moveTo(bw * 0.36, -H * 0.86);
-  g.lineTo(bw * 0.36 - stride * s * 0.13, -H * 0.42);
+  g.moveTo(bw * 0.38, -H * 0.88);
+  g.lineTo(bw * 0.38 - stride * s * 0.13, -H * 0.44);
   g.stroke();
 
-  // Head.
+  // Head. A bare circle is a peg, not a person: hair takes the top third and
+  // there is a mark where a face goes, which at forty pixels is the difference
+  // between a crowd and a row of dowels.
+  const hy = -H * 1.12;
+  const hr = s * 0.19;
   g.fillStyle = '#f0d9bd';
   g.beginPath();
-  g.arc(0, -H * 1.12, s * 0.19, 0, Math.PI * 2);
+  g.arc(0, hy, hr, 0, Math.PI * 2);
   g.fill();
   g.stroke();
+  const hair = ['#3a2c22', '#6b4a2a', '#8a8175', '#241d17'][t.index % 4];
+  g.save();
+  g.beginPath();
+  g.arc(0, hy, hr, 0, Math.PI * 2);
+  g.clip();
+  g.fillStyle = hair;
+  g.fillRect(-hr, hy - hr, hr * 2, hr * (t.id === 'pensioner' ? 0.7 : 1.05));
+  g.restore();
+  if (hr > 5) {                       // eye and mouth, one mark each
+    g.fillStyle = 'rgba(25,20,16,.75)';
+    g.fillRect(hr * 0.18, hy - hr * 0.06, Math.max(1, hr * 0.16), Math.max(1, hr * 0.2));
+    g.fillRect(hr * 0.02, hy + hr * 0.42, Math.max(1, hr * 0.34), 1);
+  }
 
   // One accessory each. This is what does the actual identifying.
   g.fillStyle = INK;
@@ -135,9 +165,10 @@ function drawPerson(g, t, x, y, s, walkPhase, onFloor = false, idle = 0) {
     }
     case 'student': // satchel on a strap
       g.strokeStyle = line;
-      g.beginPath(); g.moveTo(-bw * 0.2, -H * 0.95); g.lineTo(bw * 0.5, -H * 0.6); g.stroke();
+      g.lineWidth = Math.max(1, s * 0.045);
+      g.beginPath(); g.moveTo(-bw * 0.18, -H * 0.98); g.lineTo(bw * 0.52, -H * 0.66); g.stroke();
       g.fillStyle = '#3b4a52';
-      rr(g, bw * 0.34, -H * 0.66, s * 0.26, s * 0.3, 2); g.fill(); g.stroke();
+      rr(g, bw * 0.42, -H * 0.7, s * 0.2, s * 0.24, 2); g.fill(); g.stroke();
       break;
     case 'pensioner': // stick, and a hat
       g.beginPath(); g.moveTo(bw * 0.62, -H * 0.5); g.lineTo(bw * 0.68, 0); g.stroke();
@@ -160,11 +191,12 @@ function drawPerson(g, t, x, y, s, walkPhase, onFloor = false, idle = 0) {
       g.fillRect(-s * 0.19, -H * 1.62, s * 0.38, s * 0.31);
       g.strokeRect(-s * 0.19, -H * 1.62, s * 0.38, s * 0.31);
       break;
-    case 'tourist': // camera at the chest
+    case 'tourist': // camera on a strap
       g.strokeStyle = line;
-      g.beginPath(); g.arc(0, -H * 0.98, s * 0.16, 0.15, Math.PI - 0.15); g.stroke();
-      g.fillStyle = INK;
-      rr(g, -s * 0.12, -H * 0.84, s * 0.24, s * 0.17, 2); g.fill(); g.stroke();
+      g.lineWidth = Math.max(1, s * 0.045);
+      g.beginPath(); g.arc(0, -H * 1.0, s * 0.14, 0.3, Math.PI - 0.3); g.stroke();
+      g.fillStyle = '#4a4038';
+      rr(g, -s * 0.09, -H * 0.86, s * 0.18, s * 0.12, 1.5); g.fill(); g.stroke();
       break;
     case 'browser': // hands behind the back, head tilted at a shelf
       g.strokeStyle = line;
@@ -689,7 +721,7 @@ export function createFloorRenderer(canvas) {
     g.fillStyle = '#8f2418';
     g.fillRect(cLeft + 3, counterY + 3, cW, counterH);
     g.restore();
-    g.fillStyle = halftone(g, '#c8452f', 4, 1);     // front face
+    g.fillStyle = halftone(g, '#c8452f', 3, 1);     // front face
     g.fillRect(cLeft, counterY + 7, cW, counterH - 7);
     g.strokeStyle = INK;
     g.lineWidth = lw;
@@ -769,6 +801,15 @@ export function createFloorRenderer(canvas) {
     // a child alongside, so the front of the queue was a pile.
     const qPerson = person * 0.86;
     const qCols = Math.max(1, Math.floor((queueRight - tillX - 14) / Math.max(30, qPerson * 1.3)));
+    // Work out where everybody stands FIRST, then draw back to front.
+    //
+    // The queue stacks in rows about thirty pixels apart and a figure is fifty
+    // tall, so rows overlap by design — but customers were drawn in spawn
+    // order, so a person at the back of the queue could be painted over the
+    // face of somebody at the front, and their patience bar over that person's
+    // head. Sorting by ground line is the whole fix, and it is also correct for
+    // anything else that ever overlaps.
+    const placed = [];
     for (const c of s.customers) {
       if ((c.phase === PHASE.DONE || c.phase === PHASE.LOST) && t - (c.exitAt ?? 0) > 8) continue;
       const li = c.lane;
@@ -815,7 +856,7 @@ export function createFloorRenderer(canvas) {
         const row = Math.floor(qi / qCols);
         const colW = (queueRight - tillX - 14) / qCols;
         x = tillX + 10 + col * colW + colW / 2;
-        y = counterY - 8 - row * Math.max(26, qPerson * 0.8);
+        y = counterY - 8 - row * Math.max(30, qPerson * 1.02);
         if (y < padT + qPerson * 1.3) y = padT + qPerson * 1.3;
       } else {
         x = tillX + frontW / 2;
@@ -823,6 +864,11 @@ export function createFloorRenderer(canvas) {
         alpha = Math.max(0, 1 - (t - (c.exitAt ?? t)) / 8);
       }
 
+      placed.push({ c, x, y, alpha });
+    }
+    placed.sort((a, b) => a.y - b.y);
+
+    for (const { c, x, y, alpha } of placed) {
       g.globalAlpha = alpha;
       // Walking figures stride; standing ones sway. Perfectly still figures
       // are what made a shop full of people look like a paused screenshot.

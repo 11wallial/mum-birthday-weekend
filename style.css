@@ -105,6 +105,7 @@ body::after {
   padding: 3px 9px; cursor: pointer;
 }
 .chipbtn:hover { background: var(--ink); color: var(--paper); }
+.chipbtn.off { color: var(--ink-soft); border-color: var(--rule); }
 #ledger .grow { margin-left: auto; }
 .money { color: var(--money); }
 .boss-flag {
@@ -196,6 +197,14 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
   padding: 7px 12px 8px; border: 2px solid var(--red);
 }
 #bosstoday.today { background: var(--red); border-color: var(--ink); color: #fff; }
+/* It arrives. A landlord who is already on the page when you get there is a
+   landlord you scroll past. */
+#bosstoday { animation: bossin .34s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes bossin {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { #bosstoday { animation: none; } }
 #bosstoday.soon { background: rgba(214,52,38,.07); }
 .bt-when {
   font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; opacity: .85;
@@ -210,7 +219,19 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 /* --------------------------------------------------------- catalogue page */
 /* Section 31: rarity is page real estate, not a coloured border. */
 
+/* A catalogue page sets in columns once there is width for it — one column of
+   700px-wide boxed offers is a line of billboards, not a page. Inside the
+   left-hand column, so the floor stays beside it: putting the catalogue full
+   width pushed the aisles you have to place the card into below the fold. */
 #offers { display: grid; gap: 12px; }
+@media (min-width: 1240px) {
+  #offers { grid-template-columns: 1fr 1fr; }
+  .entry.r-flagship { grid-column: 1 / -1; }
+  .entry .name { font-size: 20px; }
+  .entry.r-rare .name { font-size: 23px; }
+  .entry.r-flagship .name { font-size: 28px; }
+  .entry .eff { font-size: 15px; }
+}
 
 /* Every entry is a boxed offer on an advert page: heavy rule, tint block,
    the name shouted in condensed caps, and the effect set as the price flash
