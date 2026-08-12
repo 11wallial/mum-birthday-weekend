@@ -320,6 +320,9 @@ export function createRun(content, { characterId = 'default_shop', audit = 1, se
 
   return {
     run, shop, ctx, target, beginNight, chooseBoss, take, skipPick, reroll,
+    // Which inspection lands on a given day, if it has been dealt yet. The run
+    // map needs this to show what is coming, which is the whole point of it.
+    bossAt: (enc) => (enc % bossEvery === 0 ? bossFor.get(enc) || null : null),
     currentRerollCost, buy, costOf, settle, projection, boss, nextBoss, findInstance,
   };
 }

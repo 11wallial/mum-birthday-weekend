@@ -49,6 +49,19 @@ if (boss) await boss.click();
 await page.waitForTimeout(200);
 await shot('3-placed');
 
+// The two sheets, because a page that only ever gets photographed in its
+// default state is a page whose other states rot.
+await page.click('#btn-map');
+await page.waitForTimeout(250);
+await shot('3b-runmap');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(150);
+await page.click('#btn-help');
+await page.waitForTimeout(250);
+await shot('3c-rules');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(150);
+
 await page.click('#btn-open');
 await page.waitForTimeout(2600);
 await shot('4-day');

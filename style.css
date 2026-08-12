@@ -362,20 +362,55 @@ h2 .hint, .sub { font-family: var(--body); font-size: 11.5px; font-weight: 400; 
 
 /* ------------------------------------------------------------------ title */
 
-#title { display: grid; place-items: center; gap: 14px; text-align: center; padding: 4vh 0; }
+#title {
+  display: grid; place-items: center; gap: 13px; text-align: center;
+  padding: 3vh 0 4vh; position: relative;
+}
+/* A catalogue cover: issue number, season, a rule top and bottom, and the
+   masthead reversed out of a red band. */
+.cover-top {
+  display: flex; gap: 14px; align-items: baseline; justify-content: center;
+  width: 100%; max-width: 640px; padding-bottom: 5px;
+  border-bottom: 2px solid var(--ink);
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.cover-top .mid { margin: 0 auto; color: var(--ink); font-weight: 600; }
+.cover-burst { position: static; transform: rotate(-9deg) translateY(-8px); }
 #title h1 {
+  background: var(--red); color: var(--paper); padding: 2px 26px 8px;
+  box-shadow: 5px 5px 0 var(--ink);
   font-family: var(--cond); font-size: clamp(56px, 15vw, 150px); line-height: .85;
   letter-spacing: -.01em;
-  text-shadow: 3px 3px 0 var(--cyan), 6px 6px 0 var(--magenta);
+  text-shadow: none;
 }
-#title .tag { font-size: 14px; color: var(--ink-soft); max-width: 34ch; }
-#title .fine { font-size: 11.5px; color: var(--ink-soft); line-height: 1.7; }
+#title .tag {
+  font-size: 15px; color: var(--ink); max-width: 42ch; line-height: 1.5;
+  font-style: italic;
+}
+#title .terms-line {
+  font-style: normal; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+#title .fine {
+  font-family: var(--cond); font-size: 15px; letter-spacing: .04em;
+  color: var(--ink); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  padding: 5px 14px; margin-top: 4px;
+}
 #charpick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 700px; }
+/* Shop cards are stock lines on the cover page, so they get the same
+   furniture as a catalogue entry: heavy rule, tint, a drop shadow. */
 .charbtn {
+  box-shadow: 3px 3px 0 rgba(25,20,16,.15);
+  border-width: 2px !important; border-color: var(--ink) !important;
   border: 1px solid var(--rule); background: var(--paper-2); padding: 8px 12px;
   font: inherit; cursor: pointer; text-align: left; max-width: 210px; min-height: 44px;
 }
-.charbtn.on { outline: 3px solid var(--ink); background: var(--paper); }
+.charbtn.on {
+  outline: 3px solid var(--red); outline-offset: 2px; background: #fff;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.charbtn .cn { color: var(--ink); }
 .charbtn:disabled { opacity: .4; cursor: not-allowed; }
 .charbtn .lock { font-size: 10px; letter-spacing: .1em; color: var(--magenta); }
 .charbtn .cn { font-family: var(--cond); font-size: 16px; text-transform: uppercase; }
@@ -489,3 +524,56 @@ button { font-family: var(--body); }
   color: var(--money); border: 1.5px solid var(--money); padding: 6px; margin: 10px 0;
 }
 #receipt .build { font-size: 11px; color: var(--ink-soft); line-height: 1.7; margin-top: 6px; }
+
+
+/* ------------------------------------------------------------- the run map */
+/* Twenty-four days on one page. One round tells a player almost nothing about
+   the shape of a run, and the shape is the game: a curve that multiplies, an
+   inspection every third day, and eight quarters of it. */
+
+.mkey { display: flex; gap: 14px; font-size: 11px; color: var(--ink-soft); margin: 10px 0 12px; }
+.mkey span { display: flex; align-items: center; gap: 5px; }
+.sw { width: 11px; height: 11px; border: 1.5px solid var(--ink); display: inline-block; }
+.sw.now { background: var(--yellow); }
+.sw.won { background: var(--money); }
+.sw.todo { background: var(--paper-2); }
+.sw.boss { background: var(--red); border-radius: 50%; }
+
+.mmap { display: grid; gap: 9px; }
+.mq { display: grid; grid-template-columns: 62px 1fr; gap: 9px; align-items: end; }
+.mqlabel {
+  font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft); padding-bottom: 5px;
+}
+.mqdays { display: flex; gap: 5px; }
+
+.mday {
+  flex: 1; position: relative; text-align: center; padding: 3px 2px 4px;
+  min-height: 74px;
+  border: 1.5px solid var(--rule); background: var(--paper-2);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 1px;
+}
+.mday.now { border-color: var(--ink); border-width: 2.5px; background: #fdf3cf; }
+.mday.won { background: #e2efe4; }
+.mday.lost { background: #fadcd8; border-color: var(--red); }
+/* The bar is the target, on a compressed scale — a curve that multiplies by
+   1.24 for twenty-four steps is 200x, and a linear axis would draw day one as
+   a hairline and tell the player nothing. */
+.mbar { background: var(--ink); opacity: .3; width: 100%; }
+.mday.now .mbar { background: var(--red); opacity: .6; }
+.mnum { font-family: var(--cond); font-size: 12px; line-height: 1; }
+.mt { font-size: 8.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.mgot {
+  font-size: 9px; font-variant-numeric: tabular-nums;
+  font-family: var(--cond); color: var(--money);
+}
+.mday.lost .mgot { color: var(--red); }
+.mboss {
+  position: absolute; top: -6px; right: -5px; width: 15px; height: 15px;
+  border-radius: 50%; background: var(--red); color: #fff;
+  font: 700 10px/15px var(--body); border: 1.5px solid var(--ink);
+}
+@media (max-width: 620px) {
+  .mq { grid-template-columns: 1fr; }
+  .mt, .mgot { font-size: 8px; }
+}

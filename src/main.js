@@ -345,7 +345,7 @@ function openDoors() {
   show('day');
   day = createTradingDay(content, game.shop, game.ctx(), game.run.rng);
   $('btn-open').hidden = true;
-  $('tip').textContent = 'Tap a waiting customer to serve them next.';
+  $('tip').textContent = 'Someone waiting? Tap them and take them next.';
   let acc = 0;
   let last = performance.now();
 
@@ -379,7 +379,7 @@ function openDoors() {
 
 function settle() {
   document.documentElement.style.setProperty('--frenzy', '0');
-  audio.setFrenzy(0);
+  audio.quiet();
   audio.receipt();
   const s = day.state;
   const entry = game.settle(s);
@@ -388,8 +388,9 @@ function settle() {
   // fifty times over.
   if (s.profit > peakDay) peakDay = s.profit;
   show('settle');
-  $('tip').textContent = entry.fatal ? 'The gap was the term you did not cover.'
-    : 'The panel is the plan. The day is the roll.';
+  $('tip').textContent = entry.fatal
+    ? 'The landlord does not take instalments.'
+    : 'Cash up, lock the door, order for tomorrow.';
   const row = (k, v, cls = '') => `<div class="r ${cls}"><span>${k}</span><span>${v}</span></div>`;
   $('receipt').innerHTML = `
     <h3>FOOTFALL</h3>
@@ -635,6 +636,73 @@ function recordsHtml() {
     <button class="ghost" id="btn-wipe">Wipe everything</button>`;
 }
 
+/**
+ * The whole run on one page: every day, the target it asks for, the day you
+ * traded against it, and every inspection between here and the end.
+ *
+ * Without this a player sees one target, beats it, and gets another — with no
+ * way to know whether the curve is about to bend, when the next inspection
+ * lands, or what "eight quarters" is going to cost. One round tells you almost
+ * nothing about the shape of a run, and the shape is the game.
+ */
+function runMapHtml() {
+  const { shop, run } = game;
+  const total = content.run.encounters;
+  const per = content.run.daysPerQuarter;
+  const log = new Map(run.log.map((e) => [e.encounter, e]));
+  const maxTarget = game.target(total);
+
+  let rows = '';
+  for (let q = 1; q <= content.run.quarters; q++) {
+    let cells = '';
+    for (let i = 0; i < per; i++) {
+      const enc = (q - 1) * per + i + 1;
+      if (enc > total) break;
+      const t = game.target(enc);
+      const e = log.get(enc);
+      const boss = game.bossAt ? game.bossAt(enc) : null;
+      const state = e ? (e.fatal ? 'lost' : 'won') : enc === run.encounter ? 'now' : 'todo';
+      // Log scale. The curve multiplies by 1.24 for twenty-four steps, which is
+      // 140x end to end — on a linear axis day one is a hairline and the shape
+      // reads as a wall rather than a climb.
+      const lo = Math.log(content.targets[0]);
+      const hi = Math.log(maxTarget);
+      const h = Math.max(4, Math.round(((Math.log(t) - lo) / (hi - lo)) * 40) + 4);
+      cells += `<div class="mday ${state}">
+        <div class="mbar" style="height:${h}px"></div>
+        <div class="mnum">${enc}</div>
+        <div class="mt">${money(t)}</div>
+        ${e ? `<div class="mgot">${money(e.profit)}</div>` : '<div class="mgot">&mdash;</div>'}
+        ${boss ? `<div class="mboss" title="${boss.name}">!</div>` : ''}
+      </div>`;
+    }
+    rows += `<div class="mq"><div class="mqlabel">Quarter ${q}</div>
+      <div class="mqdays">${cells}</div></div>`;
+  }
+
+  const cleared = save.clearedFor(character);
+  return `<h3>The run</h3>
+    <p>Twenty-four trading days in eight quarters. Every day sets a target and
+    every third day the landlord sends someone. Miss once and that is the run.</p>
+    <div class="mkey">
+      <span><i class="sw now"></i> today</span>
+      <span><i class="sw won"></i> traded</span>
+      <span><i class="sw todo"></i> to come</span>
+      <span><i class="sw boss"></i> inspection</span>
+    </div>
+    <div class="mmap">${rows}</div>
+    <h4>What the curve does</h4>
+    <p>The target multiplies by <b>&times;${(content.targets[1] / content.targets[0]).toFixed(2)}</b>
+    every day — ${money(content.targets[0])} on day one, <b>${money(maxTarget)}</b> on day
+    twenty-four. Flat cards cannot keep up with a curve that multiplies; that is
+    what the compounding fixtures are for, and why buying one late is a waste.</p>
+    <h4>Where this shop stands</h4>
+    <p>${content.characterById.get(character).name} has cleared
+    <b>${cleared ? `Audit ${roman(cleared)}` : 'nothing yet'}</b>. Survive all
+    twenty-four days to unlock the next rung — each shop climbs its own ladder,
+    and there are eight.</p>`;
+}
+
 function showTitle() {
   game = null;
   day = null;
@@ -663,6 +731,10 @@ async function boot() {
     nextEncounter();
   };
   $('btn-rules').onclick = () => openSheet(RULES);
+  $('btn-map').onclick = () => { if (game) openSheet(runMapHtml()); };
+  // The rules used to live only on the title screen, so the moment a run
+  // started there was no way to look anything up.
+  $('btn-help').onclick = () => openSheet(RULES);
   $('btn-records').onclick = () => {
     openSheet(recordsHtml());
     const wipe = $('btn-wipe');

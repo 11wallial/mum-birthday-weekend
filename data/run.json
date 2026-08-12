@@ -205,7 +205,7 @@
   {
    "id": "default_shop",
    "name": "The Shop",
-   "rule": "Breaks no rule. The base game the section 14 starting values describe.",
+   "rule": "A shop. Three aisles, one till, and the rent to find. Nothing is bent in your favour and nothing is bent against you.",
    "baseGame": true,
    "aisles": 3,
    "slotsPerAisle": 3,
@@ -217,7 +217,7 @@
   {
    "id": "superstore",
    "name": "Superstore",
-   "rule": "Floorspace is free, but a placed fixture can never be removed.",
+   "rule": "Four aisles of four, floorspace thrown in — but a fixture, once placed, stays placed. Choose slowly.",
    "aisles": 4,
    "slotsPerAisle": 4,
    "tills": 2,
@@ -232,7 +232,7 @@
   {
    "id": "discounter",
    "name": "Discounter",
-   "rule": "COGS halved (+20pp Margin), duplicates level twice, shopfitting at 40% off — but you may hold only seven fixture types.",
+   "rule": "Cost of goods halved, shopfitting at 40% off, and duplicates level twice. You may stock seven lines. Not eight.",
    "aisles": 2,
    "slotsPerAisle": 4,
    "tills": 1,
@@ -252,7 +252,7 @@
   {
    "id": "car_dealership",
    "name": "Car Dealership",
-   "rule": "A dozen customers a day, all Luxury, vast wallets. Conversion is the entire game.",
+   "rule": "A dozen callers a day, every one of them monied. Sell to them or the day is a loss.",
    "aisles": 1,
    "slotsPerAisle": 6,
    "tills": 99,
@@ -272,7 +272,7 @@
   {
    "id": "estate_agent",
    "name": "Estate Agent",
-   "rule": "No stock. Basket is fixed at the property price. Pure Footfall x Conversion.",
+   "rule": "No stock, no shelves, no basket. A fee on every completion, and nothing but bodies through the door to grow.",
    "aisles": 2,
    "slotsPerAisle": 4,
    "tills": 4,
@@ -289,7 +289,7 @@
   {
    "id": "corner_shop",
    "name": "Corner Shop",
-   "rule": "Tiny floor, but every customer traverses it three times per day.",
+   "rule": "One aisle, three feet of it — and the same faces past it three times before teatime.",
    "aisles": 1,
    "slotsPerAisle": 3,
    "tills": 1,
@@ -302,7 +302,7 @@
   {
    "id": "market_stall",
    "name": "Market Stall",
-   "rule": "The floor wipes every morning. Rebuild from your owned pool each night — with free rerolls and a fourth card on the page.",
+   "rule": "Down at dusk, up at dawn. Rebuild the pitch nightly from what you own, with a fourth card on the page and rerolls free.",
    "aisles": 3,
    "slotsPerAisle": 2,
    "tills": 1,
