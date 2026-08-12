@@ -13,7 +13,7 @@
 //   node sim/verify.js [--n=200000]
 
 import { loadContent } from './content.js';
-import { collectFlags, resolveDay } from './day.js';
+import { baseMarginFor, collectFlags, resolveDay } from './day.js';
 import { walkIndividual } from './walk-one.js';
 import { addFixture, autoSign, createShop, projectRatchets } from './shop.js';
 import { makeRng } from './rng.js';
@@ -25,9 +25,9 @@ const flagOf = (k, d) => {
 };
 
 const content = loadContent();
-function buildShop(fixtures) {
-  const shop = createShop(content, 'default_shop');
-  shop.tills = 40; // remove the queue from the comparison entirely
+function buildShop(fixtures, characterId = 'default_shop') {
+  const shop = createShop(content, characterId);
+  shop.tills = 40; // remove the queue from the comparison entirely (see verify-queue.js)
   for (const [id, copies] of fixtures) {
     for (let c = 0; c < copies; c++) addFixture(content, shop, id);
   }
@@ -58,34 +58,52 @@ const CASES = [
   ['compound over a linear stack', [['interest_free_credit', 2], ['range_extension', 1], ['weighing_scales', 1]]],
 ];
 
+// Every character, not just the base one. Five of the seven rewrite a term
+// outright — Basket fixed at a property price, Margin fixed, Basket multiplied
+// by 320 — and those rules lived ONLY in the aggregate resolver. The browser
+// build walks individuals, so it had been playing five of the seven shops
+// differently from the simulator that measured them, and this file could not
+// see it because it only ever built default_shop.
+const CHARACTER_CASES = content.characters.map((ch) => [
+  `character: ${ch.name}`,
+  [['sample_table', 2], ['greeter', 1], ['own_brand', 1]],
+  ch.id,
+]);
+
 const N = flagOf('n', 200000);
 const BIAS_BOUND = 0.031; // per unit of clamp rate
 const failures = [];
 
 /** Walk `count` individuals through this shop and summarise the disagreement. */
 function sampleCase(shop, agg, flags, count) {
-  const baseMargin = content.economy.start.margin;
+  // The same base Margin the resolver used, not the raw starting value. The
+  // Discounter's +20pp is a character rule the resolver applies here, and
+  // hard-coding the starting margin put this file 14.5% out on that shop while
+  // reporting it as a walk error.
+  const baseMargin = baseMarginFor(content, shop, shop.saleOn);
   const rng = makeRng(20260811);
-  const entries = content.types
-    .filter((t) => t.special !== 'steals')
-    .map((t) => [t, shop.pool[t.id] || 0]);
-  const poolTotal = entries.reduce((a, [, w]) => a + w, 0);
-  const allPool = content.types.reduce((a, t) => a + (shop.pool[t.id] || 0), 0);
+  // The resolver now reports the exact (type, aisle) mix it resolved and how
+  // many of each. Sampling that directly IS the comparison: the individual walk
+  // has to answer the same question, not a question rebuilt from Footfall and
+  // pool weights. That reconstruction was wrong three times over — it missed
+  // the Discounter's Margin rule, the Corner Shop's three traversals, and every
+  // character that overrides Footfall outright — and each time it reported a
+  // fault in the engine rather than in itself.
+  const entries = agg.walkerMix.filter((w) => w.weight > 0).map((w) => [w, w.weight]);
+  const shoppers = entries.reduce((a, [, w]) => a + w, 0);
+  if (!entries.length) return { individual: 0, se: 0, diff: 0, sigmas: 0, rel: 0, clampRate: 0 };
 
   let sum = 0; let sumSq = 0; let clamps = 0;
   for (let i = 0; i < count; i++) {
-    const t = rng.weighted(entries);
-    // Tourists ignore signage and route randomly; day.js averages that outcome
-    // across open aisles, so the individual walk has to actually roll it.
-    const aisle = t.routing === 'random'
-      ? rng.int(shop.aisles.length)
-      : (shop.signage[t.id] ?? 0);
-    const r = walkIndividual(content, shop, aisle, t, flags, baseMargin, rng);
+    const w = rng.weighted(entries);
+    const t = content.typeById.get(w.typeId);
+    // Tourists route randomly, and the mix carries one entry per aisle for
+    // them, so drawing from it reproduces the routing without re-deriving it.
+    const r = walkIndividual(content, shop, w.aisle, t, flags, baseMargin, rng);
     sum += r.value;
     sumSq += r.value * r.value;
     if (r.clamped) clamps++;
   }
-  const shoppers = agg.footfall * (poolTotal / allPool);
   const mean = sum / count;
   const individual = mean * shoppers;
   const variance = Math.max(0, sumSq / count - mean * mean);
@@ -107,8 +125,8 @@ console.log('sample is the signature of real bias; noise alone leaves it flat.\n
 console.log('case                          aggregate   individual   err    σ@n/4    σ@n  clamped');
 console.log('─'.repeat(88));
 
-for (const [name, fixtures] of CASES) {
-  const shop = buildShop(fixtures);
+for (const [name, fixtures, characterId] of [...CASES, ...CHARACTER_CASES]) {
+  const shop = buildShop(fixtures, characterId);
   const ctx = { auditMods: {} };
   const agg = resolveDay(content, shop, ctx);
   const flags = collectFlags(content, shop, ctx);

@@ -10,7 +10,7 @@
 // already drifted once: the verifier, and the browser build, which walks real
 // customers across the floor while the projection panel shows the aggregate.
 
-import { clauseHolds } from './day.js';
+import { clauseHolds, conditionsHold } from './day.js';
 import { isMultiplicative } from './ratchets.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -32,6 +32,15 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
     patience: (type.patienceTicks + aisle.patienceBonus + flags.patienceBonus)
       * flags.patienceMul * (crowdMode === 'patience' ? crowd : 1),
   };
+
+  // Character rules that rewrite a term outright. These lived only in the
+  // aggregate resolver, so the browser build — which walks individuals — has
+  // been playing five of the seven shops differently from the simulator that
+  // measured them. verify.js never caught it because it only ever built
+  // default_shop.
+  if (flags.basketFixed != null) terms.basket = flags.basketFixed;
+  if (shop.flags.basketFixed != null) terms.basket = shop.flags.basketFixed;
+  if (shop.flags.basketMultiplier) terms.basket *= shop.flags.basketMultiplier;
 
   const amps = [];
   const apply = (term, op, value, strength) => {
@@ -55,15 +64,21 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
     const L = inst.level - 1;
     if (def.trigger.scope === 'shop' || def.trigger.scope === 'exit') continue;
 
-    let ok = true;
-    for (const c of def.trigger.conditions || []) {
-      if (c.check === 'customer_type_in') {
-        const list = def.breadth && def.breadth.check === 'customer_type_in'
-          ? def.breadth.value[L] : c.value;
-        if (!list.includes(type.id)) ok = false;
-      }
-    }
-    if (!ok) continue;
+    // The SAME condition check the resolver uses. This file used to implement
+    // exactly one of the eleven — customer_type_in — so every fixture gated on
+    // a slot position, an adjacency, a tag or a rarity fired unconditionally
+    // during the trading day. The player was getting effects the projection
+    // panel had already told them they would not get, which is the one promise
+    // the panel makes.
+    //
+    // It hid because verify.js only built boards out of unconditional commons.
+    // The character cases brought in Appointment Book and Bulk Buy as starting
+    // fixtures, and the Estate Agent's Conversion came out 35% high.
+    //
+    // The ENGINE here is deliberately a second implementation; the CONTENT
+    // rules are not duplicated, because duplicating those is not independence,
+    // it is drift. Same ruling as the levelled clauses below.
+    if (!conditionsHold(content, shop, def, inst, aisleIdx, type, i)) continue;
 
     let strength = 1;
     let forced = false;
@@ -121,13 +136,23 @@ export function walkIndividual(content, shop, aisleIdx, type, flags, baseMargin,
     }
   }
 
-  terms.margin += flags.marginFlat;
+  // This tail is in the SAME ORDER as the equivalent block in day.js, and the
+  // order is load-bearing: a fixed Margin set before `marginFlat` is added is a
+  // different number from one set after it. Having the two engines apply the
+  // same rules in a different sequence is drift that no amount of independence
+  // justifies — it put the Estate Agent 27% apart from its own resolver.
   terms.conversion += flags.conversionFlat || 0;
   terms.basket += flags.basketFlat || 0;
   if (flags.footfallFeedsBasket) {
     terms.basket += (flags.footfallRatchetTotal || 0) * flags.footfallFeedsBasket;
   }
+  if (flags.conversionCertain) terms.conversion = 1;
+  if (flags.marginSet != null) terms.margin = flags.marginSet;
+  if (shop.flags.marginFixed != null) terms.margin = shop.flags.marginFixed;
+  if (flags.marginHalved) terms.margin *= 0.5;
+  terms.margin += flags.marginFlat;
   if (type.id === 'pensioner') terms.conversion *= flags.pensionerConvMul;
+  if (flags.onlyTypesConvert && !flags.onlyTypesConvert.has(type.id)) terms.conversion = 0;
   const caps = content.economy.caps || {};
   const convCap = caps.conversion ?? 1;
   const marginCap = caps.margin ?? 0.95;

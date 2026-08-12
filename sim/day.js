@@ -345,7 +345,7 @@ export function clauseHolds(clause, type) {
   return true;
 }
 
-function conditionsHold(content, shop, def, inst, aisleIdx, type, slotIdx = -1) {
+export function conditionsHold(content, shop, def, inst, aisleIdx, type, slotIdx = -1) {
   const L = inst.level - 1;
   const slots = shop.aisles[aisleIdx].slots;
   const prevFilled = () => {
@@ -896,6 +896,7 @@ export function resolveDay(content, shop, ctx = {}) {
   let wTotal = 0;
   let returnVisits = 0;
   const salesByType = Object.create(null);
+  const walkerMix = [];
   // Pool averages of the four terms, kept only to show how badly they lie.
   let aConv = 0; let aBasket = 0; let aMargin = 0;
 
@@ -927,6 +928,17 @@ export function resolveDay(content, shop, ctx = {}) {
     aBasket += seen * terms.basket;
     aMargin += seen * terms.margin;
     wTotal += seen;
+    // Exactly who the resolver resolved, and how many of them. verify.js used
+    // to reconstruct this from footfall and pool shares, and that
+    // reconstruction was wrong twice — it missed the Discounter's margin rule,
+    // the Corner Shop's three traversals, and every character that overrides
+    // Footfall outright. Reported rather than inferred, the verifier samples
+    // the same mix by construction instead of trying to rebuild it.
+    // The terms ride along too, so a disagreement can be localised to a term
+    // rather than argued about from the bottom line.
+    walkerMix.push({
+      typeId: t.id, aisle: seg.aisle, weight: seen, terms,
+    });
   }
   refunds = (flags.refundShare || 0) * Math.max(0, shop.lastTradingProfit || 0);
   let profit = saleProfit + shrink - refunds;
@@ -1038,6 +1050,7 @@ export function resolveDay(content, shop, ctx = {}) {
     profit,
     rent,
     salesByType,
+    walkerMix,
     ratchetUpkeep: upkeepRatchet,
     revenue,
     saleProfit,

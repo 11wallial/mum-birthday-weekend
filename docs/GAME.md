@@ -46,4 +46,35 @@ and signage as a third pillar — with about half of that from using it *well*
 rather than merely using it. Watch the patience bars: the Luxury customer is
 worth eight Pensioners, but the Pensioner is three ticks from leaving.
 
-Press `m` to mute.
+## The floor is a sample when it has to be
+
+Footfall is bounded at twelve times what the tills can serve, and a strong late
+run reaches 80,000. Above `economy.day.maxWalkers` the walk stops drawing a
+sprite per customer and walks a weighted sample instead: each sprite stands for
+several people, and every total it touches is counted in those units.
+
+The arithmetic of the day was always settled by the aggregate resolver; the walk
+exists so you can read the shop and reach into the queue, and a sample does that
+job at any scale. `tools/check-sampling.mjs` proves the sampled day still agrees
+with the resolver — it is the only approximation in the project that the
+resolver does not carry, so it gets its own test.
+
+## The meta-game
+
+Each shop climbs its own Audit ladder: survive all twenty-four days to unlock
+the next rung for that character. Eight rungs, descending from about 66% to
+about 8%, with each one changing a rule permanently. Progress, records and the
+best day you have ever traded live in one `localStorage` key.
+
+The end-of-run summary leads with your **best day**, not the target. The target
+is only the fail condition — a good run overshoots its last one fifty times
+over, and that number is what the run is remembered by.
+
+## Keys
+
+| | |
+|---|---|
+| `space` | whatever the current phase wants — open the doors, lock up, start |
+| `?` | how it works |
+| `esc` | close the sheet |
+| `m` | mute |
