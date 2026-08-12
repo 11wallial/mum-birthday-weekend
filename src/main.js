@@ -957,33 +957,37 @@ function runMapHtml() {
   const log = new Map(run.log.map((e) => [e.encounter, e]));
   const maxTarget = game.target(total);
 
+  // One continuous strip rather than eight rows of three. Broken into
+  // quarters, every row restarted at the left and the climb — which is the
+  // entire subject of the chart — was invisible. Log scale: the curve
+  // multiplies by 1.24 for twenty-four steps, which is 140x end to end, and on
+  // a linear axis day one is a hairline against a wall.
+  const H = 118;
+  const lo = Math.log(content.targets[0]);
+  const hi = Math.log(maxTarget);
+  const yOf = (v) => Math.max(7, Math.min(H, ((Math.log(Math.max(1, v)) - lo) / (hi - lo)) * H));
   let rows = '';
-  for (let q = 1; q <= content.run.quarters; q++) {
-    let cells = '';
-    for (let i = 0; i < per; i++) {
-      const enc = (q - 1) * per + i + 1;
-      if (enc > total) break;
-      const t = game.target(enc);
-      const e = log.get(enc);
-      const boss = game.bossAt ? game.bossAt(enc) : null;
-      const state = e ? (e.fatal ? 'lost' : 'won') : enc === run.encounter ? 'now' : 'todo';
-      // Log scale. The curve multiplies by 1.24 for twenty-four steps, which is
-      // 140x end to end — on a linear axis day one is a hairline and the shape
-      // reads as a wall rather than a climb.
-      const lo = Math.log(content.targets[0]);
-      const hi = Math.log(maxTarget);
-      const h = Math.max(4, Math.round(((Math.log(t) - lo) / (hi - lo)) * 40) + 4);
-      cells += `<div class="mday ${state}">
-        <div class="mbar" style="height:${h}px"></div>
-        <div class="mnum">${enc}</div>
-        <div class="mt">${money(t)}</div>
-        ${e ? `<div class="mgot">${money(e.profit)}</div>` : '<div class="mgot">&mdash;</div>'}
-        ${boss ? `<div class="mboss" title="${boss.name}">!</div>` : ''}
-      </div>`;
-    }
-    rows += `<div class="mq"><div class="mqlabel">Quarter ${q}</div>
-      <div class="mqdays">${cells}</div></div>`;
+  for (let enc = 1; enc <= total; enc++) {
+    const t = game.target(enc);
+    const e = log.get(enc);
+    // Every inspection day is marked, not only the ones whose landlord has
+    // been dealt yet — the schedule is knowable from day one and hiding it
+    // makes the run look arbitrary.
+    const named = game.bossAt ? game.bossAt(enc) : null;
+    const boss = named || enc % run.bossEvery === 0;
+    const state = e ? (e.fatal ? 'lost' : 'won') : enc === run.encounter ? 'now' : 'todo';
+    const qstart = enc > 1 && enc % per === 1 ? ' qstart' : '';
+    const over = e && e.profit > maxTarget;
+    rows += `<div class="rmday ${state}${qstart}"
+      title="Day ${enc} — target ${money(t)}${e ? `, traded ${money(e.profit)}` : ''}${named ? ` — ${named.name}` : ''}">
+      <span class="rmt" style="height:${yOf(t)}px"></span>
+      ${e ? `<span class="rma ${e.fatal ? 'lost' : 'won'}" style="height:${yOf(e.profit)}px"></span>` : ''}
+      ${over ? '<span class="rmover">&#9650;</span>' : ''}
+      ${boss ? '<span class="rmboss"></span>' : ''}
+      ${enc % 3 === 0 || enc === 1 ? `<span class="rmn">${enc}</span>` : ''}
+    </div>`;
   }
+  rows = `<div class="rmchart" style="height:${H}px">${rows}</div>`;
 
   // What you are actually holding, in walk order. The floorplan is only on the
   // night screen, so mid-day there was no way to answer "what have I got?".
@@ -1010,12 +1014,14 @@ function runMapHtml() {
     <p>Twenty-four trading days in eight quarters. Every day sets a target and
     every third day the landlord sends someone. Miss once and that is the run.</p>
     <div class="mkey">
+      <span><i class="sw todo"></i> the target</span>
+      <span><i class="sw won"></i> what you traded</span>
       <span><i class="sw now"></i> today</span>
-      <span><i class="sw won"></i> traded</span>
-      <span><i class="sw todo"></i> to come</span>
       <span><i class="sw boss"></i> inspection</span>
     </div>
     <div class="mmap">${rows}</div>
+    <div class="mfoot"><span>Day 1 &mdash; ${money(content.targets[0] * (game.run.auditMods.targetMultiplier || 1))}</span>
+      <span>Day ${total} &mdash; ${money(maxTarget)}</span></div>
     <h4>The shop as it stands</h4>
     <p class="sublead">Front to back, the order they fire in. The right-hand
     column is what that fixture charges you in upkeep today.</p>

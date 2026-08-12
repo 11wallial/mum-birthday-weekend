@@ -707,43 +707,40 @@ button { font-family: var(--body); }
 .sw.todo { background: var(--paper-2); }
 .sw.boss { background: var(--red); border-radius: 50%; }
 
-.mmap { display: grid; gap: 9px; }
-.mq { display: grid; grid-template-columns: 62px 1fr; gap: 9px; align-items: end; }
-.mqlabel {
-  font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--ink-soft); padding-bottom: 5px;
+/* One continuous strip, not eight rows of three. Split into quarters, every
+   row restarted at the left and the climb — the entire subject of the chart —
+   was invisible. */
+.mmap { padding-bottom: 16px; }
+.rmchart {
+  display: flex; align-items: flex-end; gap: 2px;
+  border-bottom: 2px solid var(--ink);
 }
-.mqdays { display: flex; gap: 5px; }
-
-.mday {
-  flex: 1; position: relative; text-align: center; padding: 3px 2px 4px;
-  min-height: 74px;
-  border: 1.5px solid var(--rule); background: var(--paper-2);
-  display: flex; flex-direction: column; justify-content: flex-end; gap: 1px;
+.rmday { flex: 1; position: relative; height: 100%; }
+.rmday.qstart { margin-left: 8px; }
+/* The target, and what you actually traded against it, on one axis. */
+.rmt {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--ink); opacity: .22;
 }
-.mday.now { border-color: var(--ink); border-width: 2.5px; background: #fdf3cf; }
-.mday.won { background: #e2efe4; }
-.mday.lost { background: #fadcd8; border-color: var(--red); }
-/* The bar is the target, on a compressed scale — a curve that multiplies by
-   1.24 for twenty-four steps is 200x, and a linear axis would draw day one as
-   a hairline and tell the player nothing. */
-.mbar { background: var(--ink); opacity: .3; width: 100%; }
-.mday.now .mbar { background: var(--red); opacity: .6; }
-.mnum { font-family: var(--cond); font-size: 12px; line-height: 1; }
-.mt { font-size: 8.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.mgot {
-  font-size: 9px; font-variant-numeric: tabular-nums;
-  font-family: var(--cond); color: var(--money);
+.rmday.now .rmt { background: var(--yellow); opacity: 1; outline: 1.5px solid var(--ink); }
+.rma { position: absolute; bottom: 0; left: 26%; right: 26%; }
+.rma.won { background: var(--money); }
+.rma.lost { background: var(--red); }
+.rmover {
+  position: absolute; top: -3px; left: 0; right: 0; text-align: center;
+  font-size: 8px; color: var(--money); line-height: 1;
 }
-.mday.lost .mgot { color: var(--red); }
-.mboss {
-  position: absolute; top: -6px; right: -5px; width: 15px; height: 15px;
-  border-radius: 50%; background: var(--red); color: #fff;
-  font: 700 10px/15px var(--body); border: 1.5px solid var(--ink);
+.rmboss {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
 }
-@media (max-width: 620px) {
-  .mq { grid-template-columns: 1fr; }
-  .mt, .mgot { font-size: 8px; }
+.rmn {
+  position: absolute; bottom: -14px; left: 0; right: 0; text-align: center;
+  font-size: 8.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.mfoot {
+  display: flex; justify-content: space-between; font-size: 10.5px;
+  color: var(--ink-soft); margin-top: 4px;
 }
 
 
