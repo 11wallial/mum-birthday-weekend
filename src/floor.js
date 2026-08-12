@@ -10,82 +10,152 @@
 // thousand Footfall that silhouette is all you get.
 
 import { PHASE } from './trading-day.js';
+import {
+  INK, PAPER, contact, halftone, rr, screenRect, easeOutCubic,
+} from './art.js';
 
 // What fraction of the time between two shelves is spent moving. The rest is
 // spent standing still, which is the point.
 const HOP_SHARE = 0.34;
+
+/** Roughly one pendant every this many pixels, snapped to a whole number. */
+const bwSpacing = (w) => w / Math.max(2, Math.round(w / 210));
 
 const COLOUR = {
   family: '#d6206a', student: '#0aa3c2', pensioner: '#7a5cbf', trade: '#e07b1a',
   luxury: '#0f8a4a', tourist: '#f2b90c', browser: '#9a9086', shoplifter: '#2a2622',
 };
 
-/** Silhouettes. Distinct at a glance is the entire requirement. */
-function drawPerson(g, t, x, y, s, bob, onFloor = false) {
-  const c = COLOUR[t.id] || '#666';
+/**
+ * A person, drawn as an illustration rather than as a rounded rectangle.
+ *
+ * Every figure gets legs that actually stride, an arm that swings, a contact
+ * shadow, a coat in the type's colour laid as a dot screen, and one accessory
+ * that carries the read at a glance. The old version was a capsule and a
+ * circle: silhouette-distinct in principle, placeholder-grade in practice.
+ *
+ * `phase01` is where the figure is in its own stride, 0..1. Standing figures
+ * are given a slow idle sway instead so nothing on the floor is ever perfectly
+ * still — stillness is what made the shop look paused.
+ */
+function drawPerson(g, t, x, y, s, walkPhase, onFloor = false, idle = 0) {
+  const c = COLOUR[t.id] || '#8a8175';
+  const stride = Math.sin(walkPhase * Math.PI * 2);
+  const lift = Math.abs(Math.cos(walkPhase * Math.PI * 2)) * s * 0.035;
+  const sway = Math.sin(idle) * s * 0.012;
+
+  contact(g, x, y + 1, s * (t.id === 'family' ? 1.15 : 0.85), onFloor ? 0.1 : 0.2);
+
   g.save();
-  g.translate(x, y + bob);
-  g.lineWidth = Math.max(1, s * 0.09);
-  // Contrast is attention. Someone crossing the floor is scenery; someone in
-  // the queue is a decision you can act on, so only the queue gets full ink.
-  g.globalAlpha *= onFloor ? 0.5 : 1;
-  g.strokeStyle = onFloor ? 'rgba(25,20,16,.55)' : '#191410';
+  g.translate(x + sway, y - (walkPhase > 0 ? lift : 0));
+  g.globalAlpha *= onFloor ? 0.62 : 1;
+  const line = onFloor ? 'rgba(25,20,16,.6)' : INK;
+  g.lineWidth = Math.max(1, s * 0.075);
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+
+  const H = s;                    // shoulder height above the floor line
+  const legTop = -H * 0.42;
+
+  // Legs first, so the coat overlaps them.
+  g.strokeStyle = line;
+  g.lineWidth = Math.max(1.4, s * 0.1);
+  g.beginPath();
+  g.moveTo(-s * 0.07, legTop);
+  g.lineTo(-s * 0.07 + stride * s * 0.17, -s * 0.01);
+  g.moveTo(s * 0.07, legTop);
+  g.lineTo(s * 0.07 - stride * s * 0.17, -s * 0.01);
+  g.stroke();
+
+  // Coat: a screened body, misregistered a hair so it reads as printed.
+  const bw = t.id === 'trade' ? s * 0.62 : s * 0.5;
+  const bh = H * 0.66;
+  g.save();
+  g.globalAlpha *= 0.45;
   g.fillStyle = c;
+  rr(g, -bw / 2 + 1.2, -H * 0.98 + 1.2, bw, bh, s * 0.12);
+  g.fill();
+  g.restore();
+  g.fillStyle = halftone(g, c, Math.max(2, s * 0.09), 0.95);
+  rr(g, -bw / 2, -H * 0.98, bw, bh, s * 0.12);
+  g.fill();
+  g.strokeStyle = line;
+  g.lineWidth = Math.max(1, s * 0.075);
+  g.stroke();
 
-  const body = (w, h, r = 0) => {
-    g.beginPath();
-    g.roundRect(-w / 2, -h, w, h, r);
-    g.fill();
-    g.stroke();
-  };
-  const head = (r, dy = 0) => {
-    g.beginPath();
-    g.arc(0, -s * 1.02 + dy, r, 0, Math.PI * 2);
-    g.fill();
-    g.stroke();
-  };
+  // Arm, swinging opposite the leading leg.
+  g.beginPath();
+  g.moveTo(bw * 0.36, -H * 0.86);
+  g.lineTo(bw * 0.36 - stride * s * 0.13, -H * 0.42);
+  g.stroke();
 
+  // Head.
+  g.fillStyle = '#f0d9bd';
+  g.beginPath();
+  g.arc(0, -H * 1.12, s * 0.19, 0, Math.PI * 2);
+  g.fill();
+  g.stroke();
+
+  // One accessory each. This is what does the actual identifying.
+  g.fillStyle = INK;
   switch (t.id) {
-    case 'family': // two figures, one small
-      g.save(); g.translate(-s * 0.22, 0); body(s * 0.5, s * 0.9, 2); head(s * 0.2); g.restore();
-      g.save(); g.translate(s * 0.3, 0); g.scale(0.62, 0.62);
-      body(s * 0.5, s * 0.9, 2); head(s * 0.2); g.restore();
+    case 'family': { // a child alongside, holding on
+      g.save();
+      g.translate(s * 0.34, 0);
+      g.scale(0.58, 0.58);
+      g.fillStyle = halftone(g, c, Math.max(2, s * 0.07), 0.95);
+      rr(g, -s * 0.24, -H * 0.98, s * 0.48, H * 0.66, s * 0.1);
+      g.fill(); g.stroke();
+      g.fillStyle = '#f0d9bd';
+      g.beginPath(); g.arc(0, -H * 1.12, s * 0.19, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.restore();
       break;
-    case 'student': // backpack
-      body(s * 0.46, s * 0.92, 2); head(s * 0.19);
-      g.fillStyle = '#16130f';
-      g.beginPath(); g.roundRect(s * 0.2, -s * 0.85, s * 0.24, s * 0.42, 2); g.fill();
+    }
+    case 'student': // satchel on a strap
+      g.strokeStyle = line;
+      g.beginPath(); g.moveTo(-bw * 0.2, -H * 0.95); g.lineTo(bw * 0.5, -H * 0.6); g.stroke();
+      g.fillStyle = '#3b4a52';
+      rr(g, bw * 0.34, -H * 0.66, s * 0.26, s * 0.3, 2); g.fill(); g.stroke();
       break;
-    case 'pensioner': // small, stooped, stick
-      g.save(); g.translate(0, 0); g.scale(0.86, 0.8);
-      body(s * 0.48, s * 0.9, 3); head(s * 0.2); g.restore();
-      g.beginPath(); g.moveTo(s * 0.3, -s * 0.05); g.lineTo(s * 0.34, -s * 0.6); g.stroke();
+    case 'pensioner': // stick, and a hat
+      g.beginPath(); g.moveTo(bw * 0.62, -H * 0.5); g.lineTo(bw * 0.68, 0); g.stroke();
+      g.fillStyle = '#6b6155';
+      rr(g, -s * 0.24, -H * 1.34, s * 0.48, s * 0.11, 2); g.fill(); g.stroke();
       break;
-    case 'trade': // wide, carrying a box
-      body(s * 0.66, s * 0.92, 1); head(s * 0.19);
-      g.fillStyle = '#b4772f';
-      g.beginPath(); g.rect(-s * 0.5, -s * 0.72, s * 0.42, s * 0.34); g.fill(); g.stroke();
+    case 'trade': // a box under the arm, and a flat cap
+      g.fillStyle = halftone(g, '#b4772f', 3, 1);
+      g.fillRect(-bw * 0.78, -H * 0.86, s * 0.42, s * 0.34);
+      g.strokeRect(-bw * 0.78, -H * 0.86, s * 0.42, s * 0.34);
+      g.fillStyle = '#4a4038';
+      g.beginPath();
+      g.moveTo(-s * 0.24, -H * 1.26); g.lineTo(s * 0.2, -H * 1.28);
+      g.lineTo(s * 0.26, -H * 1.2); g.lineTo(-s * 0.24, -H * 1.19);
+      g.closePath(); g.fill(); g.stroke();
       break;
-    case 'luxury': // tall, hat
-      g.save(); g.scale(1, 1.16); body(s * 0.44, s * 0.92, 2); head(s * 0.18); g.restore();
-      g.fillStyle = '#16130f';
-      g.beginPath(); g.rect(-s * 0.34, -s * 1.42, s * 0.68, s * 0.07); g.fill();
-      g.beginPath(); g.rect(-s * 0.2, -s * 1.62, s * 0.4, s * 0.22); g.fill();
+    case 'luxury': // top hat and a long coat
+      g.fillStyle = INK;
+      g.fillRect(-s * 0.3, -H * 1.32, s * 0.6, s * 0.06);
+      g.fillRect(-s * 0.19, -H * 1.62, s * 0.38, s * 0.31);
+      g.strokeRect(-s * 0.19, -H * 1.62, s * 0.38, s * 0.31);
       break;
-    case 'tourist': // camera round the neck
-      body(s * 0.48, s * 0.9, 2); head(s * 0.19);
-      g.fillStyle = '#16130f';
-      g.beginPath(); g.rect(-s * 0.16, -s * 0.6, s * 0.32, s * 0.2); g.fill();
+    case 'tourist': // camera at the chest
+      g.strokeStyle = line;
+      g.beginPath(); g.arc(0, -H * 0.98, s * 0.16, 0.15, Math.PI - 0.15); g.stroke();
+      g.fillStyle = INK;
+      rr(g, -s * 0.12, -H * 0.84, s * 0.24, s * 0.17, 2); g.fill(); g.stroke();
       break;
-    case 'browser': // thin, hands behind back, drifting
-      g.save(); g.scale(0.72, 1); body(s * 0.44, s * 0.9, 2); head(s * 0.2); g.restore();
+    case 'browser': // hands behind the back, head tilted at a shelf
+      g.strokeStyle = line;
+      g.beginPath(); g.arc(-bw * 0.42, -H * 0.62, s * 0.09, -1, 2); g.stroke();
       break;
-    case 'shoplifter': // hunched, dark, hood
-      g.save(); g.scale(0.94, 0.92); body(s * 0.5, s * 0.88, 4); g.restore();
-      g.beginPath(); g.arc(0, -s * 0.95, s * 0.24, Math.PI * 0.9, Math.PI * 2.1); g.fill(); g.stroke();
+    case 'shoplifter': // collar up, one hand in the coat
+      g.fillStyle = INK;
+      g.beginPath();
+      g.moveTo(-s * 0.2, -H * 1.02); g.lineTo(0, -H * 1.2); g.lineTo(s * 0.2, -H * 1.02);
+      g.lineTo(s * 0.12, -H * 0.9); g.lineTo(-s * 0.12, -H * 0.9);
+      g.closePath(); g.fill();
       break;
-    default:
-      body(s * 0.48, s * 0.9, 2); head(s * 0.2);
+    default: break;
   }
   g.restore();
 }
@@ -138,100 +208,264 @@ export function createFloorRenderer(canvas) {
       const floorY = top + laneH - 6;
       const shelfBase = floorY - strip * 0.5;
 
-      // Lane ground
-      g.fillStyle = li % 2 ? '#ecdfbe' : '#f3ead0';
-      g.fillRect(0, top, tillX, laneH - 3);
+      // --- the room ----------------------------------------------------
+      // Back wall, skirting, floor. Three tones instead of one flat fill is
+      // the difference between a room and a rectangle, and it costs nothing.
+      screenRect(g, 0, top, tillX, laneH - 3, li % 2 ? '#c9b489' : '#c2ac80', 4, 0.34);
+      g.fillStyle = '#efe2c0';
+      g.fillRect(0, floorY, tillX, laneH - 3 - (floorY - top));
+      // Floor boards, receding — the only perspective cue the cutaway gets.
+      g.strokeStyle = 'rgba(25,20,16,.10)';
+      g.lineWidth = 1;
+      for (let bx = 0; bx < tillX; bx += 34) {
+        g.beginPath(); g.moveTo(bx, floorY); g.lineTo(bx - 7, top + laneH - 3); g.stroke();
+      }
+      // Skirting board.
+      g.fillStyle = '#b9a276';
+      g.fillRect(0, floorY - 4, tillX, 4);
+      g.strokeStyle = INK;
+      g.lineWidth = lw;
       g.beginPath();
       g.moveTo(0, floorY); g.lineTo(tillX, floorY);
       g.stroke();
 
-      // Shelving units, one per slot, standing on the floor line.
+      // Pendant lights along the ceiling of the lane.
+      for (let px = bwSpacing(tillX); px < tillX; px += bwSpacing(tillX)) {
+        g.strokeStyle = 'rgba(25,20,16,.45)';
+        g.lineWidth = 1;
+        g.beginPath(); g.moveTo(px, top); g.lineTo(px, top + 9); g.stroke();
+        g.fillStyle = '#f7c331';
+        g.beginPath();
+        g.moveTo(px - 7, top + 15); g.lineTo(px + 7, top + 15);
+        g.lineTo(px + 3, top + 9); g.lineTo(px - 3, top + 9);
+        g.closePath(); g.fill();
+        g.strokeStyle = INK; g.lineWidth = 1.2; g.stroke();
+        // The pool of light it throws.
+        g.save();
+        g.globalAlpha = 0.075;
+        g.fillStyle = '#f7c331';
+        g.beginPath();
+        g.moveTo(px - 6, top + 15); g.lineTo(px + 6, top + 15);
+        g.lineTo(px + 19, floorY); g.lineTo(px - 19, floorY);
+        g.closePath(); g.fill();
+        g.restore();
+      }
+      g.strokeStyle = INK;
+      g.lineWidth = lw;
+
+      // --- shelving ------------------------------------------------------
       const n = aisle.slots.length;
       const bw = tillX / n;
       for (let i = 0; i < n; i++) {
         const inst = aisle.slots[i];
         const x0 = i * bw + bw * 0.08;
         const uw = bw * 0.84;
-        const uh = Math.min(laneH - strip * 0.55 - 10, 76);
+        const uh = Math.min(laneH - strip * 0.55 - 10, 82);
         const y0 = shelfBase - uh;
         if (!inst) {
-          // Faint. An empty slot is an absence, and drawing absences at the
-          // same weight as stock is most of why the floor read as clutter.
-          g.setLineDash([3, 7]);
-          g.strokeStyle = 'rgba(25,20,16,.13)';
-          g.lineWidth = 1;
-          g.strokeRect(x0, y0 + uh * 0.55, uw, uh * 0.45);
-          g.setLineDash([]);
-          g.strokeStyle = '#191410';
+          // An empty bay: bare uprights, nothing on them. It should read as a
+          // gap in the shop rather than as a dashed UI affordance.
+          g.save();
+          g.globalAlpha = 0.3;
+          g.strokeStyle = 'rgba(25,20,16,.5)';
+          g.lineWidth = 1.4;
+          g.beginPath();
+          g.moveTo(x0 + 2, shelfBase); g.lineTo(x0 + 2, y0 + uh * 0.42);
+          g.moveTo(x0 + uw - 2, shelfBase); g.lineTo(x0 + uw - 2, y0 + uh * 0.42);
+          g.moveTo(x0 + 2, y0 + uh * 0.42); g.lineTo(x0 + uw - 2, y0 + uh * 0.42);
+          g.stroke();
+          g.restore();
+          g.strokeStyle = INK;
           g.lineWidth = lw;
           continue;
         }
         const tone = inst.def.rarity === 'flagship' ? '#f7c331'
           : inst.def.rarity === 'rare' ? '#d81e63'
             : inst.def.rarity === 'uncommon' ? '#0e8fb5' : '#d63426';
+
+        // Carcass, with a plate offset behind it.
+        g.save();
+        g.globalAlpha = 0.35;
+        g.fillStyle = tone;
+        g.fillRect(x0 + 2, y0 + 2, uw, uh);
+        g.restore();
         g.fillStyle = '#fdf7e8';
         g.fillRect(x0, y0, uw, uh);
         g.strokeRect(x0, y0, uw, uh);
-        // Shelves, with stock on them in the fixture's own colour.
+
+        // Shelf boards, drawn with thickness so they are joinery rather than
+        // hairlines, and stock that varies in shape and height per shelf.
         const rows = 3;
         for (let r = 0; r < rows; r++) {
           const sy = y0 + (uh / rows) * (r + 1);
-          g.beginPath(); g.moveTo(x0, sy); g.lineTo(x0 + uw, sy); g.stroke();
-          const items = 4;
+          const cell = uh / rows;
+          const items = 3 + ((i + r) % 3);
           for (let k = 0; k < items; k++) {
-            const iw = uw / items * 0.62;
-            const ih = (uh / rows) * 0.5;
+            const slotW = uw / items;
+            const iw = slotW * 0.66;
+            const kind = (i * 7 + r * 3 + k) % 3;
+            const ih = cell * (kind === 0 ? 0.62 : kind === 1 ? 0.48 : 0.55);
+            const ix = x0 + slotW * k + (slotW - iw) / 2;
+            // Solid at this size. A dot screen only reads as a screen when
+            // there is room for several dots across the shape; on a 12px tin
+            // it reads as damage.
             g.fillStyle = tone;
-            g.globalAlpha = 0.78 + ((i + r + k) % 3) * 0.11;
-            g.fillRect(x0 + (uw / items) * k + iw * 0.28, sy - ih, iw, ih);
+            g.globalAlpha = 0.72 + ((i + r + k) % 3) * 0.12;
+            if (kind === 2) {                     // bottles
+              rr(g, ix + iw * 0.2, sy - ih, iw * 0.6, ih, 1.5);
+              g.fill();
+              g.fillRect(ix + iw * 0.36, sy - ih - cell * 0.12, iw * 0.28, cell * 0.12);
+            } else if (kind === 1) {              // tins
+              rr(g, ix, sy - ih, iw, ih, iw * 0.16);
+              g.fill();
+            } else {                              // boxes
+              g.fillRect(ix, sy - ih, iw, ih);
+            }
+            g.strokeStyle = 'rgba(25,20,16,.55)';
+            g.lineWidth = 1;
             g.globalAlpha = 1;
+            if (kind === 0) g.strokeRect(ix, sy - ih, iw, ih); else g.stroke();
+          }
+          // The board itself.
+          g.fillStyle = '#c8b285';
+          g.fillRect(x0, sy, uw, 3);
+          g.strokeStyle = INK;
+          g.lineWidth = lw;
+          g.strokeRect(x0, sy, uw, 3);
+          // A price ticket clipped to the front edge, every other shelf.
+          if ((i + r) % 2 === 0 && uw > 54) {
+            g.fillStyle = '#fffdf4';
+            g.fillRect(x0 + uw * 0.1, sy + 3, uw * 0.16, 5);
+            g.fillStyle = 'rgba(25,20,16,.42)';
+            g.fillRect(x0 + uw * 0.115, sy + 5, uw * 0.13, 1.2);
+            g.strokeStyle = 'rgba(25,20,16,.35)';
+            g.lineWidth = 0.8;
+            g.strokeRect(x0 + uw * 0.1, sy + 3, uw * 0.16, 5);
+            g.strokeStyle = INK;
+            g.lineWidth = lw;
           }
         }
-        // Header board
+
+        // Header board — a shelf barker, hung slightly askew.
+        g.save();
+        g.translate(x0 + uw / 2, y0 - 8);
+        g.rotate(((i % 2) ? 1 : -1) * 0.012);
         g.fillStyle = tone;
-        g.fillRect(x0, y0 - 15, uw, 15);
-        g.strokeRect(x0, y0 - 15, uw, 15);
-        g.fillStyle = inst.def.rarity === 'flagship' ? '#191410' : '#fff';
-        g.font = `700 ${Math.max(8, Math.min(11, uw * 0.11))}px Inter, sans-serif`;
-        g.fillText(inst.def.name.toUpperCase().slice(0, 18), x0 + uw / 2, y0 - 4.5);
+        g.fillRect(-uw / 2, -8, uw, 16);
+        g.strokeRect(-uw / 2, -8, uw, 16);
+        g.fillStyle = inst.def.rarity === 'flagship' ? INK : '#fff';
+        g.font = `700 ${Math.max(8, Math.min(11, uw * 0.105))}px Inter, sans-serif`;
+        g.fillText(inst.def.name.toUpperCase().slice(0, 18), 0, 4);
+        g.restore();
+
         if (inst.level > 1) {
-          g.fillStyle = '#16130f';
-          g.fillRect(x0 + uw - 17, y0 + 3, 14, 12);
-          g.fillStyle = '#f4ead6';
-          g.font = 'bold 9px Inter, sans-serif';
-          g.fillText(`L${inst.level}`, x0 + uw - 10, y0 + 12);
+          // A gold star for a levelled line, which is what a catalogue would
+          // put there.
+          g.save();
+          g.translate(x0 + uw - 12, y0 + 11);
+          g.fillStyle = '#f7c331';
+          g.beginPath();
+          for (let a = 0; a < 10; a++) {
+            const rad = a % 2 ? 4.4 : 9;
+            const ang = (a / 10) * Math.PI * 2 - Math.PI / 2;
+            const fn = a ? 'lineTo' : 'moveTo';
+            g[fn](Math.cos(ang) * rad, Math.sin(ang) * rad);
+          }
+          g.closePath(); g.fill();
+          g.lineWidth = 1.2; g.strokeStyle = INK; g.stroke();
+          g.fillStyle = INK;
+          g.font = '700 8px Inter, sans-serif';
+          g.fillText(String(inst.level), 0, 3);
+          g.restore();
+          g.lineWidth = lw;
         }
       }
     }
 
     // --- the front of shop -------------------------------------------------
-    // Was a large empty tinted rectangle with a queue stacked in one column at
-    // the top of it. A counter you can see is what makes the queue read as a
-    // queue rather than as figures parked in a box.
+    // A shopfront: daylight through the window, the door, the counter and a
+    // till on it. This was a large empty tinted rectangle with a queue parked
+    // in it, which is most of why the day looked unfinished.
     const frontW = w - tillX;
-    g.fillStyle = '#efe0bb';
-    g.fillRect(tillX, padT, frontW, h - padT - padB);
-    g.strokeStyle = '#191410';
-    g.lineWidth = lw + 0.5;
-    g.strokeRect(tillX + 0.5, padT + 0.5, frontW - 1, h - padT - padB - 1);
+    screenRect(g, tillX, padT, frontW, h - padT - padB, '#c2ac80', 4, 0.3);
+    g.fillStyle = '#efe2c0';
+    g.fillRect(tillX + 1, padT + 1, frontW - 2, h - padT - padB - 2);
 
-    // The counter runs along the bottom, with a till per point of throughput.
-    const tills = Math.max(1, shop.tills);
-    const counterY = h - padB - 46;
-    g.fillStyle = '#c8452f';
-    g.fillRect(tillX + 1, counterY, frontW - 2, 20);
-    g.strokeRect(tillX + 1.5, counterY + 0.5, frontW - 3, 19);
-    g.fillStyle = '#efe0bb';
-    for (let t = 0; t < Math.min(tills, 9); t++) {
-      const cw = (frontW - 12) / Math.min(tills, 9);
-      const cx = tillX + 6 + t * cw;
-      g.fillRect(cx + cw * 0.18, counterY + 4, cw * 0.64, 12);
-      g.strokeRect(cx + cw * 0.18, counterY + 4, cw * 0.64, 12);
+    // The window wall, with daylight falling in.
+    const winY = padT + 14;
+    const winH = Math.min(150, (h - padT - padB) * 0.42);
+    g.fillStyle = '#cfe6ef';
+    g.fillRect(tillX + 14, winY, frontW - 28, winH);
+    g.strokeStyle = INK;
+    g.lineWidth = lw + 0.6;
+    g.strokeRect(tillX + 14, winY, frontW - 28, winH);
+    // Glazing bars.
+    g.lineWidth = 1.4;
+    for (let k = 1; k < 3; k++) {
+      const gx = tillX + 14 + ((frontW - 28) / 3) * k;
+      g.beginPath(); g.moveTo(gx, winY); g.lineTo(gx, winY + winH); g.stroke();
     }
-    g.fillStyle = '#191410';
-    g.font = '700 10px Inter, sans-serif';
-    g.fillText('TILLS', tillX + frontW / 2, counterY + 33);
+    g.beginPath();
+    g.moveTo(tillX + 14, winY + winH * 0.42);
+    g.lineTo(tillX + frontW - 14, winY + winH * 0.42);
+    g.stroke();
+    // Reversed-out shop name across the glass, as a signwriter would.
+    g.fillStyle = 'rgba(25,20,16,.42)';
+    g.font = `700 ${Math.min(19, frontW * 0.075)}px Inter, sans-serif`;
+    g.fillText('OPEN', tillX + frontW / 2, winY + winH * 0.3);
+    // Daylight pooling on the floor below the window.
+    g.save();
+    g.globalAlpha = 0.13;
+    g.fillStyle = '#cfe6ef';
+    g.beginPath();
+    g.moveTo(tillX + 14, winY + winH);
+    g.lineTo(tillX + frontW - 14, winY + winH);
+    g.lineTo(tillX + frontW - 2, h - padB - 4);
+    g.lineTo(tillX + 2, h - padB - 4);
+    g.closePath(); g.fill();
+    g.restore();
 
+    // The counter, with a till machine standing on it.
+    const tills = Math.max(1, shop.tills);
+    const counterY = h - padB - 52;
+    g.save();
+    g.globalAlpha = 0.3;
+    g.fillStyle = '#8f2418';
+    g.fillRect(tillX + 3, counterY + 3, frontW - 4, 26);
+    g.restore();
+    g.fillStyle = halftone(g, '#c8452f', 4, 1);
+    g.fillRect(tillX + 1, counterY, frontW - 2, 24);
+    g.strokeStyle = INK;
+    g.lineWidth = lw;
+    g.strokeRect(tillX + 1, counterY, frontW - 2, 24);
+    // Counter front panelling.
+    g.strokeStyle = 'rgba(25,20,16,.35)';
+    g.lineWidth = 1;
+    for (let k = 1; k < 5; k++) {
+      const cx = tillX + (frontW / 5) * k;
+      g.beginPath(); g.moveTo(cx, counterY + 4); g.lineTo(cx, counterY + 20); g.stroke();
+    }
+    // A till per point of throughput, up to what fits.
+    const shown = Math.min(tills, Math.max(1, Math.floor(frontW / 46)));
+    for (let t = 0; t < shown; t++) {
+      const cw = (frontW - 16) / shown;
+      const cx = tillX + 8 + t * cw + cw / 2;
+      const ty = counterY - 20;
+      g.fillStyle = '#efe2c0';
+      g.fillRect(cx - 15, ty, 30, 20);
+      g.strokeStyle = INK; g.lineWidth = lw;
+      g.strokeRect(cx - 15, ty, 30, 20);
+      g.fillStyle = '#191410';                     // the readout
+      g.fillRect(cx - 11, ty + 3, 22, 7);
+      g.fillStyle = '#7fe3a0';
+      g.fillRect(cx - 9, ty + 5, 4, 3);
+      g.fillRect(cx - 3, ty + 5, 4, 3);
+      g.fillStyle = 'rgba(25,20,16,.5)';           // keys
+      for (let kx = 0; kx < 3; kx++) g.fillRect(cx - 10 + kx * 7, ty + 13, 5, 4);
+    }
+    g.fillStyle = INK;
+    g.font = '700 10px Inter, sans-serif';
+    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, tillX + frontW / 2, h - padB - 14);
 
     // --- customers ---------------------------------------------------------
     hitboxes = [];
@@ -266,6 +500,8 @@ export function createFloorRenderer(canvas) {
         const eased = hop * hop * (3 - 2 * hop);          // smoothstep
         const step = (tillX - 24) / stops;
         x = 8 + (idx + eased) * step;
+        // Two paces per hop, and none at all during the dwell.
+        c.stridePhase = hop < 1 ? hop * 2 : 0;
       } else if (c.phase === PHASE.QUEUE) {
         // Rows fill UP from the counter, so the front of the queue is the row
         // touching the tills and the shop visibly fills from the front. The
@@ -285,7 +521,11 @@ export function createFloorRenderer(canvas) {
       }
 
       g.globalAlpha = alpha;
-      drawPerson(g, c.type, x, y, person, 0, c.phase === PHASE.WALKING);
+      // Walking figures stride; standing ones sway. Perfectly still figures
+      // are what made a shop full of people look like a paused screenshot.
+      const walking = c.phase === PHASE.WALKING;
+      drawPerson(g, c.type, x, y, person, walking ? c.stridePhase || 0 : 0,
+        walking, t * 0.09 + c.id * 1.7);
 
       if (c.phase === PHASE.QUEUE) {
         const left = Math.max(0, 1 - c.waited / c.patience);
