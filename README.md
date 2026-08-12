@@ -82,6 +82,22 @@ is **£731,335**, and 42% of wins finish on a day clearing seven figures — abo
 one run in four overall. Seven figures is the overshoot, not the requirement,
 which is the only version of it a 24-encounter run can actually carry.
 
+Where the skill lives, across three disjoint seed blocks — every row below
+sign-stable except `stress`, which nothing should be concluded from:
+
+| capability | alone | removed |
+|---|---|---|
+| tempo | +15.8pp | −19.7pp |
+| sign | +5.2pp | −6.2pp |
+| lookahead | +4.5pp | −12.1pp |
+| reroll | +2.9pp | −8.0pp |
+| reorder | +1.9pp | −1.9pp |
+
+Part four **withdrew** the lookahead claim as unstable. Part six reinstates it,
+and the compounders are why: every other card is worth the same whenever you buy
+it, so lookahead had nothing to look at. A compounder is worth what is left of
+the run.
+
 Still out of band: tier rush at 74% (wants ~30%), and staff counts in winning
 builds run 0–14 (wants 0–8, unclustered).
 

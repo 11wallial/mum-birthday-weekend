@@ -265,6 +265,43 @@ finished holding seven figures whether they had played well or not**. The ending
 was being handed out by the payout formula. Matched to the curve, banked cash is
 dominated by overshoot, which is skill.
 
+## Lookahead is a skill after all, and the compounders are why
+
+Part four **withdrew** the claim that lookahead carries skill. It had come from
+the least stable cell in the ablation, and the honest reading at the time was
+that lookahead was a complement to tempo rather than an axis of its own.
+
+Re-run on the current pool, across three disjoint seed blocks:
+
+```
+capability      alone                      removed                    stable
+lookahead      +4.5pp [3.5 to 5.2]        -12.1pp [-15.7 to -9.3]    yes
+tempo         +15.8pp [13.8 to 17.0]      -19.7pp [-22.0 to -16.2]   yes
+sign           +5.2pp [4.7 to 5.8]         -6.2pp [-8.0 to -5.0]     yes
+reroll         +2.9pp [2.2 to 3.5]         -8.0pp [-12.2 to -5.8]    yes
+reorder        +1.9pp [0.8 to 3.0]         -1.9pp [-2.7 to -0.2]     yes
+balance        -0.8pp [-2.0 to 0.0]        -0.2pp [-0.7 to 0.3]      yes
+stress         -0.2pp [-2.3 to 1.2]        +0.1pp [-0.5 to 0.5]      NO
+```
+
+Sign-stable, and removing it is the second largest loss on the board. The
+withdrawal is itself withdrawn.
+
+The cause is the compounding class, and it is worth being precise about why,
+because it is the strongest argument in this document that the ops were the
+right thing to add. Every other card in the pool is worth the same whenever you
+buy it, so a player who can see ten encounters ahead learns nothing a player who
+can see one does not already know. A compounder is worth **what is left of the
+run**. That is the only quantity in the game that lookahead is *for*, and until
+there was a card whose value depended on it, the ablation was right to say the
+axis did not exist.
+
+§2's claim about lookahead was not wrong. It was unexpressed, in exactly the way
+order-of-operations was unexpressed at 23 fixtures — and it was fixed the same
+way, by writing content that has something for the skill to grip.
+
+`stress` remains unstable and nothing should be concluded from it.
+
 ## What that says about the order of work
 
 Part four committed to **pool -> queue verification -> tune**. The pool work was
@@ -383,6 +420,10 @@ survives.
 Two corrections to part three:
 
 - **The lookahead conclusion is withdrawn.** It is unresolved, not settled.
+  *(Part six settles it: on the current pool lookahead is +4.5pp alone and
+  -12.1pp removed, sign-stable across three seed blocks. It was unexpressed
+  rather than absent — nothing in the pool was worth a different amount
+  depending on how much of the run was left, until the compounders were.)*
 - **Reroll was omitted from the writeup** and is a bigger removal effect than
   lookahead on every draw they took. That was a selection error on my part.
 
