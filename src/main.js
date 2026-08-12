@@ -9,6 +9,7 @@ import { createTradingDay } from './trading-day.js';
 import { createFloorRenderer } from './floor.js';
 import { createAudio } from './audio.js';
 import { save } from './save.js';
+import { createParticles, roll, wipe } from './motion.js';
 
 const $ = (id) => document.getElementById(id);
 const money = (v) => `${v < 0 ? '−' : ''}£${Math.abs(Math.round(v)).toLocaleString('en-GB')}`;
@@ -26,6 +27,8 @@ let audit = 1;
 // Peak day of the current run. The target is the fail condition; this is the
 // number the run is actually about, and a good one overshoots it fifty times.
 let peakDay = 0;
+let particles = null;
+let lastShort = null;
 
 // ---------------------------------------------------------------- copy ----
 
@@ -114,18 +117,28 @@ function renderPanel() {
   const d = game.projection();
   const p = d.panel;
   const target = game.target(game.run.encounter);
-  $('p-footfall').textContent = p.footfall;
-  $('p-conv').textContent = pct(p.conversion);
-  $('p-basket').textContent = money(p.basket);
-  $('p-margin').textContent = pct(p.margin);
-  $('p-trading').textContent = money(p.trading);
+  // Rolling, not snapping. A figure that snaps has to be re-read; one that
+  // rolls tells you which way it moved without being read at all.
+  roll($('p-footfall'), p.footfall, (v) => Math.round(v).toLocaleString('en-GB'));
+  roll($('p-conv'), p.conversion, (v) => pct(v));
+  roll($('p-basket'), p.basket, money);
+  roll($('p-margin'), p.margin, (v) => pct(v));
+  roll($('p-trading'), p.trading, money);
   $('p-rent').textContent = `rent ${money(-p.rent)}`;
   $('p-shrink').textContent = `shrink ${money(p.shrink)}`;
   $('p-upkeep').textContent = `upkeep ${money(-(p.upkeep + (d.ratchetUpkeep || 0)))}`;
   const gap = d.profit - target;
   const short = gap < 0;
-  $('p-profit').textContent = money(d.profit);
-  $('p-profit').className = `vprofit ${short ? 'short' : 'clear'}`;
+  const pel = $('p-profit');
+  roll(pel, d.profit, money, 520);
+  pel.className = `vprofit ${short ? 'short' : 'clear'}`;
+  // The one state change on this panel worth interrupting someone for.
+  if (lastShort !== null && lastShort !== short) {
+    pel.classList.remove('flip');
+    void pel.offsetWidth;
+    pel.classList.add('flip');
+  }
+  lastShort = short;
   const g = $('p-gap');
   g.innerHTML = short
     ? `against ${money(target)} — <b>${money(-gap)} short</b>`
@@ -342,7 +355,8 @@ function renderNight() {
 function openDoors() {
   audio.unlock();
   audio.tannoy();
-  show('day');
+  particles = createParticles();
+  showWiped('day');
   day = createTradingDay(content, game.shop, game.ctx(), game.run.rng);
   $('btn-open').hidden = true;
   $('tip').textContent = 'Someone waiting? Tap them and take them next.';
@@ -359,17 +373,30 @@ function openDoors() {
       const before = day.state.sales;
       const beforeLost = day.state.walkouts;
       day.step();
-      if (day.state.sales > before) audio.sale();
-      if (day.state.walkouts > beforeLost) audio.walkout();
+      if (day.state.sales > before) {
+        audio.sale();
+        const at = floor.tillPoint();
+        // One coin per event, not per person — at eighty thousand Footfall a
+        // coin per sale would take the frame rate with it.
+        particles.emit('coin', at.x + (Math.random() - 0.5) * 40, at.y);
+      }
+      if (day.state.walkouts > beforeLost) {
+        audio.walkout();
+        const at = floor.tillPoint();
+        particles.emit('cross', at.x + (Math.random() - 0.5) * 60, at.y - 20);
+        particles.emit('puff', at.x + (Math.random() - 0.5) * 60, at.y - 16);
+      }
       acc -= msPerTick;
     }
     audio.setFrenzy(day.state.frenzy);
     document.documentElement.style.setProperty('--frenzy', day.state.frenzy.toFixed(2));
-    floor.draw(day, game.shop);
-    $('d-clock').textContent = `${Math.min(100, Math.round(day.state.tick / day.state.ticks * 100))}%`;
-    $('d-sales').textContent = day.state.sales;
-    $('d-walk').textContent = day.state.walkouts;
-    $('d-profit').textContent = money(day.state.tradingProfit + day.state.shrink);
+    particles.update();
+    floor.draw(day, game.shop, particles);
+    const n = (v) => Math.round(v).toLocaleString('en-GB');
+    roll($('d-clock'), Math.min(100, day.state.tick / day.state.ticks * 100), (v) => `${Math.round(v)}%`, 200);
+    roll($('d-sales'), day.state.sales, n, 300);
+    roll($('d-walk'), day.state.walkouts, n, 300);
+    roll($('d-profit'), day.state.tradingProfit + day.state.shrink, money, 300);
     $('d-triage').textContent = day.state.triageLeft;
     if (day.state.finished) { settle(); return; }
     requestAnimationFrame(frame);
@@ -387,7 +414,7 @@ function settle() {
   // is the best day it ever had, and a good run overshoots its last target
   // fifty times over.
   if (s.profit > peakDay) peakDay = s.profit;
-  show('settle');
+  showWiped('settle');
   $('tip').textContent = entry.fatal
     ? 'The landlord does not take instalments.'
     : 'Cash up, lock the door, order for tomorrow.';
@@ -421,6 +448,15 @@ function settle() {
 
 // --------------------------------------------------------------- shell ----
 
+/**
+ * Phase change behind a page turn. A hard cut between the catalogue and the
+ * floor gives the eye nothing to follow, and makes two registers of one
+ * publication feel like two programs.
+ */
+function showWiped(which, after) {
+  wipe(document.body, () => { show(which); if (after) after(); });
+}
+
 function show(which) {
   for (const id of ['title', 'night', 'day', 'settle']) $(id).hidden = id !== which;
   $('btn-open').hidden = which !== 'night';
@@ -437,8 +473,7 @@ function nextEncounter() {
   game.beginNight();
   if (game.run.over) return endRun();
   pending = null;
-  show('night');
-  renderNight();
+  showWiped('night', renderNight);
 }
 
 function endRun() {

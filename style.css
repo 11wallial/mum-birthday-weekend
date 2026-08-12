@@ -577,3 +577,73 @@ button { font-family: var(--body); }
   .mq { grid-template-columns: 1fr; }
   .mt, .mgot { font-size: 8px; }
 }
+
+
+/* ------------------------------------------------------------ transitions */
+/* A hard cut between the catalogue and the floor gives the eye nothing to
+   follow and makes two screens feel like two programs. These are two registers
+   of one publication, so the transition is a page turning. */
+
+.wipe {
+  position: fixed; inset: 0; z-index: 80; pointer-events: none;
+  background:
+    repeating-linear-gradient(-8deg, var(--paper-2) 0 26px, var(--paper) 26px 52px);
+  border-right: 4px solid var(--ink);
+  transform: translateX(-102%);
+}
+.wipe.go { animation: pageturn .68s cubic-bezier(.66, 0, .3, 1) forwards; }
+@keyframes pageturn {
+  0%   { transform: translateX(-102%); }
+  45%  { transform: translateX(0); }
+  55%  { transform: translateX(0); }
+  100% { transform: translateX(102%); }
+}
+
+/* Cards deal onto the page rather than appearing on it. */
+@keyframes dealin {
+  from { opacity: 0; transform: translateY(14px) rotate(-1.2deg); }
+  to   { opacity: 1; transform: none; }
+}
+.entry { animation: dealin .34s cubic-bezier(.2, .9, .3, 1.2) backwards; }
+.entry:nth-child(2) { animation-delay: .06s; }
+.entry:nth-child(3) { animation-delay: .12s; }
+.entry:nth-child(4) { animation-delay: .18s; }
+
+/* A slot receiving a fixture should land, not blink. */
+@keyframes slotland {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+.slot.landed { animation: slotland .38s cubic-bezier(.3, 1.4, .5, 1); }
+
+/* The headline number pulses when the verdict flips between short and clear —
+   the one state change on the panel worth interrupting someone for. */
+@keyframes verdictflip {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+.vprofit.flip { animation: verdictflip .42s cubic-bezier(.3, 1.5, .5, 1); }
+
+/* Buttons get a press. Nothing in the build had one. */
+button { transition: transform .07s ease, background .12s ease, color .12s ease; }
+button:active { transform: translateY(1px) scale(.985); }
+button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.entry:focus-visible, .slot:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* The sheet arrives rather than appearing. */
+@keyframes sheetin {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+#sheet .sheetinner { animation: sheetin .26s cubic-bezier(.2, .9, .3, 1.1); }
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+#sheet { animation: fadein .2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wipe, .entry, .slot.landed, .vprofit.flip, #sheet, #sheet .sheetinner {
+    animation: none !important;
+  }
+  button { transition: none; }
+}

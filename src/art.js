@@ -98,6 +98,7 @@ export function inkRect(g, x, y, w, h, lw = 1.6, seed = 0) {
  * float.
  */
 export function contact(g, x, y, w, alpha = 0.17) {
+  if (!(w > 0)) return;
   g.save();
   g.globalAlpha = alpha;
   g.fillStyle = INK;
@@ -109,7 +110,9 @@ export function contact(g, x, y, w, alpha = 0.17) {
 
 /** Rounded rect that works everywhere, including older Safari. */
 export function rr(g, x, y, w, h, r) {
-  const k = Math.min(r, w / 2, h / 2);
+  // Guard: a lane can be short enough that a derived height goes negative, and
+  // arcTo throws on a negative radius rather than clamping.
+  const k = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
   g.beginPath();
   g.moveTo(x + k, y);
   g.arcTo(x + w, y, x + w, y + h, k);

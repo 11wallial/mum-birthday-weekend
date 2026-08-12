@@ -163,6 +163,11 @@ function drawPerson(g, t, x, y, s, walkPhase, onFloor = false, idle = 0) {
 export function createFloorRenderer(canvas) {
   const g = canvas.getContext('2d');
   let hitboxes = [];
+  // Where feedback should come from. Events happen at the till, so that is
+  // where coins fly off and crosses appear — anywhere else and the eye has to
+  // hunt for what just changed.
+  let till = { x: 0, y: 0 };
+  let queueRight = 0;
 
   function resize() {
     const r = canvas.getBoundingClientRect();
@@ -173,7 +178,7 @@ export function createFloorRenderer(canvas) {
     return { w: r.width, h: r.height };
   }
 
-  function draw(day, shop) {
+  function draw(day, shop, particles) {
     const { w, h } = resize();
     const s = day.state;
     const frenzy = s.frenzy;
@@ -194,8 +199,11 @@ export function createFloorRenderer(canvas) {
     // The floor strip customers walk along sits at the bottom of each lane;
     // the shelving stands on it. Person height is set from the strip, not the
     // whole lane, so three aisles and five still read the same.
-    const strip = Math.min(laneH * 0.5, 74);
-    const person = Math.min(strip * 0.78, 46);
+    // Guarded at the source. Every size below is derived from these two, so a
+    // short canvas or a five-aisle shop used to push half the geometry
+    // negative and canvas throws on that rather than clamping.
+    const strip = Math.max(18, Math.min(laneH * 0.5, 74));
+    const person = Math.max(12, Math.min(strip * 0.78, 46));
     const lw = 1.5 + frenzy * 1.5;
     g.lineWidth = lw;
     g.strokeStyle = '#16130f';
@@ -260,7 +268,10 @@ export function createFloorRenderer(canvas) {
         const inst = aisle.slots[i];
         const x0 = i * bw + bw * 0.08;
         const uw = bw * 0.84;
-        const uh = Math.min(laneH - strip * 0.55 - 10, 82);
+        // Never negative: at five aisles the lane is short enough that the
+        // derived shelf height goes below zero and every stock item is drawn
+        // inside out.
+        const uh = Math.max(22, Math.min(laneH - strip * 0.55 - 10, 82));
         const y0 = shelfBase - uh;
         if (!inst) {
           // An empty bay: bare uprights, nothing on them. It should read as a
@@ -446,10 +457,15 @@ export function createFloorRenderer(canvas) {
       g.beginPath(); g.moveTo(cx, counterY + 4); g.lineTo(cx, counterY + 20); g.stroke();
     }
     // A till per point of throughput, up to what fits.
-    const shown = Math.min(tills, Math.max(1, Math.floor(frontW / 46)));
+    // Tills occupy the right-hand third of the counter and the queue forms
+    // along it to the left. They used to be centred, which is exactly where
+    // the queue stood, so the machines were never once visible.
+    const tillZone = Math.max(60, frontW * 0.34);
+    const tillLeft = tillX + frontW - tillZone;
+    const shown = Math.min(tills, Math.max(1, Math.floor(tillZone / 40)));
     for (let t = 0; t < shown; t++) {
-      const cw = (frontW - 16) / shown;
-      const cx = tillX + 8 + t * cw + cw / 2;
+      const cw = tillZone / shown;
+      const cx = tillLeft + t * cw + cw / 2;
       const ty = counterY - 20;
       g.fillStyle = '#efe2c0';
       g.fillRect(cx - 15, ty, 30, 20);
@@ -465,12 +481,14 @@ export function createFloorRenderer(canvas) {
     }
     g.fillStyle = INK;
     g.font = '700 10px Inter, sans-serif';
-    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, tillX + frontW / 2, h - padB - 14);
+    g.fillText(`${tills} TILL${tills > 1 ? 'S' : ''}`, tillLeft + tillZone / 2, h - padB - 14);
+    till = { x: tillLeft + tillZone / 2, y: counterY - 14 };
+    queueRight = tillLeft - 6;
 
     // --- customers ---------------------------------------------------------
     hitboxes = [];
     const t = s.tick;
-    const qCols = Math.max(1, Math.floor((w - tillX - 20) / Math.max(30, person * 1.05)));
+    const qCols = Math.max(1, Math.floor((queueRight - tillX - 14) / Math.max(30, person * 1.05)));
     for (const c of s.customers) {
       if ((c.phase === PHASE.DONE || c.phase === PHASE.LOST) && t - (c.exitAt ?? 0) > 8) continue;
       const li = c.lane;
@@ -510,8 +528,8 @@ export function createFloorRenderer(canvas) {
         const qi = Math.max(0, s.queue.indexOf(c));
         const col = qi % qCols;
         const row = Math.floor(qi / qCols);
-        const colW = (w - tillX - 20) / qCols;
-        x = tillX + 12 + col * colW + colW / 2;
+        const colW = (queueRight - tillX - 14) / qCols;
+        x = tillX + 10 + col * colW + colW / 2;
         y = counterY - 8 - row * Math.max(26, person * 0.72);
         if (y < padT + person * 1.3) y = padT + person * 1.3;
       } else {
@@ -551,6 +569,8 @@ export function createFloorRenderer(canvas) {
       g.globalAlpha = 1;
     }
 
+    if (particles) particles.draw(g);
+
     // --- day clock ---------------------------------------------------------
     g.fillStyle = 'rgba(22,19,15,.15)';
     g.fillRect(0, h - 3, w * Math.min(1, s.tick / s.ticks), 3);
@@ -566,5 +586,5 @@ export function createFloorRenderer(canvas) {
     return best ? best.id : null;
   }
 
-  return { draw, pick };
+  return { draw, pick, tillPoint: () => till };
 }
