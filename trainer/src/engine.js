@@ -31,7 +31,9 @@ const KEY = 'dclinpsy.trainer.v1';
 let S;
 
 function blankState() {
-  return { v:1, created: Date.now(), interviewDate:null, theme:'dark', sound:false,
+  // dark-first, but honour the viewer's OS preference on a genuinely first run
+  const prefersLight = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches;
+  return { v:1, created: Date.now(), interviewDate:null, theme: prefersLight ? 'light' : 'dark', sound:false,
            c:{}, i:{}, cal:[], errors:[], log:[], wins:[], written:{}, panel:{}, rp:{}, formul:{},
            streak:{last:null,n:0}, seenIntro:false, lastMode:'today' };
 }
