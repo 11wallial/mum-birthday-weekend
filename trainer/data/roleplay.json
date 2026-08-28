@@ -1,0 +1,488 @@
+{
+ "version": 1,
+ "dims": {
+  "open": "Opening space",
+  "reflect": "Reflecting",
+  "validate": "Validating",
+  "explore": "Staying with experience",
+  "fix": "Advising too early",
+  "close": "Closing down",
+  "self": "Managing own agenda"
+ },
+ "scenarios": [
+  {
+   "id": "rp_timekeeping",
+   "title": "The colleague and the timekeeping feedback",
+   "source": "Glasgow 2018 — one of four scenarios given to candidates a week in advance, verbatim",
+   "brief": "Your colleague approaches you to discuss a work-related problem. They are of equal status, so there is no power relationship. There is NO expectation that you resolve the problem. Your aim is (a) to establish the circumstances leading to the problem and (b) to establish and understand your colleague's reaction to those circumstances.",
+   "setting": "An office in your workplace. Mid-afternoon. You have about eight minutes.",
+   "character": "Sam, a colleague of equal status, who has just come from a meeting with your shared line manager.",
+   "opening": "Have you got a minute? Sorry — I know you're busy. I've just come out of a meeting with Jo and I'm… I don't really know what to do with it, to be honest.",
+   "turns": [
+    {
+     "says": "She's had a go at me about my timekeeping. Apparently I've been late 'a number of times'. She wouldn't even say who'd mentioned it.",
+     "options": [
+      {
+       "t": "Have you been late, though?",
+       "d": "close",
+       "s": -2,
+       "f": "This puts them on trial in the first thirty seconds. Whether they were late is not the task — the brief asks you to establish the circumstances and understand their reaction."
+      },
+      {
+       "t": "That sounds like it landed pretty hard. What happened?",
+       "d": "open",
+       "s": 3,
+       "f": "Names the impact and opens the space. This is exactly what the brief asks for."
+      },
+      {
+       "t": "Jo does that with everyone. I wouldn't take it personally.",
+       "d": "close",
+       "s": -2,
+       "f": "Reassurance that dismisses the feeling and closes the topic. It also aligns you against a manager on no evidence."
+      },
+      {
+       "t": "Do you want to make a formal complaint?",
+       "d": "fix",
+       "s": -3,
+       "f": "Solving a problem you have not yet understood, and escalating something they have not asked to escalate."
+      }
+     ]
+    },
+    {
+     "says": "It was just… she called me in, sat me down, and said it had been 'raised'. Passive voice, you know? Like I'm supposed to guess who. And I have been late — a few times. My mum's been ill and I've been doing her mornings before work. I didn't want to make a thing of it.",
+     "options": [
+      {
+       "t": "You should have told her about your mum. She'd have to make allowances.",
+       "d": "fix",
+       "s": -2,
+       "f": "Advice, and slightly blaming — 'you should have'. They have just told you something vulnerable and this steps straight over it."
+      },
+      {
+       "t": "So you've been getting your mum up in the mornings, and you didn't tell anyone at work — and now it's come back to you as a complaint.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Reflects both the circumstance and its sting, and holds them together. It also gently makes visible the choice they made without judging it."
+      },
+      {
+       "t": "How is your mum?",
+       "d": "explore",
+       "s": 1,
+       "f": "Kind, and human. Slightly risks moving away from the work problem they came with, but a brief version of this is warm rather than diverting."
+      },
+      {
+       "t": "That's really unfair of her then.",
+       "d": "validate",
+       "s": 0,
+       "f": "Sympathetic, but it takes a side on facts you do not have, and it closes off exploring their own mixed feelings — which are the interesting part."
+      }
+     ]
+    },
+    {
+     "says": "Yeah. And the thing is, I'm annoyed with her, but I'm mostly annoyed with myself. I should have just said something. Now it looks like I've been getting away with something.",
+     "options": [
+      {
+       "t": "You've got nothing to feel guilty about. You were caring for your mum.",
+       "d": "close",
+       "s": -1,
+       "f": "Well-meant, but it argues them out of a feeling instead of understanding it, and it can leave them feeling unheard."
+      },
+      {
+       "t": "There's something about how it looks that's bothering you more than the lateness itself.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Picks up the real thread — this is about being seen as someone who gets away with things. This is understanding their reaction, which is what the brief asks for."
+      },
+      {
+       "t": "What do you think stopped you from saying something at the time?",
+       "d": "explore",
+       "s": 3,
+       "f": "Curious, non-judgemental, and goes to the heart of it without telling them what to think."
+      },
+      {
+       "t": "I'd have done the same thing, honestly.",
+       "d": "self",
+       "s": 0,
+       "f": "Normalising, but it turns the conversation toward you. Use sparingly and briefly, if at all."
+      }
+     ]
+    },
+    {
+     "says": "I suppose I didn't want to be the person with the problem. Everyone's stretched. And if I'm honest I thought if I said it out loud I might not be able to keep doing it — the job and mum, I mean.",
+     "options": [
+      {
+       "t": "That sounds like a lot to be carrying on your own.",
+       "d": "validate",
+       "s": 3,
+       "f": "Validation at the right moment, after they have disclosed the thing underneath. Not agreement, not reassurance — recognition."
+      },
+      {
+       "t": "Do you think you can keep doing both?",
+       "d": "explore",
+       "s": 2,
+       "f": "A real question that follows what they said. Slightly early — the validation lands better first — but it does not close anything down."
+      },
+      {
+       "t": "Have you looked into carer's leave? I think there's a policy.",
+       "d": "fix",
+       "s": -2,
+       "f": "The information may be useful later. Offered here, it steps over the thing they have just risked saying and turns it into an admin problem."
+      },
+      {
+       "t": "Right, so the practical issue is the mornings.",
+       "d": "close",
+       "s": -2,
+       "f": "Reduces a personal disclosure to a logistics problem, and misses everything they just told you about not wanting to be the person with the problem."
+      }
+     ]
+    },
+    {
+     "says": "I don't know. Probably not forever. [pause] Sorry, I didn't mean to dump all this on you. I just wanted to moan about Jo really.",
+     "options": [
+      {
+       "t": "You haven't dumped anything on me. It sounds like there's quite a lot going on beyond Jo.",
+       "d": "validate",
+       "s": 3,
+       "f": "Declines the retreat without pushing, and names what has actually happened in the conversation."
+      },
+      {
+       "t": "No problem. So what are you going to do about Jo?",
+       "d": "fix",
+       "s": -2,
+       "f": "Accepts the retreat and heads for a solution. The brief explicitly says you are not expected to resolve the problem."
+      },
+      {
+       "t": "Was there something you were hoping to get out of talking it through?",
+       "d": "open",
+       "s": 2,
+       "f": "A good closing move — asking rather than prescribing what would help. Slightly early here, since they have just pulled back."
+      },
+      {
+       "t": "It's fine, everyone needs to vent.",
+       "d": "close",
+       "s": -1,
+       "f": "Minimises what they said and lets the retreat stand."
+      }
+     ]
+    }
+   ],
+   "debrief": "Glasgow's brief is unusually explicit and worth taking literally: establish the circumstances, understand the reaction, and do NOT resolve the problem. Almost every negative score above is an attempt to fix, reassure or advise. The other thing to notice is the shape of the conversation — it starts as a complaint about a manager and, if you stay with it, becomes about a caring responsibility and a fear of not coping. That movement only happens if you resist the first three opportunities to solve it. If you find yourself offering the carer's leave policy in minute two, you have taken the role of manager rather than colleague.",
+   "difficulty": 3
+  },
+  {
+   "id": "rp_examstress",
+   "title": "The student with exam stress",
+   "source": "Southampton 2015 — verbatim role-play brief",
+   "brief": "You are playing a college counsellor. You are about to see a student who is struggling with exam stress. No intervention as such is expected — the purpose is to see how you engage with the client and your brief assessment and formulation skills. About eight minutes.",
+   "setting": "A small counselling room at a further education college. First appointment.",
+   "character": "Aisha, 19, first year, referred by her tutor after missing two mock exams.",
+   "opening": "Hi. Um. My tutor said I had to come. I don't really know what I'm supposed to say.",
+   "turns": [
+    {
+     "says": "I mean, it's just exams, isn't it. Everyone's stressed. I don't know why she made a big deal of it.",
+     "options": [
+      {
+       "t": "Your tutor was worried enough to refer you. What do you think she noticed?",
+       "d": "open",
+       "s": 3,
+       "f": "Acknowledges the referral route honestly and invites her perspective on it rather than defending the tutor."
+      },
+      {
+       "t": "Exam stress is really common. Let's talk about some techniques.",
+       "d": "fix",
+       "s": -3,
+       "f": "Accepts her minimisation, skips assessment entirely, and starts intervening in the first minute."
+      },
+      {
+       "t": "It sounds like you'd rather not be here.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Names the elephant in the room, which almost always improves engagement in a mandated referral."
+      },
+      {
+       "t": "Well, you missed two mocks — that's not nothing.",
+       "d": "close",
+       "s": -2,
+       "f": "Confronts with the evidence before any relationship exists. She will comply or withdraw; neither helps."
+      }
+     ]
+    },
+    {
+     "says": "I don't know. I suppose I didn't go to the mocks. I got there — I was outside the hall — and I just couldn't go in. I walked home. I didn't tell anyone.",
+     "options": [
+      {
+       "t": "What was happening for you, standing outside that hall?",
+       "d": "explore",
+       "s": 3,
+       "f": "Goes straight to the moment with an open question. This is where the formulation lives."
+      },
+      {
+       "t": "That must have been frightening.",
+       "d": "validate",
+       "s": 2,
+       "f": "Warm and probably accurate, though it names the feeling for her rather than asking. Better after she has described it."
+      },
+      {
+       "t": "Have you had panic attacks before?",
+       "d": "close",
+       "s": 0,
+       "f": "A reasonable question that arrives too soon and in closed form. It hands her a label rather than eliciting her account."
+      },
+      {
+       "t": "OK. So we need to get you back in that hall.",
+       "d": "fix",
+       "s": -3,
+       "f": "Jumps to the goal before understanding anything, and is likely to be experienced as exactly what she feared."
+      }
+     ]
+    },
+    {
+     "says": "My heart was going really fast and I felt sick and I thought I was going to be sick in front of everyone. And then I thought if I go in and I can't do it, that's worse, because then everyone knows.",
+     "options": [
+      {
+       "t": "So going in risked everyone seeing you fail — and walking away meant nobody saw.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Reflects the appraisal precisely and hands her the beginning of a formulation in her own terms."
+      },
+      {
+       "t": "Those are physical symptoms of anxiety — your body's alarm system.",
+       "d": "fix",
+       "s": 1,
+       "f": "Accurate psychoeducation, but it arrives before she has finished, and explaining can shut down disclosure."
+      },
+      {
+       "t": "What would 'everyone knowing' mean?",
+       "d": "explore",
+       "s": 3,
+       "f": "Goes underneath the appraisal to the meaning. This is the question that finds the belief."
+      },
+      {
+       "t": "Did you feel better once you'd left?",
+       "d": "explore",
+       "s": 3,
+       "f": "Elegant — establishes the negative reinforcement without any jargon, and she will say yes."
+      }
+     ]
+    },
+    {
+     "says": "[quietly] My parents came here so I could do this. My brother didn't finish. If I mess it up… I don't know. It's not really about the exam.",
+     "options": [
+      {
+       "t": "It's not really about the exam.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Simple reflection of her own words at the moment they matter most. Says nothing, does everything."
+      },
+      {
+       "t": "That's a lot of pressure to be carrying at nineteen.",
+       "d": "validate",
+       "s": 3,
+       "f": "Validation that names the weight without interpreting it for her."
+      },
+      {
+       "t": "Have you talked to your parents about how you're feeling?",
+       "d": "fix",
+       "s": -1,
+       "f": "A reasonable question eventually, but here it moves away from her at the exact moment she has moved toward you."
+      },
+      {
+       "t": "So it's about letting your family down.",
+       "d": "close",
+       "s": 0,
+       "f": "Probably right, but stated as a conclusion. She has just said 'I don't know' — she needs room, not an interpretation."
+      }
+     ]
+    },
+    {
+     "says": "[looks at the clock] Is that it, then? Do I have to come back?",
+     "options": [
+      {
+       "t": "That's yours to decide. What was it like, saying that out loud?",
+       "d": "open",
+       "s": 3,
+       "f": "Gives her control — which matters enormously in a mandated referral — and closes by checking the experience of the session."
+      },
+      {
+       "t": "I think it would really help if you did.",
+       "d": "close",
+       "s": -1,
+       "f": "Well-intentioned, but it takes the choice from someone whose difficulty is partly about things being decided for her."
+      },
+      {
+       "t": "Yes, we should book six sessions.",
+       "d": "fix",
+       "s": -3,
+       "f": "Imposes a contract she has not agreed to at the moment she is asking whether she has any choice."
+      },
+      {
+       "t": "You don't have to. But I'd be glad to see you again if you wanted.",
+       "d": "validate",
+       "s": 3,
+       "f": "Autonomy plus an honest offer. Clear, warm, and leaves the door open without pushing her through it."
+      }
+     ]
+    }
+   ],
+   "debrief": "Southampton then asks three questions: what was the presenting issue, how could the intervention move forward, and what about your performance could be improved. Prepare all three. The presenting issue is not exam stress — it is avoidance maintained by immediate relief, with a fear of visible failure carrying family meaning. For the third question, name something real and specific: 'I explained the physiology slightly too early and she stopped talking for a moment' is a much stronger answer than 'I could have been more empathic'. The candidate who wrote this paper up added a reassurance worth keeping: 'once the conversation started I actually forgot I was being observed'.",
+   "difficulty": 3
+  },
+  {
+   "id": "rp_carer_call",
+   "title": "The carer who wants you to intervene",
+   "source": "Cardiff 2012 and 2013 — a version of this appears in both years",
+   "brief": "You take a call from the wife of a man with early signs of a degenerative dementia. He is refusing to attend a neurology appointment for diagnostic testing. He is not open to your service and has not consented to you discussing him. Establish what is happening, be clear about what you can and cannot do, and respond to her as someone with needs of her own.",
+   "setting": "A telephone call, taken at your desk. You have about seven minutes.",
+   "character": "Margaret, 68, married for forty-one years.",
+   "opening": "I'm sorry to ring out of the blue. I got your number from the memory clinic. It's about my husband — he won't go to his appointment and I don't know what else to do.",
+   "turns": [
+    {
+     "says": "They've booked him in twice now and both times he's refused to get in the car. I've tried everything. Can you talk to him? Or tell me what to say to him?",
+     "options": [
+      {
+       "t": "I can't discuss him without his consent, I'm afraid.",
+       "d": "close",
+       "s": -2,
+       "f": "Correct, and delivered as a door closing on a frightened person in the first minute. The content is right; the timing and framing are wrong."
+      },
+      {
+       "t": "It sounds like you've been trying very hard on your own. Can you tell me a bit about what's been happening?",
+       "d": "open",
+       "s": 3,
+       "f": "Acknowledges her effort and opens the space. You can be clear about the limits shortly — but not before she feels heard."
+      },
+      {
+       "t": "Of course. What would you like me to say to him?",
+       "d": "self",
+       "s": -3,
+       "f": "Agrees to something you cannot do. He is a capacitous adult who has not consented to your involvement."
+      },
+      {
+       "t": "Has he been assessed as lacking capacity?",
+       "d": "close",
+       "s": -1,
+       "f": "The right concept, asked in a way that will mean nothing to her and signals you are processing rather than listening."
+      }
+     ]
+    },
+    {
+     "says": "He's just being stubborn. He's always been stubborn. He says there's nothing wrong with him and he doesn't need doctors poking about. But there IS something wrong — he got lost coming back from the shop last month.",
+     "options": [
+      {
+       "t": "That must have been frightening for you both.",
+       "d": "validate",
+       "s": 3,
+       "f": "Picks up the thing underneath the frustration. She is frightened, and 'stubborn' is easier to say."
+      },
+      {
+       "t": "What do you think it would mean to him, to go and be told?",
+       "d": "explore",
+       "s": 3,
+       "f": "Beautifully placed — invites her to consider his position, which is the beginning of a systemic shift, without asking her to give up her own."
+      },
+      {
+       "t": "Getting lost is a significant sign. He really does need that assessment.",
+       "d": "fix",
+       "s": -2,
+       "f": "Recruits you onto her side of the very argument that is stuck, and increases the pressure on him."
+      },
+      {
+       "t": "Has he always refused medical appointments?",
+       "d": "explore",
+       "s": 1,
+       "f": "Useful history, but it moves to fact-gathering just as feeling appeared."
+      }
+     ]
+    },
+    {
+     "says": "[pause] I hadn't thought about it like that. I suppose he'd have to stop driving. That's his freedom, that is. He drives everywhere. [pause] But I can't just leave it, can I?",
+     "options": [
+      {
+       "t": "You're caught between respecting what he wants and being frightened about what happens if nothing's done.",
+       "d": "reflect",
+       "s": 3,
+       "f": "Names the dilemma precisely and does not resolve it for her. This is the heart of the call."
+      },
+      {
+       "t": "No, you can't leave it. There are things that can help if it's caught early.",
+       "d": "fix",
+       "s": -1,
+       "f": "True, and it takes a side in a dilemma she is only just beginning to hold — and pushes her back into persuading him."
+      },
+      {
+       "t": "What do you think would happen if you stopped raising it for a few weeks?",
+       "d": "explore",
+       "s": 3,
+       "f": "A genuinely systemic intervention offered as a question. It interrupts the loop and gives her something she can actually test."
+      },
+      {
+       "t": "Ultimately it's his decision to make.",
+       "d": "close",
+       "s": 0,
+       "f": "Legally accurate and, said alone at this point, it can land as abandonment. Pair it with something she can do."
+      }
+     ]
+    },
+    {
+     "says": "I don't know. I'd feel like I was giving up on him. [quietly] I'm so tired. I'm sorry. I didn't mean to go on.",
+     "options": [
+      {
+       "t": "You're not going on. You've been holding this by yourself for a while, by the sound of it.",
+       "d": "validate",
+       "s": 3,
+       "f": "Declines the apology and names her exhaustion. This is the moment the call turns from being about him to being about her."
+      },
+      {
+       "t": "It's completely understandable. Now, about the appointment —",
+       "d": "close",
+       "s": -3,
+       "f": "A sympathetic noise followed by a return to business. She has just told you she is exhausted."
+      },
+      {
+       "t": "Have you had any support for yourself in all this?",
+       "d": "explore",
+       "s": 3,
+       "f": "Moves to what you can actually offer, at exactly the right moment, and treats her as someone with needs of her own."
+      },
+      {
+       "t": "You should look after yourself too.",
+       "d": "fix",
+       "s": -1,
+       "f": "An instruction rather than an offer. It sounds caring and gives her one more thing to fail at."
+      }
+     ]
+    },
+    {
+     "says": "Not really. My daughter rings. There's not much she can do from Leeds. What can you actually do, then?",
+     "options": [
+      {
+       "t": "Let me be honest about that. I can't approach him or discuss him without his agreement — that's his right. But I can talk with you, and you're entitled to support in your own right, including a carer's assessment. Shall I explain what that is?",
+       "d": "open",
+       "s": 3,
+       "f": "Honest, clear, kind, and lands on something concrete for HER. This is the answer Cardiff is listening for."
+      },
+      {
+       "t": "Not a great deal without his consent, I'm afraid.",
+       "d": "close",
+       "s": -3,
+       "f": "Accurate and useless. She ends the call with nothing."
+      },
+      {
+       "t": "I could see if a GP would do a home visit.",
+       "d": "fix",
+       "s": -1,
+       "f": "Arranging something about him without his knowledge — the same breach in a different coat."
+      },
+      {
+       "t": "I can send you some information about dementia and about carers' services, and we can talk again.",
+       "d": "validate",
+       "s": 2,
+       "f": "Genuinely useful and appropriate. Slightly less strong than naming the carer's assessment and her entitlement explicitly."
+      }
+     ]
+    }
+   ],
+   "debrief": "Two things are being tested at once: whether you protect the autonomy of a man who is not your patient, and whether you can nonetheless respond to a distressed woman who is. Candidates tend to fail in one of two directions — being recruited into managing him, or reciting confidentiality at someone who is frightened. The resolution is that listening, giving general information and supporting her in her own right require no disclosure at all. Note the systemic move in turn three: asking what would happen if she stopped raising it is both a real intervention and something she can test this week. Cardiff weights carers heavily and puts a carer on the panel — expect a version of this.",
+   "difficulty": 3
+  }
+ ]
+}
