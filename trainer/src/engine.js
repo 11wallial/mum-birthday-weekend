@@ -6,7 +6,7 @@
 const LEVELS = ['unseen','recognise','recall','apply','discriminate','transfer'];
 const LEVEL_N = { recognise:1, recall:2, apply:3, discriminate:4, transfer:5 };
 const BANDS = [
-  [0,  39, 'Foundational deficit', 'var(--critical)'],
+  [0,  39, 'Foundational deficit', 'var(--wrong)'],
   [40, 59, 'Emerging',             'var(--serious)'],
   [60, 74, 'Functional but unreliable', 'var(--warning)'],
   [75, 84, 'Competent',            'var(--seq-5)'],
@@ -31,9 +31,9 @@ const KEY = 'dclinpsy.trainer.v1';
 let S;
 
 function blankState() {
-  // dark-first, but honour the viewer's OS preference on a genuinely first run
-  const prefersLight = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches;
-  return { v:1, created: Date.now(), interviewDate:null, theme: prefersLight ? 'light' : 'dark', sound:false,
+  // light-first, but honour a viewer whose OS is set to dark on a genuinely first run
+  const prefersDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
+  return { v:1, created: Date.now(), interviewDate:null, theme: prefersDark ? 'dark' : 'light', sound:false,
            c:{}, i:{}, cal:[], errors:[], log:[], wins:[], written:{}, panel:{}, rp:{}, formul:{},
            streak:{last:null,n:0}, seenIntro:false, lastMode:'today' };
 }

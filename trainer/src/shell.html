@@ -1,19 +1,15 @@
 <div id="app">
   <header id="top">
-    <button class="iconbtn" id="railbtn" title="Panel" aria-label="Toggle panel">☰</button>
-    <div class="brand"><span class="mk"></span><b>DClinPsy</b><span>Trainer</span></div>
+    <button class="brand" id="brandlink" aria-label="Home"><span class="mk"></span><b>DClinPsy</b></button>
     <nav id="tabs" role="tablist"></nav>
     <div class="spacer"></div>
-    <button class="chip" id="datechip" title="Interview date"></button>
-    <button class="iconbtn" id="cmdbtn" title="Command palette (⌘K)">⌘</button>
-    <button class="iconbtn" id="themebtn" title="Theme">◐</button>
+    <button class="metric flame" id="streak" title="Days practised in a row"><span class="ic">🔥</span><span id="streakn">0</span></button>
+    <button class="iconbtn" id="cmdbtn" title="Search — ⌘K">⌘</button>
     <button class="iconbtn" id="setbtn" title="Settings">⚙</button>
   </header>
-  <div id="body">
-    <aside id="rail"></aside>
-    <main id="stage"></main>
-  </div>
+  <main id="stage"></main>
 </div>
+<div id="actbar" aria-live="polite"></div>
 <div id="scrim"></div>
 <div id="modal" role="dialog" aria-modal="true"></div>
-<div id="toasts"></div>
+<div id="toasts" aria-live="polite"></div>

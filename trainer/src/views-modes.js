@@ -14,7 +14,7 @@ function vBench(stage, exId) {
     text:'Real written papers, run to their real clock. When the time is up the paper closes, exactly as it does on the day. Afterwards your text is matched against the marking scheme point by point — and you confirm or override every award, because comparing your own answer to a marker\'s list is where most of the learning is.' }));
   DATA.written.exercises.forEach(ex => {
     const prev = S.written[ex.id];
-    const c = el('button', { class:'mode', style:'width:100%;margin-bottom:12px', onclick: () => benchStart(stage, ex.id) });
+    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => benchStart(stage, ex.id) });
     c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:1 1 260px">
           <h3>${esc(ex.title)}</h3>
@@ -43,10 +43,10 @@ function benchRun(stage) {
     w.appendChild(el('div', { class:'lbl', text: ex.course + ' · ' + ex.year }));
     w.appendChild(el('h1', { style:'margin:6px 0 14px', text: ex.title }));
     w.appendChild(el('p', { class:'serif', style:'color:var(--ink-2);margin-bottom:18px', text: ex.brief }));
-    const p = el('div', { class:'panel pad', style:'margin-bottom:20px' });
+    const p = el('div', { class:'card', style:'margin-bottom:20px' });
     p.innerHTML = `<div class="lbl">Provenance</div><p class="src" style="margin-top:7px;font-style:normal">${esc(ex.provenance)}</p>`;
     w.appendChild(p);
-    const warn = el('div', { class:'panel pad', style:'margin-bottom:22px;border-color:color-mix(in srgb,var(--warning) 30%,transparent)' });
+    const warn = el('div', { class:'card', style:'margin-bottom:22px;border-color:color-mix(in srgb,var(--warning) 30%,transparent)' });
     warn.innerHTML = `<div class="lbl" style="color:var(--warning)">${ex.minutes} minutes, then it closes</div>
       <p style="margin-top:7px;font-size:13.5px;color:var(--ink-2)">Do it under the clock or the practice is worth much less. You can move between questions freely. There is no spellcheck in the real Birmingham test, and presentation is marked.</p>`;
     w.appendChild(warn);
@@ -98,7 +98,7 @@ function benchRun(stage) {
       const hd = el('div', { style:'display:flex;justify-content:space-between;gap:14px;align-items:baseline;margin-bottom:8px' });
       hd.innerHTML = `<div class="lbl">Question ${i+1}</div><div class="lbl">${q.marks} marks</div>`;
       blk.appendChild(hd);
-      blk.appendChild(el('div', { class:'stem', style:'font-size:15.5px;margin-bottom:10px', text: q.prompt }));
+      blk.appendChild(el('div', { class:'qstem', style:'font-size:15.5px;margin-bottom:10px', text: q.prompt }));
       const ta = el('textarea', { placeholder:'Write in full sentences.', rows:8 });
       ta.value = EXAM.answers[q.id] || '';
       ta.addEventListener('input', () => { EXAM.answers[q.id] = ta.value; wc.textContent = (ta.value.match(/\S+/g)||[]).length + ' words'; });
@@ -157,7 +157,7 @@ function benchMark(stage) {
   w.appendChild(el('div', { class:'lbl', text: ex.course + ' · ' + ex.year }));
   w.appendChild(el('h1', { style:'margin:6px 0 4px', text:'Marking' }));
 
-  const scoreLine = el('div', { class:'panel pad', style:'margin:18px 0 24px' });
+  const scoreLine = el('div', { class:'card', style:'margin:18px 0 24px' });
   w.appendChild(scoreLine);
   const note = el('p', { style:'font-size:13px;color:var(--ink-2);margin-bottom:22px;max-width:70ch' });
   note.innerHTML = 'Ticks were placed automatically by matching your text against each rubric point. <b>The matcher is literal and you are not.</b> Read each point, and click the tick to award or remove it yourself — that adjudication is the exercise. Points you made in different words still count.';
@@ -184,7 +184,7 @@ function benchMark(stage) {
     const t = rubricTotals(q.rubric, EXAM.awarded[q.id] || {});
     hd.innerHTML = `<div class="lbl">Question ${i+1}</div><div class="lbl" id="qs${i}">${t.got} / ${t.max}</div>`;
     blk.appendChild(hd);
-    blk.appendChild(el('div', { class:'stem', style:'font-size:15px;margin-bottom:12px', text: q.prompt }));
+    blk.appendChild(el('div', { class:'qstem', style:'font-size:15px;margin-bottom:12px', text: q.prompt }));
 
     const yours = el('details', { class:'disc' });
     yours.innerHTML = `<summary>Your answer (${((EXAM.answers[q.id]||'').match(/\S+/g)||[]).length} words)</summary>`;
@@ -195,13 +195,13 @@ function benchMark(stage) {
     blk.appendChild(yours);
 
     if (q.guidance) {
-      const g = el('div', { class:'panel pad', style:'margin-top:10px' });
+      const g = el('div', { class:'card', style:'margin-top:10px' });
       g.innerHTML = `<div class="lbl">What this question is actually testing</div><p style="margin-top:6px;font-size:13.5px;color:var(--ink-2)">${esc(q.guidance)}</p>`;
       blk.appendChild(g);
     }
 
     (EXAM.trapsFired[q.id] || []).forEach(tr => {
-      const t2 = el('div', { class:'trap' });
+      const t2 = el('div', { class:'flag' });
       t2.innerHTML = `<div class="lbl">Flagged in your answer</div>${esc(tr.msg)}`;
       blk.appendChild(t2);
     });
@@ -233,7 +233,7 @@ function benchMark(stage) {
   });
 
   if (ex.debrief) {
-    const d = el('div', { class:'panel pad', style:'margin-bottom:20px;border-color:color-mix(in srgb,var(--accent) 36%,transparent)' });
+    const d = el('div', { class:'card', style:'margin-bottom:20px;border-color:color-mix(in srgb,var(--accent) 36%,transparent)' });
     d.innerHTML = `<div class="lbl" style="color:var(--accent)">What this paper is really testing</div>
       <p style="margin-top:8px;font-size:14px">${esc(ex.debrief)}</p>`;
     w.appendChild(d);
@@ -256,7 +256,7 @@ function vPanel(stage, arg) {
   w.appendChild(el('p', { style:'color:var(--ink-2);margin:8px 0 22px;max-width:68ch',
     text:'Every question here was actually asked. Answer out loud, against the clock. Afterwards you get what the panel is listening for, the follow-up they push with, and the failure mode most candidates fall into.' }));
 
-  const filt = el('div', { class:'panel pad', style:'margin-bottom:20px' });
+  const filt = el('div', { class:'card', style:'margin-bottom:20px' });
   filt.appendChild(el('div', { class:'lbl', style:'margin-bottom:10px', text:'Run a set' }));
   const btns = el('div', { style:'display:flex;gap:9px;flex-wrap:wrap' });
   [['Mixed panel — 5 questions', () => startPanel(shuffle(DATA.interview.questions).slice(0, 5))],
@@ -273,7 +273,7 @@ function vPanel(stage, arg) {
   const themeCount = {};
   DATA.interview.questions.forEach(q => themeCount[q.theme] = (themeCount[q.theme] || 0) + 1);
   DATA.interview.themes.slice().sort((a,b) => (themeCount[b.id]||0) - (themeCount[a.id]||0)).forEach(t => {
-    const c = el('button', { class:'mode', style:'width:100%;margin-bottom:10px',
+    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:10px',
       onclick: () => showTheme(t.id) });
     c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:14px;align-items:baseline">
         <h3>${esc(t.label)}</h3>
@@ -296,60 +296,66 @@ function panelRun(stage) {
   const q = PANEL.qs[PANEL.idx];
   const theme = DATA.interview.themes.find(t => t.id === q.theme);
   const mode = PANEL.forceMode || q.mode;
-  const secs = mode === '60s' ? 60 : mode === 'roleplay' ? 300 : mode === 'group' ? 180 : 180;
+  const secs = mode === '60s' ? 60 : 180;
 
-  const w = el('div', { class:'wrap' });
-  const bar = el('div', { style:'display:flex;gap:14px;align-items:center;margin-bottom:20px;flex-wrap:wrap' });
-  bar.innerHTML = `<div class="tagrow">
-      <span class="tag on">${esc(q.course)} ${q.year}</span>
-      <span class="tag">${esc(q.panel)}</span>
-      <span class="tag">${mode === '60s' ? '60 seconds' : '3 minutes'}</span>
-    </div><div class="spacer" style="flex:1"></div><div class="lbl">${PANEL.idx+1} / ${PANEL.qs.length}</div>`;
-  w.appendChild(bar);
+  const bar = el('div', { id:'sessbar' });
+  bar.innerHTML = `<button class="x" title="Leave">✕</button>
+    <div class="track"><i></i></div>
+    <span class="lbl" style="flex:none">${PANEL.idx + 1}/${PANEL.qs.length}</span>`;
+  $('.x', bar).addEventListener('click', () => { PANEL = null; go('panel'); });
+  stage.appendChild(bar);
+  requestAnimationFrame(() => { $('.track i', bar).style.width = (PANEL.idx / PANEL.qs.length * 100) + '%'; });
 
-  w.appendChild(el('div', { class:'ctx', style:'font-size:18px;color:var(--ink);border-left-color:var(--accent)', text: q.text }));
+  const w = el('div', { class:'wrap centred' });
+  const tags = el('div', { class:'tagrow', style:'margin-bottom:20px' });
+  tags.innerHTML = `<span class="pill on">${esc(q.course)} ${q.year}</span>
+    <span class="pill">${esc(q.panel)}</span>
+    <span class="pill">${mode === '60s' ? '60 seconds' : '3 minutes'}</span>`;
+  w.appendChild(tags);
 
-  // clock
-  const clock = el('div', { class:'panel pad', style:'margin-bottom:18px;text-align:center' });
-  const tEl = el('div', { class:'timer', style:'font-size:44px', text: fmtTime(secs) });
+  // the question is the hero: this is somebody asking you something
+  const ask = el('div', { class:'askq' });
+  ask.innerHTML = `<span class="q">“</span><p>${esc(q.text)}</p>`;
+  w.appendChild(ask);
+
+  const clock = el('div', { class:'clockwrap' });
+  const tEl = el('div', { class:'timer bigclock', text: fmtTime(secs) });
   clock.appendChild(tEl);
-  const tb = el('div', { class:'timerbar', style:'margin-top:12px' });
+  const tb = el('div', { class:'timerbar', style:'margin-top:14px' });
   tb.innerHTML = '<i></i>';
   clock.appendChild(tb);
-  const ctl = el('div', { style:'margin-top:14px;display:flex;gap:9px;justify-content:center;flex-wrap:wrap' });
-  clock.appendChild(ctl);
+  clock.appendChild(el('p', { class:'src', style:'margin-top:12px;text-align:center',
+    text:'Answer out loud. Reading a good answer is not the same skill as producing one under a clock.' }));
   w.appendChild(clock);
 
-  let running = false, left = secs, iv = null;
-  const startBtn = el('button', { class:'btn pri', text:'Start — answer out loud' });
-  const doneBtn = el('button', { class:'btn', text:'I have finished', disabled:'' });
-  ctl.append(startBtn, doneBtn);
-
-  // optional live transcription, where the browser offers it
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, transcript = '';
-  const trBox = el('div', { class:'panel pad', style:'margin-bottom:18px;display:none' });
+  const trBox = el('div', { class:'card', style:'margin-top:18px;display:none' });
   trBox.innerHTML = `<div class="lbl">Live transcript</div>`;
   const trText = el('p', { class:'serif', style:'margin-top:8px;color:var(--ink-2);min-height:2em' });
   trBox.appendChild(trText);
   w.appendChild(trBox);
-  if (SR) {
-    const useMic = el('button', { class:'btn ghost', text:'Transcribe while I speak' });
-    useMic.addEventListener('click', () => {
-      try {
-        rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = 'en-GB';
-        rec.onresult = e => {
-          let s = '';
-          for (let i = 0; i < e.results.length; i++) s += e.results[i][0].transcript + ' ';
-          transcript = s; trText.textContent = s;
-        };
-        rec.onerror = () => toast('Transcription unavailable — carry on, self-scoring still works');
-        rec.start(); trBox.style.display = 'block'; useMic.remove();
-        toast('Listening. Your speech stays in this browser.');
-      } catch (err) { toast('Transcription unavailable in this browser'); }
-    });
-    ctl.appendChild(useMic);
-  }
+  stage.appendChild(w);
+
+  let running = false, left = secs, iv = null;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, transcript = '';
+
+  const startBtn = el('button', { class:'btn pri lg', text:'Start' });
+  const doneBtn  = el('button', { class:'btn lg', text:'Finished', disabled:'' });
+  const micBtn = SR ? el('button', { class:'btn sm ghost', text:'🎙  Transcribe' }) : null;
+  if (micBtn) micBtn.addEventListener('click', () => {
+    try {
+      rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = 'en-GB';
+      rec.onresult = e => {
+        let t = '';
+        for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript + ' ';
+        transcript = t; trText.textContent = t;
+      };
+      rec.onerror = () => toast('Transcription unavailable — self-scoring still works');
+      rec.start(); trBox.style.display = 'block'; micBtn.remove();
+      toast('Listening. Your speech stays in this browser.');
+    } catch (err) { toast('Transcription unavailable in this browser'); }
+  });
+  Act.row([micBtn], [doneBtn, startBtn]);
 
   startBtn.addEventListener('click', () => {
     if (running) return;
@@ -358,7 +364,7 @@ function panelRun(stage) {
       left--; tEl.textContent = fmtTime(left);
       $('i', tb).style.width = Math.max(0, left / secs * 100) + '%';
       const cls = left <= 10 ? 'out' : left <= 30 ? 'warn' : '';
-      tEl.className = 'timer ' + cls; tb.className = 'timerbar ' + cls;
+      tEl.className = 'timer bigclock ' + cls; tb.className = 'timerbar ' + cls;
       if (left === 30 || left === 10) tick(660, .07, .04);
       if (left <= 0) { clearInterval(iv); tick(420, .3, .06); toast('Time.'); finish(); }
     }, 1000);
@@ -367,25 +373,24 @@ function panelRun(stage) {
   doneBtn.addEventListener('click', finish);
 
   function finish() {
-    if (!running && left === secs) { /* allow scoring without the clock */ }
     running = false; clearInterval(iv);
     try { if (rec) rec.stop(); } catch (e) {}
-    startBtn.disabled = true; doneBtn.disabled = true;
-    stage.querySelector('#panelfb') || w.appendChild(panelFeedback(q, theme, secs - left, transcript, () => {
-      PANEL.idx++; go('panel');
-    }));
-    scrollToEnd(w);
+    if ($('#panelfb')) return;
+    w.classList.remove('centred');   // feedback is long; stop centring
+    w.appendChild(panelFeedback(q, theme, secs - left, transcript, () => { PANEL.idx++; go('panel'); }));
+    scrollEnd(w);
   }
-  stage.appendChild(w);
 }
 
 function panelFeedback(q, theme, spent, transcript, onNext) {
-  const wrap = el('div', { id:'panelfb', style:'margin-top:6px' });
+  focusMode(false);   // the timed part is over — give the navigation back
+  Act.hide();
+  const wrap = el('div', { id:'panelfb', style:'margin-top:24px' });
   const auto = transcript ? scoreText(transcript, theme.listen.map((l, i) => ({ id:'l'+i, cues:l.cues, weight:1, text:l.text })), []) : null;
   const awarded = {};
   theme.listen.forEach((l, i) => awarded['l'+i] = auto ? auto.hits['l'+i] : false);
 
-  const head = el('div', { class:'panel pad', style:'margin-bottom:14px' });
+  const head = el('div', { class:'card', style:'margin-bottom:14px' });
   const scoreEl = el('div');
   head.appendChild(scoreEl);
   wrap.appendChild(head);
@@ -427,16 +432,16 @@ function panelFeedback(q, theme, spent, transcript, onNext) {
     d.appendChild(dc); wrap.appendChild(d);
   }
 
-  const shape = el('div', { class:'panel pad', style:'margin-top:14px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
+  const shape = el('div', { class:'card', style:'margin-top:14px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
   shape.innerHTML = `<div class="lbl" style="color:var(--accent)">The shape of a strong answer</div>
     <p style="margin-top:8px;font-size:14px">${esc(theme.shape)}</p>`;
   wrap.appendChild(shape);
 
-  const fail = el('div', { class:'trap', style:'margin-top:12px' });
+  const fail = el('div', { class:'flag', style:'margin-top:12px' });
   fail.innerHTML = `<div class="lbl">The common failure</div>${esc(theme.failure)}`;
   wrap.appendChild(fail);
 
-  const fu = el('div', { class:'panel pad', style:'margin-top:12px' });
+  const fu = el('div', { class:'card', style:'margin-top:12px' });
   fu.innerHTML = `<div class="lbl">They will push with</div>`;
   const list = el('div', { style:'margin-top:9px;display:grid;gap:7px' });
   shuffle(theme.followups).slice(0, 4).forEach(f => list.appendChild(
@@ -446,7 +451,7 @@ function panelFeedback(q, theme, spent, transcript, onNext) {
   pressBtn.addEventListener('click', () => {
     pressBtn.disabled = true;
     const f = pick(theme.followups);
-    const box = el('div', { class:'panel pad', style:'margin-top:12px;border-color:var(--warning)' });
+    const box = el('div', { class:'card', style:'margin-top:12px;border-color:var(--warning)' });
     const t = el('div', { class:'timer', style:'font-size:30px' , text:'1:00' });
     box.innerHTML = `<div class="lbl" style="color:var(--warning)">Pressure follow-up</div>
       <p class="serif" style="font-size:17px;margin:8px 0 12px">“${esc(f)}”</p>`;
@@ -455,12 +460,13 @@ function panelFeedback(q, theme, spent, transcript, onNext) {
     let l = 60;
     const iv = setInterval(() => { l--; t.textContent = fmtTime(l); if (l <= 0) { clearInterval(iv); t.className = 'timer out'; tick(420,.3,.06); } }, 1000);
     TIMERS.push(iv);
-    scrollToEnd(wrap);
+    scrollEnd(wrap);
   });
   fu.appendChild(pressBtn);
   wrap.appendChild(fu);
 
-  wrap.appendChild(el('button', { class:'btn pri lg', style:'margin-top:18px', text:'Next question', onclick: onNext }));
+  wrap.appendChild(el('button', { class:'btn pri lg wide', style:'margin-top:20px',
+    text: 'Next question', onclick: onNext }));
   return wrap;
 }
 
@@ -490,15 +496,15 @@ function showTheme(id) {
     rub.appendChild(r);
   });
   body.appendChild(rub);
-  const sh = el('div', { class:'panel pad', style:'margin-bottom:12px' });
+  const sh = el('div', { class:'card', style:'margin-bottom:12px' });
   sh.innerHTML = `<div class="lbl" style="color:var(--accent)">The shape of a strong answer</div><p style="margin-top:7px;font-size:13.5px">${esc(t.shape)}</p>`;
   body.appendChild(sh);
-  const fl = el('div', { class:'trap', style:'margin-bottom:16px' });
+  const fl = el('div', { class:'flag', style:'margin-bottom:16px' });
   fl.innerHTML = `<div class="lbl">The common failure</div>${esc(t.failure)}`;
   body.appendChild(fl);
   body.appendChild(el('div', { class:'lbl', style:'margin-bottom:8px', text: qs.length + ' real questions in this theme' }));
   qs.forEach(q => {
-    const r = el('div', { class:'rrow', style:'align-items:flex-start' }, [
+    const r = el('div', { class:'listrow', style:'align-items:flex-start' }, [
       el('span', { class:'nm', style:'white-space:normal;color:var(--ink)', text: q.text }),
       el('span', { class:'vv', text: q.course.split(' ')[0] + ' ' + q.year }),
     ]);
@@ -519,11 +525,11 @@ function vStudio(stage, vid) {
     text:'One case, several lenses. You write your own formulation first, then compare it against an account from each model — including what that model illuminates, what it misses, and how you would know it was wrong. This is the question Birmingham used to catch a whole cohort out: name a model, and then be told to formulate with a different one.' }));
   DATA.formulation.vignettes.forEach(v => {
     const done = S.formul[v.id];
-    const c = el('button', { class:'mode', style:'width:100%;margin-bottom:12px', onclick: () => studioCase(stage, v.id) });
+    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => studioCase(stage, v.id) });
     c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:1 1 240px"><h3>${esc(v.title)}</h3>
           <p>${v.models.map(m => esc(m.model)).join(' · ')}</p></div>
-        ${done ? '<span class="tag on">attempted</span>' : ''}
+        ${done ? '<span class="pill on">attempted</span>' : ''}
       </div><div class="mt"><span class="src">${esc(v.source)}</span></div>`;
     w.appendChild(c);
   });
@@ -542,7 +548,7 @@ function studioCase(stage, vid) {
   paper.appendChild(el('p', { text: v.text }));
   w.appendChild(paper);
 
-  const ask = el('div', { class:'panel pad', style:'margin-bottom:20px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
+  const ask = el('div', { class:'card', style:'margin-bottom:20px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
   ask.innerHTML = `<div class="lbl" style="color:var(--accent)">The question</div><p style="margin-top:7px;font-size:15px">${esc(v.ask)}</p>`;
   w.appendChild(ask);
 
@@ -575,12 +581,12 @@ function studioCase(stage, vid) {
     w.appendChild(d);
   });
 
-  const cmp = el('div', { class:'panel pad', style:'margin-top:20px;border-color:color-mix(in srgb,var(--accent) 36%,transparent)' });
+  const cmp = el('div', { class:'card', style:'margin-top:20px;border-color:color-mix(in srgb,var(--accent) 36%,transparent)' });
   cmp.innerHTML = `<div class="lbl" style="color:var(--accent)">Choosing between them</div>
     <p style="margin-top:8px;font-size:14px;line-height:1.62">${esc(v.compare)}</p>`;
   w.appendChild(cmp);
 
-  const drill = el('div', { class:'panel pad', style:'margin-top:16px' });
+  const drill = el('div', { class:'card', style:'margin-top:16px' });
   drill.innerHTML = `<div class="lbl">Now do it aloud</div>
     <p style="margin-top:7px;font-size:13.5px;color:var(--ink-2)">Pick two of these models. Sixty seconds each: core principle, what maintains the problem on that account, what intervention follows. Then one sentence on what the second lens adds that the first missed.</p>`;
   const go60 = el('button', { class:'btn', style:'margin-top:12px', text:'Start 60-second clock' });
@@ -608,7 +614,7 @@ function vRoom(stage, sid) {
     text:'Branching conversations from the courses that use role-play. You are scored on process, not content: whether you open the space, reflect, validate and stay with the person — or reach for a solution. Glasgow states it outright in their brief: there is no expectation that you resolve the problem.' }));
   DATA.roleplay.scenarios.forEach(s => {
     const prev = S.rp[s.id];
-    const c = el('button', { class:'mode', style:'width:100%;margin-bottom:12px', onclick: () => { RP = { s, turn:0, score:0, max:0, log:[] }; go('room'); } });
+    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => { RP = { s, turn:0, score:0, max:0, log:[] }; go('room'); } });
     c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:1 1 240px"><h3>${esc(s.title)}</h3><p>${esc(s.setting)}</p></div>
         ${prev ? `<div style="text-align:right"><div class="lbl">Best</div><div class="dnum" style="font-size:22px">${prev.score}</div></div>` : ''}
@@ -625,7 +631,7 @@ function roomRun(stage) {
   const w = el('div', { class:'wrap' });
   w.appendChild(el('button', { class:'btn ghost', style:'margin-bottom:14px', text:'← Leave', onclick: () => { RP = null; go('room'); } }));
 
-  const brief = el('div', { class:'panel pad', style:'margin-bottom:20px' });
+  const brief = el('div', { class:'card', style:'margin-bottom:20px' });
   brief.innerHTML = `<div class="lbl">Your brief</div>
     <p style="margin-top:7px;font-size:13.5px;color:var(--ink-2)">${esc(s.brief)}</p>
     <p style="margin-top:9px;font-size:12.5px;color:var(--ink-3)"><b>${esc(s.character)}</b> · ${esc(s.setting)}</p>`;
@@ -638,7 +644,7 @@ function roomRun(stage) {
   script.appendChild(turnEl('them', s.character.split(',')[0], s.opening));
   RP.log.forEach(entry => {
     script.appendChild(turnEl('you', 'You', entry.said));
-    const fb = el('div', { class:'fb ' + (entry.s > 0 ? 'pos' : entry.s < 0 ? 'neg' : '') });
+    const fb = el('div', { class:'fbnote ' + (entry.s > 0 ? 'pos' : entry.s < 0 ? 'neg' : '') });
     fb.innerHTML = `<b>${entry.s > 0 ? '+' : ''}${entry.s}</b> · ${esc(entry.f)}`;
     script.appendChild(fb);
     if (entry.next) script.appendChild(turnEl('them', s.character.split(',')[0], entry.next));
@@ -653,9 +659,9 @@ function roomRun(stage) {
   if (RP.log.length === 0) script.appendChild(turnEl('them', s.character.split(',')[0], t.says));
   else if (!RP.log[RP.log.length - 1].next) script.appendChild(turnEl('them', s.character.split(',')[0], t.says));
 
-  const opts = el('div', { class:'opts', style:'margin-top:18px' });
+  const opts = el('div', { class:'choices', style:'margin-top:18px' });
   shuffle(t.options).forEach(o => {
-    const b = el('button', { class:'opt' }, [
+    const b = el('button', { class:'choice' }, [
       el('span', { class:'key', text:'›' }),
       el('span', {}, [el('span', { text: o.t })]),
     ]);
@@ -671,7 +677,7 @@ function roomRun(stage) {
   });
   w.appendChild(opts);
   stage.appendChild(w);
-  requestAnimationFrame(() => scrollToEnd(w));
+  requestAnimationFrame(() => scrollEnd(w));
 }
 
 function turnEl(who, name, text) {
@@ -683,6 +689,7 @@ function turnEl(who, name, text) {
 }
 
 function roomEnd(stage, w, script) {
+  focusMode(false);
   const s = RP.s;
   const pct = Math.round(Math.max(0, RP.score) / RP.max * 100);
   const prev = S.rp[s.id];
@@ -691,7 +698,7 @@ function roomEnd(stage, w, script) {
 
   const dims = {};
   RP.log.forEach(l => dims[l.d] = (dims[l.d] || 0) + 1);
-  const res = el('div', { class:'panel pad', style:'margin-top:22px' });
+  const res = el('div', { class:'card', style:'margin-top:22px' });
   res.innerHTML = `<div style="display:flex;gap:26px;align-items:flex-end;flex-wrap:wrap">
       <div><div class="lbl">Process score</div><div class="dnum" style="font-size:38px;line-height:1;color:${band(pct)[3]}">${RP.score}<span style="font-size:17px;color:var(--ink-3)">/${RP.max}</span></div></div>
       <div style="flex:1 1 180px"><div class="lbl">${band(pct)[2]}</div>
@@ -699,12 +706,12 @@ function roomEnd(stage, w, script) {
     </div>`;
   const dimRow = el('div', { class:'tagrow', style:'margin-top:16px' });
   Object.entries(dims).forEach(([d, n]) => dimRow.appendChild(
-    el('span', { class:'tag' + (['fix','close','self'].includes(d) ? '' : ' on'),
+    el('span', { class:'pill' + (['fix','close','self'].includes(d) ? '' : ' on'),
                  text: (DATA.roleplay.dims[d] || d) + ' ×' + n })));
   res.appendChild(dimRow);
   w.appendChild(res);
 
-  const db = el('div', { class:'panel pad', style:'margin-top:14px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
+  const db = el('div', { class:'card', style:'margin-top:14px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)' });
   db.innerHTML = `<div class="lbl" style="color:var(--accent)">Debrief</div>
     <p style="margin-top:8px;font-size:14px;line-height:1.62">${esc(s.debrief)}</p>`;
   w.appendChild(db);
@@ -714,7 +721,7 @@ function roomEnd(stage, w, script) {
     el('button', { class:'btn', text:'Other scenarios', onclick: () => { RP = null; go('room'); } }),
   ]));
   stage.appendChild(w);
-  requestAnimationFrame(() => scrollToEnd(w));
+  requestAnimationFrame(() => scrollEnd(w));
 }
 
 /* ---------------------------------------------------------- ATLAS */
@@ -730,9 +737,9 @@ function vAtlas(stage, domainFilter) {
   const filters = ['all','research','clinical','professional'];
   let active = domainFilter || 'all';
   filters.forEach(f => {
-    const b = el('button', { class:'tag' + (f === active ? ' on' : ''), style:'cursor:pointer;padding:6px 12px;font-size:12px' },
+    const b = el('button', { class:'pill' + (f === active ? ' on' : ''), style:'cursor:pointer;padding:6px 12px;font-size:12px' },
       [f !== 'all' ? el('span', { class:'dot ' + f }) : null, el('span', { text: f === 'all' ? 'All domains' : f[0].toUpperCase() + f.slice(1) })]);
-    b.addEventListener('click', () => { $$('.tag', bar).forEach(x => x.classList.remove('on')); b.classList.add('on'); active = f; buildAtlas(active); });
+    b.addEventListener('click', () => { $$('.pill', bar).forEach(x => x.classList.remove('on')); b.classList.add('on'); active = f; buildAtlas(active); });
     bar.appendChild(b);
   });
   w.appendChild(bar);
@@ -743,19 +750,34 @@ function vAtlas(stage, domainFilter) {
   holder.appendChild(el('div', { id:'atlastip' }));
   w.appendChild(holder);
 
-  const legend = el('div', { style:'display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;align-items:center' });
-  legend.innerHTML = `<span class="lbl">Mastery</span>` +
-    [0,25,50,75,100].map(v => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3)">
-      <i style="width:11px;height:11px;border-radius:50%;background:${seqColor(v)};display:inline-block"></i>${v}</span>`).join('') +
-    `<span style="font-size:11.5px;color:var(--ink-3);margin-left:auto">Node size = how central the concept is · click a node for its exact formulation</span>`;
+  const legend = el('div', { style:'display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;align-items:center' });
+  const swatch = v => ['research','clinical','professional']
+    .map(d => `<i style="width:11px;height:11px;border-radius:50%;display:inline-block;
+      background:color-mix(in srgb, var(--d-${d}) ${8 + v * 0.92}%, var(--card));
+      border:1.5px solid var(--d-${d})"></i>`).join('');
+  legend.innerHTML =
+    `<span class="lbl">Colour = domain · fill = mastery</span>` +
+    [0, 40, 75, 100].map(v => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11.5px;color:var(--ink-3)">
+      ${swatch(v)}<span style="margin-left:4px">${v}</span></span>`).join('') +
+    `<span style="font-size:11.5px;color:var(--ink-3);margin-left:auto">Size = how central the concept is · click a node for its exact formulation</span>`;
   w.appendChild(legend);
   stage.appendChild(w);
   buildAtlas(active);
 }
 
+function hex2rgb(h) {
+  h = (h || '').trim().replace('#','');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h || '888888', 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mixHex(a, b, t) {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return `rgb(${Math.round(A[0]+(B[0]-A[0])*t)},${Math.round(A[1]+(B[1]-A[1])*t)},${Math.round(A[2]+(B[2]-A[2])*t)})`;
+}
 function seqColor(pct) {
   const st = ['--seq-1','--seq-2','--seq-3','--seq-4','--seq-5','--seq-6','--seq-7'];
-  if (pct <= 0) return 'var(--s3)';
+  if (pct <= 0) return 'var(--bg-2)';
   const i = Math.min(6, Math.floor(pct / 100 * 6.99));
   return getComputedStyle(document.documentElement).getPropertyValue(st[i]).trim() || '#3987e5';
 }
@@ -781,7 +803,7 @@ function buildAtlas(domain) {
 
   // Three domain lobes. Separating the domains is not decoration: the whole
   // point of the map is to show which of the three is dark.
-  const PAD = 40;
+  const PAD = 46;
   const doms = ['research','clinical','professional'];
   const present = doms.filter(d => nodes.some(n => n.domain === d));
   const lobe = {};
@@ -837,6 +859,12 @@ function buildAtlas(domain) {
                    clinical: css.getPropertyValue('--d-clinical').trim(),
                    professional: css.getPropertyValue('--d-professional').trim() };
   const inkDim = css.getPropertyValue('--ink-3').trim();
+  const unseenCol = css.getPropertyValue('--bg-2').trim();
+  const surfaceCol = css.getPropertyValue('--card').trim();
+  const chipBg = css.getPropertyValue('--card').trim();
+  // link ink follows the theme: dark strokes on a light ground, light on dark
+  const darkUI = document.documentElement.getAttribute('data-theme') === 'dark';
+  const linkRGB = darkUI ? '150,170,210' : '70,90,130';
   const now = Date.now();
   let hover = null, t = 0;
 
@@ -844,21 +872,28 @@ function buildAtlas(domain) {
 
   function draw() {
     ctx.clearRect(0, 0, W, H);
+    // lobe captions sit above each cluster's real extent, not over its nodes
     present.forEach(d => {
-      const L = lobe[d];
-      ctx.font = '700 26px Inter, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = domCol[d] + '16';
-      ctx.fillText(d.toUpperCase(), L.x, L.y);
+      const pts = nodes.filter(n => n.domain === d).map(n => P[n.id]);
+      if (!pts.length) return;
+      const cx = pts.reduce((a, q) => a + q.x, 0) / pts.length;
+      const top = Math.min.apply(null, pts.map(q => q.y));
+      ctx.font = '800 10.5px Figtree, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = domCol[d];
+      ctx.globalAlpha = .7;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '1.5px';
+      ctx.fillText(d.toUpperCase(), cx, Math.max(15, top - 24));
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+      ctx.globalAlpha = 1;
     });
-    ctx.textBaseline = 'alphabetic';
     ctx.lineWidth = 1;
     links.forEach(([a, b, wgt]) => {
       const pa = P[a], pb = P[b];
       const ma = mastery(a, now), mb = mastery(b, now);
       const lit = (ma + mb) / 200;
-      ctx.strokeStyle = `rgba(140,160,200,${0.045 + lit * 0.16})`;
-      if (hover && (a === hover || b === hover)) ctx.strokeStyle = 'rgba(160,180,240,.5)';
+      ctx.strokeStyle = `rgba(${linkRGB},${(darkUI ? 0.05 : 0.07) + lit * 0.17})`;
+      if (hover && (a === hover || b === hover)) ctx.strokeStyle = `rgba(${linkRGB},.55)`;
       ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
     });
     nodes.forEach(n => {
@@ -869,11 +904,13 @@ function buildAtlas(domain) {
         ctx.beginPath(); ctx.arc(p.x, p.y, r * 2.9 * (m / 100) * pulse, 0, 7);
         ctx.fillStyle = domCol[n.domain] + '18'; ctx.fill();
       }
+      // One channel per variable: hue carries the domain, intensity carries
+      // mastery. A blue mastery ramp inside a blue domain lobe encodes nothing.
       ctx.beginPath(); ctx.arc(p.x, p.y, r * (isHover ? 1.35 : 1), 0, 7);
-      ctx.fillStyle = m > 0 ? seqColor(m) : css.getPropertyValue('--s3').trim();
-      ctx.globalAlpha = m > 0 ? 1 : 0.55; ctx.fill(); ctx.globalAlpha = 1;
-      ctx.lineWidth = 1.4;
-      ctx.strokeStyle = domCol[n.domain] + (m > 30 ? 'ff' : '66');
+      ctx.fillStyle = mixHex(surfaceCol, domCol[n.domain], 0.08 + (m / 100) * 0.92);
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = m > 0 ? domCol[n.domain] : mixHex(surfaceCol, domCol[n.domain], 0.34);
       ctx.stroke();
     });
     // labels last, with a coarse occupancy grid so they never pile up
@@ -894,8 +931,8 @@ function buildAtlas(domain) {
       ctx.font = (isHover ? '600 ' : '500 ') + '10.5px Inter, sans-serif';
       if (isHover) {
         const wgt = ctx.measureText(lbl).width;
-        ctx.fillStyle = css.getPropertyValue('--s2').trim();
-        ctx.fillRect(p.x - wgt/2 - 5, ly - 11, wgt + 10, 15);
+        ctx.fillStyle = chipBg;
+        ctx.fillRect(p.x - wgt/2 - 6, ly - 11, wgt + 12, 15);
       }
       ctx.fillStyle = isHover ? css.getPropertyValue('--ink').trim() : inkDim;
       ctx.fillText(lbl, p.x, ly);
@@ -958,11 +995,11 @@ function vLedger(stage) {
   const clusters = misconceptionClusters(5);
   if (clusters.length) {
     w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Shared misconceptions' })]));
-    const p = el('div', { class:'panel pad', style:'margin-bottom:14px' });
+    const p = el('div', { class:'card', style:'margin-bottom:14px' });
     p.appendChild(el('p', { style:'font-size:13px;color:var(--ink-2);margin-bottom:12px',
       text:'These concepts sit underneath more than one of your errors. Teaching the node is worth more than correcting the instances.' }));
     clusters.forEach(c => {
-      const row = el('div', { class:'rrow', onclick: () => showConcept(c.cid) }, [
+      const row = el('div', { class:'listrow', onclick: () => showConcept(c.cid) }, [
         el('span', { class:'dot ' + c.node.domain }),
         el('span', { class:'nm', style:'color:var(--ink)', text: c.node.label }),
         el('span', { class:'vv', text: Math.round(c.n) + ' × · ' + c.m + '%' }),
@@ -976,7 +1013,7 @@ function vLedger(stage) {
   S.errors.forEach(e => { if (e.type) byType[e.type] = (byType[e.type] || 0) + 1; });
   if (Object.keys(byType).length) {
     w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'How you go wrong' })]));
-    const p = el('div', { class:'panel pad', style:'margin-bottom:14px' });
+    const p = el('div', { class:'card', style:'margin-bottom:14px' });
     const total = Object.values(byType).reduce((a, b) => a + b, 0);
     ERROR_TYPES.forEach(([id, nm]) => {
       const n = byType[id] || 0; if (!n) return;
@@ -997,7 +1034,7 @@ function vLedger(stage) {
     const cs = (e.concepts || []).map(c => (CONCEPT[c] || {}).label).filter(Boolean).slice(0, 2).join(', ');
     d.innerHTML = `<summary>
         <span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.stem || cs)}</span>
-        ${e.conf >= 4 ? '<span class="tag" style="border-color:var(--warning);color:var(--warning)">confident</span>' : ''}
+        ${e.conf >= 4 ? '<span class="pill" style="border-color:var(--warning);color:var(--warning)">confident</span>' : ''}
         <span class="lbl">${relTime(e.ts)}</span></summary>`;
     const dc = el('div', { class:'dc' });
     if (cs) dc.appendChild(el('p', { class:'lbl', style:'margin-bottom:8px', text: cs }));
@@ -1035,13 +1072,13 @@ function showConcept(id) {
       <div class="meter" style="margin-top:7px"><i style="width:${m}%;background:${band(m)[3]}"></i></div></div>`;
   body.appendChild(top);
 
-  const p = el('div', { class:'panel pad', style:'margin-bottom:12px;border-color:color-mix(in srgb,var(--good) 34%,transparent)' });
+  const p = el('div', { class:'card', style:'margin-bottom:12px;border-color:color-mix(in srgb,var(--good) 34%,transparent)' });
   p.innerHTML = `<div class="lbl" style="color:var(--good)">The precise formulation</div>
     <p style="margin-top:7px;font-size:14.5px;line-height:1.6">${esc(n.precision)}</p>`;
   body.appendChild(p);
 
   if (n.notThis && n.notThis.length) {
-    const q = el('div', { class:'trap' });
+    const q = el('div', { class:'flag' });
     q.innerHTML = `<div class="lbl">It is NOT</div>` +
       n.notThis.map(x => `<div style="margin-top:5px">✕ ${esc(x)}</div>`).join('');
     body.appendChild(q);
@@ -1053,7 +1090,7 @@ function showConcept(id) {
     const row = el('div', { class:'tagrow' });
     rel.forEach(r => {
       const rn = CONCEPT[r]; if (!rn) return;
-      const b = el('button', { class:'tag', style:'cursor:pointer' },
+      const b = el('button', { class:'pill', style:'cursor:pointer' },
         [el('span', { class:'dot ' + rn.domain }), el('span', { text: rn.label }),
          el('span', { style:'color:var(--ink-3)', text: mastery(r) })]);
       b.addEventListener('click', () => showConcept(r));

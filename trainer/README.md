@@ -17,23 +17,35 @@ no server, no network. All progress is stored in the browser's local storage.
 - **6 multi-model formulation cases**, 24 model formulations
 - **3 branching role-plays** scored on process
 
-## The eight surfaces
+## How it is arranged
+
+Three tabs, because metrics should not sit in your peripheral vision while you
+are trying to think.
 
 | | |
 |---|---|
-| **Today** | Your brief, the session launcher, what changed, and the misconceptions underneath your errors |
+| **Today** | One tap into a session, where you are, and what changed |
+| **Practice** | Drill, Bench, Panel, Studio, Room |
+| **Progress** | Readiness, calibration, weakest concepts, the Atlas, the Ledger |
+
+The five practice surfaces:
+
+| | |
+|---|---|
 | **Drill** | The adaptive interleaved core loop |
 | **Bench** | Timed written papers, marked to the scheme |
 | **Panel** | Real interview questions under the clock, with pressure follow-ups |
 | **Studio** | One case, many models — write yours first, then compare |
 | **Room** | Role-play, scored on process not content |
-| **Atlas** | A live map of the concept graph |
-| **Ledger** | Your errors, classified, and what they share |
+
+While you are working, the navigation leaves and the item is alone on the page.
+The bottom bar holds your confidence rating and the primary action, then becomes
+the result panel.
 
 ## Keyboard
 
-`⌘K` command palette · `D 1–7` switch surface · `1–5` set confidence ·
-`⏎` continue · `Esc` close
+`⌘K` search everything · `1–5` set confidence · `A–F` pick a choice ·
+`⏎` continue · `Esc` leave the session or close a dialog
 
 ## Rebuilding
 

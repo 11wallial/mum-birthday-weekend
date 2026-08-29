@@ -3,65 +3,57 @@
    ============================================================ */
 
 function buildShell() {
-  const top = $('#top');
   const tabs = $('#tabs');
-  MODES.forEach(([id, nm, key]) => {
+  tabs.innerHTML = '';
+  MODES.forEach(([id, nm]) => {
     const b = el('button', { class:'tab', 'data-v':id, role:'tab', 'aria-selected':'false',
-                             onclick: () => go(id) });
-    b.innerHTML = `${nm}<span class="k">${key}</span>`;
+                             text:nm, onclick: () => go(id) });
     tabs.appendChild(b);
   });
-
-  $('#railbtn').addEventListener('click', () => document.body.classList.toggle('rail'));
+  $('#brandlink').addEventListener('click', () => go('today'));
   $('#cmdbtn').addEventListener('click', openPalette);
   $('#setbtn').addEventListener('click', openSettings);
-  $('#themebtn').addEventListener('click', () => {
-    S.theme = S.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', S.theme);
-    save(); if (VIEW === 'atlas') go('atlas');
-  });
+  $('#streak').addEventListener('click', () => go('progress'));
   $('#scrim').addEventListener('click', closeModal);
-
-  const d2i = daysToInterview();
-  const chip = $('#datechip');
-  chip.classList.toggle('nodate', d2i === null);
-  chip.innerHTML = d2i === null
-    ? '<span>Set interview date</span>'
-    : `<b>${d2i}</b><span>days to interview</span>`;
-  chip.addEventListener('click', openSettings);
+  Act.init();
 }
 
 /* ---------------------------------------------------------- command palette */
 function paletteItems() {
   const out = [];
-  MODES.forEach(([id, nm, key, desc]) => out.push({ t:nm, s:desc, h:key, go:() => go(id) }));
-  out.push({ t:'Start a short session', s:'12 minutes, adaptive', h:'', go:() => startDrill(12) });
-  out.push({ t:'Start a standard session', s:'25 minutes, adaptive', h:'', go:() => startDrill(25) });
+  MODES.forEach(([id, nm, desc]) => out.push({ t: nm, s: desc, go: () => go(id) }));
+  out.push({ t:'Start a 12-minute session', s:'adaptive', go: () => startDrill(12) });
+  out.push({ t:'Start a 25-minute session', s:'adaptive', go: () => startDrill(25) });
+  out.push({ t:'Start a 45-minute session', s:'adaptive', go: () => startDrill(45) });
   DATA.written.exercises.forEach(e => out.push({
-    t:'Paper — ' + e.title, s:`${e.course} ${e.year} · ${e.minutes} min`, h:'', go:() => { EXAM=null; go('bench'); benchStart($('#stage'), e.id); } }));
-  DATA.formulation.vignettes.forEach(v => out.push({ t:'Case — ' + v.title, s:v.source, h:'', go:() => go('studio', v.id) }));
-  DATA.roleplay.scenarios.forEach(r => out.push({ t:'Role-play — ' + r.title, s:r.source, h:'', go:() => { RP = { s:r, turn:0, score:0, max:0, log:[] }; go('room'); } }));
-  DATA.interview.themes.forEach(t => out.push({ t:'Theme — ' + t.label, s:'interview', h:'', go:() => { go('panel'); showTheme(t.id); } }));
-  DATA.concepts.nodes.forEach(n => out.push({ t:n.label, s:n.domain + ' · ' + n.cluster, h:'', go:() => showConcept(n.id) }));
+    t:'Paper — ' + e.title, s:`${e.course} ${e.year} · ${e.minutes} min`,
+    go: () => { EXAM = null; go('bench'); benchStart($('#stage'), e.id); } }));
+  DATA.formulation.vignettes.forEach(v => out.push({ t:'Case — ' + v.title, s:v.source, go: () => go('studio', v.id) }));
+  DATA.roleplay.scenarios.forEach(r => out.push({ t:'Role-play — ' + r.title, s:r.source,
+    go: () => { RP = { s:r, turn:0, score:0, max:0, log:[] }; go('room'); } }));
+  DATA.interview.themes.forEach(t => out.push({ t:'Theme — ' + t.label, s:'interview',
+    go: () => { go('panel'); showTheme(t.id); } }));
+  out.push({ t:'The Atlas', s:'concept map', go: () => go('atlas') });
+  out.push({ t:'The Ledger', s:'your errors', go: () => go('ledger') });
+  DATA.concepts.nodes.forEach(n => out.push({ t: n.label, s: n.domain + ' · ' + n.cluster, go: () => showConcept(n.id) }));
   return out;
 }
 let PAL = null;
 function openPalette() {
   PAL = PAL || paletteItems();
-  const body = el('div');
-  const input = el('input', { type:'text', class:'cmdinput', placeholder:'Search modes, papers, cases, concepts…' });
+  const input = el('input', { type:'text', class:'cmdinput', placeholder:'Search papers, cases, themes, concepts…' });
   const list = el('div', { class:'cmdlist' });
   let sel = 0, shown = [];
   function render(q) {
     const ql = q.toLowerCase().trim();
-    shown = (ql ? PAL.filter(x => (x.t + ' ' + x.s).toLowerCase().includes(ql)) : PAL).slice(0, 40);
+    shown = (ql ? PAL.filter(x => (x.t + ' ' + (x.s || '')).toLowerCase().includes(ql)) : PAL).slice(0, 40);
     sel = 0; list.innerHTML = '';
     shown.forEach((x, i) => {
       const r = el('div', { class:'cmditem' + (i === 0 ? ' on' : ''), onclick: () => { closeModal(); x.go(); } });
-      r.innerHTML = `<span>${esc(x.t)}</span><span class="h">${esc(x.s || '')}${x.h ? ' · ' + x.h : ''}</span>`;
+      r.innerHTML = `<span>${esc(x.t)}</span><span class="h">${esc(x.s || '')}</span>`;
       list.appendChild(r);
     });
-    if (!shown.length) list.appendChild(el('div', { class:'empty', style:'padding:30px', text:'Nothing matches' }));
+    if (!shown.length) list.appendChild(el('div', { class:'empty', style:'padding:34px', text:'Nothing matches' }));
   }
   input.addEventListener('input', () => render(input.value));
   input.addEventListener('keydown', e => {
@@ -72,9 +64,9 @@ function openPalette() {
       const on = $$('.cmditem', list)[sel]; if (on) on.scrollIntoView({ block:'nearest' });
     } else if (e.key === 'Enter' && shown[sel]) { closeModal(); shown[sel].go(); }
   });
-  body.append(input, list);
   const m = $('#modal');
-  m.innerHTML = ''; m.appendChild(body);
+  m.innerHTML = '';
+  m.append(input, list);
   m.classList.add('on'); $('#scrim').classList.add('on');
   render('');
   setTimeout(() => input.focus(), 60);
@@ -85,34 +77,45 @@ function openSettings() {
   const body = el('div');
 
   body.appendChild(el('div', { class:'lbl', style:'margin-bottom:8px', text:'Interview date' }));
-  body.appendChild(el('p', { style:'font-size:13px;color:var(--ink-2);margin-bottom:10px',
-    text:'Setting this changes the scheduler. Inside 45 days review intervals tighten; inside 14 they halve, and the session shifts from acquiring material to retrieving it fast.' }));
+  body.appendChild(el('p', { class:'src', style:'margin-bottom:11px',
+    text:'This changes the scheduler. Inside 45 days review intervals tighten; inside 14 they halve, and sessions shift from acquiring material to retrieving it fast.' }));
   const dt = el('input', { type:'date', value: S.interviewDate || '' });
-  dt.addEventListener('change', () => { S.interviewDate = dt.value || null; save(); buildShell(); renderRail(); });
+  dt.addEventListener('change', () => { S.interviewDate = dt.value || null; save(); if (VIEW === 'today') go('today'); });
   body.appendChild(dt);
 
-  body.appendChild(el('div', { class:'lbl', style:'margin:22px 0 8px', text:'Your courses' }));
-  const cw = el('div', { class:'panel pad' });
-  cw.innerHTML = `<p style="font-size:13px;color:var(--ink-2);margin:0 0 10px">
-    <b>Cardiff · UCL · UEA</b>, with a fourth slot open. Cardiff is the only one of the three represented in the past-paper corpus, so Cardiff-specific guidance in this app is evidence-based and the rest is general. Verify every course's current selection process on their own site — these processes change year to year.</p>
-    <p style="font-size:13px;color:var(--ink-2);margin:0">The corpus also covers Birmingham, Coventry &amp; Warwick, Exeter, Glasgow, Plymouth, Southampton and South Wales. Those papers are worth doing whatever your four are: the reasoning they test is common to all of them.</p>`;
+  body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Your courses' }));
+  const cw = el('div', { class:'card flat' });
+  cw.innerHTML = `<p style="font-size:14px;color:var(--ink-2);margin:0 0 10px">
+    <b>Cardiff · UCL · UEA</b>, with a fourth slot open. Cardiff is the only one of the three represented in the past-paper corpus, so Cardiff-specific guidance here is evidence-based and the rest is general. Verify every course's current selection process on its own site — these change year to year.</p>
+    <p style="font-size:14px;color:var(--ink-2);margin:0">The corpus also covers Birmingham, Coventry &amp; Warwick, Exeter, Glasgow, Plymouth, Southampton and South Wales. Those papers are worth doing whatever your four are: the reasoning they test is common to all of them.</p>`;
   body.appendChild(cw);
 
-  body.appendChild(el('div', { class:'lbl', style:'margin:22px 0 8px', text:'Preferences' }));
-  const prefs = el('div', { style:'display:flex;gap:10px;flex-wrap:wrap' });
-  const snd = el('button', { class:'btn' + (S.sound ? ' pri' : ''), text: S.sound ? 'Timer sounds on' : 'Timer sounds off' });
-  snd.addEventListener('click', () => { S.sound = !S.sound; save(); snd.textContent = S.sound ? 'Timer sounds on' : 'Timer sounds off'; snd.classList.toggle('pri', S.sound); if (S.sound) tick(660, .07, .04); });
-  prefs.appendChild(snd);
-  const thm = el('button', { class:'btn', text: S.theme === 'dark' ? 'Dark theme' : 'Light theme' });
-  thm.addEventListener('click', () => { $('#themebtn').click(); thm.textContent = S.theme === 'dark' ? 'Dark theme' : 'Light theme'; });
+  body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Preferences' }));
+  const prefs = el('div', { class:'row wrap' });
+  const thm = el('button', { class:'btn sm', text: S.theme === 'dark' ? '🌙  Dark' : '☀️  Light' });
+  thm.addEventListener('click', () => {
+    S.theme = S.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', S.theme);
+    save();
+    thm.textContent = S.theme === 'dark' ? '🌙  Dark' : '☀️  Light';
+    if (VIEW === 'atlas') go('atlas');
+  });
   prefs.appendChild(thm);
+  const snd = el('button', { class:'btn sm' + (S.sound ? ' pri' : ''), text: S.sound ? '🔔  Sounds on' : '🔕  Sounds off' });
+  snd.addEventListener('click', () => {
+    S.sound = !S.sound; save();
+    snd.textContent = S.sound ? '🔔  Sounds on' : '🔕  Sounds off';
+    snd.classList.toggle('pri', S.sound);
+    if (S.sound) tick(880, .08, .05);
+  });
+  prefs.appendChild(snd);
   body.appendChild(prefs);
 
-  body.appendChild(el('div', { class:'lbl', style:'margin:22px 0 8px', text:'Your data' }));
-  body.appendChild(el('p', { style:'font-size:13px;color:var(--ink-2);margin-bottom:10px',
-    text:'Everything is stored in this browser only. Nothing is sent anywhere. Clearing site data will erase your progress, so export if you care about it.' }));
-  const data = el('div', { style:'display:flex;gap:10px;flex-wrap:wrap' });
-  data.appendChild(el('button', { class:'btn', text:'Export progress', onclick: () => {
+  body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Your data' }));
+  body.appendChild(el('p', { class:'src', style:'margin-bottom:11px',
+    text:'Everything is stored in this browser only. Nothing is sent anywhere. Clearing site data erases your progress, so export it if you care about it.' }));
+  const data = el('div', { class:'row wrap' });
+  data.appendChild(el('button', { class:'btn sm', text:'Export', onclick: () => {
     const blob = new Blob([JSON.stringify(S, null, 1)], { type:'application/json' });
     const a = el('a', { href: URL.createObjectURL(blob), download:'dclinpsy-progress.json' });
     document.body.appendChild(a); a.click(); a.remove();
@@ -121,25 +124,27 @@ function openSettings() {
   imp.addEventListener('change', () => {
     const f = imp.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = () => { try { S = Object.assign(blankState(), JSON.parse(r.result)); save(); closeModal(); go('today'); toast('Progress restored'); }
-                       catch (e) { toast('Could not read that file'); } };
+    r.onload = () => {
+      try { S = Object.assign(blankState(), JSON.parse(r.result)); save(); closeModal(); go('today'); toast('Progress restored'); }
+      catch (e) { toast('Could not read that file'); }
+    };
     r.readAsText(f);
   });
-  data.append(el('button', { class:'btn', text:'Import progress', onclick: () => imp.click() }), imp);
-  data.appendChild(el('button', { class:'btn ghost', text:'Reset everything', onclick: () => {
+  data.append(el('button', { class:'btn sm', text:'Import', onclick: () => imp.click() }), imp);
+  data.appendChild(el('button', { class:'btn sm ghost', text:'Reset everything', onclick: () => {
     if (confirm('This erases all progress, permanently. Continue?')) { S = blankState(); save(); closeModal(); go('today'); }
   }}));
   body.appendChild(data);
 
-  const stats = el('div', { class:'panel pad', style:'margin-top:22px' });
   const cal = calibration();
-  stats.innerHTML = `<div class="lbl">Content in this build</div>
-    <p style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6">
+  const stats = el('div', { class:'card flat', style:'margin-top:24px' });
+  stats.innerHTML = `<div class="lbl">In this build</div>
+    <p class="src" style="margin-top:8px">
       ${DATA.concepts.nodes.length} concepts · ${DATA.items.items.length} drill items ·
-      ${DATA.written.exercises.length} written papers (${DATA.written.exercises.reduce((a,e)=>a+e.questions.reduce((b,q)=>b+q.rubric.length,0),0)} rubric points) ·
+      ${DATA.written.exercises.length} written papers (${DATA.written.exercises.reduce((a,e)=>a+e.questions.reduce((b,q)=>b+q.rubric.length,0),0)} marking points) ·
       ${DATA.interview.questions.length} verbatim interview questions ·
-      ${DATA.formulation.vignettes.length} multi-model cases · ${DATA.roleplay.scenarios.length} role-plays.<br>
-      You have answered ${cal.n} confidence-rated items across ${Object.keys(S.c).length} concepts.</p>`;
+      ${DATA.formulation.vignettes.length} multi-model cases · ${DATA.roleplay.scenarios.length} role-plays.<br><br>
+      You have answered ${cal.n} confidence-rated item${cal.n === 1 ? '' : 's'} across ${Object.keys(S.c).length} concept${Object.keys(S.c).length === 1 ? '' : 's'}.</p>`;
   body.appendChild(stats);
 
   openModal('Settings', body);
@@ -149,15 +154,13 @@ function openSettings() {
 function intro() {
   const body = el('div');
   body.innerHTML = `
-    <p style="font-size:15px;line-height:1.62;margin-bottom:14px">This is a preparation engine built from real DClinPsy selection material — past interview questions from eight courses, four written papers, and one official marking scheme.</p>
-    <p style="font-size:14px;color:var(--ink-2);line-height:1.62;margin-bottom:14px">Three things worth knowing before you start.</p>
-    <p style="font-size:14px;color:var(--ink-2);line-height:1.62;margin-bottom:12px"><b style="color:var(--ink)">Confidence is compulsory.</b> Every item asks how sure you are before you answer. Being confident and wrong is the single most important signal here, and those items come back the same day.</p>
-    <p style="font-size:14px;color:var(--ink-2);line-height:1.62;margin-bottom:12px"><b style="color:var(--ink)">Depth is earned at each level separately.</b> Recognising something never counts as mastering it. A concept only advances when you pass an item at that level, and a failed transfer item takes depth back.</p>
-    <p style="font-size:14px;color:var(--ink-2);line-height:1.62;margin-bottom:18px"><b style="color:var(--ink)">Free text is matched, not marked.</b> On written papers your answer is scanned against each rubric point and then <em>you</em> adjudicate every tick. That comparison is the exercise — it is what makes a past paper worth more than a textbook.</p>
-    <p style="font-size:13px;color:var(--ink-3);line-height:1.55">Everything is stored in this browser. Nothing is sent anywhere.</p>`;
-  const b = el('button', { class:'btn pri lg', style:'margin-top:20px', text:'Begin', onclick: () => {
-    S.seenIntro = true; save(); closeModal();
-  }});
+    <p style="font-size:16px;line-height:1.6;margin-bottom:16px">A preparation engine for DClinPsy selection, built from real material: past interview questions from eight courses, four written papers, and one official marking scheme.</p>
+    <p style="font-size:15px;color:var(--ink-2);line-height:1.6;margin-bottom:14px"><b style="color:var(--ink)">Confidence is compulsory.</b> Every item asks how sure you are before you answer. Being sure and wrong is the most important signal here, and those items come back the same day.</p>
+    <p style="font-size:15px;color:var(--ink-2);line-height:1.6;margin-bottom:14px"><b style="color:var(--ink)">Depth is earned level by level.</b> Recognising something never counts as mastering it. A concept only advances when you pass an item at that level, and a failed transfer item takes depth back.</p>
+    <p style="font-size:15px;color:var(--ink-2);line-height:1.6;margin-bottom:18px"><b style="color:var(--ink)">Written answers are matched, not marked.</b> Your text is scanned against each rubric point and then <em>you</em> adjudicate every tick. That comparison is the exercise — it is what makes a past paper worth more than a textbook.</p>
+    <p class="src">Everything stays in this browser. Nothing is sent anywhere.</p>`;
+  const b = el('button', { class:'btn pri lg wide', style:'margin-top:22px', text:'Begin',
+    onclick: () => { S.seenIntro = true; save(); closeModal(); } });
   body.appendChild(b);
   openModal('Before you start', body);
 }
@@ -167,13 +170,22 @@ function keys() {
   document.addEventListener('keydown', e => {
     const typing = e.target.matches('input,textarea,select');
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); return; }
-    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === 'Escape') {
+      if ($('#modal').classList.contains('on')) { closeModal(); return; }
+      if (SESSION && VIEW === 'drill') { quitDrill(); return; }
+      return;
+    }
     if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
-    const m = MODES.find(x => x[2].toLowerCase() === e.key.toLowerCase());
-    if (m) { e.preventDefault(); go(m[0]); return; }
+    // 1-5 sets confidence while an item is open
     if (/^[1-5]$/.test(e.key)) {
-      const cb = $$('.conf .cb')[+e.key - 1];
-      if (cb) { e.preventDefault(); cb.click(); }
+      const pip = $$('#actbar .pip')[+e.key - 1];
+      if (pip) { e.preventDefault(); pip.click(); return; }
+    }
+    // a-f picks a choice
+    if (/^[a-f]$/i.test(e.key)) {
+      const i = e.key.toLowerCase().charCodeAt(0) - 97;
+      const ch = $$('.choices > .choice:not(.locked)')[i];
+      if (ch) { e.preventDefault(); ch.click(); }
     }
   });
 }
@@ -181,12 +193,16 @@ function keys() {
 /* ---------------------------------------------------------- go */
 function boot() {
   load();
-  document.documentElement.setAttribute('data-theme', S.theme || 'dark');
+  document.documentElement.setAttribute('data-theme', S.theme || 'light');
   buildIndex();
   buildShell();
   keys();
   go(S.lastMode && MODES.some(m => m[0] === S.lastMode) ? S.lastMode : 'today');
-  if (!S.seenIntro) setTimeout(intro, 420);
-  window.addEventListener('resize', () => { if (VIEW === 'atlas') buildAtlas('all'); });
+  if (!S.seenIntro) setTimeout(intro, 460);
+  let rt = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => { if (VIEW === 'atlas') go('atlas'); }, 240);
+  });
 }
 document.addEventListener('DOMContentLoaded', boot);

@@ -147,11 +147,46 @@ There is no XP, no level, no streak of raw days. The reward structure is:
 - **The competence narrative** — "You can now discriminate mediation from
   moderation in unfamiliar clinical studies" is generated at the moment depth
   advances, and shown as *what changed*.
-- **The Atlas** — a live force-directed map of the concept graph where nodes
-  brighten with demonstrated depth. Watching the dark regions light up is the
-  loop. It is also diagnostic: dim, high-degree hubs are the highest-leverage
-  targets.
+- **The Atlas** — a live force-directed map of the concept graph in three domain
+  lobes. Hue carries the domain and fill intensity carries mastery, so a lit lobe
+  beside two pale ones tells you where you are thin at a glance. Dim, high-degree
+  hubs are the highest-leverage targets.
 - **A shrinking Ledger.**
+- **A streak of days practised**, shown small in the top bar and hidden entirely
+  at zero — present enough to matter, quiet enough not to become the point.
+
+## 9a. Interface design
+
+The surface is deliberately in the idiom of a consumer learning app rather than a
+professional instrument, because the tool has to survive months of daily use by
+someone under real pressure. Five decisions carry it:
+
+**One thing at a time.** There is no permanent metrics rail beside the work.
+Readiness, calibration and the error ledger live in their own tab. While you are
+answering, the top bar leaves and the item is alone on the page.
+
+**The action bar is the spine.** A persistent bottom bar holds the confidence
+control and the primary action, then *becomes* the result panel — tinted green or
+red, carrying the verdict, the teaching, the precise formulation, the near-misses
+and the error classification. Every surface puts its controls there, so the
+learner never hunts for the next step.
+
+**Select, then check.** Choosing an option does not submit it. That single change
+turns an item from a reflex into a decision, and makes the confidence rating
+meaningful, since you commit to both before seeing the outcome.
+
+**Light-first, with a real dark theme.** Ground is a cool near-white; cards are
+white and float on soft shadow rather than sitting inside borders. Both themes
+are defined at token level, and every colour resolves in both.
+
+**Two typefaces doing structural work.** Figtree for the interface, Newsreader for
+clinical and exam material. Vignettes, interview questions, transcripts and paper
+stimuli are all set in serif, so "the app" and "the thing you are reading" never
+blur. Interview questions are set as a large serif quotation, because somebody is
+asking you them.
+
+Buttons carry a solid bottom edge that compresses on press. It is a small thing,
+repeated several hundred times a week.
 
 ## 10. Ecological validity
 
@@ -163,7 +198,9 @@ Practice increasingly resembles the actual task:
   with a pressure follow-up drawn from the same theme.
 - **Room** scores role-plays on process moves — opening, reflecting, validating,
   staying with experience — and penalises advising, exactly as Glasgow's brief
-  specifies ("there is no expectation for you to resolve the problem").
+  specifies ("there is no expectation for you to resolve the problem"). It is
+  rendered as a real conversation: asymmetric bubbles, the other person in serif,
+  your own turns in sans, with the score for each move shown inline.
 - **Studio** requires you to write your own formulation *before* revealing model
   accounts, and every model entry includes a falsification test, because a
   formulation that cannot be wrong is not a formulation.
