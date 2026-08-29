@@ -551,7 +551,7 @@ function studioCase(stage, vid) {
   w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'The lenses' })]));
   v.models.forEach(m => {
     const d = el('details', { class:'disc', style:'margin-bottom:10px' });
-    d.innerHTML = `<summary><b style="font-weight:620;color:var(--ink)">${esc(m.model)}</b></summary>`;
+    d.innerHTML = `<summary><b style="font-weight:600;color:var(--ink)">${esc(m.model)}</b></summary>`;
     const dc = el('div', { class:'dc' });
     const rows = [
       ['Core mechanism', m.mech, 'var(--accent)'],

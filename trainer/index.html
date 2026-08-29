@@ -2,23 +2,40 @@
 <meta name="description" content="A preparation engine for UK Doctorate in Clinical Psychology selection, built from real past papers and one official marking scheme.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    DClinPsy Trainer — design system
 
-   Restraint is the point. Almost nothing here is a floating card: the
-   page is a structured surface of hairline-separated rows under quiet
-   section labels, so the eye reads hierarchy rather than counting
-   components. Violet is an accent, not an atmosphere — it marks the one
-   thing worth pressing and the thing currently selected, and nothing else.
+   ONE COLOUR RULE, held everywhere:
 
-   Two typefaces do structural work: Inter (variable, so the type scale can
-   use real intermediate weights) for the interface, Newsreader for clinical
-   and exam material — so "the app" and "the thing you are reading" never blur.
+     Neutrals carry the interface.  Colour is only ever data or outcome.
 
-   Domain colours are the validated categorical slots 1-3; every domain
-   colour appears beside its own text label, never alone.
+   · Chrome, structure and the primary action are warm ink on warm paper.
+     There is no decorative accent hue anywhere in this file. A violet
+     button, a tinted icon chip or a "brand" colour on a label would all
+     break the rule.
+   · The three DOMAIN hues (research / clinical / professional) appear only
+     where they encode which domain something belongs to — dots, meters,
+     depth rungs, Atlas nodes. Never on chrome, never as decoration.
+   · The three STATUS hues (correct / incorrect / attention) appear only
+     where they encode an outcome. Never as a category colour.
+
+   The consequence: selection reads as neutral and outcome reads as
+   coloured, so the two can never be confused, and nothing on a page is
+   coloured for want of a better idea.
+
+   TYPE — two faces, four display steps.
+   Instrument Sans for the interface; Newsreader for clinical and exam
+   material, so "the app" and "the thing you are reading" never blur.
+   Display sizes carry negative tracking that scales with size.
+
+   ELEVATION — three layered steps. Shadows are stacked (contact + ambient
+   + cast) rather than a single blur, so a raised surface reads as lit
+   rather than as a floating rectangle.
+
+   MOTION — four durations, three curves, defined as tokens. Entrances use
+   an expo-out; anything that should feel physical uses the spring.
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -27,28 +44,26 @@ html, body { margin: 0; padding: 0; }
 :root {
   color-scheme: light;
 
-  /* ground & surfaces — neutral off-white with a faint cool bias */
-  --bg:        #F7F8FA;
-  --bg-2:      #EFF1F5;
+  /* ---- ground & surfaces. Warm, not Tailwind-slate neutral ---- */
+  --bg:        #FBFAF8;
+  --bg-2:      #F2EFEA;
   --card:      #FFFFFF;
-  --card-2:    #F9FAFC;
-  --line:      #E6E8EE;
-  --line-2:    #D2D6E0;
+  --card-2:    #F8F6F3;
+  --line:      #E9E5DE;
+  --line-2:    #D7D1C7;
 
-  /* ink — a navy-biased near-black, never pure */
-  --ink:       #14181F;
-  --ink-2:     #4E5665;
-  --ink-3:     #838C9C;
+  /* ---- ink. Warm near-black, never pure ---- */
+  --ink:       #1A1815;
+  --ink-2:     #57534B;
+  --ink-3:     #8C867C;
 
-  /* accent — deep violet. Used sparingly: one primary action, one
-     selected state. If it appears three times on a screen, something
-     is wrong. */
-  --accent:      #5A46D6;
-  --accent-deep: #4332AE;
-  --accent-soft: #F1EFFC;
-  --accent-ink:  #FFFFFF;
+  /* ---- the primary action. Ink, not a hue. See the colour rule. ---- */
+  --accent:      #1A1815;
+  --accent-deep: #000000;
+  --accent-soft: #F2EFEA;
+  --accent-ink:  #FBFAF8;
 
-  /* domain — validated categorical slots */
+  /* ---- DOMAIN: data only ---- */
   --d-research:      #2a78d6;
   --d-clinical:      #eb6834;
   --d-professional:  #1baf7a;
@@ -56,39 +71,59 @@ html, body { margin: 0; padding: 0; }
   --d-clinical-soft:     #FDEFE9;
   --d-professional-soft: #E7F7F1;
 
-  /* status — reserved, never a series */
+  /* ---- STATUS: outcome only ---- */
   --good:      #0f8a4d;
   --good-deep: #0B6B3B;
-  --good-soft: #E8F6EE;
-  --warning:   #B87503;
-  --warning-soft: #FDF4E1;
-  --serious:   #D0642B;
-  --wrong:      #D03B3B;
-  --wrong-deep: #A82D2D;
-  --wrong-soft: #FCEDED;
+  --good-soft: #E9F5ED;
+  --warning:   #A8700B;
+  --warning-soft: #FBF2E0;
+  --serious:   #C2621F;
+  --wrong:      #C8382F;
+  --wrong-deep: #9E2A23;
+  --wrong-soft: #FBEDEB;
 
   /* sequential ramp — mastery magnitude */
   --seq-1: #DDE7F6; --seq-2: #B7D3F6; --seq-3: #86b6ef;
   --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95; --seq-7: #0d366b;
 
-  /* spacing — strict 4px grid, no arbitrary values anywhere */
+  /* ---- spacing: strict 4px grid, no arbitrary values ---- */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
   --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
 
-  /* radius — four values, and pills only where something is genuinely a pill */
+  /* ---- radius: four values ---- */
   --r-s: 10px; --r-m: 14px; --r-l: 20px; --r-pill: 999px;
 
-  /* elevation exists; it does not announce itself */
-  --sh-1: 0 1px 2px rgba(17,22,32,.04);
-  --sh-2: 0 1px 3px rgba(17,22,32,.05), 0 6px 16px rgba(17,22,32,.05);
-  --sh-3: 0 4px 12px rgba(17,22,32,.08), 0 24px 56px rgba(17,22,32,.12);
-  --sh-up: 0 -1px 3px rgba(17,22,32,.04), 0 -12px 32px rgba(17,22,32,.07);
+  /* ---- elevation: layered, contact + ambient + cast ---- */
+  --sh-1: 0 1px 1px rgba(26,24,21,.04),
+          0 2px 4px rgba(26,24,21,.03);
+  --sh-2: 0 1px 1px rgba(26,24,21,.04),
+          0 3px 6px rgba(26,24,21,.04),
+          0 8px 20px rgba(26,24,21,.05);
+  --sh-3: 0 1px 2px rgba(26,24,21,.05),
+          0 6px 14px rgba(26,24,21,.07),
+          0 20px 44px rgba(26,24,21,.09);
+  --sh-up: 0 -1px 1px rgba(26,24,21,.04),
+           0 -3px 8px rgba(26,24,21,.04),
+           0 -14px 34px rgba(26,24,21,.07);
+  /* a hairline of light along the top of a raised surface */
+  --edge: inset 0 1px 0 rgba(255,255,255,.9);
 
-  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* ---- type ---- */
+  --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
-  --ease: cubic-bezier(.22,.61,.36,1);
-  --spring: cubic-bezier(.34,1.32,.64,1);
-  --t-fast: .16s; --t-mid: .22s;
+
+  /* ---- motion ---- */
+  --m-fast: 120ms;
+  --m-base: 200ms;
+  --m-slow: 340ms;
+  --m-page: 460ms;
+  --e-out:    cubic-bezier(.16, 1, .3, 1);      /* expo-out: entrances */
+  --e-spring: cubic-bezier(.34, 1.26, .5, 1);   /* overshoot: things that move */
+  --e-both:   cubic-bezier(.65, 0, .35, 1);     /* symmetric: state changes */
+  /* legacy aliases, kept so no rule silently loses its easing */
+  --ease: var(--e-out);
+  --spring: var(--e-spring);
+  --t-fast: var(--m-fast); --t-mid: var(--m-base);
 
   --bar-h: 56px;
   --act-h: 80px;
@@ -96,40 +131,48 @@ html, body { margin: 0; padding: 0; }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg:      #0F131A;
-  --bg-2:    #171C25;
-  --card:    #161B24;
-  --card-2:  #1C222D;
-  --line:    #262D3A;
-  --line-2:  #36404F;
-  --ink:     #EDF0F5;
-  --ink-2:   #9FA9B9;
-  --ink-3:   #6B7688;
+  --bg:      #131210;
+  --bg-2:    #1E1C19;
+  --card:    #1B1917;
+  --card-2:  #232120;
+  --line:    #302D29;
+  --line-2:  #45413A;
+  --ink:     #F3F0EB;
+  --ink-2:   #A9A29A;
+  --ink-3:   #78726A;
 
-  --accent:      #8E82EC;
-  --accent-deep: #6A5CCB;
-  --accent-soft: #221F3A;
-  --accent-ink:  #0E1219;
+  --accent:      #F3F0EB;
+  --accent-deep: #FFFFFF;
+  --accent-soft: #262320;
+  --accent-ink:  #131210;
 
-  --d-research:      #3987e5;
-  --d-clinical:      #d95926;
-  --d-professional:  #199e70;
+  --d-research:      #4a95e8;
+  --d-clinical:      #ef7c4e;
+  --d-professional:  #2bbd87;
   --d-research-soft:     #15263C;
-  --d-clinical-soft:     #301E18;
-  --d-professional-soft: #122B26;
+  --d-clinical-soft:     #2F1E17;
+  --d-professional-soft: #112B25;
 
-  --good:      #2FAF6A;  --good-deep: #1E8A50;  --good-soft: #122C1D;
-  --warning:   #E3A72A;  --warning-soft: #2C2415;
+  --good:      #35B872;  --good-deep: #2AA063;  --good-soft: #13291C;
+  --warning:   #E0A63A;  --warning-soft: #2B2416;
   --serious:   #E08A4E;
-  --wrong:     #E06060;  --wrong-deep: #B44545; --wrong-soft: #301A1A;
+  --wrong:     #E4726B;  --wrong-deep: #C9564E; --wrong-soft: #2E1B19;
 
   --seq-1: #1E3050; --seq-2: #22436E; --seq-3: #2A5A96;
   --seq-4: #3987e5; --seq-5: #6da7ec; --seq-6: #9ec5f4; --seq-7: #cde2fb;
 
-  --sh-1: 0 1px 2px rgba(0,0,0,.3);
-  --sh-2: 0 1px 3px rgba(0,0,0,.34), 0 6px 16px rgba(0,0,0,.3);
-  --sh-3: 0 4px 12px rgba(0,0,0,.4), 0 24px 56px rgba(0,0,0,.46);
-  --sh-up: 0 -1px 3px rgba(0,0,0,.3), 0 -12px 32px rgba(0,0,0,.4);
+  --sh-1: 0 1px 1px rgba(0,0,0,.4),
+          0 2px 4px rgba(0,0,0,.3);
+  --sh-2: 0 1px 1px rgba(0,0,0,.4),
+          0 3px 6px rgba(0,0,0,.34),
+          0 8px 20px rgba(0,0,0,.34);
+  --sh-3: 0 1px 2px rgba(0,0,0,.44),
+          0 6px 14px rgba(0,0,0,.4),
+          0 20px 44px rgba(0,0,0,.5);
+  --sh-up: 0 -1px 1px rgba(0,0,0,.4),
+           0 -3px 8px rgba(0,0,0,.34),
+           0 -14px 34px rgba(0,0,0,.44);
+  --edge: inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 body {
@@ -140,28 +183,31 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'cv05' 1, 'ss03' 1;   /* Inter: single-storey l, rounded quotes */
+  font-feature-settings: 'ss01' 1;             /* Instrument Sans alternates */
   overflow: hidden;
   height: 100vh; height: 100dvh;
 }
 ::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 
-/* ---------------------------------------------------------- type scale */
-h1, h2, h3, h4 { margin: 0; letter-spacing: -0.022em; line-height: 1.2; }
-h1 { font-size: 31px; font-weight: 680; letter-spacing: -0.032em; line-height: 1.14; text-wrap: balance; }
-h2 { font-size: 22px; font-weight: 660; letter-spacing: -0.026em; }
-h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.018em; }
-h4 { font-size: 15px; font-weight: 650; }
+/* ---------------------------------------------------------- type scale
+   Four display steps and two utility steps. Tracking tightens as size
+   grows — the ratio is roughly -0.001em per point above 15px — so large
+   text reads as set rather than as body copy scaled up. */
+h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
+h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.038em; line-height: 1.1;  text-wrap: balance; }
+h2 { font-size: 23px; font-weight: 600; letter-spacing: -0.028em; line-height: 1.16; }
+h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.014em; }
+h4 { font-size: 15px; font-weight: 600; letter-spacing: -0.008em; }
 p  { margin: 0 0 .75em; }
 p:last-child { margin-bottom: 0; }
 a { color: var(--accent); }
-strong, b { font-weight: 680; color: var(--ink); }
+strong, b { font-weight: 600; color: var(--ink); }
 em { font-style: italic; }
 
-.display { font-size: 44px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.06; }
-.dnum { font-variant-numeric: tabular-nums; letter-spacing: -0.035em; font-weight: 700; }
+.display { font-size: 46px; font-weight: 600; letter-spacing: -0.046em; line-height: 1.04; }
+.dnum { font-variant-numeric: tabular-nums; letter-spacing: -0.04em; font-weight: 600; }
 .lbl {
-  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  font-size: 10.5px; font-weight: 620; letter-spacing: .13em;
   text-transform: uppercase; color: var(--ink-3);
 }
 .serif { font-family: var(--serif); font-size: 17px; line-height: 1.62; }
@@ -174,7 +220,7 @@ em { font-style: italic; }
   font-size: 13px; color: var(--ink-3); font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-.meta b { color: var(--ink-2); font-weight: 650; }
+.meta b { color: var(--ink-2); font-weight: 600; }
 .meta .sep { opacity: .5; margin: 0 var(--s2); }
 .src { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
 
@@ -196,9 +242,9 @@ em { font-style: italic; }
 }
 .brand .mk svg { width: 22px; height: 22px; display: block; }
 .brand .wm { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
-.brand .wm b { font-size: 14.5px; font-weight: 700; letter-spacing: -0.028em; }
+.brand .wm b { font-size: 14.5px; font-weight: 600; letter-spacing: -0.028em; }
 .brand .wm i {
-  font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: .19em;
+  font-style: normal; font-size: 8.5px; font-weight: 600; letter-spacing: .19em;
   color: var(--ink-3); margin-top: 2px;
 }
 
@@ -211,25 +257,26 @@ nav#tabs::-webkit-scrollbar { display: none; }
   transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
 .tab:hover { color: var(--ink); background: var(--bg-2); }
-.tab[aria-selected="true"] { color: var(--ink); font-weight: 650; background: var(--bg-2); }
+.tab[aria-selected="true"] { color: var(--ink); font-weight: 600; background: var(--bg-2); }
 
 .spacer { flex: 1 1 auto; }
 
 .metric {
   display: inline-flex; align-items: center; gap: var(--s1); height: 30px; padding: 0 var(--s2);
   border-radius: var(--r-s); background: transparent; border: 0; cursor: pointer;
-  font: inherit; font-size: 13.5px; font-weight: 650; color: var(--ink-2);
+  font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink-2);
   font-variant-numeric: tabular-nums;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .metric:hover { background: var(--bg-2); color: var(--ink); }
-.metric .ic { width: 14px; height: 14px; flex: none; color: var(--serious); }
+.metric:hover .ic { color: var(--ink-2); }
+.metric .ic { width: 14px; height: 14px; flex: none; color: var(--ink-3); }
 .metric .ic svg { width: 14px; height: 14px; display: block; }
 
 .iconbtn {
   width: 30px; height: 30px; display: grid; place-items: center; flex: none;
   border: 0; border-radius: var(--r-s); background: transparent;
-  color: var(--ink-3); cursor: pointer; font-size: 13px; font-weight: 650;
+  color: var(--ink-3); cursor: pointer; font-size: 13px; font-weight: 600;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .iconbtn:hover { background: var(--bg-2); color: var(--ink); }
@@ -237,6 +284,12 @@ nav#tabs::-webkit-scrollbar { display: none; }
 #stage { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .wrap { max-width: 700px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s8); }
 .wrap.wide { max-width: 980px; }
+/* Today runs wider than the reading surfaces and pairs its two review
+   sections, so the screen has a composition rather than one centred column. */
+.wrap.today { max-width: 860px; }
+.pair { display: grid; gap: var(--s5) var(--s6); margin-top: var(--s7); }
+.pair > .section { margin-top: 0; }
+@media (min-width: 900px) { .pair { grid-template-columns: 1fr 1fr; } }
 .wrap.narrow { max-width: 580px; }
 #stage.hasact .wrap { padding-bottom: calc(var(--act-h) + var(--s7)); }
 
@@ -252,13 +305,13 @@ body.focus #app { --bar-h: 0px; }
 /* ---------------------------------------------------------- buttons
    Flat. One primary per screen. Press is a 2% scale, not a 4px drop. */
 .btn {
-  appearance: none; font: inherit; font-size: 14.5px; font-weight: 650;
+  appearance: none; font: inherit; font-size: 14.5px; font-weight: 600;
   padding: 10px 18px; border-radius: var(--r-s); cursor: pointer;
   border: 1px solid var(--line-2); background: var(--card); color: var(--ink);
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
-  transition: transform .1s var(--ease), background var(--t-fast) var(--ease),
-              border-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease),
-              box-shadow var(--t-fast) var(--ease);
+  transition: transform var(--m-fast) var(--e-spring), background var(--m-fast) var(--e-both),
+              border-color var(--m-fast) var(--e-both), opacity var(--m-fast) var(--e-both),
+              box-shadow var(--m-base) var(--e-out);
 }
 .btn:hover { background: var(--card-2); border-color: var(--ink-3); }
 .btn:active { transform: scale(.98); }
@@ -267,7 +320,7 @@ body.focus #app { --bar-h: 0px; }
 
 .btn.pri {
   background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent-deep) 30%, transparent);
+  box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.12);
 }
 .btn.pri:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
 .btn.pri:disabled:hover { background: var(--accent); border-color: var(--accent); }
@@ -288,23 +341,31 @@ body.focus #app { --bar-h: 0px; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* segmented control — choosing a mode, not three competing calls to action */
+/* segmented control — choosing a mode, not three competing calls to action.
+   The thumb slides between options rather than the highlight snapping. */
 .seg {
-  display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-2);
-  border-radius: var(--r-s); flex: none;
+  display: inline-flex; padding: 3px; background: var(--bg-2);
+  border-radius: var(--r-s); flex: none; position: relative;
+}
+.seg .thumb {
+  position: absolute; top: 3px; bottom: 3px; left: 0; width: 0;
+  background: var(--card); border-radius: 8px; box-shadow: var(--sh-1);
+  transition: transform var(--m-slow) var(--e-spring), width var(--m-slow) var(--e-spring);
+  pointer-events: none;
 }
 .seg button {
   appearance: none; border: 0; background: transparent; font: inherit; font-size: 13px;
-  font-weight: 650; color: var(--ink-3); padding: 6px 13px; border-radius: 8px;
+  font-weight: 500; color: var(--ink-3); padding: 6px 13px; border-radius: 8px;
   cursor: pointer; white-space: nowrap; font-variant-numeric: tabular-nums;
-  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  position: relative; z-index: 1;
+  transition: color var(--m-base) var(--e-both);
 }
-.seg button:hover { color: var(--ink); }
-.seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--sh-1); }
+.seg button:hover { color: var(--ink-2); }
+.seg button.on { color: var(--ink); font-weight: 600; }
 
 .pagehead { margin-bottom: var(--s5); }
 .pagehead .lbl { display: block; margin-bottom: var(--s2); }
-.pagehead h1 { font-size: 24px; font-weight: 660; letter-spacing: -0.028em; }
+.pagehead h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.028em; }
 .pagehead.big h1 { font-size: 31px; letter-spacing: -0.032em; }
 .pagehead .sub { font-size: 15px; color: var(--ink-2); margin-top: var(--s1); max-width: 60ch; }
 
@@ -321,10 +382,10 @@ body.focus #app { --bar-h: 0px; }
 .sechead .lbl { flex: none; }
 .sechead .note { font-size: 12.5px; color: var(--ink-3); }
 .sechead .act {
-  margin-left: auto; flex: none; font-size: 13px; font-weight: 650; color: var(--accent);
+  margin-left: auto; flex: none; font-size: 13px; font-weight: 500; color: var(--ink-2);
   background: none; border: 0; cursor: pointer; font-family: inherit; padding: 0;
 }
-.sechead .act:hover { text-decoration: underline; }
+.sechead .act:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* a plate holds rows divided by hairlines — one container, many items */
 .plate {
@@ -340,9 +401,9 @@ body.focus #app { --bar-h: 0px; }
 button.prow { cursor: pointer; }
 button.prow:hover { background: var(--card-2); }
 .prow .pmain { flex: 1 1 auto; min-width: 0; }
-.prow .pname { font-size: 14.5px; font-weight: 650; line-height: 1.35; }
+.prow .pname { font-size: 14.5px; font-weight: 600; line-height: 1.35; }
 .prow .psub { font-size: 12.5px; color: var(--ink-3); line-height: 1.45; margin-top: 2px; }
-.prow .pval { flex: none; font-variant-numeric: tabular-nums; font-weight: 650; font-size: 14px; color: var(--ink-2); }
+.prow .pval { flex: none; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .prow > .meta, .prow > .mv, .prow > .rungs, .prow > .pill { flex: none; }
 .prow .rlead {
   flex: none; width: 20px; height: 20px; color: var(--ink-3);
@@ -404,11 +465,20 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
    is spent on a single button and a hairline rule. */
 .launch {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-l);
-  padding: var(--s5) var(--s5) var(--s5) calc(var(--s5) - 3px);
-  border-left: 3px solid var(--accent);
-  box-shadow: var(--sh-2);
+  padding: var(--s6);
+  box-shadow: var(--sh-3), var(--edge);
+  position: relative; overflow: hidden;
 }
-.launch .lbl { color: var(--accent); }
+/* a barely-there wash so the hero action does not sit at the same visual
+   weight as the secondary surfaces below it */
+.launch::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(168deg,
+    color-mix(in srgb, var(--ink) 3.5%, transparent) 0%,
+    transparent 42%);
+}
+.launch > * { position: relative; }
+.launch .lbl { color: var(--ink-2); }
 .launch h2 { margin: var(--s2) 0 var(--s2); }
 .launch p { color: var(--ink-2); font-size: 14.5px; max-width: 62ch; margin: 0; }
 .launch .lfoot {
@@ -424,7 +494,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 }
 .planline:first-child { border-top: 0; padding-top: var(--s3); }
 .planline .n {
-  width: 18px; flex: none; font-size: 11px; font-weight: 700; color: var(--ink-3);
+  width: 18px; flex: none; font-size: 11px; font-weight: 600; color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 .planline .pl-t { flex: 1 1 auto; font-size: 14px; font-weight: 600; min-width: 0; }
@@ -438,12 +508,13 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
   width: 100%; text-align: left; cursor: pointer; font: inherit;
   border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s4) var(--s5) var(--s5);
   background: var(--card); color: var(--ink); position: relative;
-  transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease),
-              border-color var(--t-mid) var(--ease);
+  transition: transform var(--m-base) var(--e-out), box-shadow var(--m-base) var(--e-out),
+              border-color var(--m-base) var(--e-both);
 }
-.tile:hover { transform: translateY(-1px); box-shadow: var(--sh-2); border-color: var(--line-2); }
+.tile:hover { transform: translateY(-1px); box-shadow: var(--sh-1); border-color: var(--line-2); }
 .tile:active { transform: translateY(0); }
-.tile .tmk { display: block; margin-bottom: var(--s3); height: 20px; }
+.tile .tmk { display: block; margin-bottom: var(--s3); height: 20px; color: var(--ink-3); }
+.tile:hover .tmk { color: var(--ink-2); }
 .tile .tmk svg { width: 20px; height: 20px; display: block; }
 .tile h3 { margin-bottom: var(--s1); }
 .tile p { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin: 0; }
@@ -451,7 +522,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 
 /* the primary surface — wider, a row rather than a box */
 .tile.feature { flex-direction: row; align-items: center; gap: var(--s5); padding: var(--s5); }
-.tile.feature .tmk { margin: 0; flex: none; color: var(--accent); }
+.tile.feature .tmk { margin: 0; flex: none; color: var(--ink-2); }
 .tile.feature .tbody { flex: 1 1 auto; min-width: 0; display: block; }
 .tile.feature .tbody .tfoot { margin-top: var(--s3); padding-top: 0; }
 .tile.feature .tgo { flex: none; }
@@ -459,8 +530,8 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 /* ---------------------------------------------------------- meters */
 .meter { height: 6px; border-radius: 99px; background: var(--bg-2); overflow: hidden; }
 .meter > i {
-  display: block; height: 100%; border-radius: 99px; width: 0; background: var(--accent);
-  transition: width 1s var(--ease);
+  display: block; height: 100%; border-radius: 99px; width: 0; background: var(--ink-3);
+  transition: width 1s var(--e-out);
 }
 .meter.research > i { background: var(--d-research); }
 .meter.clinical > i { background: var(--d-clinical); }
@@ -472,7 +543,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .rungs i {
   display: block; width: 15px; height: 5px; border-radius: 2px; background: var(--bg-2);
 }
-.rungs i.on { background: var(--accent); }
+.rungs i.on { background: var(--ink-2); }
 .rungs.research i.on { background: var(--d-research); }
 .rungs.clinical i.on { background: var(--d-clinical); }
 .rungs.professional i.on { background: var(--d-professional); }
@@ -481,7 +552,8 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .ring svg { transform: rotate(-90deg); display: block; }
 .ring circle { fill: none; stroke-linecap: round; }
 .ring .trk { stroke: var(--bg-2); }
-.ring .val { transition: stroke-dashoffset 1.2s var(--ease); }
+.ring .val  { transition: stroke-dashoffset 1.1s var(--e-out); }
+.ring .ghost { transition: stroke-dashoffset 1.1s var(--e-out) .12s; }
 .ring .mid { position: absolute; text-align: center; line-height: 1.05; }
 
 .statline { display: flex; align-items: baseline; gap: var(--s2); }
@@ -489,7 +561,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .statline .u { font-size: 13px; color: var(--ink-3); font-weight: 600; }
 
 /* movement — up, down or flat, with the direction stated in words too */
-.mv { display: inline-flex; align-items: center; gap: var(--s1); font-size: 13px; font-weight: 650; }
+.mv { display: inline-flex; align-items: center; gap: var(--s1); font-size: 13px; font-weight: 600; }
 .mv.up { color: var(--good); }
 .mv.dn { color: var(--wrong); }
 .mv.fl { color: var(--ink-3); }
@@ -518,7 +590,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
   padding: var(--s4) var(--s5); margin-bottom: var(--s5);
 }
 .qstem {
-  font-size: 23px; line-height: 1.32; font-weight: 660; letter-spacing: -0.024em;
+  font-size: 23px; line-height: 1.32; font-weight: 600; letter-spacing: -0.024em;
   margin-bottom: var(--s5); text-wrap: pretty;
 }
 .qhint { font-size: 13px; color: var(--ink-3); margin: calc(-1 * var(--s3)) 0 var(--s5); }
@@ -536,7 +608,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .choice:active:not(.locked) { transform: scale(.995); }
 .choice .key {
   width: 22px; height: 22px; flex: none; border-radius: 6px; display: grid; place-items: center;
-  border: 1px solid var(--line-2); font-size: 11.5px; font-weight: 700; color: var(--ink-3);
+  border: 1px solid var(--line-2); font-size: 11.5px; font-weight: 600; color: var(--ink-3);
   margin-top: 2px; transition: all var(--t-fast) var(--ease); background: transparent;
 }
 .choice .ctx { flex: 1 1 auto; }
@@ -557,7 +629,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 /* contrast sorter */
 .sortcols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin-bottom: var(--s3); }
 .sortcols .h {
-  text-align: center; font-size: 12.5px; font-weight: 650; padding: var(--s2) var(--s3);
+  text-align: center; font-size: 12.5px; font-weight: 600; padding: var(--s2) var(--s3);
   border-radius: var(--r-s); background: var(--bg-2); color: var(--ink-2); line-height: 1.3;
 }
 .sortrow {
@@ -572,7 +644,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .sortrow .t { flex: 1 1 auto; font-size: 14px; line-height: 1.4; }
 .sidebtn {
   width: 36px; height: 30px; flex: none; border-radius: 8px; border: 1px solid var(--line-2);
-  background: var(--card-2); color: var(--ink-3); font: inherit; font-weight: 650; font-size: 13px;
+  background: var(--card-2); color: var(--ink-3); font: inherit; font-weight: 600; font-size: 13px;
   cursor: pointer; transition: all var(--t-fast) var(--ease);
 }
 .sidebtn:hover { border-color: var(--ink-3); color: var(--ink); }
@@ -582,7 +654,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 #actbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
   background: var(--card); box-shadow: var(--sh-up);
-  transform: translateY(110%); transition: transform .34s var(--ease), background var(--t-mid) var(--ease);
+  transform: translateY(110%); transition: transform var(--m-slow) var(--e-out), background var(--m-base) var(--e-both);
   max-height: 62vh; display: flex; flex-direction: column;
   border-top: 1px solid var(--line);
 }
@@ -604,7 +676,7 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 @keyframes pop { from { transform: scale(.4); opacity: 0; } }
 .verdict-h.good .badge { background: var(--good); }
 .verdict-h.bad .badge { background: var(--wrong); }
-.verdict-h .t { font-size: 17px; font-weight: 680; letter-spacing: -0.024em; }
+.verdict-h .t { font-size: 17px; font-weight: 600; letter-spacing: -0.024em; }
 .verdict-h.good .t { color: var(--good-deep); }
 .verdict-h.bad .t { color: var(--wrong-deep); }
 .verdict-h .meta { margin-left: auto; }
@@ -623,15 +695,15 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .nots .n {
   display: flex; gap: var(--s2); font-size: 13px; color: var(--ink-2); margin-top: var(--s1); line-height: 1.45;
 }
-.nots .n::before { content: '✕'; color: var(--wrong); flex: none; font-weight: 700; font-size: 11px; margin-top: 3px; }
+.nots .n::before { content: '✕'; color: var(--wrong); flex: none; font-weight: 600; font-size: 11px; margin-top: 3px; }
 
 /* confidence pips */
 .confwrap { display: flex; align-items: center; gap: var(--s2); flex: none; }
-.confwrap .cl { font-size: 11px; font-weight: 700; color: var(--ink-3); letter-spacing: .1em; text-transform: uppercase; }
+.confwrap .cl { font-size: 11px; font-weight: 600; color: var(--ink-3); letter-spacing: .1em; text-transform: uppercase; }
 .pips { display: flex; gap: var(--s1); }
 .pip {
   width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line-2);
-  background: var(--card); color: var(--ink-3); font: inherit; font-weight: 650; font-size: 12.5px;
+  background: var(--card); color: var(--ink-3); font: inherit; font-weight: 600; font-size: 12.5px;
   cursor: pointer; transition: all var(--t-fast) var(--ease); padding: 0;
 }
 .pip:hover { border-color: var(--ink-3); color: var(--ink); }
@@ -647,10 +719,10 @@ button.prow:hover .chev { color: var(--ink-3); transform: translateX(2px); }
 .paper .note { font-size: 13px; color: var(--ink-3); font-style: italic; font-family: var(--sans); }
 .tblwrap { overflow-x: auto; margin: var(--s5) 0; border-radius: var(--r-s); border: 1px solid var(--line); }
 table.dt { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-table.dt caption { text-align: left; padding: var(--s3) var(--s4) var(--s2); font-size: 12.5px; font-weight: 650; color: var(--ink-2); }
+table.dt caption { text-align: left; padding: var(--s3) var(--s4) var(--s2); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
 table.dt th, table.dt td { padding: var(--s2) var(--s4); text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
 table.dt th:first-child, table.dt td:first-child { text-align: left; }
-table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+table.dt th { color: var(--ink-3); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 
 /* rubric */
 .rub { display: grid; gap: var(--s1); margin-top: var(--s3); }
@@ -668,10 +740,10 @@ table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spa
 .rubpt .tick:hover { border-color: var(--good); }
 .rubpt.hit .tick { background: var(--good); border-color: var(--good); color: #fff; }
 .rubpt .tx { flex: 1 1 auto; font-size: 14.5px; line-height: 1.5; }
-.rubpt .wt { flex: none; font-size: 12px; color: var(--ink-3); font-weight: 650; margin-top: 3px; }
+.rubpt .wt { flex: none; font-size: 12px; color: var(--ink-3); font-weight: 600; margin-top: 3px; }
 .rubpt.adv .tx::after {
   content: 'ADVANCED'; font-size: 9px; letter-spacing: .1em; color: var(--accent);
-  margin-left: var(--s2); vertical-align: 1px; font-weight: 700;
+  margin-left: var(--s2); vertical-align: 1px; font-weight: 600;
 }
 
 .flag {
@@ -710,7 +782,7 @@ table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spa
 
 /* ---------------------------------------------------------- timers */
 .timer {
-  font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.04em; font-size: 22px;
+  font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.04em; font-size: 22px;
 }
 .timer.warn { color: var(--warning); }
 .timer.out { color: var(--wrong); }
@@ -725,11 +797,11 @@ table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spa
 .turn { display: flex; gap: var(--s3); margin-bottom: var(--s5); }
 .turn .av {
   width: 28px; height: 28px; border-radius: 50%; flex: none; display: grid; place-items: center;
-  font-size: 11.5px; font-weight: 700; background: var(--bg-2); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 600; background: var(--bg-2); color: var(--ink-2);
 }
 .turn.you .av { background: var(--accent); color: var(--accent-ink); }
 .turn .sp { flex: 1 1 auto; }
-.turn .sp .who { font-size: 11px; color: var(--ink-3); margin-bottom: var(--s1); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.turn .sp .who { font-size: 11px; color: var(--ink-3); margin-bottom: var(--s1); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .turn .sp .tx {
   font-family: var(--serif); font-size: 16.5px; line-height: 1.58;
   background: var(--card); border: 1px solid var(--line); padding: var(--s3) var(--s4);
@@ -768,8 +840,8 @@ table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spa
 }
 .listrow:first-child { border-top: 0; }
 .listrow:hover { opacity: .66; }
-.listrow .nm { flex: 1 1 auto; font-size: 14.5px; font-weight: 650; line-height: 1.4; }
-.listrow .vv { flex: none; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; font-weight: 650; }
+.listrow .nm { flex: 1 1 auto; font-size: 14.5px; font-weight: 600; line-height: 1.4; }
+.listrow .vv { flex: none; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* ---------------------------------------------------------- misc */
 .divider { display: flex; align-items: baseline; gap: var(--s3); margin: var(--s7) 0 var(--s4); padding-bottom: var(--s3); border-bottom: 1px solid var(--line); }
@@ -777,7 +849,7 @@ table.dt th { color: var(--ink-3); font-weight: 700; font-size: 11px; letter-spa
 
 details.disc { border-radius: var(--r-s); background: var(--card); border: 1px solid var(--line); margin-top: var(--s2); overflow: hidden; }
 details.disc > summary {
-  cursor: pointer; padding: var(--s3) var(--s4); font-size: 14px; font-weight: 650; list-style: none;
+  cursor: pointer; padding: var(--s3) var(--s4); font-size: 14px; font-weight: 600; list-style: none;
   display: flex; align-items: center; gap: var(--s2); color: var(--ink-2);
 }
 details.disc > summary::-webkit-details-marker { display: none; }
@@ -827,7 +899,7 @@ textarea:focus, input:focus, select:focus {
 .cmdinput:focus { box-shadow: none; border-color: var(--line); }
 .cmdlist { max-height: 420px; overflow-y: auto; padding: var(--s2); }
 .cmdgroup {
-  font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase;
   color: var(--ink-3); padding: var(--s3) var(--s3) var(--s1);
 }
 .cmditem {
@@ -845,7 +917,7 @@ textarea:focus, input:focus, select:focus {
   font-size: 11.5px; color: var(--ink-3);
 }
 kbd {
-  font: inherit; font-size: 10.5px; font-weight: 650; padding: 1px 5px; border-radius: 4px;
+  font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
   border: 1px solid var(--line-2); background: var(--bg-2); color: var(--ink-2);
 }
 
@@ -858,13 +930,13 @@ kbd {
 @keyframes tin { from { opacity: 0; transform: translateY(10px); } }
 
 /* entrance stagger — short, ease-out, no bounce */
-.stg > * { animation: rise .4s var(--ease) backwards; }
+.stg > * { animation: rise var(--m-page) var(--e-out) backwards; }
 .stg > *:nth-child(1){animation-delay:.01s} .stg > *:nth-child(2){animation-delay:.05s}
 .stg > *:nth-child(3){animation-delay:.09s} .stg > *:nth-child(4){animation-delay:.13s}
 .stg > *:nth-child(5){animation-delay:.17s} .stg > *:nth-child(6){animation-delay:.21s}
 .stg > *:nth-child(7){animation-delay:.25s} .stg > *:nth-child(8){animation-delay:.29s}
 .stg > *:nth-child(9){animation-delay:.33s} .stg > *:nth-child(10){animation-delay:.37s}
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
 
@@ -1406,19 +1478,22 @@ function tick(freq, dur, vol) {
 /* One stroke weight, one optical size, no coloured chips behind them.
    Emoji render inconsistently across platforms and read as decoration. */
 const ICON = {
-  bench:  '<path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M8.5 12.5h7M8.5 16h4.5"/>',
-  panel:  '<path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
-  studio: '<path d="M12 3 3.5 7.5 12 12l8.5-4.5z"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5"/>',
-  room:   '<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h7A2.5 2.5 0 0 1 15 6.5v3A2.5 2.5 0 0 1 12.5 12H7l-4 3z"/><path d="M9 15.2c0 1.3 1.1 2.3 2.5 2.3H17l4 3V13a2.5 2.5 0 0 0-2.5-2.5H18"/>',
-  drill:  '<path d="M13 2 4.5 13H11l-1 9 8.5-11H12z"/>',
-  atlas:  '<circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6.5" r="2"/><circle cx="12" cy="14" r="2.6"/><circle cx="19" cy="18" r="2"/><path d="M8 8.5 10 12M16.2 7.6 13.4 12M14.2 15.6 17.3 17.2"/>',
-  ledger: '<path d="M5 4h14v17l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 9h6M9 13h6"/>',
-  go:     '<path d="M4 12h15M13 6l6 6-6 6"/>',
-  clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
-  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
-  spark:  '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
-  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.2v2.6M12 19.2v2.6M21.8 12h-2.6M4.8 12H2.2M18.9 5.1l-1.8 1.8M6.9 17.1l-1.8 1.8M18.9 18.9l-1.8-1.8M6.9 6.9 5.1 5.1"/>',
-  theme:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" stroke-width="1.4"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
+  /* Drawn on one 24-unit grid: 1.6 stroke, round caps and joins, every glyph
+     sitting in the same 18-unit optical box, circles all r=2.2. No fills, so
+     nothing reads heavier than its neighbours. */
+  bench:  '<path d="M6.2 3.4h7.3l4.3 4.3v12.9H6.2z"/><path d="M13.4 3.5v4.3h4.3"/><path d="M9 13h6.2M9 16.4h3.6"/>',
+  panel:  '<rect x="9.2" y="2.9" width="5.6" height="10.5" rx="2.8"/><path d="M6 11.1a6 6 0 0 0 12 0"/><path d="M12 17.1v3.5"/><path d="M9.2 20.6h5.6"/>',
+  studio: '<path d="M12 3.2 3.6 7.5 12 11.8l8.4-4.3z"/><path d="m3.6 12 8.4 4.3 8.4-4.3"/><path d="m3.6 16.5 8.4 4.3 8.4-4.3"/>',
+  room:   '<path d="M3.4 6.6a2.2 2.2 0 0 1 2.2-2.2h7.8a2.2 2.2 0 0 1 2.2 2.2v3.6a2.2 2.2 0 0 1-2.2 2.2H7l-3.6 2.7z"/><path d="M9 15.4a2.2 2.2 0 0 0 2.2 2.2h5.2l4.2 2.8v-8.6a2.2 2.2 0 0 0-2.2-2.2h-1.4"/>',
+  drill:  '<path d="M13.4 2.6 5.2 13.4h5.5l-1.1 8 8.2-10.8h-5.5z"/>',
+  atlas:  '<circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="6.4" r="2.2"/><circle cx="12" cy="14" r="2.2"/><circle cx="18.6" cy="18" r="2.2"/><path d="M7.9 8.3 10.3 12.6M16.3 7.6 13.6 12.2M13.8 15.5 16.8 17.1"/>',
+  ledger: '<path d="M5.4 4.2h13.2v16.4l-2.9-2-1.9 2-1.9-2-1.9 2-1.9-2-2.8 2z"/><path d="M9.2 9h5.6M9.2 12.6h5.6"/>',
+  go:     '<path d="M4.5 12h14"/><path d="m12.8 6.3 5.7 5.7-5.7 5.7"/>',
+  clock:  '<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3.2 1.9"/>',
+  search: '<circle cx="11" cy="11" r="6.4"/><path d="m19.8 19.8-4.3-4.3"/>',
+  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/>',
+  theme:  '<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8a8.2 8.2 0 0 1 0 16.4z" fill="currentColor" stroke="none"/>',
+  flame:  '<path d="M12 21.2a6.6 6.6 0 0 0 6.6-6.6c0-3.8-2.9-6.2-3.4-9.6-2.4 2.7-3.2 4.1-3.2 4.1S10.5 6.6 8.6 5.6c0 2.9-3.2 4.3-3.2 9a6.6 6.6 0 0 0 6.6 6.6z"/>',
 };
 function icon(name, size) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -1536,6 +1611,53 @@ function prow(o) {
 
 function dotEl(domain) { return el('span', { class:'dot ' + domain }); }
 
+/* Segmented control. The thumb is a single element that travels, so changing
+   the choice reads as one object moving rather than two highlights swapping. */
+function segEl(options, current, onPick) {
+  const wrap = el('div', { class:'seg' });
+  const thumb = el('i', { class:'thumb' });
+  wrap.appendChild(thumb);
+  const btns = options.map(([val, label]) => {
+    const b = el('button', { text: label, class: val === current ? 'on' : '' });
+    b.addEventListener('click', () => {
+      if (b.classList.contains('on')) return;
+      btns.forEach(x => x.classList.toggle('on', x === b));
+      place();
+      onPick(val);
+    });
+    wrap.appendChild(b);
+    return b;
+  });
+  function place() {
+    const on = btns.find(b => b.classList.contains('on')) || btns[0];
+    if (!on || !on.offsetWidth) return;
+    thumb.style.width = on.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${on.offsetLeft}px)`;
+  }
+  requestAnimationFrame(() => {
+    // the first placement must not animate in from zero
+    const t = thumb.style.transition;
+    thumb.style.transition = 'none';
+    place();
+    requestAnimationFrame(() => { thumb.style.transition = t; });
+  });
+  return wrap;
+}
+
+/* Count a number up to its value. Numbers that matter should arrive, not
+   appear — but only where the value is the point of the element. */
+function countUp(node, to, ms) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { node.textContent = to; return; }
+  const dur = ms || 760, t0 = performance.now();
+  function step(now) {
+    const k = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 4);                 // expo-out, matches --e-out
+    node.textContent = Math.round(to * e);
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 /* the depth ladder, drawn — five rungs, filled to the level demonstrated */
 function rungsEl(depth, domain) {
   const w = el('div', { class:'rungs ' + (domain || ''), title: LEVELS[depth] || 'unseen' });
@@ -1543,12 +1665,20 @@ function rungsEl(depth, domain) {
   return w;
 }
 
-function ringEl(pct, size, stroke, colour, label, sub) {
+/* `ghost`, when given, draws a second faint arc behind the value. On the
+   readiness ring it is the unweighted mean of the three domains, so the gap
+   between the two arcs *is* the weighting — the chart shows you what the
+   formula did to you rather than asserting a number. */
+function ringEl(pct, size, stroke, colour, label, sub, ghost) {
   const r = (size - stroke) / 2, C = 2 * Math.PI * r;
   const w = el('div', { class:'ring', style:`width:${size}px;height:${size}px` });
+  const clamp = v => Math.max(0, Math.min(100, v));
   w.innerHTML =
     `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
        <circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"></circle>
+       ${ghost != null ? `<circle class="ghost" cx="${size/2}" cy="${size/2}" r="${r}"
+               stroke-width="${stroke}" stroke="${colour}" stroke-opacity=".22"
+               stroke-dasharray="${C}" stroke-dashoffset="${C}"></circle>` : ''}
        <circle class="val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"
                stroke="${colour}" stroke-dasharray="${C}" stroke-dashoffset="${C}"></circle>
      </svg>
@@ -1557,7 +1687,10 @@ function ringEl(pct, size, stroke, colour, label, sub) {
        ${sub ? `<div class="lbl" style="font-size:9px;margin-top:1px">${sub}</div>` : ''}
      </div>`;
   requestAnimationFrame(() => {
-    const v = $('.val', w); if (v) v.style.strokeDashoffset = C * (1 - Math.max(0, Math.min(100, pct)) / 100);
+    const v = $('.val', w);   if (v) v.style.strokeDashoffset = C * (1 - clamp(pct) / 100);
+    const g = $('.ghost', w); if (g) g.style.strokeDashoffset = C * (1 - clamp(ghost) / 100);
+    const n = $('.dnum', w);
+    if (n && /^\d+$/.test(String(label))) countUp(n, +label, 900);
   });
   return w;
 }
@@ -1571,7 +1704,7 @@ function domainRow(d, pct, mv) {
   row.innerHTML =
     `<div class="row" style="margin-bottom:7px;gap:8px">
        <span class="dot ${d}"></span>
-       <span style="font-weight:620;font-size:14px">${d[0].toUpperCase() + d.slice(1)}</span>
+       <span style="font-weight:600;font-size:14px">${d[0].toUpperCase() + d.slice(1)}</span>
        <span class="spacer"></span>
        ${arrow}
        <span class="dnum" style="font-size:14px;color:var(--ink-2)">${pct}</span>
@@ -1585,7 +1718,7 @@ function domainRow(d, pct, mv) {
 let PLAN_MIN = 12;
 
 function vToday(stage) {
-  const w = el('div', { class:'wrap stg' });
+  const w = el('div', { class:'wrap today stg' });
   const rd = readiness(), d2i = daysToInterview(), due = dueCount();
   const hcw = S.errors.filter(e => e.conf >= 4).length;
   const started = Object.keys(S.c).length > 0;
@@ -1610,11 +1743,12 @@ function vToday(stage) {
 
   if (started) {
     const s = section('Where you are', { act:'Full breakdown', onAct: () => go('progress') });
+    const mean = Math.round((rd.research + rd.clinical + rd.professional) / 3);
     const top = el('div', { class:'row', style:'gap:20px;margin-bottom:4px;align-items:center' });
-    top.appendChild(ringEl(rd.overall, 78, 8, band(rd.overall)[3], rd.overall, ''));
+    top.appendChild(ringEl(rd.overall, 78, 8, band(rd.overall)[3], rd.overall, '', mean));
     const t = el('div', { style:'flex:1 1 auto' });
-    t.innerHTML = `<div style="font-weight:660;font-size:17px;margin-bottom:3px;letter-spacing:-.02em">${band(rd.overall)[2]}</div>
-      <div class="src">Readiness weights your weakest domain, because selection filters on your weakest panel — not your strongest.</div>`;
+    t.innerHTML = `<div style="font-weight:600;font-size:17px;margin-bottom:3px;letter-spacing:-.024em">${band(rd.overall)[2]}</div>
+      <div class="src">The faint arc is your plain average, ${mean}. Readiness sits ${rd.overall === mean ? 'level with it' : (rd.overall < mean ? 'below' : 'above') + ' it'} because it weights your weakest domain — selection filters on the weakest panel you sit, not the strongest.</div>`;
     top.appendChild(t);
     s.appendChild(top);
     const mv = recentMovement(7);
@@ -1622,29 +1756,34 @@ function vToday(stage) {
     w.appendChild(s);
   }
 
-  if (S.wins.length) {
-    const s = section('What changed', { note:'depth you have gained, most recent first' });
-    s.appendChild(plate(S.wins.slice(0, 5).map(win => {
-      const node = CONCEPT[win.cid];
-      return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text,
-                    tail: el('span', { class:'meta', text: relTime(win.ts) }) });
-    })));
-    w.appendChild(s);
-  }
-
+  /* These two read as a pair — what you gained, and what keeps costing you —
+     so at wide widths they sit beside each other rather than stacking. */
   const clusters = misconceptionClusters(3);
-  if (clusters.length) {
-    const s = section('Underneath your errors', { note:'separate mistakes that share a root' });
-    s.appendChild(plate(clusters.map(cl => prow({
-      lead: dotEl(cl.node.domain), name: cl.node.label,
-      sub: `${Math.round(cl.n)} errors trace back here`,
-      val: cl.m, onclick: () => showConcept(cl.cid) }))));
-    w.appendChild(s);
+  if (S.wins.length || clusters.length) {
+    const pair = el('div', { class:'pair' });
+    if (S.wins.length) {
+      const s = section('What changed', { note:'most recent first' });
+      s.appendChild(plate(S.wins.slice(0, 5).map(win => {
+        const node = CONCEPT[win.cid];
+        return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text,
+                      tail: el('span', { class:'meta', text: relTime(win.ts) }) });
+      })));
+      pair.appendChild(s);
+    }
+    if (clusters.length) {
+      const s = section('Underneath your errors', { note:'mistakes that share a root' });
+      s.appendChild(plate(clusters.map(cl => prow({
+        lead: dotEl(cl.node.domain), name: cl.node.label,
+        sub: `${Math.round(cl.n)} errors trace back here`,
+        val: cl.m, onclick: () => showConcept(cl.cid) }))));
+      pair.appendChild(s);
+    }
+    w.appendChild(pair);
   }
 
   const s = section('Or work on something specific');
   s.appendChild(plate(SURFACES.map(([id, nm, mk, dom, blurb, count]) => prow({
-    lead: el('span', { class:'rlead', style:`color:var(--d-${dom})` , html: icon(mk) }),
+    lead: el('span', { class:'rlead', html: icon(mk) }),
     name: nm, sub: blurb, tail: el('span', { class:'meta', text: count() }),
     onclick: () => go(id) }))));
   w.appendChild(s);
@@ -1667,17 +1806,10 @@ function launchPanel(started, due, hcw) {
   p.appendChild(planBox);
 
   const foot = el('div', { class:'lfoot' });
-  const seg = el('div', { class:'seg' });
-  [12, 25, 45].forEach(m => {
-    const b = el('button', { text: m + ' min', class: m === PLAN_MIN ? 'on' : '' });
-    b.addEventListener('click', () => {
-      PLAN_MIN = m;
-      $$('button', seg).forEach(x => x.classList.toggle('on', x === b));
-      drawPlan(planBox, m);
-    });
-    seg.appendChild(b);
-  });
-  foot.appendChild(seg);
+  foot.appendChild(segEl([[12,'12 min'], [25,'25 min'], [45,'45 min']], PLAN_MIN, m => {
+    PLAN_MIN = m;
+    drawPlan(planBox, m);
+  }));
   foot.appendChild(el('div', { class:'spacer', style:'flex:1 1 auto' }));
   const start = el('button', { class:'btn pri lg', onclick: () => startDrill(PLAN_MIN) });
   start.innerHTML = `Start session <span class="arw">${icon('go', 16)}</span>`;
@@ -1731,7 +1863,7 @@ function surfaceGrid(cols) {
   const g = el('div', { class:'grid g' + (cols || 2) });
   SURFACES.forEach(([id, nm, mk, dom, blurb, count]) => {
     const b = el('button', { class:'tile', onclick: () => go(id) });
-    b.innerHTML = `<span class="tmk" style="color:var(--d-${dom})">${icon(mk)}</span>
+    b.innerHTML = `<span class="tmk">${icon(mk)}</span>
       <h3>${nm}</h3><p>${esc(blurb)}</p>
       <div class="tfoot"><span class="meta">${esc(count())}</span></div>`;
     g.appendChild(b);
@@ -1784,11 +1916,12 @@ function vProgress(stage) {
 
   /* readiness — the one number, with the weighting stated rather than hidden */
   const s0 = section('Readiness', { note:'0.62 × mean of domains + 0.38 × weakest' });
+  const mean = Math.round((rd.research + rd.clinical + rd.professional) / 3);
   const top = el('div', { class:'row', style:'gap:24px;align-items:center;margin-bottom:4px' });
-  top.appendChild(ringEl(rd.overall, 96, 9, band(rd.overall)[3], rd.overall, ''));
+  top.appendChild(ringEl(rd.overall, 96, 9, band(rd.overall)[3], rd.overall, '', mean));
   const rt = el('div', { style:'flex:1 1 auto' });
-  rt.innerHTML = `<div style="font-weight:660;font-size:20px;letter-spacing:-.026em;margin-bottom:4px">${band(rd.overall)[2]}</div>
-    <div class="src">Weighted towards your weakest domain, because selection filters on the weakest panel you sit — not the strongest.</div>`;
+  rt.innerHTML = `<div style="font-weight:600;font-size:20px;letter-spacing:-.03em;margin-bottom:4px">${band(rd.overall)[2]}</div>
+    <div class="src">The solid arc is your readiness. The faint one behind it is the plain average of the three domains, <b>${mean}</b> — the distance between them is what the weakest-domain weighting costs you.</div>`;
   top.appendChild(rt);
   s0.appendChild(top);
   ['research','clinical','professional'].forEach(d => s0.appendChild(domainRow(d, rd[d], mv[d])));
@@ -2127,7 +2260,7 @@ function renderLadder(host, item, t0, done) {
     const r = item.rungs[rung];
     const blk = el('div', { class:'card', style:'margin-bottom:12px' });
     blk.appendChild(el('div', { class:'lbl', text:'Step ' + (rung + 1) + ' of ' + item.rungs.length }));
-    blk.appendChild(el('div', { style:'font-size:18px;font-weight:700;letter-spacing:-.015em;margin:7px 0 14px;line-height:1.35', text: r.q }));
+    blk.appendChild(el('div', { style:'font-size:18px;font-weight:600;letter-spacing:-.015em;margin:7px 0 14px;line-height:1.35', text: r.q }));
     const opts = el('div', { class:'choices' });
     r.options.forEach((o, i) => {
       const b = el('button', { class:'choice' + (live ? '' : ' faded'), style:'box-shadow:none;border-color:var(--line)' }, [
@@ -2178,7 +2311,7 @@ function showVerdict(item, correct, rec, secs, onNext) {
   body.appendChild(h);
 
   if (rec.hiConfWrong) {
-    body.appendChild(el('p', { style:'color:var(--warning);font-weight:700;font-size:14.5px;margin-bottom:10px',
+    body.appendChild(el('p', { style:'color:var(--warning);font-weight:600;font-size:14.5px;margin-bottom:10px',
       text:'You were confident. That makes this the most valuable error in the session — it comes back before you leave.' }));
   }
   body.appendChild(el('div', { class:'teachtext', text: item.teach }));
@@ -2794,7 +2927,7 @@ function studioCase(stage, vid) {
   w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'The lenses' })]));
   v.models.forEach(m => {
     const d = el('details', { class:'disc', style:'margin-bottom:10px' });
-    d.innerHTML = `<summary><b style="font-weight:620;color:var(--ink)">${esc(m.model)}</b></summary>`;
+    d.innerHTML = `<summary><b style="font-weight:600;color:var(--ink)">${esc(m.model)}</b></summary>`;
     const dc = el('div', { class:'dc' });
     const rows = [
       ['Core mechanism', m.mech, 'var(--accent)'],
@@ -3374,6 +3507,7 @@ function buildShell() {
   $('#cmdbtn').addEventListener('click', openPalette);
   $('#setbtn').addEventListener('click', openSettings);
   $('#streak').addEventListener('click', () => go('progress'));
+  if (S.streak.n) countUp($('#streakn'), S.streak.n, 620);
   $('#scrim').addEventListener('click', closeModal);
   Act.init();
 }
@@ -3482,28 +3616,10 @@ function openSettings() {
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Preferences' }));
   const prefs = el('div', { class:'row wrap' });
-  const thmSeg = el('div', { class:'seg' });
-  [['light','Light'], ['dark','Dark']].forEach(([v, nm]) => {
-    const b = el('button', { text: nm, class: S.theme === v ? 'on' : '' });
-    b.addEventListener('click', () => {
-      if (S.theme === v) return;
-      toggleTheme();
-      $$('button', thmSeg).forEach(x => x.classList.toggle('on', x === b));
-    });
-    thmSeg.appendChild(b);
-  });
-  prefs.appendChild(thmSeg);
-  const sndSeg = el('div', { class:'seg' });
-  [[false,'Silent'], [true,'Sounds']].forEach(([v, nm]) => {
-    const b = el('button', { text: nm, class: !!S.sound === v ? 'on' : '' });
-    b.addEventListener('click', () => {
-      S.sound = v; save();
-      $$('button', sndSeg).forEach(x => x.classList.toggle('on', x === b));
-      if (v) tick(880, .08, .05);
-    });
-    sndSeg.appendChild(b);
-  });
-  prefs.appendChild(sndSeg);
+  prefs.appendChild(segEl([['light','Light'], ['dark','Dark']], S.theme || 'light',
+    v => { if (S.theme !== v) toggleTheme(); }));
+  prefs.appendChild(segEl([[false,'Silent'], [true,'Sounds']], !!S.sound,
+    v => { S.sound = v; save(); if (v) tick(880, .08, .05); }));
   body.appendChild(prefs);
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Your data' }));

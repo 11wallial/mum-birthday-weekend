@@ -157,74 +157,122 @@ There is no XP, no level, no streak of raw days. The reward structure is:
 
 ## 9a. Interface design
 
-The surface has to survive months of daily use by someone under real pressure, so
-it is built for calm and legibility rather than for looking like an app. The
-reference points are Linear, Stripe and the BMJ rather than Duolingo: precise,
-quiet, clinical, demanding. Eight decisions carry it.
+The surface has to survive months of daily use by someone under real pressure,
+so it is built for calm and legibility rather than for looking like an app. It
+is a governed system: every colour, size, shadow and duration below comes from a
+token, and each token family has a rule attached saying when it may be used.
 
-**Structure, not cards.** An early version made every piece of information a
-white card floating on a shadow. It read as a UI kit. The page is now a sequence
-of *sections* — a small uppercase label, a hairline rule, and content — and
-homogeneous lists are single bordered *plates* whose rows are divided by
-hairlines. One container, many items, instead of one container per item. This is
-the single largest change in the look of the thing.
+### The colour rule
 
-**Explicit hierarchy.** Practice does not present five equal choices. Drill is
-the engine, so it sits alone under *Recommended* as a wide feature row; the four
-simulation surfaces sit under *Simulate the real thing*; the Atlas and the Ledger
-sit under *Study the map*. The grouping does the explaining that five identical
-tiles could not.
+> **Neutrals carry the interface. Colour is only ever data or outcome.**
 
-**One thing at a time.** There is no permanent metrics rail beside the work.
-Readiness, calibration and the error ledger live in their own tab. While you are
-answering, the top bar leaves and the item is alone on the page.
+- **Chrome, structure and the primary action are warm ink on warm paper.** There
+  is no decorative accent hue in the stylesheet at all. The primary button is
+  ink; selected states are ink; the wordmark is ink.
+- **The three domain hues** (research / clinical / professional) appear *only*
+  where they encode which domain something belongs to — dots, meters, depth
+  rungs, Atlas nodes.
+- **The three status hues** (correct / incorrect / attention) appear *only*
+  where they encode an outcome.
+
+Two consequences are worth stating. First, selection reads as neutral and
+outcome reads as coloured, so the learner can never confuse "I picked this" with
+"this was right". Second, nothing on a page is coloured for want of a better
+idea — the previous build tinted each practice surface by its domain, which
+produced two near-identical oranges (Bench and Room are both clinical) and read
+as one arbitrary colour per card. Those glyphs are now ink.
+
+The neutrals are deliberately warm (`#FBFAF8` paper, `#1A1815` ink) rather than
+the pure greys a default utility palette gives you, so the surface reads as
+paper rather than as a blank div.
+
+### Type
+
+Two faces. **Instrument Sans** for the interface, **Newsreader** for clinical and
+exam material — vignettes, interview questions, transcripts, paper stimuli — so
+"the app" and "the thing you are reading" never blur. Interview questions are set
+as a large serif quotation, because somebody is asking you them.
+
+Four display steps and two utility steps, and **three weights only** (400 / 500 /
+600). Tracking tightens as size grows, roughly `-0.001em` per point above 15px,
+so `Good afternoon.` at 32px is set at `-0.038em` and body copy at 15px is set
+loose. Large text should read as *set*, not as body copy scaled up.
+
+### Spacing, radius, elevation, motion
+
+| Family | Values | Rule |
+|---|---|---|
+| Spacing | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 | Strict 4px grid; no arbitrary values |
+| Radius | 10 / 14 / 20 / pill | Buttons, cards, feature surfaces, pills |
+| Elevation | 3 steps, each a stack of contact + ambient + cast shadows, plus an inset light edge | A raised surface reads as *lit*, not as a floating rectangle |
+| Motion | 120 / 200 / 340 / 460ms; expo-out, spring, symmetric | Entrances use expo-out; anything that physically moves uses the spring |
+
+Elevation is what makes the hero action outrank its screen: the launch panel
+carries the deepest shadow plus a barely-there tonal wash, while the four
+secondary surfaces sit almost flat. Nothing else on Today is raised.
+
+### Motion is not decoration
+
+Motion is invisible in a screenshot, which is exactly why it is easy to skip and
+why it is most of the difference between tiers of polish. What actually moves:
+
+- The readiness ring draws its arc on load (1.1s expo-out); the faint mean arc
+  follows 120ms behind it.
+- Numbers that *are* the point of their element count up rather than appearing —
+  the readiness score, the streak.
+- The duration control's thumb travels between options on a spring, so changing
+  12 → 45 minutes reads as one object moving rather than two highlights swapping.
+- Domain meters and the session progress bar animate their width.
+- Cards enter on a staggered expo-out; buttons compress 2% on press.
+- Every one of these is disabled under `prefers-reduced-motion`.
+
+### The rest of the interface
+
+**Structure, not cards.** A page is a sequence of sections — small uppercase
+label, hairline rule, content — and homogeneous lists are single bordered plates
+whose rows are divided by hairlines. One container holding many items, rather
+than one container per item.
+
+**Explicit hierarchy.** Practice does not offer five equal choices: Drill sits
+alone under *Recommended*, the four simulation surfaces under *Simulate the real
+thing*, the Atlas and Ledger under *Study the map*.
+
+**A composition, not a centred stack.** Today runs wider than the reading
+surfaces and pairs *What changed* with *Underneath your errors* side by side
+above 900px, because they are read together — what you gained, and what keeps
+costing you.
+
+**One thing at a time.** No permanent metrics rail. While you are answering, the
+top bar leaves and the item is alone on the page.
 
 **The action bar is the spine.** A persistent bottom bar holds the confidence
-control and the primary action, then *becomes* the result panel — tinted green or
-red, carrying the verdict, the teaching, the precise formulation, the near-misses
-and the error classification. Every surface puts its controls there, so the
-learner never hunts for the next step.
+control and the primary action, then *becomes* the result panel — carrying the
+verdict, teaching, precise formulation, near-misses and error classification.
 
-**Select, then check.** Choosing an option does not submit it. That single change
-turns an item from a reflex into a decision, and makes the confidence rating
-meaningful, since you commit to both before seeing the outcome.
+**Select, then check.** Choosing an option does not submit it, which turns an
+item from a reflex into a decision and makes the confidence rating meaningful.
 
-**Violet is an accent, not an atmosphere.** It marks the one primary action and
-the currently selected state, and almost nothing else. Icons are stroke glyphs in
-their domain hue with no coloured chip behind them; metadata is inline
-dot-separated text rather than a row of pills; the greeting is deliberately
-smaller than the thing you are meant to do next. If violet appears three times on
-a screen, something has gone wrong.
-
-**A design system with a small vocabulary.** Spacing is a strict 4px scale
-(4·8·12·16·24·32·48·64) with no arbitrary values. There are four radii (10, 14,
-20, pill) and three elevations, all subtle enough to say "this is above that"
-without saying "this is floating". The type scale is fixed at display / h1 / h2 /
-h3 / body / small / micro. Motion is short and eased — a 1px hover lift, a 2%
-press, a 400ms entrance — never a bounce.
-
-**Two typefaces doing structural work.** Inter for the interface, Newsreader for
-clinical and exam material. Vignettes, interview questions, transcripts and paper
-stimuli are all set in serif, so "the app" and "the thing you are reading" never
-blur. Interview questions are set as a large serif quotation, because somebody is
-asking you them.
+**Icons are drawn, not imported.** One 24-unit grid, 1.6 stroke, round caps and
+joins, every glyph in the same 18-unit optical box, all circles at r=2.2, no
+fills. They are chrome, so they are ink.
 
 ### Making the engine legible
 
 The most interesting thing about this tool is that it decides what you should
-practise, and an interface that hides that decision wastes it. So Today does not
+practise, and an interface that hides that decision wastes it. Today does not
 just offer a Start button: it renders the queue `buildSession()` is about to hand
-the drill — which clusters it will cover, how many items each, and *why* each was
-chosen (due for review, you were sure and wrong here, you have lost this one
-before, not yet seen). Changing the duration re-plans it live. Nothing in that
-panel is written for display; it is the same priority calculation the session
-runs on.
+the drill — which clusters, how many items each, and *why* each was chosen (due
+for review, you were sure and wrong here, you have lost this one before, not yet
+seen). Changing the duration re-plans it live. Nothing in that panel is written
+for display; it is the same priority calculation the session runs on.
 
-Progress reports movement the same way — from events that actually happened
-(depth advancements up, recorded errors down, over a seven-day window) rather
-than a synthesised delta. Depth is drawn as a five-rung ladder next to each
-concept, so "discriminate" is visible as a shape and not only as a word, and
-mastery is never reduced to a lone percentage.
+The readiness ring is the same idea applied to a chart. It draws two arcs: your
+readiness, and behind it in 22% opacity the plain unweighted mean of the three
+domains. The gap between them *is* the weakest-domain weighting — so the
+visualisation teaches you what the formula did to you instead of decorating a
+number. Progress reports movement from events that actually happened (depth
+advancements up, recorded errors down, over seven days) and draws depth as a
+five-rung ladder, so "discriminate" is visible as a shape and not only as a word.
 
 The command palette (⌘K) is a real command layer rather than a search box:
 grouped, with the actions the engine can take at the top, then every mode, paper,

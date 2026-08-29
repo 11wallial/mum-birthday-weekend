@@ -49,6 +49,19 @@ The bottom bar holds your confidence rating and the primary action, then becomes
 the result panel — verdict, teaching, the precise formulation, the near-misses,
 and the error classification.
 
+## The design system
+
+One rule governs colour: **neutrals carry the interface; colour is only ever data
+or outcome.** Chrome and the primary action are warm ink on warm paper — there is
+no decorative accent hue. The three domain colours appear only where they encode
+a domain; the three status colours only where they encode an outcome.
+
+Type is Instrument Sans for the interface and Newsreader for clinical and exam
+material, in three weights and six steps, with tracking that tightens as size
+grows. Spacing is a strict 4px scale, radius has four values, elevation has three
+layered steps, and motion has four durations and three curves — all as tokens in
+`trainer/src/styles.css`, with the rules written at the top of that file.
+
 ## Keyboard
 
 `⌘K` command palette — actions first, then every mode, paper, theme, case,

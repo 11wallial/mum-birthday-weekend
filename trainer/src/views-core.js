@@ -10,19 +10,22 @@
 /* One stroke weight, one optical size, no coloured chips behind them.
    Emoji render inconsistently across platforms and read as decoration. */
 const ICON = {
-  bench:  '<path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M8.5 12.5h7M8.5 16h4.5"/>',
-  panel:  '<path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
-  studio: '<path d="M12 3 3.5 7.5 12 12l8.5-4.5z"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5"/>',
-  room:   '<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h7A2.5 2.5 0 0 1 15 6.5v3A2.5 2.5 0 0 1 12.5 12H7l-4 3z"/><path d="M9 15.2c0 1.3 1.1 2.3 2.5 2.3H17l4 3V13a2.5 2.5 0 0 0-2.5-2.5H18"/>',
-  drill:  '<path d="M13 2 4.5 13H11l-1 9 8.5-11H12z"/>',
-  atlas:  '<circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6.5" r="2"/><circle cx="12" cy="14" r="2.6"/><circle cx="19" cy="18" r="2"/><path d="M8 8.5 10 12M16.2 7.6 13.4 12M14.2 15.6 17.3 17.2"/>',
-  ledger: '<path d="M5 4h14v17l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 9h6M9 13h6"/>',
-  go:     '<path d="M4 12h15M13 6l6 6-6 6"/>',
-  clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
-  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
-  spark:  '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
-  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.2v2.6M12 19.2v2.6M21.8 12h-2.6M4.8 12H2.2M18.9 5.1l-1.8 1.8M6.9 17.1l-1.8 1.8M18.9 18.9l-1.8-1.8M6.9 6.9 5.1 5.1"/>',
-  theme:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" stroke-width="1.4"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
+  /* Drawn on one 24-unit grid: 1.6 stroke, round caps and joins, every glyph
+     sitting in the same 18-unit optical box, circles all r=2.2. No fills, so
+     nothing reads heavier than its neighbours. */
+  bench:  '<path d="M6.2 3.4h7.3l4.3 4.3v12.9H6.2z"/><path d="M13.4 3.5v4.3h4.3"/><path d="M9 13h6.2M9 16.4h3.6"/>',
+  panel:  '<rect x="9.2" y="2.9" width="5.6" height="10.5" rx="2.8"/><path d="M6 11.1a6 6 0 0 0 12 0"/><path d="M12 17.1v3.5"/><path d="M9.2 20.6h5.6"/>',
+  studio: '<path d="M12 3.2 3.6 7.5 12 11.8l8.4-4.3z"/><path d="m3.6 12 8.4 4.3 8.4-4.3"/><path d="m3.6 16.5 8.4 4.3 8.4-4.3"/>',
+  room:   '<path d="M3.4 6.6a2.2 2.2 0 0 1 2.2-2.2h7.8a2.2 2.2 0 0 1 2.2 2.2v3.6a2.2 2.2 0 0 1-2.2 2.2H7l-3.6 2.7z"/><path d="M9 15.4a2.2 2.2 0 0 0 2.2 2.2h5.2l4.2 2.8v-8.6a2.2 2.2 0 0 0-2.2-2.2h-1.4"/>',
+  drill:  '<path d="M13.4 2.6 5.2 13.4h5.5l-1.1 8 8.2-10.8h-5.5z"/>',
+  atlas:  '<circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="6.4" r="2.2"/><circle cx="12" cy="14" r="2.2"/><circle cx="18.6" cy="18" r="2.2"/><path d="M7.9 8.3 10.3 12.6M16.3 7.6 13.6 12.2M13.8 15.5 16.8 17.1"/>',
+  ledger: '<path d="M5.4 4.2h13.2v16.4l-2.9-2-1.9 2-1.9-2-1.9 2-1.9-2-2.8 2z"/><path d="M9.2 9h5.6M9.2 12.6h5.6"/>',
+  go:     '<path d="M4.5 12h14"/><path d="m12.8 6.3 5.7 5.7-5.7 5.7"/>',
+  clock:  '<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3.2 1.9"/>',
+  search: '<circle cx="11" cy="11" r="6.4"/><path d="m19.8 19.8-4.3-4.3"/>',
+  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/>',
+  theme:  '<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8a8.2 8.2 0 0 1 0 16.4z" fill="currentColor" stroke="none"/>',
+  flame:  '<path d="M12 21.2a6.6 6.6 0 0 0 6.6-6.6c0-3.8-2.9-6.2-3.4-9.6-2.4 2.7-3.2 4.1-3.2 4.1S10.5 6.6 8.6 5.6c0 2.9-3.2 4.3-3.2 9a6.6 6.6 0 0 0 6.6 6.6z"/>',
 };
 function icon(name, size) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -140,6 +143,53 @@ function prow(o) {
 
 function dotEl(domain) { return el('span', { class:'dot ' + domain }); }
 
+/* Segmented control. The thumb is a single element that travels, so changing
+   the choice reads as one object moving rather than two highlights swapping. */
+function segEl(options, current, onPick) {
+  const wrap = el('div', { class:'seg' });
+  const thumb = el('i', { class:'thumb' });
+  wrap.appendChild(thumb);
+  const btns = options.map(([val, label]) => {
+    const b = el('button', { text: label, class: val === current ? 'on' : '' });
+    b.addEventListener('click', () => {
+      if (b.classList.contains('on')) return;
+      btns.forEach(x => x.classList.toggle('on', x === b));
+      place();
+      onPick(val);
+    });
+    wrap.appendChild(b);
+    return b;
+  });
+  function place() {
+    const on = btns.find(b => b.classList.contains('on')) || btns[0];
+    if (!on || !on.offsetWidth) return;
+    thumb.style.width = on.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${on.offsetLeft}px)`;
+  }
+  requestAnimationFrame(() => {
+    // the first placement must not animate in from zero
+    const t = thumb.style.transition;
+    thumb.style.transition = 'none';
+    place();
+    requestAnimationFrame(() => { thumb.style.transition = t; });
+  });
+  return wrap;
+}
+
+/* Count a number up to its value. Numbers that matter should arrive, not
+   appear — but only where the value is the point of the element. */
+function countUp(node, to, ms) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { node.textContent = to; return; }
+  const dur = ms || 760, t0 = performance.now();
+  function step(now) {
+    const k = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 4);                 // expo-out, matches --e-out
+    node.textContent = Math.round(to * e);
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 /* the depth ladder, drawn — five rungs, filled to the level demonstrated */
 function rungsEl(depth, domain) {
   const w = el('div', { class:'rungs ' + (domain || ''), title: LEVELS[depth] || 'unseen' });
@@ -147,12 +197,20 @@ function rungsEl(depth, domain) {
   return w;
 }
 
-function ringEl(pct, size, stroke, colour, label, sub) {
+/* `ghost`, when given, draws a second faint arc behind the value. On the
+   readiness ring it is the unweighted mean of the three domains, so the gap
+   between the two arcs *is* the weighting — the chart shows you what the
+   formula did to you rather than asserting a number. */
+function ringEl(pct, size, stroke, colour, label, sub, ghost) {
   const r = (size - stroke) / 2, C = 2 * Math.PI * r;
   const w = el('div', { class:'ring', style:`width:${size}px;height:${size}px` });
+  const clamp = v => Math.max(0, Math.min(100, v));
   w.innerHTML =
     `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
        <circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"></circle>
+       ${ghost != null ? `<circle class="ghost" cx="${size/2}" cy="${size/2}" r="${r}"
+               stroke-width="${stroke}" stroke="${colour}" stroke-opacity=".22"
+               stroke-dasharray="${C}" stroke-dashoffset="${C}"></circle>` : ''}
        <circle class="val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"
                stroke="${colour}" stroke-dasharray="${C}" stroke-dashoffset="${C}"></circle>
      </svg>
@@ -161,7 +219,10 @@ function ringEl(pct, size, stroke, colour, label, sub) {
        ${sub ? `<div class="lbl" style="font-size:9px;margin-top:1px">${sub}</div>` : ''}
      </div>`;
   requestAnimationFrame(() => {
-    const v = $('.val', w); if (v) v.style.strokeDashoffset = C * (1 - Math.max(0, Math.min(100, pct)) / 100);
+    const v = $('.val', w);   if (v) v.style.strokeDashoffset = C * (1 - clamp(pct) / 100);
+    const g = $('.ghost', w); if (g) g.style.strokeDashoffset = C * (1 - clamp(ghost) / 100);
+    const n = $('.dnum', w);
+    if (n && /^\d+$/.test(String(label))) countUp(n, +label, 900);
   });
   return w;
 }
@@ -175,7 +236,7 @@ function domainRow(d, pct, mv) {
   row.innerHTML =
     `<div class="row" style="margin-bottom:7px;gap:8px">
        <span class="dot ${d}"></span>
-       <span style="font-weight:620;font-size:14px">${d[0].toUpperCase() + d.slice(1)}</span>
+       <span style="font-weight:600;font-size:14px">${d[0].toUpperCase() + d.slice(1)}</span>
        <span class="spacer"></span>
        ${arrow}
        <span class="dnum" style="font-size:14px;color:var(--ink-2)">${pct}</span>
@@ -189,7 +250,7 @@ function domainRow(d, pct, mv) {
 let PLAN_MIN = 12;
 
 function vToday(stage) {
-  const w = el('div', { class:'wrap stg' });
+  const w = el('div', { class:'wrap today stg' });
   const rd = readiness(), d2i = daysToInterview(), due = dueCount();
   const hcw = S.errors.filter(e => e.conf >= 4).length;
   const started = Object.keys(S.c).length > 0;
@@ -214,11 +275,12 @@ function vToday(stage) {
 
   if (started) {
     const s = section('Where you are', { act:'Full breakdown', onAct: () => go('progress') });
+    const mean = Math.round((rd.research + rd.clinical + rd.professional) / 3);
     const top = el('div', { class:'row', style:'gap:20px;margin-bottom:4px;align-items:center' });
-    top.appendChild(ringEl(rd.overall, 78, 8, band(rd.overall)[3], rd.overall, ''));
+    top.appendChild(ringEl(rd.overall, 78, 8, band(rd.overall)[3], rd.overall, '', mean));
     const t = el('div', { style:'flex:1 1 auto' });
-    t.innerHTML = `<div style="font-weight:660;font-size:17px;margin-bottom:3px;letter-spacing:-.02em">${band(rd.overall)[2]}</div>
-      <div class="src">Readiness weights your weakest domain, because selection filters on your weakest panel — not your strongest.</div>`;
+    t.innerHTML = `<div style="font-weight:600;font-size:17px;margin-bottom:3px;letter-spacing:-.024em">${band(rd.overall)[2]}</div>
+      <div class="src">The faint arc is your plain average, ${mean}. Readiness sits ${rd.overall === mean ? 'level with it' : (rd.overall < mean ? 'below' : 'above') + ' it'} because it weights your weakest domain — selection filters on the weakest panel you sit, not the strongest.</div>`;
     top.appendChild(t);
     s.appendChild(top);
     const mv = recentMovement(7);
@@ -226,29 +288,34 @@ function vToday(stage) {
     w.appendChild(s);
   }
 
-  if (S.wins.length) {
-    const s = section('What changed', { note:'depth you have gained, most recent first' });
-    s.appendChild(plate(S.wins.slice(0, 5).map(win => {
-      const node = CONCEPT[win.cid];
-      return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text,
-                    tail: el('span', { class:'meta', text: relTime(win.ts) }) });
-    })));
-    w.appendChild(s);
-  }
-
+  /* These two read as a pair — what you gained, and what keeps costing you —
+     so at wide widths they sit beside each other rather than stacking. */
   const clusters = misconceptionClusters(3);
-  if (clusters.length) {
-    const s = section('Underneath your errors', { note:'separate mistakes that share a root' });
-    s.appendChild(plate(clusters.map(cl => prow({
-      lead: dotEl(cl.node.domain), name: cl.node.label,
-      sub: `${Math.round(cl.n)} errors trace back here`,
-      val: cl.m, onclick: () => showConcept(cl.cid) }))));
-    w.appendChild(s);
+  if (S.wins.length || clusters.length) {
+    const pair = el('div', { class:'pair' });
+    if (S.wins.length) {
+      const s = section('What changed', { note:'most recent first' });
+      s.appendChild(plate(S.wins.slice(0, 5).map(win => {
+        const node = CONCEPT[win.cid];
+        return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text,
+                      tail: el('span', { class:'meta', text: relTime(win.ts) }) });
+      })));
+      pair.appendChild(s);
+    }
+    if (clusters.length) {
+      const s = section('Underneath your errors', { note:'mistakes that share a root' });
+      s.appendChild(plate(clusters.map(cl => prow({
+        lead: dotEl(cl.node.domain), name: cl.node.label,
+        sub: `${Math.round(cl.n)} errors trace back here`,
+        val: cl.m, onclick: () => showConcept(cl.cid) }))));
+      pair.appendChild(s);
+    }
+    w.appendChild(pair);
   }
 
   const s = section('Or work on something specific');
   s.appendChild(plate(SURFACES.map(([id, nm, mk, dom, blurb, count]) => prow({
-    lead: el('span', { class:'rlead', style:`color:var(--d-${dom})` , html: icon(mk) }),
+    lead: el('span', { class:'rlead', html: icon(mk) }),
     name: nm, sub: blurb, tail: el('span', { class:'meta', text: count() }),
     onclick: () => go(id) }))));
   w.appendChild(s);
@@ -271,17 +338,10 @@ function launchPanel(started, due, hcw) {
   p.appendChild(planBox);
 
   const foot = el('div', { class:'lfoot' });
-  const seg = el('div', { class:'seg' });
-  [12, 25, 45].forEach(m => {
-    const b = el('button', { text: m + ' min', class: m === PLAN_MIN ? 'on' : '' });
-    b.addEventListener('click', () => {
-      PLAN_MIN = m;
-      $$('button', seg).forEach(x => x.classList.toggle('on', x === b));
-      drawPlan(planBox, m);
-    });
-    seg.appendChild(b);
-  });
-  foot.appendChild(seg);
+  foot.appendChild(segEl([[12,'12 min'], [25,'25 min'], [45,'45 min']], PLAN_MIN, m => {
+    PLAN_MIN = m;
+    drawPlan(planBox, m);
+  }));
   foot.appendChild(el('div', { class:'spacer', style:'flex:1 1 auto' }));
   const start = el('button', { class:'btn pri lg', onclick: () => startDrill(PLAN_MIN) });
   start.innerHTML = `Start session <span class="arw">${icon('go', 16)}</span>`;
@@ -335,7 +395,7 @@ function surfaceGrid(cols) {
   const g = el('div', { class:'grid g' + (cols || 2) });
   SURFACES.forEach(([id, nm, mk, dom, blurb, count]) => {
     const b = el('button', { class:'tile', onclick: () => go(id) });
-    b.innerHTML = `<span class="tmk" style="color:var(--d-${dom})">${icon(mk)}</span>
+    b.innerHTML = `<span class="tmk">${icon(mk)}</span>
       <h3>${nm}</h3><p>${esc(blurb)}</p>
       <div class="tfoot"><span class="meta">${esc(count())}</span></div>`;
     g.appendChild(b);
@@ -388,11 +448,12 @@ function vProgress(stage) {
 
   /* readiness — the one number, with the weighting stated rather than hidden */
   const s0 = section('Readiness', { note:'0.62 × mean of domains + 0.38 × weakest' });
+  const mean = Math.round((rd.research + rd.clinical + rd.professional) / 3);
   const top = el('div', { class:'row', style:'gap:24px;align-items:center;margin-bottom:4px' });
-  top.appendChild(ringEl(rd.overall, 96, 9, band(rd.overall)[3], rd.overall, ''));
+  top.appendChild(ringEl(rd.overall, 96, 9, band(rd.overall)[3], rd.overall, '', mean));
   const rt = el('div', { style:'flex:1 1 auto' });
-  rt.innerHTML = `<div style="font-weight:660;font-size:20px;letter-spacing:-.026em;margin-bottom:4px">${band(rd.overall)[2]}</div>
-    <div class="src">Weighted towards your weakest domain, because selection filters on the weakest panel you sit — not the strongest.</div>`;
+  rt.innerHTML = `<div style="font-weight:600;font-size:20px;letter-spacing:-.03em;margin-bottom:4px">${band(rd.overall)[2]}</div>
+    <div class="src">The solid arc is your readiness. The faint one behind it is the plain average of the three domains, <b>${mean}</b> — the distance between them is what the weakest-domain weighting costs you.</div>`;
   top.appendChild(rt);
   s0.appendChild(top);
   ['research','clinical','professional'].forEach(d => s0.appendChild(domainRow(d, rd[d], mv[d])));
@@ -731,7 +792,7 @@ function renderLadder(host, item, t0, done) {
     const r = item.rungs[rung];
     const blk = el('div', { class:'card', style:'margin-bottom:12px' });
     blk.appendChild(el('div', { class:'lbl', text:'Step ' + (rung + 1) + ' of ' + item.rungs.length }));
-    blk.appendChild(el('div', { style:'font-size:18px;font-weight:700;letter-spacing:-.015em;margin:7px 0 14px;line-height:1.35', text: r.q }));
+    blk.appendChild(el('div', { style:'font-size:18px;font-weight:600;letter-spacing:-.015em;margin:7px 0 14px;line-height:1.35', text: r.q }));
     const opts = el('div', { class:'choices' });
     r.options.forEach((o, i) => {
       const b = el('button', { class:'choice' + (live ? '' : ' faded'), style:'box-shadow:none;border-color:var(--line)' }, [
@@ -782,7 +843,7 @@ function showVerdict(item, correct, rec, secs, onNext) {
   body.appendChild(h);
 
   if (rec.hiConfWrong) {
-    body.appendChild(el('p', { style:'color:var(--warning);font-weight:700;font-size:14.5px;margin-bottom:10px',
+    body.appendChild(el('p', { style:'color:var(--warning);font-weight:600;font-size:14.5px;margin-bottom:10px',
       text:'You were confident. That makes this the most valuable error in the session — it comes back before you leave.' }));
   }
   body.appendChild(el('div', { class:'teachtext', text: item.teach }));

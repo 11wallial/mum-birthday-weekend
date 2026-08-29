@@ -14,6 +14,7 @@ function buildShell() {
   $('#cmdbtn').addEventListener('click', openPalette);
   $('#setbtn').addEventListener('click', openSettings);
   $('#streak').addEventListener('click', () => go('progress'));
+  if (S.streak.n) countUp($('#streakn'), S.streak.n, 620);
   $('#scrim').addEventListener('click', closeModal);
   Act.init();
 }
@@ -122,28 +123,10 @@ function openSettings() {
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Preferences' }));
   const prefs = el('div', { class:'row wrap' });
-  const thmSeg = el('div', { class:'seg' });
-  [['light','Light'], ['dark','Dark']].forEach(([v, nm]) => {
-    const b = el('button', { text: nm, class: S.theme === v ? 'on' : '' });
-    b.addEventListener('click', () => {
-      if (S.theme === v) return;
-      toggleTheme();
-      $$('button', thmSeg).forEach(x => x.classList.toggle('on', x === b));
-    });
-    thmSeg.appendChild(b);
-  });
-  prefs.appendChild(thmSeg);
-  const sndSeg = el('div', { class:'seg' });
-  [[false,'Silent'], [true,'Sounds']].forEach(([v, nm]) => {
-    const b = el('button', { text: nm, class: !!S.sound === v ? 'on' : '' });
-    b.addEventListener('click', () => {
-      S.sound = v; save();
-      $$('button', sndSeg).forEach(x => x.classList.toggle('on', x === b));
-      if (v) tick(880, .08, .05);
-    });
-    sndSeg.appendChild(b);
-  });
-  prefs.appendChild(sndSeg);
+  prefs.appendChild(segEl([['light','Light'], ['dark','Dark']], S.theme || 'light',
+    v => { if (S.theme !== v) toggleTheme(); }));
+  prefs.appendChild(segEl([[false,'Silent'], [true,'Sounds']], !!S.sound,
+    v => { S.sound = v; save(); if (v) tick(880, .08, .05); }));
   body.appendChild(prefs);
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Your data' }));
