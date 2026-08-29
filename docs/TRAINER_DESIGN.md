@@ -278,6 +278,50 @@ The command palette (⌘K) is a real command layer rather than a search box:
 grouped, with the actions the engine can take at the top, then every mode, paper,
 interview theme, case, role-play and concept in the build.
 
+### Accessibility is interaction design, not compliance
+
+The audience includes disabled applicants to a profession with an explicit duty
+on this point, so this is treated as design work with rules like any other axis.
+
+**The document declares itself.** A doctype, a language, an encoding and a
+viewport. The last of these is not a detail: without it a phone lays the page
+out at 980px and scales it down, and every `max-width` media query in the
+stylesheet becomes unreachable. A responsive layer verified only by setting a
+browser viewport is not verified at all — that test bypasses the missing tag
+and passes against a situation no real device is in.
+
+**Nothing claims a role it does not implement.** The tab list has arrow-key
+traversal and a single tab stop. The dialog is genuinely removed from the
+accessibility tree when closed, traps Tab while open, and returns focus to
+whatever opened it — an always-present element with `aria-modal="true"` tells a
+screen reader the rest of the application is inert.
+
+**State that is visible is also readable.** Selection on an answer is
+`aria-checked`, not just a border colour. Confidence pips are a labelled
+radiogroup announcing "Fairly sure — 4 of 5", not five bare digits. Rubric ticks
+are checkboxes labelled with the point they award.
+
+**One announcer, one sentence.** The action bar used to be a live region in its
+entirety, so every re-render read out the pips, the button and the full teaching
+text. A single polite announcer now says one thing: the verdict, the question
+number, the mark just awarded.
+
+**Focus survives the loop.** The drill rebuilds its screen on every item; focus
+moves to the new question rather than falling to `<body>`, which had made a
+45-minute session hundreds of redundant keystrokes.
+
+**Targets have a floor.** 24px minimum, and a 44px hit area on coarse pointers
+added without changing where any ink sits.
+
+### The system has to be able to fail
+
+Every rule above is checked by `tools/check_design.py`, which the build runs and
+which exits non-zero on a violation: 48 contrast pairs across both themes, the
+document head, the colour rule (no domain hue used as a text colour), and the
+canvas typefaces. A rule nothing checks is a preference, and preferences drift —
+this file previously documented a six-step type scale while the stylesheet held
+fourteen sizes, and described a typeface the build did not load.
+
 ## 10. Ecological validity
 
 Practice increasingly resembles the actual task:

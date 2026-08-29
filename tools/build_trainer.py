@@ -34,20 +34,30 @@ blob = blob.replace("</", "<\\/")
 js = "\n".join(read(os.path.join(SRC, f)) for f in
                ["engine.js", "views-core.js", "views-modes.js", "boot.js"])
 
-html = f"""<title>DClinPsy Trainer</title>
+html = f"""<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DClinPsy Trainer</title>
 <meta name="description" content="A preparation engine for UK Doctorate in Clinical Psychology selection, built from real past papers and one official marking scheme.">
+<meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 {read(os.path.join(SRC, 'styles.css'))}
 </style>
+</head>
+<body>
 {read(os.path.join(SRC, 'shell.html'))}
 <script id="trainer-data" type="application/json">{blob}</script>
 <script>
 const DATA = JSON.parse(document.getElementById('trainer-data').textContent);
 {js}
 </script>
+</body>
+</html>
 """
 
 with open(OUT, "w", encoding="utf-8") as f:

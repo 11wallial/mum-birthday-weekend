@@ -38,8 +38,15 @@ const MODES = [
   ['progress', 'Progress', 'What you hold, and what you keep getting wrong'],
 ];
 let VIEW = 'today', TIMERS = [];
+/* The verdict panel binds a document-level key handler. Navigating away must
+   unbind it, or it survives into the next screen. */
+let VERDICT_OFF = null;
+function clearVerdict() { if (VERDICT_OFF) { VERDICT_OFF(); VERDICT_OFF = null; } }
 
-function clearTimers() { TIMERS.forEach(t => clearInterval(t)); TIMERS = []; }
+function clearTimers() {
+  TIMERS.forEach(t => { if (t && t.__off) t.__off(); else clearInterval(t); });
+  TIMERS = [];
+}
 function focusMode(on) { document.body.classList.toggle('focus', !!on); }
 
 /* ---------------------------------------------------------- action bar */
@@ -80,17 +87,77 @@ const Act = {
   },
 };
 
-function go(view, arg) {
-  clearTimers(); focusMode(false); Act.hide();
+/* Which tab owns each screen. Sub-pages used to leave every tab unselected,
+   so the navigation could not say where you were. */
+const OWNER = {
+  today:'today', practice:'practice', progress:'progress',
+  drill:'practice', papers:'practice', panel:'practice', studio:'practice', room:'practice',
+  atlas:'progress', ledger:'progress',
+};
+const VIEWS = { today:vToday, practice:vPractice, progress:vProgress, drill:vDrill,
+                papers:vBench, panel:vPanel, studio:vStudio, room:vRoom,
+                atlas:vAtlas, ledger:vLedger };
+/* 'Bench' read as furniture rather than as the written-paper surface. The old
+   route still resolves so any link already made keeps working. */
+const ROUTE_ALIAS = { bench: 'papers' };
+const TITLES = { today:'Today', practice:'Practice', progress:'Progress', drill:'Drill',
+                 papers:'Papers', panel:'The Panel', studio:'The Studio', room:'The Room',
+                 atlas:'The Atlas', ledger:'The Ledger' };
+
+/* Hash routing. The single go() chokepoint is the whole router: every screen
+   gets a URL, the browser's back button works instead of leaving the app, and
+   a screen can be linked to. `replace` is used when a view redirects to
+   itself so we do not push a history entry the user has to press back twice
+   through. */
+let ROUTING = false;
+
+function routeOf(view, arg) {
+  return '#/' + view + (arg ? '/' + encodeURIComponent(arg) : '');
+}
+
+function go(view, arg, opts) {
+  opts = opts || {};
+  if (ROUTE_ALIAS[view]) view = ROUTE_ALIAS[view];
+  if (!VIEWS[view]) view = 'today';
+  clearTimers(); clearVerdict(); focusMode(false); Act.hide();
   if (MODES.some(m => m[0] === view)) { VIEW = view; S.lastMode = view; save(); }
-  $$('#tabs .tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.v === view)));
+
+  if (!ROUTING && !opts.fromPop) {
+    const url = routeOf(view, arg);
+    if (location.hash !== url) {
+      if (opts.replace) history.replaceState({ view, arg }, '', url);
+      else history.pushState({ view, arg }, '', url);
+    }
+  }
+  document.title = (TITLES[view] ? TITLES[view] + ' · ' : '') + 'DClinPsy Trainer';
+
+  const owner = OWNER[view] || view;
+  $$('#tabs .tab').forEach(t => {
+    const on = t.dataset.v === owner;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+  });
+
   const stage = $('#stage');
   stage.scrollTop = 0;
   stage.innerHTML = '';
-  ({ today:vToday, practice:vPractice, progress:vProgress, drill:vDrill,
-     bench:vBench, panel:vPanel, studio:vStudio, room:vRoom,
-     atlas:vAtlas, ledger:vLedger }[view] || vToday)(stage, arg);
+  VIEWS[view](stage, arg);
   refreshTop();
+}
+
+/* Read the address bar and render it. Guarded so the render does not push a
+   new entry for the state we are already restoring. */
+function applyRoute(fromPop) {
+  const m = /^#\/([a-z]+)(?:\/(.*))?$/.exec(location.hash || '');
+  const raw = m ? (ROUTE_ALIAS[m[1]] || m[1]) : null;
+  const view = raw && VIEWS[raw] ? raw : null;
+  const arg = m && m[2] ? decodeURIComponent(m[2]) : undefined;
+  ROUTING = true;
+  try {
+    if (!view) go(S.lastMode && MODES.some(x => x[0] === S.lastMode) ? S.lastMode : 'today',
+                  undefined, { fromPop: true });
+    else go(view, arg, { fromPop: true });
+  } finally { ROUTING = false; }
 }
 
 function refreshTop() {
@@ -141,7 +208,16 @@ function prow(o) {
   return r;
 }
 
-function dotEl(domain) { return el('span', { class:'dot ' + domain }); }
+function dotEl(domain) { return el('span', { class:'dot ' + domain, 'aria-hidden':'true' }); }
+
+/* One way back, used everywhere. Each screen used to invent its own — "← All
+   cases" in the Studio, "← Leave" in the Room, nothing at all in the papers and
+   the Panel — so the return path changed shape depending where you were. */
+function backLink(label, onBack) {
+  const b = el('button', { class:'backlink', onclick: onBack });
+  b.innerHTML = `<span class="bk" aria-hidden="true">${icon('go', 15)}</span><span>${esc(label)}</span>`;
+  return b;
+}
 
 /* Segmented control. The thumb is a single element that travels, so changing
    the choice reads as one object moving rather than two highlights swapping. */
@@ -249,6 +325,37 @@ function domainRow(d, pct, mv) {
 /* ---------------------------------------------------------- TODAY */
 let PLAN_MIN = 12;
 
+/* The Today headline, written from the queue the engine has actually built.
+   It leads with the most valuable thing in the session rather than with a
+   greeting: a confident error outranks a due review, which outranks new
+   material. Nothing here is decorative — every number is the real one. */
+function sessionHeadline(started, due, hcw) {
+  if (!started) return {
+    title: 'Start with the diagnostic.',
+    sub: 'Twelve items across all three domains. After that it stops sampling and starts targeting.' };
+
+  const plan = sessionPlan(Math.max(6, Math.round(PLAN_MIN * 0.85)));
+  if (!plan.total) return {
+    title: 'Nothing is due.',
+    sub: 'Every item is scheduled further out. The papers and the Panel are the better use of this session.' };
+
+  const top = plan.groups[0];
+  const others = plan.groups.length - 1;
+  const spread = others > 0
+    ? `${top.label.toLowerCase()} and ${others} other area${others === 1 ? '' : 's'}`
+    : top.label.toLowerCase();
+
+  if (hcw) return {
+    title: `${hcw} you were sure about and got wrong.`,
+    sub: `They come first this session, then ${plan.total - Math.min(hcw, plan.total)} more across ${spread}.` };
+  if (due) return {
+    title: `${due} item${due === 1 ? '' : 's'} due.`,
+    sub: `${PLAN_MIN} minutes on ${spread}, interleaved so no cluster runs twice in a row.` };
+  return {
+    title: `${PLAN_MIN} minutes on ${spread}.`,
+    sub: 'Nothing overdue, so this session brings new material and stretches what you already hold.' };
+}
+
 function vToday(stage) {
   const w = el('div', { class:'wrap today stg' });
   const rd = readiness(), d2i = daysToInterview(), due = dueCount();
@@ -256,10 +363,13 @@ function vToday(stage) {
   const started = Object.keys(S.c).length > 0;
   const hour = new Date().getHours();
 
-  w.appendChild(pageHead(
-    new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }),
-    hour < 12 ? 'Good morning.' : hour < 18 ? 'Good afternoon.' : 'Good evening.',
-    started ? "Here's what the engine would have you work on." : 'The first dozen items are diagnostic. After that it stops guessing and starts choosing.'));
+  /* The headline states what this session is, drawn from the real queue. The
+     greeting moves to the eyebrow: it was the largest text on the most-visited
+     screen and it carried no information. */
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const date = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  const head = sessionHeadline(started, due, hcw);
+  w.appendChild(pageHead(date + ' · ' + greet, head.title, head.sub, true));
 
   w.appendChild(launchPanel(started, due, hcw));
 
@@ -328,11 +438,11 @@ function vToday(stage) {
 function launchPanel(started, due, hcw) {
   const p = el('div', { class:'launch' });
   p.appendChild(el('div', { class:'lbl', text:'Recommended' }));
-  p.appendChild(el('h2', { text: started ? "Today's session" : 'Start with the diagnostic' }));
-  p.appendChild(el('p', { text: !started
-    ? 'Twelve items across all three domains. The engine watches what you get wrong and how sure you were, then stops sampling and starts targeting.'
-    : due ? `${due} item${due === 1 ? '' : 's'} due${hcw ? `, and ${hcw} you were sure about and got wrong` : ''}. Interleaved so no cluster runs twice in a row.`
-          : 'Nothing overdue. This session brings new material and stretches what you already hold.' }));
+  /* The page headline already states what this session is, so the panel does
+     not restate it — it shows the queue and hands over the controls. */
+  p.appendChild(el('p', { style:'margin-top:6px', text: !started
+    ? 'The engine watches what you get wrong and how sure you were, then stops sampling and starts targeting.'
+    : 'Chosen by what is due, what you got wrong while confident, and which concepts sit lowest.' }));
 
   const planBox = el('div', { style:'margin-top:16px' });
   p.appendChild(planBox);
@@ -356,7 +466,7 @@ function drawPlan(box, minutes) {
   box.innerHTML = '';
   const plan = sessionPlan(Math.max(6, Math.round(minutes * 0.85)));
   if (!plan.total) {
-    box.appendChild(el('p', { class:'src', text:'Nothing is queued right now — every item is scheduled further out. The Bench and the Panel are the better use of this session.' }));
+    box.appendChild(el('p', { class:'src', text:'Nothing is queued right now — every item is scheduled further out. The papers and the Panel are the better use of this session.' }));
     return;
   }
   const ph = el('div', { class:'row', style:'margin-bottom:2px;gap:10px' });
@@ -377,7 +487,7 @@ function drawPlan(box, minutes) {
 }
 
 const SURFACES = [
-  ['bench',  'Bench',  'bench', 'clinical',
+  ['papers', 'Papers', 'bench', 'clinical',
    'Timed written papers, marked to the scheme. The 2014 Birmingham paper carries its own official one.',
    () => DATA.written.exercises.length + ' papers · ' + DATA.written.exercises.reduce((a,e)=>a+e.questions.reduce((b,q)=>b+q.rubric.length,0),0) + ' marking points'],
   ['panel',  'Panel',  'panel', 'research',
@@ -532,32 +642,48 @@ let SESSION = null;
 function startDrill(minutes) {
   const n = Math.max(6, Math.round(minutes * 0.85));
   const items = buildSession(n);
-  if (!items.length) { toast('Nothing to drill right now — try the Bench or the Panel'); return; }
+  if (!items.length) { toast('Nothing to drill right now — try the papers or the Panel'); return; }
   SESSION = { items, idx:0, right:0, started:Date.now(), answers:[], minutes, wasWins: S.wins.length };
   go('drill');
 }
 
 function quitDrill() {
-  if (SESSION && SESSION.answers.length && SESSION.idx < SESSION.items.length) {
-    if (!confirm('Leave this session? Answers already given are saved.')) return;
-  }
-  SESSION = null; go('today');
+  const midway = SESSION && SESSION.answers.length && SESSION.idx < SESSION.items.length;
+  if (!midway) { SESSION = null; go('today'); return; }
+  const left = SESSION.items.length - SESSION.idx;
+  confirmDialog({
+    title: 'Leave this session?',
+    text: `${left} item${left === 1 ? '' : 's'} left. Everything you have already answered is saved, ` +
+          'and the scheduler has it — nothing is lost by stopping here.',
+    cancel: 'Keep going',
+    confirm: 'Leave',
+    onConfirm: () => { SESSION = null; go('today'); },
+  });
 }
 
 function vDrill(stage) {
-  if (!SESSION) { go('practice'); return; }
+  if (!SESSION) { go('practice', undefined, { replace: true }); return; }
   if (SESSION.idx >= SESSION.items.length) return drillDone(stage);
 
   focusMode(true);
   const item = SESSION.items[SESSION.idx];
 
   const bar = el('div', { id:'sessbar' });
-  bar.innerHTML = `<button class="x" title="Leave">✕</button>
-    <div class="track"><i></i></div>
+  const pct = SESSION.idx / SESSION.items.length * 100;
+  bar.innerHTML = `<button class="x" title="Leave" aria-label="Leave this session">✕</button>
+    <div class="track" role="progressbar" aria-label="Session progress"
+         aria-valuemin="0" aria-valuemax="${SESSION.items.length}" aria-valuenow="${SESSION.idx}"><i></i></div>
     <span class="lbl" style="flex:none">${SESSION.idx + 1}/${SESSION.items.length}</span>`;
   $('.x', bar).addEventListener('click', quitDrill);
   stage.appendChild(bar);
-  requestAnimationFrame(() => { $('.track i', bar).style.width = (SESSION.idx / SESSION.items.length * 100) + '%'; });
+  /* The bar is a new element on every item, so it had nothing to animate from
+     and arrived as a jump. Start it where the last one finished and let the
+     width transition carry it — the one place in the drill where motion means
+     something. */
+  const track = $('.track i', bar);
+  track.style.width = (SESSION.lastPct || 0) + '%';
+  requestAnimationFrame(() => requestAnimationFrame(() => { track.style.width = pct + '%'; }));
+  SESSION.lastPct = pct;
 
   const w = el('div', { class:'wrap' });
   const node = CONCEPT[item.concepts[0]] || {};
@@ -571,6 +697,19 @@ function vDrill(stage) {
   w.appendChild(host);
   stage.appendChild(w);
 
+  /* go('drill') rebuilds the stage for every item, which dropped focus to
+     <body> each time and made a keyboard user re-tab from the top on every
+     question. Put focus on the new question instead, and say where we are. */
+  requestAnimationFrame(() => {
+    const stem = $('.qstem, .qctx', host);
+    if (stem) {
+      stem.setAttribute('tabindex', '-1');
+      stem.focus({ preventScroll: true });
+    }
+    announce(`Question ${SESSION.idx + 1} of ${SESSION.items.length}. ${
+      (item.stem || '').slice(0, 160)}`);
+  });
+
   renderItem(host, item, res => {
     SESSION.answers.push(res);
     if (res.correct) SESSION.right++;
@@ -578,7 +717,7 @@ function vDrill(stage) {
     if (res.hiConfWrong && SESSION.items.length < 60) {
       SESSION.items.splice(Math.min(SESSION.items.length, SESSION.idx + 4), 0, item);
     }
-    go('drill');
+    go('drill', undefined, { replace: true });
   });
 }
 
@@ -614,6 +753,7 @@ function drillDone(stage) {
   ]));
 
   if (newWins.length) {
+    setTimeout(() => coachOn('depth'), 520);
     const s1 = section("What you can now do that you couldn't");
     s1.appendChild(plate(newWins.slice(0, 6).map(win => {
       const node = CONCEPT[win.cid];
@@ -645,15 +785,24 @@ function renderItem(host, item, done) {
 }
 
 /* the confidence control that lives in the action bar */
+const CONF_LABEL = ['Guessing', 'Doubtful', 'Even', 'Fairly sure', 'Certain'];
+
 function confControl(onPick) {
+  setTimeout(() => coachOn('confidence'), 420);
   const wrap = el('div', { class:'confwrap' });
-  wrap.appendChild(el('span', { class:'cl', text:'Sure?' }));
-  const pips = el('div', { class:'pips' });
+  wrap.appendChild(el('span', { class:'cl', id:'conflbl', text:'Sure?' }));
+  /* A radiogroup, so the choice is announced as "Fairly sure, 4 of 5" rather
+     than as the digit on the button face. */
+  const pips = el('div', { class:'pips', role:'radiogroup', 'aria-labelledby':'conflbl' });
   for (let i = 1; i <= 5; i++) {
-    pips.appendChild(el('button', { class:'pip', text:i, title: ['Guessing','Doubtful','Even','Fairly sure','Certain'][i-1],
+    pips.appendChild(el('button', { class:'pip', text:i, role:'radio', 'aria-checked':'false',
+      'aria-label': `${CONF_LABEL[i-1]} — ${i} of 5`, title: CONF_LABEL[i-1],
       onclick: e => {
-        $$('.pip', pips).forEach(b => b.classList.remove('on'));
-        e.currentTarget.classList.add('on'); onPick(i);
+        $$('.pip', pips).forEach(b => { b.classList.remove('on'); b.setAttribute('aria-checked','false'); });
+        e.currentTarget.classList.add('on');
+        e.currentTarget.setAttribute('aria-checked','true');
+        announce('Confidence: ' + CONF_LABEL[i-1]);
+        onPick(i);
       }}));
   }
   wrap.appendChild(pips);
@@ -669,18 +818,30 @@ function renderChoice(host, item, t0, done) {
   if (multi) host.appendChild(el('div', { class:'qhint',
     text:'Select all that apply. In the real paper this scores only if every correct option — and no incorrect one — is selected.' }));
 
-  const box = el('div', { class:'choices' });
+  /* Selection was visual only: .sel carried no state a screen reader could
+     read. Single-answer items are a radiogroup, select-all items are toggle
+     buttons, and both announce the letter with the option text. */
+  const box = el('div', { class:'choices', role: multi ? 'group' : 'radiogroup',
+                          'aria-label': multi ? 'Select all that apply' : 'Answer options' });
+  const setSel = (node, on) => {
+    node.classList.toggle('sel', on);
+    node.setAttribute(multi ? 'aria-pressed' : 'aria-checked', String(on));
+  };
   item.options.forEach((o, i) => {
-    const b = el('button', { class:'choice', 'data-id':o.id }, [
-      el('span', { class:'key', text: String.fromCharCode(65 + i) }),
+    const letter = String.fromCharCode(65 + i);
+    const b = el('button', { class:'choice', 'data-id':o.id,
+                             role: multi ? undefined : 'radio',
+                             'aria-label': letter + '. ' + o.text }, [
+      el('span', { class:'key', text: letter, 'aria-hidden':'true' }),
       el('span', { class:'ctx' }, [el('span', { text: o.text })]),
     ]);
+    b.setAttribute(multi ? 'aria-pressed' : 'aria-checked', 'false');
     b.addEventListener('click', () => {
       if (locked) return;
-      if (multi) { picked.has(o.id) ? picked.delete(o.id) : picked.add(o.id); b.classList.toggle('sel'); }
+      if (multi) { const on = !picked.has(o.id); on ? picked.add(o.id) : picked.delete(o.id); setSel(b, on); }
       else {
         picked = new Set([o.id]);
-        $$('.choice', box).forEach(x => x.classList.toggle('sel', x === b));
+        $$('.choice', box).forEach(x => setSel(x, x === b));
       }
       sync();
     });
@@ -702,8 +863,15 @@ function renderChoice(host, item, t0, done) {
     $$('.choice', box).forEach(b => {
       const o = item.options.find(x => x.id === b.dataset.id);
       b.classList.add('locked'); b.classList.remove('sel');
+      b.setAttribute('aria-disabled', 'true');
+      b.removeAttribute('aria-checked'); b.removeAttribute('aria-pressed');
+      b.removeAttribute('role');
+      const chose = picked.has(o.id);
+      b.setAttribute('aria-label',
+        `${b.getAttribute('aria-label')} — ${o.correct ? 'correct answer' : 'incorrect'}` +
+        (chose ? ', you chose this' : ''));
       if (o.correct) b.classList.add('ok');
-      else if (picked.has(o.id)) b.classList.add('bad');
+      else if (chose) b.classList.add('bad');
       else b.classList.add('faded');
       if (o.why && (o.correct || picked.has(o.id))) $('.ctx', b).appendChild(el('span', { class:'why', text: o.why }));
     });
@@ -727,13 +895,17 @@ function renderContrast(host, item, t0, done) {
   const probes = shuffle(item.probes);
   probes.forEach((p, i) => {
     const row = el('div', { class:'sortrow' });
-    const L = el('button', { class:'sidebtn', text:'◀' });
-    const R = el('button', { class:'sidebtn', text:'▶' });
+    const L = el('button', { class:'sidebtn', text:'◀', 'aria-pressed':'false',
+                             'aria-label': `Put "${p.text}" under ${item.left}` });
+    const R = el('button', { class:'sidebtn', text:'▶', 'aria-pressed':'false',
+                             'aria-label': `Put "${p.text}" under ${item.right}` });
     row.append(L, el('span', { class:'t', text: p.text }), R);
     [[L,'L'],[R,'R']].forEach(([btn, side]) => btn.addEventListener('click', () => {
       if (locked) return;
       answers[i] = side;
       L.classList.toggle('on', side === 'L'); R.classList.toggle('on', side === 'R');
+      L.setAttribute('aria-pressed', String(side === 'L'));
+      R.setAttribute('aria-pressed', String(side === 'R'));
       row.classList.toggle('pickL', side === 'L'); row.classList.toggle('pickR', side === 'R');
       sync();
     }));
@@ -783,8 +955,9 @@ function renderLadder(host, item, t0, done) {
   Act.row([confControl(v => {
     conf = v; live = true;
     hint.textContent = 'Walk the chain. Each step follows from the one before it.';
-    $$('.choice', track).forEach(c => c.classList.remove('faded'));
+    $$('.choice', track).forEach(c => { c.classList.remove('faded'); c.setAttribute('aria-disabled','false'); });
     Act.hide();
+    announce('Steps unlocked. Choose the first step.');
   })], []);
 
   function next() {
@@ -795,8 +968,12 @@ function renderLadder(host, item, t0, done) {
     blk.appendChild(el('div', { style:'font-size:18px;font-weight:600;letter-spacing:-.015em;margin:7px 0 14px;line-height:1.35', text: r.q }));
     const opts = el('div', { class:'choices' });
     r.options.forEach((o, i) => {
-      const b = el('button', { class:'choice' + (live ? '' : ' faded'), style:'box-shadow:none;border-color:var(--line)' }, [
-        el('span', { class:'key', text: String.fromCharCode(65 + i) }),
+      const letter = String.fromCharCode(65 + i);
+      const b = el('button', { class:'choice' + (live ? '' : ' faded'),
+                               'aria-label': letter + '. ' + o.text,
+                               'aria-disabled': live ? 'false' : 'true',
+                               style:'box-shadow:none;border-color:var(--line)' }, [
+        el('span', { class:'key', text: letter, 'aria-hidden':'true' }),
         el('span', { class:'ctx' }, [el('span', { text: o.text })]),
       ]);
       b.addEventListener('click', () => {
@@ -807,6 +984,7 @@ function renderLadder(host, item, t0, done) {
         const all = $$('.choice', opts);
         all.forEach((x, xi) => {
           x.classList.add('locked');
+          x.setAttribute('aria-disabled', 'true');
           const oo = r.options[xi];
           if (oo.correct) x.classList.add('ok'); else if (x === b) x.classList.add('bad'); else x.classList.add('faded');
           if (oo.why && (oo.correct || x === b)) $('.ctx', x).appendChild(el('span', { class:'why', text: oo.why }));
@@ -886,17 +1064,42 @@ function showVerdict(item, correct, rec, secs, onNext) {
 
   if (item.source) body.appendChild(el('p', { class:'src', style:'margin-top:14px', text:'Source: ' + item.source }));
 
-  const btn = el('button', { class: 'btn lg ' + (correct ? 'ok' : 'no'), text:'Continue', onclick: onNext });
+  /* Advance exactly once, by whichever route the learner takes, and take the
+     key handler with us. Previously this listener was removed only when Enter
+     fired, so advancing with the mouse left it bound: the listeners stacked and
+     one later Enter ran all of them, skipping unseen items and recording
+     answers nobody gave. */
+  let spent = false;
+  function advance() {
+    if (spent) return;
+    spent = true;
+    document.removeEventListener('keydown', onKey);
+    VERDICT_OFF = null;
+    onNext();
+  }
+  function onKey(e) {
+    if (e.key !== 'Enter') return;
+    const t = e.target;
+    if (t && t.matches && t.matches('textarea, input, select')) return;
+    e.preventDefault();
+    advance();
+  }
+
+  const btn = el('button', { class: 'btn lg ' + (correct ? 'ok' : 'no'), text:'Continue', onclick: advance });
   Act.result(correct ? 'good' : 'bad', body, btn);
   if (correct) tick(880, .08, .05); else tick(300, .12, .045);
 
-  const h2 = e => {
-    if (e.key === 'Enter' && !e.target.matches('textarea,input')) {
-      e.preventDefault(); document.removeEventListener('keydown', h2); onNext();
-    }
-  };
-  document.addEventListener('keydown', h2);
+  document.addEventListener('keydown', onKey);
+  VERDICT_OFF = () => { spent = true; document.removeEventListener('keydown', onKey); };
+
+  /* The verdict is the moment the learner is waiting on, so it takes focus
+     and is announced once — as a sentence, not as a re-read of the panel. */
+  requestAnimationFrame(() => btn.focus({ preventScroll: true }));
+  announce((correct ? 'Correct. ' : 'Not quite. ') +
+           (rec.hiConfWrong ? 'You were confident. ' : '') +
+           (item.teach || '').slice(0, 240));
   scrollEnd();
+  return advance;
 }
 
 function scrollEnd() {

@@ -24,8 +24,8 @@ are trying to think.
 
 | | |
 |---|---|
-| **Today** | The session it would give you — and what it will cover, and why |
-| **Practice** | Drill, Bench, Panel, Studio, Room |
+| **Today** | The session it would give you — stated in the headline, with what it covers and why |
+| **Practice** | Drill, Papers, Panel, Studio, Room |
 | **Progress** | Readiness, calibration, weakest concepts, the Atlas, the Ledger |
 
 The five practice surfaces:
@@ -33,7 +33,7 @@ The five practice surfaces:
 | | |
 |---|---|
 | **Drill** | The adaptive interleaved core loop |
-| **Bench** | Timed written papers, marked to the scheme |
+| **Papers** | Timed written papers, marked to the scheme |
 | **Panel** | Real interview questions under the clock, with pressure follow-ups |
 | **Studio** | One case, many models — write yours first, then compare |
 | **Room** | Role-play, scored on process not content |
@@ -65,8 +65,21 @@ layered steps, and motion has four durations and three curves — all as tokens 
 ## Keyboard
 
 `⌘K` command palette — actions first, then every mode, paper, theme, case,
-role-play and concept · `1–5` set confidence · `A–F` pick a choice ·
-`⏎` continue · `Esc` leave the session or close a dialog
+role-play and concept · `?` the full list · `1–5` set confidence ·
+`A–F` pick a choice · `⏎` continue · `Esc` close a dialog or leave a session ·
+`← →` move between tabs
+
+Single-key shortcuts can be switched off in the keyboard sheet (`?`).
+
+## Accessibility
+
+Every screen has a URL, so the browser's back button works and any screen can be
+linked to. The dialog traps focus and gives it back. The drill moves focus to
+each new question rather than dropping it. Answer selection, confidence and
+rubric ticks all expose their state to a screen reader, and one polite announcer
+carries the verdict rather than the whole action bar re-reading itself. Contrast
+is held to 4.5:1 for text and 3:1 for control boundaries in both themes, and
+`tools/check_design.py` fails the build if that stops being true.
 
 ## Rebuilding
 
@@ -77,7 +90,12 @@ python3 tools/gen_written.py      # written papers + rubrics
 python3 tools/gen_interview.py    # interview bank
 python3 tools/gen_practice.py     # formulation + role-play
 python3 tools/build_trainer.py    # inline everything into trainer/index.html
+python3 tools/check_design.py     # fails on a contrast, head, colour-rule or font violation
 ```
+
+`check_design.py` is the design system's teeth: 48 contrast pairs across both
+themes, the document head, the colour rule, and the canvas typefaces. It exits
+non-zero, so a violation stops the build rather than shipping.
 
 The design rationale, including what was deliberately not built, is in
 [`docs/TRAINER_DESIGN.md`](../docs/TRAINER_DESIGN.md).

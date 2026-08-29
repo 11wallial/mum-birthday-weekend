@@ -35,7 +35,7 @@ function blankState() {
   const prefersDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
   return { v:1, created: Date.now(), interviewDate:null, theme: prefersDark ? 'dark' : 'light', sound:false,
            c:{}, i:{}, cal:[], errors:[], log:[], wins:[], written:{}, panel:{}, rp:{}, formul:{},
-           streak:{last:null,n:0}, seenIntro:false, lastMode:'today' };
+           streak:{last:null,n:0}, seenIntro:false, coached:{}, lastMode:'today' };
 }
 function load() {
   try {
@@ -43,13 +43,51 @@ function load() {
     S = raw ? Object.assign(blankState(), JSON.parse(raw)) : blankState();
   } catch (e) { S = blankState(); }
 }
+/* Persistence.
+
+   This used to swallow every write error, so a learner in a private window or
+   with a full quota would work for an hour watching progress accumulate on
+   screen that was never being stored. A failed write is now surfaced once and
+   stays surfaced, because the only recovery is to export.
+
+   The debounce is also flushed when the page is hidden — closing the tab
+   within 220ms of an answer used to lose it. */
 let saveTimer = null;
+let SAVE_BROKEN = false;
+
+function writeState() {
+  clearTimeout(saveTimer); saveTimer = null;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(S));
+    if (SAVE_BROKEN) { SAVE_BROKEN = false; hideSaveWarning(); }
+    return true;
+  } catch (e) {
+    if (!SAVE_BROKEN) { SAVE_BROKEN = true; showSaveWarning(e); }
+    return false;
+  }
+}
+
 function save() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
-  }, 220);
+  saveTimer = setTimeout(writeState, 220);
 }
+
+function flushSave() { if (saveTimer) writeState(); }
+
+function showSaveWarning(err) {
+  if (typeof document === 'undefined' || $('#savewarn')) return;
+  const full = err && (err.name === 'QuotaExceededError' || err.code === 22);
+  const bar = el('div', { id:'savewarn', role:'alert' });
+  bar.innerHTML = `<b>Your progress is not being saved.</b> ` +
+    (full ? 'This browser\u2019s storage for the page is full.'
+          : 'This browser is blocking local storage \u2014 private windows often do.') +
+    ` Answers you give now will be lost when you close the tab.`;
+  const b = el('button', { class:'btn sm', text:'Export what you have',
+                           onclick: () => { try { exportProgress(); } catch (e) {} } });
+  bar.appendChild(b);
+  document.body.appendChild(bar);
+}
+function hideSaveWarning() { const b = $('#savewarn'); if (b) b.remove(); }
 
 /* ---------------------------------------------------------- indexes */
 const CONCEPT = {}, ITEM = {};
@@ -418,7 +456,18 @@ function relTime(ts) {
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
+/* One polite announcer for the whole app. The action bar used to be a live
+   region in its entirety, so every re-render read out the confidence pips,
+   the button label and the full teaching text. This says one sentence. */
+function announce(msg) {
+  const a = $('#announcer');
+  if (!a) return;
+  a.textContent = '';
+  setTimeout(() => { a.textContent = msg; }, 40);
+}
+
 function toast(msg, ms) {
+  announce(msg);
   const t = el('div', { class:'toast', text: msg });
   $('#toasts').appendChild(t);
   setTimeout(() => { t.style.transition = 'opacity .3s, transform .3s'; t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; setTimeout(() => t.remove(), 320); }, ms || 2600);

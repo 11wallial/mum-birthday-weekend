@@ -1,3 +1,4 @@
+<a class="skip" href="#stage">Skip to content</a>
 <div id="app">
   <header id="top">
     <button class="brand" id="brandlink" aria-label="Home">
@@ -21,7 +22,8 @@
         stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.2v2.6M12 19.2v2.6M21.8 12h-2.6M4.8 12H2.2M18.9 5.1l-1.8 1.8M6.9 17.1l-1.8 1.8M18.9 18.9l-1.8-1.8M6.9 6.9 5.1 5.1"/></svg>
     </button>
   </header>
-  <main id="stage"></main>
+  <main id="stage" role="tabpanel" tabindex="-1"></main>
 </div>
-<div id="actbar" aria-live="polite"></div>
-<div id="scrim"></div><div id="modal" role="dialog" aria-modal="true"></div><div id="toasts" aria-live="polite"></div>
+<div id="actbar"></div>
+<div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+<div id="scrim"></div><div id="modal" role="dialog" aria-modal="true" tabindex="-1" hidden></div><div id="toasts" role="status" aria-live="polite"></div>
