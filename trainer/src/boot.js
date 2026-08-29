@@ -18,58 +18,88 @@ function buildShell() {
   Act.init();
 }
 
-/* ---------------------------------------------------------- command palette */
+/* ---------------------------------------------------------- command palette
+   Grouped, with the actions the engine can take at the top. Typing filters
+   across every paper, case, theme and concept in the build. */
 function paletteItems() {
   const out = [];
-  MODES.forEach(([id, nm, desc]) => out.push({ t: nm, s: desc, go: () => go(id) }));
-  out.push({ t:'Start a 12-minute session', s:'adaptive', go: () => startDrill(12) });
-  out.push({ t:'Start a 25-minute session', s:'adaptive', go: () => startDrill(25) });
-  out.push({ t:'Start a 45-minute session', s:'adaptive', go: () => startDrill(45) });
+  const A = (t, s, ic, fn) => out.push({ t, s, ic, g:'Actions', go: fn });
+  A('Start a session', PLAN_MIN + ' min · adaptive', 'drill', () => startDrill(PLAN_MIN));
+  A('Start a 12-minute session', 'adaptive', 'clock', () => startDrill(12));
+  A('Start a 25-minute session', 'adaptive', 'clock', () => startDrill(25));
+  A('Start a 45-minute session', 'adaptive', 'clock', () => startDrill(45));
+  A('Toggle theme', S.theme === 'dark' ? 'to light' : 'to dark', 'theme', toggleTheme);
+  A('Settings', 'date, courses, your data', 'gear', openSettings);
+
+  MODES.forEach(([id, nm, desc]) => out.push({ t: nm, s: desc, ic:'go', g:'Go to', go: () => go(id) }));
+  out.push({ t:'The Atlas', s:'concept map', ic:'atlas', g:'Go to', go: () => go('atlas') });
+  out.push({ t:'The Ledger', s:'your errors', ic:'ledger', g:'Go to', go: () => go('ledger') });
+  SURFACES.forEach(([id, nm, mk, dom, blurb]) => out.push({ t: nm, s: blurb.split('.')[0], ic: mk, g:'Go to', go: () => go(id) }));
+
   DATA.written.exercises.forEach(e => out.push({
-    t:'Paper — ' + e.title, s:`${e.course} ${e.year} · ${e.minutes} min`,
+    t: e.title, s:`${e.course} ${e.year} · ${e.minutes} min`, ic:'bench', g:'Written papers',
     go: () => { EXAM = null; go('bench'); benchStart($('#stage'), e.id); } }));
-  DATA.formulation.vignettes.forEach(v => out.push({ t:'Case — ' + v.title, s:v.source, go: () => go('studio', v.id) }));
-  DATA.roleplay.scenarios.forEach(r => out.push({ t:'Role-play — ' + r.title, s:r.source,
-    go: () => { RP = { s:r, turn:0, score:0, max:0, log:[] }; go('room'); } }));
-  DATA.interview.themes.forEach(t => out.push({ t:'Theme — ' + t.label, s:'interview',
+  DATA.interview.themes.forEach(t => out.push({ t: t.label, s:'interview theme', ic:'panel', g:'Interview themes',
     go: () => { go('panel'); showTheme(t.id); } }));
-  out.push({ t:'The Atlas', s:'concept map', go: () => go('atlas') });
-  out.push({ t:'The Ledger', s:'your errors', go: () => go('ledger') });
-  DATA.concepts.nodes.forEach(n => out.push({ t: n.label, s: n.domain + ' · ' + n.cluster, go: () => showConcept(n.id) }));
+  DATA.formulation.vignettes.forEach(v => out.push({ t: v.title, s: v.source, ic:'studio', g:'Cases',
+    go: () => go('studio', v.id) }));
+  DATA.roleplay.scenarios.forEach(r => out.push({ t: r.title, s: r.source, ic:'room', g:'Role-plays',
+    go: () => { RP = { s:r, turn:0, score:0, max:0, log:[] }; go('room'); } }));
+  DATA.concepts.nodes.forEach(n => out.push({ t: n.label, s: n.domain + ' · ' + (CLUSTER_LABEL[n.cluster] || n.cluster),
+    ic:'atlas', g:'Concepts', go: () => showConcept(n.id) }));
   return out;
 }
 let PAL = null;
 function openPalette() {
-  PAL = PAL || paletteItems();
-  const input = el('input', { type:'text', class:'cmdinput', placeholder:'Search papers, cases, themes, concepts…' });
+  PAL = paletteItems();
+  const input = el('input', { type:'text', class:'cmdinput', placeholder:'Search actions, papers, themes, cases, concepts…' });
   const list = el('div', { class:'cmdlist' });
   let sel = 0, shown = [];
+
   function render(q) {
     const ql = q.toLowerCase().trim();
-    shown = (ql ? PAL.filter(x => (x.t + ' ' + (x.s || '')).toLowerCase().includes(ql)) : PAL).slice(0, 40);
+    shown = (ql ? PAL.filter(x => (x.t + ' ' + (x.s || '')).toLowerCase().includes(ql)) : PAL).slice(0, 60);
     sel = 0; list.innerHTML = '';
+    let group = null;
     shown.forEach((x, i) => {
-      const r = el('div', { class:'cmditem' + (i === 0 ? ' on' : ''), onclick: () => { closeModal(); x.go(); } });
-      r.innerHTML = `<span>${esc(x.t)}</span><span class="h">${esc(x.s || '')}</span>`;
+      if (x.g !== group) { group = x.g; list.appendChild(el('div', { class:'cmdgroup', text: group })); }
+      const r = el('div', { class:'cmditem' + (i === 0 ? ' on' : ''), 'data-i':i,
+                            onclick: () => { closeModal(); x.go(); } });
+      r.innerHTML = `<span class="ci">${icon(x.ic || 'go', 16)}</span>
+        <span class="ct">${esc(x.t)}</span><span class="h">${esc(x.s || '')}</span>`;
       list.appendChild(r);
     });
     if (!shown.length) list.appendChild(el('div', { class:'empty', style:'padding:34px', text:'Nothing matches' }));
   }
+  function move(d) {
+    sel = Math.max(0, Math.min(shown.length - 1, sel + d));
+    $$('.cmditem', list).forEach(r => r.classList.toggle('on', +r.dataset.i === sel));
+    const on = $('.cmditem.on', list); if (on) on.scrollIntoView({ block:'nearest' });
+  }
   input.addEventListener('input', () => render(input.value));
   input.addEventListener('keydown', e => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      sel = Math.max(0, Math.min(shown.length - 1, sel + (e.key === 'ArrowDown' ? 1 : -1)));
-      $$('.cmditem', list).forEach((r, i) => r.classList.toggle('on', i === sel));
-      const on = $$('.cmditem', list)[sel]; if (on) on.scrollIntoView({ block:'nearest' });
-    } else if (e.key === 'Enter' && shown[sel]) { closeModal(); shown[sel].go(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter' && shown[sel]) { closeModal(); shown[sel].go(); }
   });
+
+  const foot = el('div', { class:'cmdfoot' });
+  foot.innerHTML = `<span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span>`;
+
   const m = $('#modal');
   m.innerHTML = '';
-  m.append(input, list);
+  m.append(input, list, foot);
   m.classList.add('on'); $('#scrim').classList.add('on');
   render('');
   setTimeout(() => input.focus(), 60);
+}
+
+function toggleTheme() {
+  S.theme = S.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', S.theme);
+  save();
+  if (VIEW === 'atlas') go('atlas');
+  toast(S.theme === 'dark' ? 'Dark' : 'Light');
 }
 
 /* ---------------------------------------------------------- settings */
@@ -92,23 +122,28 @@ function openSettings() {
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Preferences' }));
   const prefs = el('div', { class:'row wrap' });
-  const thm = el('button', { class:'btn sm', text: S.theme === 'dark' ? '🌙  Dark' : '☀️  Light' });
-  thm.addEventListener('click', () => {
-    S.theme = S.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', S.theme);
-    save();
-    thm.textContent = S.theme === 'dark' ? '🌙  Dark' : '☀️  Light';
-    if (VIEW === 'atlas') go('atlas');
+  const thmSeg = el('div', { class:'seg' });
+  [['light','Light'], ['dark','Dark']].forEach(([v, nm]) => {
+    const b = el('button', { text: nm, class: S.theme === v ? 'on' : '' });
+    b.addEventListener('click', () => {
+      if (S.theme === v) return;
+      toggleTheme();
+      $$('button', thmSeg).forEach(x => x.classList.toggle('on', x === b));
+    });
+    thmSeg.appendChild(b);
   });
-  prefs.appendChild(thm);
-  const snd = el('button', { class:'btn sm' + (S.sound ? ' pri' : ''), text: S.sound ? '🔔  Sounds on' : '🔕  Sounds off' });
-  snd.addEventListener('click', () => {
-    S.sound = !S.sound; save();
-    snd.textContent = S.sound ? '🔔  Sounds on' : '🔕  Sounds off';
-    snd.classList.toggle('pri', S.sound);
-    if (S.sound) tick(880, .08, .05);
+  prefs.appendChild(thmSeg);
+  const sndSeg = el('div', { class:'seg' });
+  [[false,'Silent'], [true,'Sounds']].forEach(([v, nm]) => {
+    const b = el('button', { text: nm, class: !!S.sound === v ? 'on' : '' });
+    b.addEventListener('click', () => {
+      S.sound = v; save();
+      $$('button', sndSeg).forEach(x => x.classList.toggle('on', x === b));
+      if (v) tick(880, .08, .05);
+    });
+    sndSeg.appendChild(b);
   });
-  prefs.appendChild(snd);
+  prefs.appendChild(sndSeg);
   body.appendChild(prefs);
 
   body.appendChild(el('div', { class:'lbl', style:'margin:24px 0 8px', text:'Your data' }));

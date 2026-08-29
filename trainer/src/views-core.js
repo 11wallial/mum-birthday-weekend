@@ -1,9 +1,14 @@
 /* ============================================================
    VIEWS — shell, router, Today, Practice, Progress, Drill
+
+   Structure over decoration. Each screen is a short page head, then
+   sections: a quiet label, a hairline, and content. Containers are used
+   where content genuinely groups, not to make every item look like a
+   component.
    ============================================================ */
 
-/* Simple stroke marks. Emoji render inconsistently across platforms and read as
-   decoration; these carry the domain colour and stay legible at 21px. */
+/* One stroke weight, one optical size, no coloured chips behind them.
+   Emoji render inconsistently across platforms and read as decoration. */
 const ICON = {
   bench:  '<path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M8.5 12.5h7M8.5 16h4.5"/>',
   panel:  '<path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
@@ -12,16 +17,22 @@ const ICON = {
   drill:  '<path d="M13 2 4.5 13H11l-1 9 8.5-11H12z"/>',
   atlas:  '<circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6.5" r="2"/><circle cx="12" cy="14" r="2.6"/><circle cx="19" cy="18" r="2"/><path d="M8 8.5 10 12M16.2 7.6 13.4 12M14.2 15.6 17.3 17.2"/>',
   ledger: '<path d="M5 4h14v17l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 9h6M9 13h6"/>',
+  go:     '<path d="M4 12h15M13 6l6 6-6 6"/>',
+  clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  spark:  '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
+  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.2v2.6M12 19.2v2.6M21.8 12h-2.6M4.8 12H2.2M18.9 5.1l-1.8 1.8M6.9 17.1l-1.8 1.8M18.9 18.9l-1.8-1.8M6.9 6.9 5.1 5.1"/>',
+  theme:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" stroke-width="1.4"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
 };
-function icon(name) {
+function icon(name, size) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ''}</svg>`;
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${size ? ` width="${size}" height="${size}"` : ''}>${ICON[name] || ''}</svg>`;
 }
 
 const MODES = [
-  ['today',    'Today',    'One tap into practice'],
-  ['practice', 'Practice', 'Every surface: papers, panels, cases, role-play'],
-  ['progress', 'Progress', 'What you hold, what you keep getting wrong'],
+  ['today',    'Today',    'What the engine would have you do now'],
+  ['practice', 'Practice', 'Every surface: drill, papers, panels, cases, role-play'],
+  ['progress', 'Progress', 'What you hold, and what you keep getting wrong'],
 ];
 let VIEW = 'today', TIMERS = [];
 
@@ -62,7 +73,7 @@ const Act = {
     if (!this.el) return;
     this.el.className = '';
     $('#stage').classList.remove('hasact');
-    setTimeout(() => { if (!this.el.classList.contains('up')) this.el.innerHTML = ''; }, 420);
+    setTimeout(() => { if (!this.el.classList.contains('up')) this.el.innerHTML = ''; }, 380);
   },
 };
 
@@ -86,7 +97,56 @@ function refreshTop() {
   if (f) f.style.display = S.streak.n ? '' : 'none';
 }
 
-/* ---------------------------------------------------------- shared bits */
+/* ---------------------------------------------------------- structure helpers */
+function pageHead(label, title, sub, big) {
+  const h = el('div', { class:'pagehead' + (big ? ' big' : '') });
+  if (label) h.appendChild(el('span', { class:'lbl', text: label }));
+  h.appendChild(el('h1', { text: title }));
+  if (sub) h.appendChild(el('div', { class:'sub', text: sub }));
+  return h;
+}
+
+function section(label, opts) {
+  opts = opts || {};
+  const s = el('div', { class:'section' });
+  const h = el('div', { class:'sechead' });
+  h.appendChild(el('span', { class:'lbl', text: label }));
+  if (opts.note) h.appendChild(el('span', { class:'note', text: opts.note }));
+  if (opts.act) h.appendChild(el('button', { class:'act', text: opts.act, onclick: opts.onAct }));
+  s.appendChild(h);
+  return s;
+}
+
+function plate(rows) {
+  const p = el('div', { class:'plate' });
+  (rows || []).forEach(r => r && p.appendChild(r));
+  return p;
+}
+
+/* one row of a plate. `lead` is an optional node placed before the text. */
+function prow(o) {
+  const r = el(o.onclick ? 'button' : 'div', { class:'prow' });
+  if (o.onclick) r.addEventListener('click', o.onclick);
+  if (o.lead) r.appendChild(o.lead);
+  const m = el('div', { class:'pmain' });
+  m.appendChild(el('div', { class:'pname', text: o.name }));
+  if (o.sub) m.appendChild(el('div', { class:'psub', text: o.sub }));
+  r.appendChild(m);
+  if (o.tail) r.appendChild(o.tail);
+  if (o.val != null) r.appendChild(el('div', { class:'pval', text: String(o.val) }));
+  if (o.onclick) r.appendChild(el('span', { class:'chev', text:'›' }));
+  return r;
+}
+
+function dotEl(domain) { return el('span', { class:'dot ' + domain }); }
+
+/* the depth ladder, drawn — five rungs, filled to the level demonstrated */
+function rungsEl(depth, domain) {
+  const w = el('div', { class:'rungs ' + (domain || ''), title: LEVELS[depth] || 'unseen' });
+  for (let i = 1; i <= 5; i++) w.appendChild(el('i', { class: i <= depth ? 'on' : '' }));
+  return w;
+}
+
 function ringEl(pct, size, stroke, colour, label, sub) {
   const r = (size - stroke) / 2, C = 2 * Math.PI * r;
   const w = el('div', { class:'ring', style:`width:${size}px;height:${size}px` });
@@ -97,8 +157,8 @@ function ringEl(pct, size, stroke, colour, label, sub) {
                stroke="${colour}" stroke-dasharray="${C}" stroke-dashoffset="${C}"></circle>
      </svg>
      <div class="mid">
-       <div class="dnum" style="font-size:${Math.round(size*0.29)}px">${label}</div>
-       ${sub ? `<div class="lbl" style="font-size:9.5px;margin-top:1px">${sub}</div>` : ''}
+       <div class="dnum" style="font-size:${Math.round(size*0.3)}px">${label}</div>
+       ${sub ? `<div class="lbl" style="font-size:9px;margin-top:1px">${sub}</div>` : ''}
      </div>`;
   requestAnimationFrame(() => {
     const v = $('.val', w); if (v) v.style.strokeDashoffset = C * (1 - Math.max(0, Math.min(100, pct)) / 100);
@@ -106,14 +166,19 @@ function ringEl(pct, size, stroke, colour, label, sub) {
   return w;
 }
 
-function domainRow(d, pct) {
-  const row = el('div', { style:'margin-bottom:15px' });
+/* a domain line: name, bar, value, and — when there is history — movement */
+function domainRow(d, pct, mv) {
+  const row = el('div', { style:'padding:13px 0;border-top:1px solid var(--line)' });
+  const arrow = !mv ? '' : mv.up > mv.dn ? `<span class="mv up">↑ ${mv.up} advanced</span>`
+    : mv.dn > mv.up ? `<span class="mv dn">↓ ${mv.dn} slipped</span>`
+    : (mv.up || mv.dn) ? '<span class="mv fl">→ holding</span>' : '';
   row.innerHTML =
-    `<div class="row" style="margin-bottom:7px">
+    `<div class="row" style="margin-bottom:7px;gap:8px">
        <span class="dot ${d}"></span>
-       <span style="font-weight:650;font-size:14.5px">${d[0].toUpperCase() + d.slice(1)}</span>
-       <span class="spacer" style="flex:1"></span>
-       <span class="dnum" style="font-size:15px">${pct}</span>
+       <span style="font-weight:620;font-size:14px">${d[0].toUpperCase() + d.slice(1)}</span>
+       <span class="spacer"></span>
+       ${arrow}
+       <span class="dnum" style="font-size:14px;color:var(--ink-2)">${pct}</span>
      </div>
      <div class="meter ${d}"><i></i></div>`;
   requestAnimationFrame(() => { $('i', row).style.width = pct + '%'; });
@@ -121,6 +186,8 @@ function domainRow(d, pct) {
 }
 
 /* ---------------------------------------------------------- TODAY */
+let PLAN_MIN = 12;
+
 function vToday(stage) {
   const w = el('div', { class:'wrap stg' });
   const rd = readiness(), d2i = daysToInterview(), due = dueCount();
@@ -128,94 +195,125 @@ function vToday(stage) {
   const started = Object.keys(S.c).length > 0;
   const hour = new Date().getHours();
 
-  // greeting
-  const head = el('div', { style:'margin-bottom:22px' });
-  head.appendChild(el('div', { class:'lbl', style:'margin-bottom:7px',
-    text: new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) }));
-  head.appendChild(el('h1', { text: hour < 12 ? 'Good morning.' : hour < 18 ? 'Good afternoon.' : 'Good evening.' }));
-  w.appendChild(head);
+  w.appendChild(pageHead(
+    new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }),
+    hour < 12 ? 'Good morning.' : hour < 18 ? 'Good afternoon.' : 'Good evening.',
+    started ? "Here's what the engine would have you work on." : 'The first dozen items are diagnostic. After that it stops guessing and starts choosing.'));
 
-  // hero — one tap into practice
-  const hero = el('div', { class:'hero', style:'margin-bottom:16px' });
-  const line = !started
-    ? 'The first dozen items are diagnostic. After that the engine stops guessing and starts choosing.'
-    : due
-      ? `${due} item${due === 1 ? '' : 's'} due${hcw ? `, and ${hcw} you were sure about and got wrong` : ''}.`
-      : 'Nothing overdue. A session will bring you new material and stretch what you already hold.';
-  hero.innerHTML = `<h2>${started ? "Today's session" : 'Start here'}</h2><p>${esc(line)}</p>`;
-  const hb = el('div', { class:'heroacts' });
-  hb.appendChild(el('button', { class:'btn lg', text:'Start · 12 min', onclick: () => startDrill(12) }));
-  hb.appendChild(el('button', { class:'btn alt lg', text:'25 min', onclick: () => startDrill(25) }));
-  hb.appendChild(el('button', { class:'btn alt lg', text:'45 min', onclick: () => startDrill(45) }));
-  hero.appendChild(hb);
-  w.appendChild(hero);
+  w.appendChild(launchPanel(started, due, hcw));
 
   if (d2i !== null) {
     const phase = d2i <= 14 ? 'Fluency phase — intervals halved, sessions weight retrieval speed and simulation.'
                 : d2i <= 45 ? 'Intervals have tightened as the date approaches.'
                 : 'Plenty of runway. This is the phase for building depth rather than speed.';
-    const c = el('div', { class:'card tight row', style:'margin-bottom:16px;gap:14px' });
-    c.innerHTML = `<div class="dnum" style="font-size:28px;color:var(--accent)">${d2i}</div>
-      <div><div style="font-weight:700;font-size:14.5px">days to interview</div>
-      <div class="src">${esc(phase)}</div></div>`;
-    w.appendChild(c);
+    const m = el('div', { class:'row', style:'margin-top:14px;gap:8px;align-items:baseline' });
+    m.innerHTML = `<span class="dnum" style="font-size:15px;color:var(--accent)">${d2i}</span>
+      <span class="meta"><b>days to interview.</b> ${esc(phase)}</span>`;
+    w.appendChild(m);
   }
 
-  // where you are
   if (started) {
-    w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Where you are' })]));
-    const c = el('div', { class:'card' });
-    const top = el('div', { class:'row', style:'gap:22px;margin-bottom:20px;align-items:center' });
-    top.appendChild(ringEl(rd.overall, 92, 10, band(rd.overall)[3], rd.overall, ''));
+    const s = section('Where you are', { act:'Full breakdown', onAct: () => go('progress') });
+    const top = el('div', { class:'row', style:'gap:20px;margin-bottom:4px;align-items:center' });
+    top.appendChild(ringEl(rd.overall, 78, 8, band(rd.overall)[3], rd.overall, ''));
     const t = el('div', { style:'flex:1 1 auto' });
-    t.innerHTML = `<div style="font-weight:750;font-size:17px;margin-bottom:3px">${band(rd.overall)[2]}</div>
+    t.innerHTML = `<div style="font-weight:660;font-size:17px;margin-bottom:3px;letter-spacing:-.02em">${band(rd.overall)[2]}</div>
       <div class="src">Readiness weights your weakest domain, because selection filters on your weakest panel — not your strongest.</div>`;
     top.appendChild(t);
-    c.appendChild(top);
-    ['research','clinical','professional'].forEach(d => c.appendChild(domainRow(d, rd[d])));
-    c.appendChild(el('button', { class:'btn sm ghost', style:'margin-top:4px;padding-left:0',
-      text:'See the full picture →', onclick: () => go('progress') }));
-    w.appendChild(c);
+    s.appendChild(top);
+    const mv = recentMovement(7);
+    ['research','clinical','professional'].forEach(d => s.appendChild(domainRow(d, rd[d], mv[d])));
+    w.appendChild(s);
   }
 
-  // what changed
   if (S.wins.length) {
-    w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'What changed' })]));
-    const c = el('div', { class:'card' });
-    S.wins.slice(0, 5).forEach((win, i) => {
+    const s = section('What changed', { note:'depth you have gained, most recent first' });
+    s.appendChild(plate(S.wins.slice(0, 5).map(win => {
       const node = CONCEPT[win.cid];
-      const r = el('div', { class:'row', style:'padding:9px 0;align-items:flex-start' + (i ? ';border-top:1px solid var(--line)' : '') });
-      r.innerHTML = `<span class="dot ${node ? node.domain : 'research'}" style="margin-top:7px"></span>
-        <span style="flex:1 1 auto;font-size:14.5px;line-height:1.45">${esc(win.text)}</span>
-        <span class="src" style="flex:none">${relTime(win.ts)}</span>`;
-      c.appendChild(r);
-    });
-    w.appendChild(c);
+      return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text,
+                    tail: el('span', { class:'meta', text: relTime(win.ts) }) });
+    })));
+    w.appendChild(s);
   }
 
-  // underneath your errors
   const clusters = misconceptionClusters(3);
   if (clusters.length) {
-    w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Underneath your errors' })]));
-    const c = el('div', { class:'card' });
-    c.appendChild(el('p', { class:'src', style:'margin-bottom:14px',
-      text:'Separate mistakes that turn out to share a root. Teaching the idea beneath them beats correcting each one.' }));
-    clusters.forEach(cl => {
-      const b = el('button', { class:'row', style:'width:100%;background:none;border:0;padding:10px 0;text-align:left;font:inherit;cursor:pointer;border-top:1px solid var(--line)',
-        onclick: () => showConcept(cl.cid) });
-      b.innerHTML = `<span class="dot ${cl.node.domain}"></span>
-        <span style="flex:1 1 auto;font-weight:650;font-size:14.5px">${esc(cl.node.label)}</span>
-        <span class="pill">${Math.round(cl.n)} errors</span>
-        <span class="dnum" style="font-size:14px;color:var(--ink-3)">${cl.m}</span>`;
-      c.appendChild(b);
-    });
-    w.appendChild(c);
+    const s = section('Underneath your errors', { note:'separate mistakes that share a root' });
+    s.appendChild(plate(clusters.map(cl => prow({
+      lead: dotEl(cl.node.domain), name: cl.node.label,
+      sub: `${Math.round(cl.n)} errors trace back here`,
+      val: cl.m, onclick: () => showConcept(cl.cid) }))));
+    w.appendChild(s);
   }
 
-  // jump to a surface
-  w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Or work on something specific' })]));
-  w.appendChild(surfaceGrid(2));
+  const s = section('Or work on something specific');
+  s.appendChild(plate(SURFACES.map(([id, nm, mk, dom, blurb, count]) => prow({
+    lead: el('span', { class:'rlead', style:`color:var(--d-${dom})` , html: icon(mk) }),
+    name: nm, sub: blurb, tail: el('span', { class:'meta', text: count() }),
+    onclick: () => go(id) }))));
+  w.appendChild(s);
   stage.appendChild(w);
+}
+
+/* The launch panel is the one thing on Today with real visual weight, and
+   it shows the queue it is about to hand you rather than asserting that it
+   knows best. */
+function launchPanel(started, due, hcw) {
+  const p = el('div', { class:'launch' });
+  p.appendChild(el('div', { class:'lbl', text:'Recommended' }));
+  p.appendChild(el('h2', { text: started ? "Today's session" : 'Start with the diagnostic' }));
+  p.appendChild(el('p', { text: !started
+    ? 'Twelve items across all three domains. The engine watches what you get wrong and how sure you were, then stops sampling and starts targeting.'
+    : due ? `${due} item${due === 1 ? '' : 's'} due${hcw ? `, and ${hcw} you were sure about and got wrong` : ''}. Interleaved so no cluster runs twice in a row.`
+          : 'Nothing overdue. This session brings new material and stretches what you already hold.' }));
+
+  const planBox = el('div', { style:'margin-top:16px' });
+  p.appendChild(planBox);
+
+  const foot = el('div', { class:'lfoot' });
+  const seg = el('div', { class:'seg' });
+  [12, 25, 45].forEach(m => {
+    const b = el('button', { text: m + ' min', class: m === PLAN_MIN ? 'on' : '' });
+    b.addEventListener('click', () => {
+      PLAN_MIN = m;
+      $$('button', seg).forEach(x => x.classList.toggle('on', x === b));
+      drawPlan(planBox, m);
+    });
+    seg.appendChild(b);
+  });
+  foot.appendChild(seg);
+  foot.appendChild(el('div', { class:'spacer', style:'flex:1 1 auto' }));
+  const start = el('button', { class:'btn pri lg', onclick: () => startDrill(PLAN_MIN) });
+  start.innerHTML = `Start session <span class="arw">${icon('go', 16)}</span>`;
+  foot.appendChild(start);
+  p.appendChild(foot);
+
+  drawPlan(planBox, PLAN_MIN);
+  return p;
+}
+
+function drawPlan(box, minutes) {
+  box.innerHTML = '';
+  const plan = sessionPlan(Math.max(6, Math.round(minutes * 0.85)));
+  if (!plan.total) {
+    box.appendChild(el('p', { class:'src', text:'Nothing is queued right now — every item is scheduled further out. The Bench and the Panel are the better use of this session.' }));
+    return;
+  }
+  const ph = el('div', { class:'row', style:'margin-bottom:2px;gap:10px' });
+  ph.innerHTML = `<span class="lbl">What it will cover</span><span class="spacer"></span>
+    <span class="meta">${plan.total} items</span>`;
+  box.appendChild(ph);
+  plan.groups.slice(0, 4).forEach((g, i) => {
+    const r = el('div', { class:'planline' });
+    r.innerHTML = `<span class="n">${i + 1}</span>
+      <span class="dot ${g.domain}"></span>
+      <span class="pl-t">${esc(g.label)}</span>
+      <span class="pl-w">${g.n} · ${esc(REASON_TEXT[g.reason])}</span>`;
+    box.appendChild(r);
+  });
+  const rest = plan.groups.slice(4).reduce((a, g) => a + g.n, 0);
+  if (rest) box.appendChild(el('div', { class:'src', style:'padding-top:8px',
+    text: `and ${rest} more across ${plan.groups.length - 4} other area${plan.groups.length - 4 === 1 ? '' : 's'}` }));
 }
 
 const SURFACES = [
@@ -237,9 +335,9 @@ function surfaceGrid(cols) {
   const g = el('div', { class:'grid g' + (cols || 2) });
   SURFACES.forEach(([id, nm, mk, dom, blurb, count]) => {
     const b = el('button', { class:'tile', onclick: () => go(id) });
-    b.innerHTML = `<div class="tmk tint-${dom}" style="color:var(--d-${dom})">${icon(mk)}</div>
+    b.innerHTML = `<span class="tmk" style="color:var(--d-${dom})">${icon(mk)}</span>
       <h3>${nm}</h3><p>${esc(blurb)}</p>
-      <div class="tfoot"><span class="pill">${esc(count())}</span></div>`;
+      <div class="tfoot"><span class="meta">${esc(count())}</span></div>`;
     g.appendChild(b);
   });
   return g;
@@ -248,108 +346,122 @@ function surfaceGrid(cols) {
 /* ---------------------------------------------------------- PRACTICE */
 function vPractice(stage) {
   const w = el('div', { class:'wrap stg' });
-  w.appendChild(el('h1', { text:'Practice' }));
-  w.appendChild(el('p', { class:'muted', style:'margin:9px 0 26px;max-width:58ch',
-    text:'Five ways in. Drill trains retrieval and discrimination; the other four rehearse the actual tasks selection puts in front of you.' }));
+  w.appendChild(pageHead(null, 'Practice',
+    'Drill trains retrieval and discrimination. The other four rehearse the actual tasks selection puts in front of you.', true));
 
-  const drill = el('button', { class:'tile', style:'margin-bottom:16px', onclick: () => startDrill(12) });
-  drill.innerHTML = `<div class="tmk">${icon('drill')}</div><h3>Drill</h3>
-    <p>Adaptive interleaved retrieval. Chosen by what is due, what you got wrong while confident, and which concepts sit lowest.</p>
-    <div class="tfoot">
-      <span class="pill">${dueCount()} due</span>
-      <span class="pill">${unseenCount()} unseen</span>
-      <span class="pill solid">Start</span>
-    </div>`;
-  w.appendChild(drill);
-  w.appendChild(surfaceGrid(2));
+  const s1 = section('Recommended');
+  const drill = el('button', { class:'tile feature', onclick: () => startDrill(PLAN_MIN) });
+  drill.innerHTML =
+    `<span class="tmk">${icon('drill')}</span>
+     <span class="tbody">
+       <h3>Drill</h3>
+       <p>Adaptive interleaved retrieval. Chosen by what is due, what you got wrong while confident, and which concepts sit lowest.</p>
+       <div class="tfoot"><span class="meta"><b>${dueCount()}</b> due<span class="sep">·</span><b>${unseenCount()}</b> unseen<span class="sep">·</span>${PLAN_MIN} min</span></div>
+     </span>
+     <span class="tgo"><span class="btn pri">Start<span class="arw">${icon('go', 15)}</span></span></span>`;
+  s1.appendChild(drill);
+  w.appendChild(s1);
+
+  const s2 = section('Simulate the real thing', { note:'the four tasks selection actually sets' });
+  s2.appendChild(surfaceGrid(2));
+  w.appendChild(s2);
+
+  const s3 = section('Study the map');
+  s3.appendChild(plate([
+    prow({ lead: el('span', { class:'rlead', html: icon('atlas') }), name:'The Atlas',
+           sub:`A live map of ${DATA.concepts.nodes.length} concepts. Dim hubs with many links are the highest-leverage targets.`,
+           onclick: () => go('atlas') }),
+    prow({ lead: el('span', { class:'rlead', html: icon('ledger') }), name:'The Ledger',
+           sub:`${S.errors.length} recorded errors, classified, ordered by what will cost you most.`,
+           onclick: () => go('ledger') }),
+  ]));
+  w.appendChild(s3);
   stage.appendChild(w);
 }
 
 /* ---------------------------------------------------------- PROGRESS */
 function vProgress(stage) {
-  const w = el('div', { class:'wrap wide stg' });
-  const rd = readiness(), cal = calibration();
-  w.appendChild(el('h1', { text:'Progress' }));
-  w.appendChild(el('p', { class:'muted', style:'margin:9px 0 24px;max-width:58ch',
-    text:'Depth is earned level by level. Recognising something never counts as mastering it, and a failed transfer item takes depth back.' }));
+  const w = el('div', { class:'wrap stg' });
+  const rd = readiness(), cal = calibration(), mv = recentMovement(7);
+  w.appendChild(pageHead(null, 'Progress',
+    'Depth is earned level by level. Recognising something never counts as mastering it, and a failed transfer item takes depth back.', true));
 
-  const top = el('div', { class:'grid g2', style:'margin-bottom:8px' });
-
-  const rcard = el('div', { class:'card' });
-  const rrow = el('div', { class:'row', style:'gap:20px;margin-bottom:18px' });
-  rrow.appendChild(ringEl(rd.overall, 96, 11, band(rd.overall)[3], rd.overall, ''));
+  /* readiness — the one number, with the weighting stated rather than hidden */
+  const s0 = section('Readiness', { note:'0.62 × mean of domains + 0.38 × weakest' });
+  const top = el('div', { class:'row', style:'gap:24px;align-items:center;margin-bottom:4px' });
+  top.appendChild(ringEl(rd.overall, 96, 9, band(rd.overall)[3], rd.overall, ''));
   const rt = el('div', { style:'flex:1 1 auto' });
-  rt.innerHTML = `<div class="lbl">Readiness</div>
-    <div style="font-weight:750;font-size:18px;margin:3px 0 4px">${band(rd.overall)[2]}</div>
-    <div class="src">0.62 × mean + 0.38 × weakest</div>`;
-  rrow.appendChild(rt);
-  rcard.appendChild(rrow);
-  ['research','clinical','professional'].forEach(d => rcard.appendChild(domainRow(d, rd[d])));
-  top.appendChild(rcard);
+  rt.innerHTML = `<div style="font-weight:660;font-size:20px;letter-spacing:-.026em;margin-bottom:4px">${band(rd.overall)[2]}</div>
+    <div class="src">Weighted towards your weakest domain, because selection filters on the weakest panel you sit — not the strongest.</div>`;
+  top.appendChild(rt);
+  s0.appendChild(top);
+  ['research','clinical','professional'].forEach(d => s0.appendChild(domainRow(d, rd[d], mv[d])));
+  s0.appendChild(el('div', { class:'meta', style:'margin-top:16px',
+    html: `<b>${dueCount()}</b> due<span class="sep">·</span><b>${unseenCount()}</b> not yet seen<span class="sep">·</span><b>${Object.keys(S.c).length}</b> of ${DATA.concepts.nodes.length} concepts met` }));
+  w.appendChild(s0);
 
-  const ccard = el('div', { class:'card' });
-  ccard.appendChild(el('div', { class:'lbl', style:'margin-bottom:12px', text:'Calibration' }));
+  /* calibration */
+  const s1 = section('Calibration', { note:'the gap between how sure you were and whether you were right' });
   if (cal.score === null) {
-    ccard.appendChild(el('p', { class:'src', text:'No data yet. Every item asks how sure you are before you answer; the gap between that and the outcome is what gets scored here.' }));
+    s1.appendChild(el('p', { class:'src',
+      text:'No data yet. Every item asks how sure you are before you answer; the gap between that and the outcome is what gets scored here.' }));
   } else {
-    const c1 = el('div', { class:'statline', style:'margin-bottom:14px' });
-    c1.innerHTML = `<span class="dnum v" style="color:${band(cal.score)[3]}">${cal.score}</span><span class="u">/ 100</span>`;
-    ccard.appendChild(c1);
-    ccard.appendChild(el('p', { class:'src', style:'margin-bottom:16px',
+    const head = el('div', { class:'row', style:'gap:20px;align-items:flex-start;margin-bottom:16px' });
+    const n = el('div', { class:'statline', style:'flex:none' });
+    n.innerHTML = `<span class="dnum v" style="color:${band(cal.score)[3]}">${cal.score}</span><span class="u">/ 100</span>`;
+    head.appendChild(n);
+    head.appendChild(el('p', { class:'src', style:'flex:1 1 auto;max-width:44ch',
       text:'The goal is calibrated confidence, not maximum confidence. Being sure and wrong costs more than being unsure and right.' }));
-    [['Sure and wrong', cal.hcw, 'var(--wrong)', 'Highest priority — the belief felt settled'],
-     ['Unsure and right', cal.lcr, 'var(--warning)', 'Knowledge you have but do not trust'],
-     ['Rated answers', cal.n, 'var(--ink-3)', '']].forEach(([nm, v, col, sub], i) => {
-      const r = el('div', { style:'padding:10px 0' + (i ? ';border-top:1px solid var(--line)' : '') });
-      r.innerHTML = `<div class="row"><span style="flex:1 1 auto;font-size:14px;font-weight:650">${nm}</span>
-        <span class="dnum" style="font-size:19px;color:${col}">${v}</span></div>
-        ${sub ? `<div class="src">${sub}</div>` : ''}`;
-      ccard.appendChild(r);
-    });
+    s1.appendChild(head);
+    s1.appendChild(plate([
+      prow({ name:'Sure and wrong', sub:'Highest priority — the belief felt settled', val: cal.hcw }),
+      prow({ name:'Unsure and right', sub:'Knowledge you have but do not trust', val: cal.lcr }),
+      prow({ name:'Rated answers', val: cal.n }),
+    ]));
   }
-  top.appendChild(ccard);
-  w.appendChild(top);
+  w.appendChild(s1);
 
-  const qs = el('div', { class:'grid g3', style:'margin-top:14px' });
-  [['Due for review', dueCount()], ['Not yet seen', unseenCount()],
-   ['Concepts met', Object.keys(S.c).length + ' / ' + DATA.concepts.nodes.length]].forEach(([nm, v]) => {
-    const c = el('div', { class:'card tight' });
-    c.innerHTML = `<div class="lbl">${nm}</div><div class="dnum" style="font-size:26px;margin-top:5px">${v}</div>`;
-    qs.appendChild(c);
-  });
-  w.appendChild(qs);
+  /* movement — real events, not a synthetic delta */
+  const anyMv = ['research','clinical','professional'].some(d => mv[d].up || mv[d].dn);
+  if (anyMv) {
+    const s2 = section('Movement', { note:'last 7 days' });
+    s2.appendChild(plate(['research','clinical','professional'].map(d => {
+      const m = mv[d];
+      const tone = m.up > m.dn ? 'up' : m.dn > m.up ? 'dn' : 'fl';
+      const word = tone === 'up' ? 'gaining' : tone === 'dn' ? 'losing ground' : 'holding';
+      return prow({ lead: dotEl(d), name: d[0].toUpperCase() + d.slice(1),
+        sub: `${m.up} concept${m.up === 1 ? '' : 's'} advanced a level · ${m.dn} error${m.dn === 1 ? '' : 's'}`,
+        tail: el('span', { class:'mv ' + tone, text: word }) });
+    })));
+    w.appendChild(s2);
+  }
 
-  // weakest held
+  /* weakest held — with the depth ladder drawn, not just a percentage */
   const weak = weakConcepts(8);
   if (weak.length) {
-    w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Weakest held' })]));
-    const c = el('div', { class:'card' });
-    weak.forEach((x, i) => {
-      const b = el('button', { style:'width:100%;background:none;border:0;padding:11px 0;text-align:left;font:inherit;cursor:pointer' + (i ? ';border-top:1px solid var(--line)' : ''),
-        onclick: () => showConcept(x.n.id) });
-      b.innerHTML = `<div class="row" style="margin-bottom:6px">
-          <span class="dot ${x.n.domain}"></span>
-          <span style="flex:1 1 auto;font-weight:650;font-size:14.5px">${esc(x.n.label)}</span>
-          ${x.rec && x.rec.hcw ? '<span class="pill warn">sure &amp; wrong ×' + x.rec.hcw + '</span>' : ''}
-          <span class="dnum" style="font-size:14px;color:var(--ink-3)">${x.m}</span>
-        </div><div class="meter thin ${x.n.domain}"><i style="width:${x.m}%"></i></div>`;
-      c.appendChild(b);
-    });
-    w.appendChild(c);
+    const s3 = section('Weakest held', { note:'depth demonstrated, not questions answered' });
+    s3.appendChild(plate(weak.map(x => prow({
+      lead: dotEl(x.n.domain), name: x.n.label,
+      sub: (x.rec && x.rec.hcw ? `sure and wrong ×${x.rec.hcw} · ` : '') + (LEVELS[(x.rec && x.rec.d) || 0] || 'unseen'),
+      tail: rungsEl((x.rec && x.rec.d) || 0, x.n.domain),
+      val: x.m, onclick: () => showConcept(x.n.id) }))));
+    w.appendChild(s3);
   }
 
-  w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'Deeper' })]));
+  const s4 = section('Deeper');
   const links = el('div', { class:'grid g2' });
   [['atlas', 'The Atlas', 'atlas', 'A live map of ' + DATA.concepts.nodes.length + ' concepts. Nodes brighten as you demonstrate depth, and dim hubs with many links are the highest-leverage targets.'],
    ['ledger', 'The Ledger', 'ledger', S.errors.length + ' recorded errors, classified, ordered by what will cost you most.']]
    .forEach(([id, nm, mk, blurb]) => {
     const b = el('button', { class:'tile', onclick: () => go(id) });
-    b.innerHTML = `<div class="tmk">${icon(mk)}</div><h3>${nm}</h3><p>${esc(blurb)}</p>`;
+    b.innerHTML = `<span class="tmk">${icon(mk)}</span><h3>${nm}</h3><p>${esc(blurb)}</p>`;
     links.appendChild(b);
   });
-  w.appendChild(links);
+  s4.appendChild(links);
+  w.appendChild(s4);
   stage.appendChild(w);
 }
+
 
 /* ============================================================
    DRILL
@@ -422,42 +534,44 @@ function drillDone(stage) {
   const newWins = S.wins.slice(0, Math.max(0, S.wins.length - SESSION.wasWins));
   const hcw = SESSION.answers.filter(a => a.hiConfWrong);
 
-  const w = el('div', { class:'wrap narrow stg', style:'text-align:center;padding-top:52px' });
-  w.appendChild(el('div', { style:'font-size:56px;line-height:1;margin-bottom:16px',
-    text: pct >= 80 ? '🎯' : pct >= 50 ? '💪' : '🧭' }));
-  w.appendChild(el('h1', { text: pct >= 80 ? 'Strong session.' : pct >= 50 ? 'Session complete.' : 'Useful session.' }));
-  w.appendChild(el('p', { class:'muted', style:'margin:10px auto 26px;max-width:38ch',
-    text: pct >= 80 ? 'Hold that. The scheduler will push these further out and bring you harder versions.'
-        : pct >= 50 ? 'The errors are the valuable part — they are already scheduled to come back.'
-        : 'A low score early is information, not a verdict. The engine now knows where to aim.' }));
+  const w = el('div', { class:'wrap narrow stg', style:'padding-top:56px' });
+  const head = el('div', { class:'row', style:'gap:22px;align-items:center;margin-bottom:28px' });
+  head.appendChild(ringEl(pct, 84, 8, band(pct)[3], pct + '%', ''));
+  const ht = el('div', { style:'flex:1 1 auto' });
+  ht.innerHTML = `<h1 style="font-size:24px">${pct >= 80 ? 'Strong session.' : pct >= 50 ? 'Session complete.' : 'Useful session.'}</h1>
+    <p class="src" style="margin-top:6px;max-width:38ch">${
+      pct >= 80 ? 'Hold that. The scheduler will push these further out and bring you harder versions.'
+    : pct >= 50 ? 'The errors are the valuable part — they are already scheduled to come back.'
+                : 'A low score early is information, not a verdict. The engine now knows where to aim.'}</p>`;
+  head.appendChild(ht);
+  w.appendChild(head);
 
-  const g = el('div', { class:'grid g3', style:'margin-bottom:22px;text-align:left' });
-  [['Answered', n], ['Correct', pct + '%'], ['Time', fmtTime(secs)]].forEach(([l, v]) => {
-    const c = el('div', { class:'card tight' });
-    c.innerHTML = `<div class="lbl">${l}</div><div class="dnum" style="font-size:26px;margin-top:4px">${v}</div>`;
-    g.appendChild(c);
-  });
-  w.appendChild(g);
+  w.appendChild(plate([
+    prow({ name:'Answered', val: n }),
+    prow({ name:'Correct', val: SESSION.right + ' of ' + n }),
+    prow({ name:'Time', val: fmtTime(secs) }),
+  ]));
 
   if (newWins.length) {
-    const c = el('div', { class:'card tint-accent', style:'text-align:left;margin-bottom:14px;box-shadow:none' });
-    c.appendChild(el('div', { class:'lbl', style:'color:var(--accent);margin-bottom:10px',
-      text:"What you can now do that you couldn't" }));
-    newWins.slice(0, 6).forEach(win => c.appendChild(
-      el('p', { style:'margin:0 0 7px;font-size:14.5px;line-height:1.45', text:'· ' + win.text })));
-    w.appendChild(c);
+    const s1 = section("What you can now do that you couldn't");
+    s1.appendChild(plate(newWins.slice(0, 6).map(win => {
+      const node = CONCEPT[win.cid];
+      return prow({ lead: dotEl(node ? node.domain : 'research'), name: win.text });
+    })));
+    w.appendChild(s1);
   }
 
   if (hcw.length) {
-    const c = el('div', { class:'card', style:'text-align:left;margin-bottom:14px;border-left:4px solid var(--warning)' });
-    c.innerHTML = `<div class="lbl" style="color:var(--warning);margin-bottom:7px">Highest priority</div>
-      <p style="font-size:14.5px;color:var(--ink-2);margin:0">You were confident and wrong on <b>${hcw.length}</b> item${hcw.length === 1 ? '' : 's'}. That combination matters more than the score: it means the belief felt settled. Those are scheduled to return today.</p>`;
+    const c = el('div', { class:'flag', style:'margin-top:28px;background:var(--warning-soft);border-left-color:var(--warning)' });
+    c.innerHTML = `<div class="lbl" style="color:var(--warning);margin-bottom:5px">Highest priority</div>
+      You were confident and wrong on <b>${hcw.length}</b> item${hcw.length === 1 ? '' : 's'}. That combination matters more than the score: it means the belief felt settled. Those are scheduled to return today.`;
     w.appendChild(c);
   }
 
-  const btns = el('div', { class:'row', style:'justify-content:center;margin-top:24px;flex-wrap:wrap' });
+  const btns = el('div', { class:'row', style:'margin-top:32px;flex-wrap:wrap' });
+  btns.appendChild(el('button', { class:'btn lg ghost', text:'Done', onclick: () => { SESSION = null; go('today'); } }));
+  btns.appendChild(el('div', { class:'spacer', style:'flex:1 1 auto' }));
   btns.appendChild(el('button', { class:'btn pri lg', text:'Another session', onclick: () => startDrill(SESSION.minutes) }));
-  btns.appendChild(el('button', { class:'btn lg', text:'Done', onclick: () => { SESSION = null; go('today'); } }));
   w.appendChild(btns);
   stage.appendChild(w);
 }
@@ -696,9 +810,9 @@ function showVerdict(item, correct, rec, secs, onNext) {
     box.appendChild(el('div', { class:'lbl', style:'margin-bottom:8px', text:'What actually went wrong?' }));
     const row = el('div', { class:'tagrow' });
     ERROR_TYPES.forEach(([id, nm, hint]) => {
-      const t = el('button', { class:'pill', title: hint, style:'cursor:pointer;border:0;font:inherit;font-weight:650', text: nm });
+      const t = el('button', { class:'pill act', title: hint, text: nm });
       t.addEventListener('click', () => {
-        $$('.pill', row).forEach(x => x.classList.remove('on'));
+        $$('.pill.act', row).forEach(x => x.classList.remove('on'));
         t.classList.add('on');
         const e = S.errors.find(x => x.id === item.id && !x.type);
         if (e) { e.type = id; save(); }

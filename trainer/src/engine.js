@@ -183,6 +183,72 @@ function buildSession(n, filterFn) {
   return out;
 }
 
+/* ---------------------------------------------------------- session plan
+   The engine already decides what to practise; this makes that decision
+   legible before you commit to it. Nothing here is invented for display —
+   it is the same queue buildSession() will hand the drill. */
+const CLUSTER_LABEL = {
+  bias: 'Bias and confounding', clinical_skills: 'Clinical skills', design: 'Study design',
+  edi: 'Equality, diversity and inclusion', epi: 'Epidemiology', ethics: 'Ethics',
+  formulation: 'Formulation', inference: 'Statistical inference', measurement: 'Measurement',
+  models: 'Therapeutic models', professional: 'Professional issues', qualitative: 'Qualitative methods',
+  risk: 'Risk', systems: 'Services and systems', tests: 'Test selection',
+};
+const REASON_TEXT = {
+  confident: 'you were sure and wrong here',
+  lapsed:    'you have lost this one before',
+  due:       'due for review',
+  new:       'not yet seen',
+};
+
+function itemReason(item) {
+  const r = S.i[item.id];
+  if (!r || !r.n) return 'new';
+  if (r.lapse) return 'lapsed';
+  if (item.concepts.some(cid => (S.c[cid] || {}).hcw)) return 'confident';
+  return 'due';
+}
+
+function sessionPlan(n) {
+  const now = Date.now();
+  const items = buildSession(n);
+  const by = {};
+  items.forEach(it => {
+    const node = CONCEPT[it.concepts[0]] || {};
+    const key = node.cluster || 'other';
+    const g = by[key] || (by[key] = {
+      key, label: CLUSTER_LABEL[key] || key, domain: node.domain || 'research',
+      n: 0, reasons: {}, weakest: 100 });
+    g.n++;
+    const r = itemReason(it);
+    g.reasons[r] = (g.reasons[r] || 0) + 1;
+    it.concepts.forEach(cid => { const m = mastery(cid, now); if (m < g.weakest) g.weakest = m; });
+  });
+  const groups = Object.values(by).sort((a, b) => b.n - a.n);
+  groups.forEach(g => { g.reason = Object.entries(g.reasons).sort((a, b) => b[1] - a[1])[0][0]; });
+  return { total: items.length, groups };
+}
+
+/* movement over a window, from events that actually happened: depth
+   advancements up, recorded errors down. Not a synthetic percentage. */
+function recentMovement(days) {
+  const cut = Date.now() - (days || 7) * DAY;
+  const out = { research: { up:0, dn:0 }, clinical: { up:0, dn:0 }, professional: { up:0, dn:0 } };
+  (S.wins || []).forEach(w => {
+    const nd = CONCEPT[w.cid];
+    if (w.ts >= cut && nd && out[nd.domain]) out[nd.domain].up++;
+  });
+  (S.errors || []).forEach(e => {
+    if ((e.ts || 0) < cut) return;
+    const seen = {};
+    (e.concepts || []).forEach(cid => {
+      const nd = CONCEPT[cid];
+      if (nd && out[nd.domain] && !seen[nd.domain]) { seen[nd.domain] = 1; out[nd.domain].dn++; }
+    });
+  });
+  return out;
+}
+
 /* ---------------------------------------------------------- recording */
 function recordAnswer(item, correct, conf, secs) {
   const now = Date.now();

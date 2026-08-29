@@ -9,23 +9,18 @@ function vBench(stage, exId) {
   if (EXAM && EXAM.phase !== 'done') return benchRun(stage);
   if (exId) return benchStart(stage, exId);
   const w = el('div', { class:'wrap stg' });
-  w.appendChild(el('h1', { text:'The Bench' }));
-  w.appendChild(el('p', { style:'color:var(--ink-2);margin:8px 0 26px;max-width:66ch',
-    text:'Real written papers, run to their real clock. When the time is up the paper closes, exactly as it does on the day. Afterwards your text is matched against the marking scheme point by point — and you confirm or override every award, because comparing your own answer to a marker\'s list is where most of the learning is.' }));
-  DATA.written.exercises.forEach(ex => {
+  w.appendChild(pageHead(null, 'The Bench',
+    "Real written papers, run to their real clock. When the time is up the paper closes, exactly as it does on the day. Afterwards your text is matched against the marking scheme point by point — and you confirm or override every award, because comparing your own answer to a marker's list is where most of the learning is.", true));
+  const sec = section('Papers', { note:'timed, then marked against the scheme' });
+  sec.appendChild(plate(DATA.written.exercises.map(ex => {
     const prev = S.written[ex.id];
-    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => benchStart(stage, ex.id) });
-    c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
-        <div style="flex:1 1 260px">
-          <h3>${esc(ex.title)}</h3>
-          <p>${esc(ex.course)} ${ex.year} · ${ex.minutes} minutes · ${ex.questions.length} question${ex.questions.length===1?'':'s'} · ${ex.totalMarks} marks</p>
-        </div>
-        ${prev ? `<div style="text-align:right"><div class="lbl">Last attempt</div>
-           <div class="dnum" style="font-size:24px">${prev.score}<span style="font-size:14px;color:var(--ink-3)">/${prev.max}</span></div></div>` : ''}
-      </div>
-      <div class="mt"><span class="src">${esc(ex.provenance.slice(0, 150))}${ex.provenance.length>150?'…':''}</span></div>`;
-    w.appendChild(c);
-  });
+    return prow({
+      name: ex.title,
+      sub: `${ex.course} ${ex.year} · ${ex.minutes} min · ${ex.questions.length} question${ex.questions.length===1?'':'s'} · ${ex.totalMarks} marks`,
+      tail: prev ? el('span', { class:'meta', html:`last <b>${prev.score}/${prev.max}</b>` }) : null,
+      onclick: () => benchStart(stage, ex.id) });
+  })));
+  w.appendChild(sec);
   stage.appendChild(w);
 }
 
@@ -252,35 +247,32 @@ let PANEL = null;
 function vPanel(stage, arg) {
   if (PANEL) return panelRun(stage);
   const w = el('div', { class:'wrap stg' });
-  w.appendChild(el('h1', { text:'The Panel' }));
-  w.appendChild(el('p', { style:'color:var(--ink-2);margin:8px 0 22px;max-width:68ch',
-    text:'Every question here was actually asked. Answer out loud, against the clock. Afterwards you get what the panel is listening for, the follow-up they push with, and the failure mode most candidates fall into.' }));
+  w.appendChild(pageHead(null, 'The Panel',
+    'Every question here was actually asked. Answer out loud, against the clock. Afterwards you get what the panel is listening for, the follow-up they push with, and the failure mode most candidates fall into.', true));
 
-  const filt = el('div', { class:'card', style:'margin-bottom:20px' });
-  filt.appendChild(el('div', { class:'lbl', style:'margin-bottom:10px', text:'Run a set' }));
-  const btns = el('div', { style:'display:flex;gap:9px;flex-wrap:wrap' });
+  const filt = section('Run a set', { note:'answered aloud, timed' });
+  const btns = el('div', { style:'display:flex;gap:8px;flex-wrap:wrap' });
   [['Mixed panel — 5 questions', () => startPanel(shuffle(DATA.interview.questions).slice(0, 5))],
    ['Clinical panel', () => startPanel(shuffle(DATA.interview.questions.filter(q => q.panel === 'clinical')).slice(0, 5))],
    ['Academic panel', () => startPanel(shuffle(DATA.interview.questions.filter(q => q.panel === 'academic')).slice(0, 5))],
    ['Personal / professional', () => startPanel(shuffle(DATA.interview.questions.filter(q => q.panel === 'personal')).slice(0, 5))],
    ['Cardiff only', () => startPanel(shuffle(DATA.interview.questions.filter(q => q.course === 'Cardiff')).slice(0, 6))],
    ['Rapid fire — 60 seconds each', () => startPanel(shuffle(DATA.interview.questions).slice(0, 8), '60s')],
-  ].forEach(([nm, fn]) => btns.appendChild(el('button', { class:'btn', text:nm, onclick:fn })));
+  ].forEach(([nm, fn], i) => btns.appendChild(el('button', { class:'btn' + (i ? '' : ' pri'), text:nm, onclick:fn })));
   filt.appendChild(btns);
   w.appendChild(filt);
 
-  w.appendChild(el('div', { class:'divider' }, [el('span', { class:'lbl', text:'By theme' })]));
+  const bt = section('By theme', { note:'what each one is really testing' });
   const themeCount = {};
   DATA.interview.questions.forEach(q => themeCount[q.theme] = (themeCount[q.theme] || 0) + 1);
-  DATA.interview.themes.slice().sort((a,b) => (themeCount[b.id]||0) - (themeCount[a.id]||0)).forEach(t => {
-    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:10px',
-      onclick: () => showTheme(t.id) });
-    c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:14px;align-items:baseline">
-        <h3>${esc(t.label)}</h3>
-        <span class="lbl">${themeCount[t.id]||0} question${(themeCount[t.id]||0)===1?'':'s'}</span></div>
-      <p style="margin-top:6px">${esc(t.why.slice(0, 190))}${t.why.length>190?'…':''}</p>`;
-    w.appendChild(c);
-  });
+  bt.appendChild(plate(DATA.interview.themes.slice()
+    .sort((a,b) => (themeCount[b.id]||0) - (themeCount[a.id]||0))
+    .map(t => prow({
+      name: t.label,
+      sub: t.why.slice(0, 150) + (t.why.length > 150 ? '…' : ''),
+      tail: el('span', { class:'meta', text: (themeCount[t.id]||0) + ' q' }),
+      onclick: () => showTheme(t.id) }))));
+  w.appendChild(bt);
   stage.appendChild(w);
 }
 
@@ -341,7 +333,7 @@ function panelRun(stage) {
 
   const startBtn = el('button', { class:'btn pri lg', text:'Start' });
   const doneBtn  = el('button', { class:'btn lg', text:'Finished', disabled:'' });
-  const micBtn = SR ? el('button', { class:'btn sm ghost', text:'🎙  Transcribe' }) : null;
+  const micBtn = SR ? el('button', { class:'btn sm ghost', html: icon('panel', 15) + ' Transcribe' }) : null;
   if (micBtn) micBtn.addEventListener('click', () => {
     try {
       rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = 'en-GB';
@@ -520,19 +512,15 @@ function showTheme(id) {
 function vStudio(stage, vid) {
   if (vid) return studioCase(stage, vid);
   const w = el('div', { class:'wrap stg' });
-  w.appendChild(el('h1', { text:'The Studio' }));
-  w.appendChild(el('p', { style:'color:var(--ink-2);margin:8px 0 24px;max-width:68ch',
-    text:'One case, several lenses. You write your own formulation first, then compare it against an account from each model — including what that model illuminates, what it misses, and how you would know it was wrong. This is the question Birmingham used to catch a whole cohort out: name a model, and then be told to formulate with a different one.' }));
-  DATA.formulation.vignettes.forEach(v => {
-    const done = S.formul[v.id];
-    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => studioCase(stage, v.id) });
-    c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
-        <div style="flex:1 1 240px"><h3>${esc(v.title)}</h3>
-          <p>${v.models.map(m => esc(m.model)).join(' · ')}</p></div>
-        ${done ? '<span class="pill on">attempted</span>' : ''}
-      </div><div class="mt"><span class="src">${esc(v.source)}</span></div>`;
-    w.appendChild(c);
-  });
+  w.appendChild(pageHead(null, 'The Studio',
+    'One case, several lenses. You write your own formulation first, then compare it against an account from each model — including what that model illuminates, what it misses, and how you would know it was wrong. This is the question Birmingham used to catch a whole cohort out: name a model, and then be told to formulate with a different one.', true));
+  const sc = section('Cases', { note:'write yours first, then compare' });
+  sc.appendChild(plate(DATA.formulation.vignettes.map(v => prow({
+    name: v.title,
+    sub: v.models.map(m => m.model).join(' · '),
+    tail: S.formul[v.id] ? el('span', { class:'pill on', text:'attempted' }) : null,
+    onclick: () => studioCase(stage, v.id) }))));
+  w.appendChild(sc);
   stage.appendChild(w);
 }
 
@@ -609,18 +597,17 @@ let RP = null;
 function vRoom(stage, sid) {
   if (RP) return roomRun(stage);
   const w = el('div', { class:'wrap stg' });
-  w.appendChild(el('h1', { text:'The Room' }));
-  w.appendChild(el('p', { style:'color:var(--ink-2);margin:8px 0 24px;max-width:68ch',
-    text:'Branching conversations from the courses that use role-play. You are scored on process, not content: whether you open the space, reflect, validate and stay with the person — or reach for a solution. Glasgow states it outright in their brief: there is no expectation that you resolve the problem.' }));
-  DATA.roleplay.scenarios.forEach(s => {
-    const prev = S.rp[s.id];
-    const c = el('button', { class:'tile', style:'width:100%;margin-bottom:12px', onclick: () => { RP = { s, turn:0, score:0, max:0, log:[] }; go('room'); } });
-    c.innerHTML = `<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
-        <div style="flex:1 1 240px"><h3>${esc(s.title)}</h3><p>${esc(s.setting)}</p></div>
-        ${prev ? `<div style="text-align:right"><div class="lbl">Best</div><div class="dnum" style="font-size:22px">${prev.score}</div></div>` : ''}
-      </div><div class="mt"><span class="src">${esc(s.source)}</span></div>`;
-    w.appendChild(c);
-  });
+  w.appendChild(pageHead(null, 'The Room',
+    'Branching conversations from the courses that use role-play. You are scored on process, not content: whether you open the space, reflect, validate and stay with the person — or reach for a solution. Glasgow states it outright in their brief: there is no expectation that you resolve the problem.', true));
+  const rs = section('Scenarios', { note:'scored on process, not on solving it' });
+  rs.appendChild(plate(DATA.roleplay.scenarios.map(sc => {
+    const prev = S.rp[sc.id];
+    return prow({
+      name: sc.title, sub: sc.setting + ' · ' + sc.source,
+      tail: prev ? el('span', { class:'meta', html:`best <b>${prev.score}</b>` }) : null,
+      onclick: () => { RP = { s: sc, turn:0, score:0, max:0, log:[] }; go('room'); } });
+  })));
+  w.appendChild(rs);
   stage.appendChild(w);
 }
 
@@ -1067,7 +1054,8 @@ function showConcept(id) {
   top.innerHTML = `<div><div class="lbl">Mastery</div>
       <div class="dnum" style="font-size:36px;line-height:1;color:${band(m)[3]}">${m}</div></div>
     <div><div class="lbl">Depth reached</div>
-      <div style="font-size:15px;font-weight:560;margin-top:5px">${rec && rec.d ? LEVELS[rec.d] : 'not yet met'}</div></div>
+      <div style="font-size:15px;font-weight:600;margin:5px 0 6px">${rec && rec.d ? LEVELS[rec.d] : 'not yet met'}</div>
+      <div class="rungs ${n.domain}">${[1,2,3,4,5].map(i => `<i class="${i <= ((rec && rec.d) || 0) ? 'on' : ''}"></i>`).join('')}</div></div>
     <div style="flex:1 1 140px"><div class="lbl">${band(m)[2]}</div>
       <div class="meter" style="margin-top:7px"><i style="width:${m}%;background:${band(m)[3]}"></i></div></div>`;
   body.appendChild(top);
@@ -1090,7 +1078,7 @@ function showConcept(id) {
     const row = el('div', { class:'tagrow' });
     rel.forEach(r => {
       const rn = CONCEPT[r]; if (!rn) return;
-      const b = el('button', { class:'pill', style:'cursor:pointer' },
+      const b = el('button', { class:'pill act' },
         [el('span', { class:'dot ' + rn.domain }), el('span', { text: rn.label }),
          el('span', { style:'color:var(--ink-3)', text: mastery(r) })]);
       b.addEventListener('click', () => showConcept(r));

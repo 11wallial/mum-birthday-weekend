@@ -157,9 +157,23 @@ There is no XP, no level, no streak of raw days. The reward structure is:
 
 ## 9a. Interface design
 
-The surface is deliberately in the idiom of a consumer learning app rather than a
-professional instrument, because the tool has to survive months of daily use by
-someone under real pressure. Five decisions carry it:
+The surface has to survive months of daily use by someone under real pressure, so
+it is built for calm and legibility rather than for looking like an app. The
+reference points are Linear, Stripe and the BMJ rather than Duolingo: precise,
+quiet, clinical, demanding. Eight decisions carry it.
+
+**Structure, not cards.** An early version made every piece of information a
+white card floating on a shadow. It read as a UI kit. The page is now a sequence
+of *sections* — a small uppercase label, a hairline rule, and content — and
+homogeneous lists are single bordered *plates* whose rows are divided by
+hairlines. One container, many items, instead of one container per item. This is
+the single largest change in the look of the thing.
+
+**Explicit hierarchy.** Practice does not present five equal choices. Drill is
+the engine, so it sits alone under *Recommended* as a wide feature row; the four
+simulation surfaces sit under *Simulate the real thing*; the Atlas and the Ledger
+sit under *Study the map*. The grouping does the explaining that five identical
+tiles could not.
 
 **One thing at a time.** There is no permanent metrics rail beside the work.
 Readiness, calibration and the error ledger live in their own tab. While you are
@@ -175,9 +189,19 @@ learner never hunts for the next step.
 turns an item from a reflex into a decision, and makes the confidence rating
 meaningful, since you commit to both before seeing the outcome.
 
-**Light-first, with a real dark theme.** Ground is a cool near-white; cards are
-white and float on soft shadow rather than sitting inside borders. Both themes
-are defined at token level, and every colour resolves in both.
+**Violet is an accent, not an atmosphere.** It marks the one primary action and
+the currently selected state, and almost nothing else. Icons are stroke glyphs in
+their domain hue with no coloured chip behind them; metadata is inline
+dot-separated text rather than a row of pills; the greeting is deliberately
+smaller than the thing you are meant to do next. If violet appears three times on
+a screen, something has gone wrong.
+
+**A design system with a small vocabulary.** Spacing is a strict 4px scale
+(4·8·12·16·24·32·48·64) with no arbitrary values. There are four radii (10, 14,
+20, pill) and three elevations, all subtle enough to say "this is above that"
+without saying "this is floating". The type scale is fixed at display / h1 / h2 /
+h3 / body / small / micro. Motion is short and eased — a 1px hover lift, a 2%
+press, a 400ms entrance — never a bounce.
 
 **Two typefaces doing structural work.** Figtree for the interface, Newsreader for
 clinical and exam material. Vignettes, interview questions, transcripts and paper
@@ -185,8 +209,26 @@ stimuli are all set in serif, so "the app" and "the thing you are reading" never
 blur. Interview questions are set as a large serif quotation, because somebody is
 asking you them.
 
-Buttons carry a solid bottom edge that compresses on press. It is a small thing,
-repeated several hundred times a week.
+### Making the engine legible
+
+The most interesting thing about this tool is that it decides what you should
+practise, and an interface that hides that decision wastes it. So Today does not
+just offer a Start button: it renders the queue `buildSession()` is about to hand
+the drill — which clusters it will cover, how many items each, and *why* each was
+chosen (due for review, you were sure and wrong here, you have lost this one
+before, not yet seen). Changing the duration re-plans it live. Nothing in that
+panel is written for display; it is the same priority calculation the session
+runs on.
+
+Progress reports movement the same way — from events that actually happened
+(depth advancements up, recorded errors down, over a seven-day window) rather
+than a synthesised delta. Depth is drawn as a five-rung ladder next to each
+concept, so "discriminate" is visible as a shape and not only as a word, and
+mastery is never reduced to a lone percentage.
+
+The command palette (⌘K) is a real command layer rather than a search box:
+grouped, with the actions the engine can take at the top, then every mode, paper,
+interview theme, case, role-play and concept in the build.
 
 ## 10. Ecological validity
 

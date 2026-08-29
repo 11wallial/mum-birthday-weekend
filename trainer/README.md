@@ -24,7 +24,7 @@ are trying to think.
 
 | | |
 |---|---|
-| **Today** | One tap into a session, where you are, and what changed |
+| **Today** | The session it would give you — and what it will cover, and why |
 | **Practice** | Drill, Bench, Panel, Studio, Room |
 | **Progress** | Readiness, calibration, weakest concepts, the Atlas, the Ledger |
 
@@ -38,13 +38,21 @@ The five practice surfaces:
 | **Studio** | One case, many models — write yours first, then compare |
 | **Room** | Role-play, scored on process not content |
 
+Today shows the queue before you commit to it: which clusters the session will
+cover, how many items each, and why each was chosen — due, sure-and-wrong,
+lapsed, or unseen. Changing the duration re-plans it live. That panel is not a
+summary written for display; it is the same priority calculation the drill runs
+on.
+
 While you are working, the navigation leaves and the item is alone on the page.
 The bottom bar holds your confidence rating and the primary action, then becomes
-the result panel.
+the result panel — verdict, teaching, the precise formulation, the near-misses,
+and the error classification.
 
 ## Keyboard
 
-`⌘K` search everything · `1–5` set confidence · `A–F` pick a choice ·
+`⌘K` command palette — actions first, then every mode, paper, theme, case,
+role-play and concept · `1–5` set confidence · `A–F` pick a choice ·
 `⏎` continue · `Esc` leave the session or close a dialog
 
 ## Rebuilding
