@@ -2311,9 +2311,10 @@ function vDrill(stage) {
   w.appendChild(host);
   stage.appendChild(w);
 
-  /* go('drill') rebuilds the stage for every item, which dropped focus to
-     <body> each time and made a keyboard user re-tab from the top on every
-     question. Put focus on the new question instead, and say where we are. */
+  /* go('drill') rebuilds the stage for every item, which dropped focus to the
+     document body each time and made a keyboard user re-tab from the top on
+     every question. Put focus on the new question instead, and say where we
+     are. */
   requestAnimationFrame(() => {
     const stem = $('.qstem, .qctx', host);
     if (stem) {
