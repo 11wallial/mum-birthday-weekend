@@ -339,8 +339,10 @@ body.focus #app { --bar-h: 0px; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 /* On an ink-filled control the ink ring would vanish, so invert it there. */
-.btn.pri:focus-visible, .pip.on:focus-visible, .pill.act.on:focus-visible,
-.sidebtn.on:focus-visible, .rubpt.hit .tick:focus-visible {
+.btn.pri:focus-visible, .btn.ok:focus-visible, .btn.no:focus-visible,
+.pip.on:focus-visible, .pill.act.on:focus-visible,
+.sidebtn.on:focus-visible, .rubpt.hit .tick:focus-visible,
+.choice.sel .key:focus-visible {
   outline-color: var(--accent-ink); outline-offset: -4px;
 }
 
@@ -357,10 +359,12 @@ body.focus #app { --bar-h: 0px; }
   transition: top var(--m-base) var(--e-out);
 }
 .skip:focus { top: var(--s3); }
-/* the drill stem takes focus on each item so a keyboard user is not returned
-   to the top of the document every question; it is not a tab stop otherwise */
+/* The drill stem takes focus on each item so a keyboard user is not returned
+   to the top of the document every question. It is a destination, not a
+   control, so it is announced without being ringed — drawing a focus ring
+   around the question on every item would be noise, not feedback. */
 [tabindex="-1"]:focus { outline: none; }
-[tabindex="-1"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.focus-quiet:focus, .focus-quiet:focus-visible { outline: none; box-shadow: none; }
 
 /* segmented control — choosing a mode, not three competing calls to action.
    The thumb slides between options rather than the highlight snapping. */

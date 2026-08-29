@@ -341,18 +341,19 @@ function sessionHeadline(started, due, hcw) {
 
   const top = plan.groups[0];
   const others = plan.groups.length - 1;
+  const lead = top.label.toLowerCase();
   const spread = others > 0
-    ? `${top.label.toLowerCase()} and ${others} other area${others === 1 ? '' : 's'}`
-    : top.label.toLowerCase();
+    ? `${lead}, plus ${others} other area${others === 1 ? '' : 's'}`
+    : lead;
 
   if (hcw) return {
-    title: `${hcw} you were sure about and got wrong.`,
-    sub: `They come first this session, then ${plan.total - Math.min(hcw, plan.total)} more across ${spread}.` };
+    title: `${hcw} item${hcw === 1 ? '' : 's'} you were sure about and got wrong.`,
+    sub: `They come first this session, then ${Math.max(0, plan.total - hcw)} more across ${spread}.` };
   if (due) return {
-    title: `${due} item${due === 1 ? '' : 's'} due.`,
-    sub: `${PLAN_MIN} minutes on ${spread}, interleaved so no cluster runs twice in a row.` };
+    title: `${due} item${due === 1 ? '' : 's'} due for review.`,
+    sub: `${PLAN_MIN} minutes on ${spread} — interleaved, so no cluster runs twice in a row.` };
   return {
-    title: `${PLAN_MIN} minutes on ${spread}.`,
+    title: `${PLAN_MIN} minutes on ${lead}.`,
     sub: 'Nothing overdue, so this session brings new material and stretches what you already hold.' };
 }
 
@@ -482,8 +483,10 @@ function drawPlan(box, minutes) {
     box.appendChild(r);
   });
   const rest = plan.groups.slice(4).reduce((a, g) => a + g.n, 0);
+  const moreAreas = plan.groups.length - 4;
   if (rest) box.appendChild(el('div', { class:'src', style:'padding-top:8px',
-    text: `and ${rest} more across ${plan.groups.length - 4} other area${plan.groups.length - 4 === 1 ? '' : 's'}` }));
+    text: moreAreas === 1 ? `and ${rest} more in one further area`
+                          : `and ${rest} more across ${moreAreas} further areas` }));
 }
 
 const SURFACES = [
@@ -704,6 +707,7 @@ function vDrill(stage) {
     const stem = $('.qstem, .qctx', host);
     if (stem) {
       stem.setAttribute('tabindex', '-1');
+      stem.classList.add('focus-quiet');
       stem.focus({ preventScroll: true });
     }
     announce(`Question ${SESSION.idx + 1} of ${SESSION.items.length}. ${
