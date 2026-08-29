@@ -1,0 +1,287 @@
+{
+ "version": 1,
+ "vignettes": [
+  {
+   "id": "v_asylum",
+   "title": "Unaccompanied child seeking asylum",
+   "source": "Birmingham 2019, clinical interview (verbatim scenario)",
+   "text": "You have picked up a referral to work with a 14-year-old unaccompanied child seeking asylum, who has been placed in a foster home. The foster family have expressed concerns as the child is behaving aggressively — shouting, slamming doors, and on one occasion pushing past a foster carer to leave the house at night. He has been in the placement eleven weeks. He speaks some English. He has not talked about his journey or his family.",
+   "ask": "Formulate. Then formulate again from a different model. What does each lens illuminate, and what does it miss?",
+   "models": [
+    {
+     "model": "Trauma / PTMF",
+     "mech": "Threat responses that were adaptive in the original context persist in a context that resembles it. The question is not what is wrong with him but what happened to him, what he had to do to survive, and what power was operating.",
+     "form": "Aggression here is most parsimoniously read as a threat response in a hyper-aroused nervous system, in a young person who has survived events he has not been able to speak about and who remains in a situation of profound ongoing threat — an unresolved asylum claim, no family, no control over where he lives or with whom. Slamming doors and leaving at night may be attempts to restore some agency and escape routes in a house where he cannot predict what happens next. Not speaking about the journey may be protective rather than avoidant: disclosure has consequences in an asylum process, and he may have been instructed not to speak.",
+     "adds": "Puts the behaviour in its context, makes it intelligible rather than pathological, and foregrounds that his powerlessness is real and current, not merely remembered.",
+     "misses": "Can under-specify the mechanism, and risks explaining everything by trauma so that ordinary adolescence, cultural difference and the specific dynamics of this household become invisible.",
+     "intervention": "Stabilisation and safety before any processing: predictability, agency over small daily decisions, psychoeducation about threat responses shared with the foster carers, and advocacy on the asylum claim — which may be the single most therapeutic act available.",
+     "test": "If this is threat-driven, arousal should track proximity to reminders and to asylum process events, and aggression should reduce as predictability and control increase — without any processing of the trauma itself. If aggression is unrelated to those, look elsewhere."
+    },
+    {
+     "model": "Attachment / developmental",
+     "mech": "Internal working models built in one caregiving environment govern expectation and help-seeking in the next. A child who has learned that adults cannot be relied upon will test rather than trust.",
+     "form": "He has lost every attachment figure and is being asked to accept care from strangers, in a language he half-speaks, at an age when identity and belonging are the central developmental tasks. Accepting care carries risk: if he lets these people matter and they too disappear, the loss compounds. Aggression may function to keep the foster carers at a manageable distance, and to test whether they will reject him — which, if they do, confirms the model and is at least predictable.",
+     "adds": "Explains the specific target of the behaviour — it is directed at the carers, not at school or peers — and predicts the placement breakdown risk that everyone is worried about.",
+     "misses": "Risks locating the difficulty inside the child's history and minimising the current, entirely real threat of the asylum process, or reading culturally normative independence as avoidant attachment.",
+     "intervention": "Work with the foster carers on holding the relationship through rejection without withdrawing, understanding the behaviour as a test rather than as a verdict on them; keep the placement stable; build one predictable relationship at a time.",
+     "test": "If this is relational testing, the aggression should be most intense with the carers he is beginning to depend on, and should intensify around separations, absences and changes of routine, rather than being uniform across settings."
+    },
+    {
+     "model": "Systemic",
+     "mech": "The problem is in the pattern between people, not inside one of them. Each response is both a reaction to and a stimulus for the other's.",
+     "form": "A loop is plausible here: he leaves the house at night; the carers become frightened and impose more restriction; restriction reduces his already minimal control and increases his need to demonstrate agency; he escalates; they restrict further. Both parties are acting reasonably from their own position — they are responsible for a vulnerable minor, he is trying to survive — and the pattern maintains itself. There is a wider system too: social care, the Home Office, school and the interpreter each carry a position, and the foster carers may be receiving contradictory instructions about what they can permit.",
+     "adds": "Locates the problem where the intervention can actually reach it, and stops the referral question ('fix the child') from being accepted uncritically.",
+     "misses": "Can miss the individual's internal experience, and — if applied naively — risks a symmetry that is inappropriate when one party has vastly less power than the other.",
+     "intervention": "Work with the household, not the child alone: map the sequence with the carers, find the point in the loop that is easiest to interrupt, negotiate what agency he can genuinely be given, and convene the wider network so it speaks with one voice.",
+     "test": "If this is a maintaining loop, changing the carers' response at one point should shift the sequence without any direct work with him. If the behaviour is unchanged by that, the loop is not carrying it."
+    },
+    {
+     "model": "CBT",
+     "mech": "Appraisal drives response, and the behavioural consequence feeds back to confirm the appraisal.",
+     "form": "A specific cognitive-behavioural account would be: an appraisal of imminent threat or of being trapped ('if I stay I cannot get out'), producing intense arousal and an escape or fight response; leaving the house terminates the arousal, which negatively reinforces it; the carers' subsequent restriction confirms the appraisal that he is not safe and not in control, strengthening the belief. Any safety behaviours — sleeping dressed, staying near the door, not eating with the family — would maintain the belief by preventing disconfirmation.",
+     "adds": "Names a precise mechanism and generates testable predictions, which makes it the most falsifiable of these accounts.",
+     "misses": "Requires shared language, a degree of trust and a capacity for meta-cognitive work that may be unavailable at eleven weeks in a second language; and it can look like locating the problem in his thinking when the danger is real.",
+     "intervention": "Not formal cognitive work yet. Arousal management and psychoeducation about the body's threat response, delivered concretely; then, only once safety and language allow, graded testing of specific predictions about the household.",
+     "test": "If this account holds, arousal should be preceded by identifiable triggers and appraisals that he can eventually report, and reducing safety behaviours should reduce belief conviction. If he cannot identify any triggers and the arousal is continuous, a trauma or attachment account fits better."
+    },
+    {
+     "model": "ACT",
+     "mech": "Suffering is compounded by struggle against internal experience; the aim is workable action in the direction of what matters, with discomfort present.",
+     "form": "He may be spending most of his available energy on controlling unbearable internal states — memories, grief, terror, guilt about those left behind — and aggression and leaving may both be forms of experiential avoidance that work in the short term and cost him the placement in the long term. The question is what he wants his life here to be for, which is nearly impossible to ask of someone whose future is being decided by someone else.",
+     "adds": "Sidesteps the need to process trauma content, which may be premature and unsafe, and moves toward what he wants rather than what is wrong with him.",
+     "misses": "Values work presupposes a degree of agency over one's future that an unaccompanied minor in the asylum system does not have; asking about values while his claim is undecided may be experienced as absurd or cruel.",
+     "intervention": "Small, concrete committed actions in domains he can actually control — education, football, learning English, contact with a community — held as valued directions rather than as coping.",
+     "test": "If avoidance is central, then any increase in willingness to have difficult internal experience should widen his behavioural repertoire even before distress reduces. If distress reduces but behaviour does not change, the account is incomplete."
+    }
+   ],
+   "compare": "Notice that all five accounts predict aggression, and that they differ chiefly in WHERE they locate the mechanism — in the nervous system, in the relationship, in the pattern between people, in appraisal, or in avoidance. In interview, the strong answer does not choose the 'right' one; it says what each buys you and what would distinguish them. Here the trauma and systemic accounts have the strongest immediate claim, because both point to interventions that do not require him to talk, and because the powerlessness in his situation is real rather than perceived. Note also the safeguarding thread: a 14-year-old leaving the house at night is at risk of exploitation, and that has to be held alongside the formulation, not after it.",
+   "difficulty": 4
+  },
+  {
+   "id": "v_protective_parent",
+   "title": "The protective parent",
+   "source": "The brief's own example; the pattern behind Exeter 2012 and Cardiff research vignettes",
+   "text": "A 9-year-old girl has become increasingly anxious about school over two terms. She now refuses two or three mornings a week. Her mother has reduced her own working hours to be available, drives her in rather than letting her take the bus with friends, and stays in the car park for the first hour. The mother says she cannot bear to see her daughter distressed. The school has started sending work home. The girl says she feels sick in the mornings and that her mother worries too much.",
+   "ask": "Formulate this from a CBT perspective and then from a systemic perspective. What does the systemic lens add?",
+   "models": [
+    {
+     "model": "CBT",
+     "mech": "Threat appraisal drives avoidance; avoidance is negatively reinforced and prevents disconfirmation.",
+     "form": "She appraises school as threatening — the content matters and is not yet known, whether social, performance or separation-related. Anticipation produces autonomic arousal that she experiences as nausea, which she then reads as evidence that she is ill and cannot go, confirming the appraisal. Not going terminates the arousal immediately, which negatively reinforces refusal. Her mother's accommodation — the lift, the presence in the car park, the work sent home — functions as a family-level safety behaviour: each removes an opportunity to discover that she could have coped, and the more effectively it relieves distress today the more strongly it is reinforced for both of them.",
+     "adds": "Names the precise mechanism by which help maintains the problem, and generates a graded intervention with testable predictions.",
+     "misses": "Treats the mother's behaviour as an accommodation variable rather than as meaningful in its own right, and can leave the family feeling blamed for having tried to help.",
+     "intervention": "Graded return to school with a hierarchy negotiated with school and family, systematic reduction of accommodations one at a time, behavioural experiments testing specific predictions ('if I go in on the bus, I will be sick and have to come home'), and psychoeducation for the mother on why relief today costs tomorrow.",
+     "test": "If avoidance is maintaining it, anxiety should reduce across repeated exposures without avoidance, and reducing one accommodation should not produce catastrophic deterioration. If distress escalates and stays escalated, something else is operating — bullying, a learning difficulty, something at home."
+    },
+    {
+     "model": "Systemic",
+     "mech": "Circular causality: each person's response is both a reaction to and a trigger for the other's, so the pattern maintains itself without a first cause.",
+     "form": "The sequence is recursive: the girl shows distress; her mother, who cannot bear it, moves closer and takes over; her proximity communicates that the situation is genuinely dangerous and that her daughter cannot manage it alone; the daughter's confidence falls and her distress rises; her mother moves closer still. Each is behaving lovingly and each escalates the other. Beyond the dyad: what does the mother's own history make of a distressed child, is there a father or partner with a different view producing a split between a 'soft' and a 'firm' parent, what is the school communicating by sending work home, and what has changed in the family in the last two terms that nobody has mentioned?",
+     "adds": "Explains why the intervention will fail if directed only at the child, and makes the mother's behaviour meaningful — she is not an obstacle, she is in a loop that makes sense from where she stands.",
+     "misses": "Can under-specify the individual mechanism that CBT names precisely, and can lose the girl's own internal experience in a description of the system.",
+     "intervention": "Work with the pattern in the room: map the sequence with both of them, ask circular questions ('when your mum waits in the car park, what does your daughter conclude?'; 'who worries most, and who notices first?'), find the smallest change to the sequence that either could make, and convene school so it is not a third party acting on its own theory.",
+     "test": "If the loop is carrying it, changing the mother's response alone should shift the daughter's behaviour without any direct work with the daughter. That is a strong and testable prediction — and it is the one that distinguishes the systemic account from the CBT one."
+    },
+    {
+     "model": "ACT",
+     "mech": "Struggle with internal experience narrows life; the mother's agenda has become the elimination of her daughter's distress.",
+     "form": "The mother's stated position — 'I cannot bear to see her distressed' — is the formulation. Her behaviour is organised around the removal of an internal experience of her own, and each accommodation works briefly and costs her working hours, her daughter's independence and her own life. The daughter is learning the same rule: that discomfort is intolerable and must be removed rather than carried.",
+     "adds": "Reframes the target from the child's anxiety to the family's relationship with discomfort, which is often the more workable target and lands less blamefully.",
+     "misses": "May be too abstract for a 9-year-old, and risks sounding like an instruction to tolerate distress that has not yet been understood.",
+     "intervention": "Work with the mother on willingness — what kind of parent she wants to be, and whether protecting her daughter from all distress serves that — while building the daughter's willingness through play-based defusion and small valued actions.",
+     "test": "If experiential avoidance is central, then the mother's willingness to tolerate her own distress should permit accommodation reduction, and the daughter's functioning should improve before her anxiety does."
+    },
+    {
+     "model": "Attachment / developmental",
+     "mech": "Proximity-seeking under threat is the system working as designed; the question is what has activated it and whether it can be deactivated.",
+     "form": "At nine, autonomy from parents and belonging with peers are the central developmental tasks, and this pattern is arresting both. Something may have activated the attachment system two terms ago — an illness, a loss, a separation, a frightening event — and the mother's hypervigilance may reflect her own experience of loss or of being unprotected. The nausea may be genuine somatic distress rather than a cognition.",
+     "adds": "Directs attention to what changed two terms ago, which nobody in the referral has explained, and to the mother's own history.",
+     "misses": "Risks a historical explanation that does not generate a next step, and can pathologise a proportionate parental response to a real problem at school.",
+     "intervention": "Understand the activating event; work with the mother on her own experience separately from the joint work; support graded separation with a secure base rather than by removing support abruptly.",
+     "test": "If the attachment system has been activated by a specific event, there should be an identifiable point of change, and the pattern should extend to other separations — sleepovers, being left with relatives — not only to school."
+    }
+   ],
+   "compare": "This is the exact pairing the brief flags and the highest-yield preparation you can do, because CBT and systemic accounts of the same case are what Cardiff, Birmingham and Southampton all ask for. The clean answer to 'what does the systemic lens add?' is: it makes the mother's behaviour meaningful rather than merely unhelpful, and it predicts that changing HER response alone will shift the daughter's behaviour — a prediction the CBT account does not make in the same form. What it loses is the precision of the accommodation mechanism and the girl's own appraisal, which is what the CBT account names best. Say both, and say what would distinguish them empirically.",
+   "difficulty": 3
+  },
+  {
+   "id": "v_lowmood",
+   "title": "Low mood, anger and rejection",
+   "source": "Coventry & Warwick 2018, recorded therapy session used in the written exercise",
+   "text": "You watch a ten-minute recorded session. A woman in her thirties describes feeling low, angry, and rejected. She says people judge her, that her family have 'given up' on her, and that she sometimes thinks about hurting herself when it gets bad. She is dismissive of previous therapy — 'I've done all this before' — and at one point says the therapist probably thinks she is difficult too.",
+   "ask": "What is the client experiencing? What is the therapist experiencing? Write a formulation a layperson would understand.",
+   "models": [
+    {
+     "model": "CBT",
+     "mech": "Core beliefs about the self and others generate appraisals that are confirmed by the interpersonal behaviour they produce.",
+     "form": "A belief of the order 'I am unacceptable / people will reject me' generates hypervigilance to signs of rejection, so ambiguous behaviour from others is read as judgement. Anger is both a response to perceived rejection and a form of protection: it gets in first. But the anger and the pre-emptive dismissal ('you probably think I'm difficult too') tend to produce distance in others, which she then experiences as the rejection she expected. The belief is confirmed by its own consequences.",
+     "adds": "Names a self-fulfilling cycle precisely, including how it will operate in the therapy room.",
+     "misses": "Individualises what may be a proportionate response to real and repeated experiences of being dismissed, including by services.",
+     "intervention": "Make the cycle explicit and collaborative, including its live operation between the two of you; behavioural experiments testing predictions about others' responses; work at belief level once the alliance can hold it.",
+     "test": "If this is belief-driven, she should predict rejection in specific situations in advance, and disconfirming evidence should reduce conviction. If she can accurately identify who has actually dismissed her, the belief may be well calibrated rather than distorted."
+    },
+    {
+     "model": "CFT",
+     "mech": "Shame and self-criticism arise from a chronically activated threat system and an underdeveloped soothing system; self-criticism feels safe and compassion feels threatening.",
+     "form": "Shame about the self as fundamentally unacceptable is the affect underneath both the anger and the withdrawal. Her threat system is dominant: she scans for judgement, and attacks first because attack is safer than exposure. Anger is a threat-system protective strategy that works — it keeps people at a distance where they cannot confirm the shame. Warmth from a therapist is not neutral here; it is threatening, because it invites the exposure she is defended against, which may be why she is dismissive of therapy.",
+     "adds": "Explains the specific texture of the presentation — the anger, the pre-emptive dismissal, the resistance to warmth — better than a purely cognitive account, and predicts the alliance difficulty.",
+     "misses": "Requires a longer arc and can feel abstract early on; risks the therapist offering compassion that is experienced as threat.",
+     "intervention": "Psychoeducation about the three systems, delivered non-blamefully ('this is not your fault, and it is how brains work'); careful attention to fear of compassion; soothing rhythm and safe-place work before any self-compassion practice.",
+     "test": "If shame is central, warmth should reliably increase distress or dismissal in the short term, and the fear-of-compassion pattern should be identifiable and nameable with her."
+    },
+    {
+     "model": "Psychodynamic",
+     "mech": "Relational templates are re-enacted in the therapeutic relationship, and the therapist's response is data.",
+     "form": "'You probably think I'm difficult too' brings the pattern into the room and invites the therapist to take a position. If the therapist becomes defensive, over-reassuring or subtly rejecting, the template is confirmed and the enactment complete. Her countertransference pull is likely to be toward feeling deskilled, criticised, or wanting to prove she is different from everyone else — and noticing that pull is more informative than any history she reports.",
+     "adds": "Uses the live relationship as the richest data available, and explains why the previous therapies failed in a way the other models do not.",
+     "misses": "Risks over-interpretation and, delivered clumsily, can feel like being told her reaction is about someone else.",
+     "intervention": "Attend to the relationship above content; notice and think about the pull rather than acting on it; name the process tentatively ('I notice I want to convince you I'm different — I wonder if that happens with others'); take countertransference to supervision.",
+     "test": "If a template is being re-enacted, the same dynamic should be traceable across her account of family, services and previous therapists, and naming it in the room should shift something."
+    },
+    {
+     "model": "PTMF / contextual",
+     "mech": "What has happened to you, how did it affect you, what sense did you make of it, and what did you have to do to survive.",
+     "form": "Rather than asking what is wrong with her, ask what happened. 'People judge me' may be an accurate report: she may have been judged, by family, by services, and by previous therapists who found her difficult. Anger is then an entirely intelligible response to repeated invalidation and to the operation of power, including the power of professionals to define her as the problem. Her dismissal of therapy may be well-earned experience rather than resistance. Self-harm may function as regulation of unbearable affect, or as communication where words have not been heard.",
+     "adds": "Reframes 'difficult' as a description of what services have done to her rather than of who she is — and 'difficult patient' is precisely the attribution the recorded session is likely to elicit in candidates.",
+     "misses": "Offers less immediate purchase on mechanism, and cannot on its own tell you what to do next session.",
+     "intervention": "Validate first and at length; be explicit about power and about what you can and cannot offer; give her control over pace and content; be honest about what previous services got wrong rather than defending them.",
+     "test": "If invalidation is central, then sustained validation should reduce the anger before any technique is introduced — which is a strong, observable and quickly testable prediction."
+    }
+   ],
+   "compare": "For the therapist's experience — which Coventry asks explicitly — the honest answer is likely to include feeling deskilled, mildly criticised, and pulled toward either defending previous therapy or over-promising that this time will be different. Saying that plainly, and saying that you would take it to supervision as information rather than acting on it, is a strong answer. Note that Coventry then asks for a formulation a layperson would understand: that means her words, no jargon, a cycle described in ordinary language, something that makes her response understandable rather than faulty, and an explicit 'does that fit?'.",
+   "difficulty": 4
+  },
+  {
+   "id": "v_id_residential",
+   "title": "Behaviour that challenges in residential care",
+   "source": "Cardiff 2016 written task setting; Birmingham 2018 population",
+   "text": "You are the psychologist for a residential home for adults with intellectual disabilities. Staff have referred a 34-year-old man who has begun hitting out at staff during personal care. It started about six weeks ago. Staff describe him as 'attention-seeking' and say he 'knows exactly what he is doing'. He has limited verbal communication. Two long-standing staff left the home two months ago and agency staff are covering. Incident records show most incidents occur in the morning, and three different staff have been involved.",
+   "ask": "Formulate. What would you do, and what would you not do?",
+   "models": [
+    {
+     "model": "Behavioural / functional analysis",
+     "mech": "Behaviour is maintained by its consequences; topographically identical behaviours may serve different functions.",
+     "form": "The behaviour is communication, and the analysis has to establish what it achieves. Morning clustering and the personal care context point toward escape from an aversive event as the most likely function — negative reinforcement, since hitting out ends or delays the care. Alternatives to test: pain (dental, constipation, musculoskeletal — very commonly missed in this population and consistent with a six-week onset), a sensory aversion to a specific aspect of care, or a change in how care is delivered by unfamiliar agency staff who do not know his routine or his signals.",
+     "adds": "Generates a precise, testable account and directs assessment before intervention.",
+     "misses": "Says nothing about his experience or his relationships, and in unskilled hands 'function' becomes a way of talking about a person as a system of contingencies.",
+     "intervention": "ABC recording across settings and staff before any intervention; medical review to exclude pain FIRST; antecedent-level change — same staff, predictable sequence, communication of each step, offering control over order and timing.",
+     "test": "If escape-maintained, incidents should reduce when care is made predictable and he is given control over its sequence, without any consequence-based programme. If they persist unchanged, look harder at pain."
+    },
+    {
+     "model": "Systemic / staff-team",
+     "mech": "The unit of analysis is the home, not the man. Staff attributions drive staff behaviour, which drives his.",
+     "form": "Two familiar staff left; agency staff arrived who do not know him, his signals or his routine; care became less predictable and less attuned; he protested in the only way available; staff — being unfamiliar and anxious — became more task-focused and quicker, which made care more aversive; he escalated. The attribution 'attention-seeking' and 'knows what he is doing' is doing work in this loop: it licenses a response that is firmer and less curious, and it protects staff from the more painful thought that he is distressed and they are the cause.",
+     "adds": "Explains the timing, which the individual formulation alone does not, and identifies the intervention target that will actually move — the staff group.",
+     "misses": "Can be experienced as blaming staff, who are under-resourced and frightened, and who need containment before they can hear a reformulation.",
+     "intervention": "Team formulation as the primary intervention; support the staff group's own distress before challenging their attributions; consistency of staffing as a clinical prescription; supervision and reflective practice for the team.",
+     "test": "If staff-mediated, incidents should cluster by staff member and by shift pattern, and should reduce with consistency of staffing alone. The incident records already contain the data to check this."
+    },
+    {
+     "model": "Attachment / trauma-informed",
+     "mech": "Loss and unpredictability activate threat; personal care is a context of profound vulnerability.",
+     "form": "Two people who knew him well disappeared two months ago, and nobody appears to have thought about that as a bereavement. He may have had no explanation he could understand and no way to ask. Personal care requires him to permit strangers to touch his body — with a plausible history of institutional care, and a population with markedly elevated rates of abuse. Hitting out during intimate care in a man who cannot say no verbally has an obvious alternative reading.",
+     "adds": "Raises the safeguarding question that a purely behavioural formulation can miss entirely, and dignifies the loss.",
+     "misses": "Speculative without evidence, and can lead to trauma explanations that are unfalsifiable and unactionable.",
+     "intervention": "Safeguarding consideration held explicitly and appropriately; work on the loss in accessible ways — photographs, a goodbye that did not happen; consent and choice built into every step of care as a matter of routine.",
+     "test": "If loss or threat is central, distress should be evident beyond care contexts — sleep, appetite, withdrawal, seeking the departed staff — not confined to personal care."
+    },
+    {
+     "model": "PBS / contextual",
+     "mech": "Behaviour change is achieved by changing the environment and teaching skills, not by managing consequences; quality of life is the outcome.",
+     "form": "The formulation integrates the above into a plan whose primary outcome is his quality of life, not the incident count. The risk in this referral is that success gets defined as fewer incidents, which can be achieved by restricting him — and that is a worse outcome achieved more quickly.",
+     "adds": "Keeps the outcome honest and guards against restrictive practice being adopted as a solution.",
+     "misses": "Requires organisational commitment that a single psychologist may not be able to secure.",
+     "intervention": "A PBS plan built with staff and, as far as possible, with him and his family: antecedent strategies, teaching a functionally equivalent communication response, and reactive strategies that are least restrictive and explicitly time-limited.",
+     "test": "Track quality of life and engagement alongside incidents. If incidents fall while engagement and activity also fall, the plan is restricting him rather than helping him."
+    }
+   ],
+   "compare": "What you would NOT do is the part that distinguishes candidates. You would not accept the referral question as framed. 'Attention-seeking' is an attribution, not a formulation, and it predicts a staff response that makes things worse — the strong move is to say that curiously rather than correctingly, because the staff group is frightened and under-resourced. You would not intervene before excluding pain, which is the single most commonly missed cause of new behaviour change in this population. And you would not deliver individual therapy as your primary response: this is Cardiff's non-1:1 question in clinical form, and the leverage is in the environment and the team.",
+   "difficulty": 4
+  },
+  {
+   "id": "v_dementia_carer",
+   "title": "The carer who calls",
+   "source": "Cardiff 2012 and 2013 (both years put a version of this to candidates)",
+   "text": "A woman rings your service. Her husband, who has early signs of a degenerative dementia, is refusing to attend the neurology appointment for diagnostic testing. She is distressed and says she does not know what to do. She asks you to talk to him, or to tell her what to say. Her husband is not open to your service and has not consented to you discussing him.",
+   "ask": "How would you handle this? What are the issues?",
+   "models": [
+    {
+     "model": "Capacity and ethics",
+     "mech": "Capacity is decision-specific and presumed; an unwise decision is not evidence of its absence.",
+     "form": "He is refusing a diagnostic appointment. Unless there is reason to think he cannot understand, retain, weigh or communicate this specific decision, that refusal is his to make and must be respected, however distressing for his wife and however much earlier diagnosis might help. Even if capacity were in question for this decision, the route is assessment and best-interests process — not persuasion arranged by a third party. Confidentiality also constrains you: you cannot discuss him without consent. But it does not stop you listening to her, giving general information, or supporting her in her own right, because none of those require disclosure.",
+     "adds": "Prevents the most common error — being recruited into managing him on her behalf.",
+     "misses": "Risks sounding legalistic to a frightened person if it is the first thing you say.",
+     "intervention": "Support her, explicitly and in her own right; be clear and kind about what you can and cannot do and why; offer general information about the condition, about the value of assessment, and about carers' rights including a statutory carer's assessment.",
+     "test": "The test of whether you have got this right: has anything been done TO him without his knowledge or consent as a result of this call?"
+    },
+    {
+     "model": "Systemic",
+     "mech": "The referral is from one part of the system about another; the pattern between them is the material.",
+     "form": "She is asking you to join a coalition. Her fear is entirely understandable — she is watching her husband change and losing control of a future she cannot alter, and getting a diagnosis is one of the few actions available to her. But the more she pushes, the more he may need to refuse in order to retain some authorship over what is happening to him. There is a loop here, and joining her side of it will strengthen it. Worth asking: what does he think is happening? What does a diagnosis mean to each of them — for her, a plan; for him, perhaps the loss of driving, of work, of standing?",
+     "adds": "Reframes his refusal as meaningful rather than obstructive, and identifies why persuasion will fail.",
+     "misses": "Requires care not to imply she is at fault when she is frightened and exhausted.",
+     "intervention": "Be curious with her about the pattern: how it goes when she raises it, what he says, what he might be protecting. Explore what would happen if she stopped raising it for a period.",
+     "test": "If the loop is operating, reducing the pressure should change his response — which is a suggestion you can make to her and she can test this week."
+    },
+    {
+     "model": "Carer-focused",
+     "mech": "The carer has needs and rights of her own, independent of the person she cares for.",
+     "form": "She is a person in distress who has contacted a service, and she is entitled to a response in her own right. She has a statutory right to a carer's assessment. She may be experiencing anticipatory grief, isolation, fear about the future, and guilt about her own frustration with him — none of which require his consent to address.",
+     "adds": "Turns a call you cannot act on into a piece of work you can do, and is the answer Cardiff is listening for, given how heavily that course weights carer involvement.",
+     "misses": "Does not resolve the presenting request, and she may initially experience it as a deflection.",
+     "intervention": "Acknowledge the difficulty of the position she is in; offer or signpost carer support and a carer's assessment; give general information; agree what she will do if his safety becomes a concern.",
+     "test": "She should end the call with something concrete for herself, not only an explanation of what you cannot do."
+    }
+   ],
+   "compare": "The trap is the request itself: 'talk to him' or 'tell me what to say'. Answering it directly breaches confidentiality and treats a capacitous adult as an object of management. The strong answer holds three things at once — his autonomy, her real distress and her own entitlement to support, and the loop between them that persuasion is feeding. Cardiff asks carer questions in every year sampled, and a carer sits on the panel, so this is a high-frequency scenario for you specifically. If a carer asks it, answer to them.",
+   "difficulty": 3
+  },
+  {
+   "id": "v_stuck",
+   "title": "Twelve sessions and stuck",
+   "source": "Birmingham 2018 clinical interview, verbatim question",
+   "text": "You have been seeing a man in his forties for twelve sessions for depression. He attends reliably and is polite. He completes what you ask between sessions. His scores have not moved. When you ask how he found the last session he says it was helpful. You leave sessions feeling flat and slightly bored, and you have noticed you check the clock.",
+   "ask": "What factors might you consider?",
+   "models": [
+    {
+     "model": "Formulation review",
+     "mech": "Stuckness is most often a signal that the formulation is wrong or incomplete.",
+     "form": "Twelve sessions of compliance without change suggests the hypothesised mechanism may not be the operative one. Is this depression at all, or grief, or an untreated physical cause, or the appropriate response to circumstances that have not changed — an unbearable job, a dying parent, debt, a marriage he has not mentioned? Is something maintaining it that is not in the formulation: alcohol, chronic pain, a partner who is undermining, a secret?",
+     "adds": "Directs you back to the highest-yield explanation rather than to a new technique.",
+     "misses": "Can become an endless reformulation that avoids the relational question.",
+     "intervention": "Reformulate from scratch WITH him, explicitly, including the possibility that you have got it wrong.",
+     "test": "If the formulation is wrong, a genuinely open reformulation should produce material that was not previously available."
+    },
+    {
+     "model": "Alliance and process",
+     "mech": "Compliance is not engagement, and the therapist's boredom is data.",
+     "form": "Politeness, reliable attendance and 'it was helpful' can be a form of accommodation — he may be being a good patient rather than doing the work, possibly because disagreeing with professionals is not safe or not permitted for him. Your flatness and clock-watching are the most useful information you have: if he is producing an interaction that is agreeable and empty, you are experiencing something about how he manages relationships, and quite possibly what others experience with him.",
+     "adds": "Uses countertransference as data rather than as a personal failing, which is exactly the move Birmingham's question invites.",
+     "misses": "Requires care in how it is raised — clumsily done, it can shame him.",
+     "intervention": "Name the process tentatively and non-blamefully: 'I've been wondering whether we've been having quite a polite conversation, and whether there are things that have felt hard to say to me.' Take the boredom to supervision first.",
+     "test": "If this is a relational pattern, naming it should produce a live shift in the room — either genuine contact or a visible increase in politeness, and both are informative."
+    },
+    {
+     "model": "Model and fit",
+     "mech": "The intervention may be wrong, the timing wrong, or the goal not his.",
+     "form": "Whose goal is symptom reduction? He may have come because his GP sent him, or because his wife asked, and may be complying with a task he did not choose. A behavioural account would ask whether the homework is actually being done in a way that contacts reinforcement, or completed as paperwork. It is also worth asking whether a different model — ACT, if the issue is a life narrowed by avoidance, or something interpersonal — fits better than continuing.",
+     "adds": "Opens the possibility that continuing is the wrong answer, which candidates rarely say.",
+     "misses": "Risks abandoning a workable approach too early.",
+     "intervention": "Renegotiate goals from the beginning; consider a change of model, a break, or an honest ending; ask directly what he would want to be different if therapy could not give him anything else.",
+     "test": "If the goal is not his, asking directly what HE wants should produce a different answer from the referral question."
+    },
+    {
+     "model": "Outside the room",
+     "mech": "Therapy cannot resolve what is being generated outside it.",
+     "form": "If his circumstances are genuinely depressing — insecure work, debt, caring, isolation, discrimination — then the absence of change may be an accurate reflection of reality rather than a failure of technique. Twelve sessions of cognitive work will not move a score that is tracking his housing situation.",
+     "adds": "Guards against the individualising error and points toward material and social intervention.",
+     "misses": "Can become a reason not to look at the relationship.",
+     "intervention": "Ask what has and has not changed in his circumstances; consider social prescribing, welfare advice, debt support, or advocacy as legitimate psychological interventions.",
+     "test": "If circumstances are driving it, the pattern of scores should track life events rather than therapy content."
+    }
+   ],
+   "compare": "The move that lifts this answer is treating your own boredom as the primary data. Most candidates list techniques; the strong answer says 'the most useful information I have is my own flatness, and I would take that to supervision before I did anything else, because it probably tells me something about how he manages relationships.' Then: reformulate, name the process with him, check whose goal we are pursuing, and look outside the room. Note that 'consider ending' belongs in the answer — knowing when to stop is a competence, not a failure.",
+   "difficulty": 4
+  }
+ ]
+}

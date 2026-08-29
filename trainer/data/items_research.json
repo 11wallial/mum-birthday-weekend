@@ -1,0 +1,1672 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "id": "pp16_1",
+   "kind": "mcq",
+   "concepts": [
+    "p_value",
+    "null_hypothesis"
+   ],
+   "level": "recall",
+   "stem": "Which indicates the strongest evidence to reject the null hypothesis?",
+   "options": [
+    {
+     "id": "a",
+     "text": "p = 0.027",
+     "correct": false,
+     "why": "Below .05, so conventionally significant — but weaker evidence than .001."
+    },
+    {
+     "id": "b",
+     "text": "p = 0.734",
+     "correct": false,
+     "why": "No evidence against the null."
+    },
+    {
+     "id": "c",
+     "text": "p = 0.001",
+     "correct": true,
+     "why": "The smallest p-value: these data would be least likely under the null."
+    },
+    {
+     "id": "d",
+     "text": "p = 1.000",
+     "correct": false,
+     "why": "The data are exactly what the null predicts."
+    }
+   ],
+   "teach": "Smaller p means the observed data would be more surprising if the null were true. It does not mean a larger or more important effect — that is what effect size is for. A p of .001 from a trial of 4,000 people can accompany a change nobody would notice.",
+   "precision": "The p-value is the probability of data at least this extreme IF the null were true.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 1,
+   "time": 30,
+   "context": null
+  },
+  {
+   "id": "pp16_2",
+   "kind": "mcq",
+   "concepts": [
+    "cross_sectional"
+   ],
+   "level": "recall",
+   "stem": "Research that collects data at a single time-point is known as:",
+   "options": [
+    {
+     "id": "a",
+     "text": "Cross-sectional design",
+     "correct": true,
+     "why": "One time point, so prevalence and association but no temporal order."
+    },
+    {
+     "id": "b",
+     "text": "Within-subjects design",
+     "correct": false,
+     "why": "That describes participants contributing to more than one condition."
+    },
+    {
+     "id": "c",
+     "text": "Repeated measures design",
+     "correct": false,
+     "why": "The opposite — measurement on multiple occasions."
+    },
+    {
+     "id": "d",
+     "text": "An ABA design",
+     "correct": false,
+     "why": "A single-case design with phases across time."
+    }
+   ],
+   "teach": "The distractors are all repeated-measurement designs. The examiner is testing whether you hear 'single time-point' as the defining feature. Cross-sectional data cannot establish which variable came first, which is why cross-sectional evidence of association is so often over-read as causal.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 1,
+   "time": 30,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_3",
+   "kind": "mcq",
+   "concepts": [
+    "assumptions",
+    "ttest_independent"
+   ],
+   "level": "recall",
+   "stem": "Which assumption needs to be satisfied for a t-test to be valid?",
+   "options": [
+    {
+     "id": "a",
+     "text": "All data were collected by the same researcher",
+     "correct": false,
+     "why": "Not a statistical assumption."
+    },
+    {
+     "id": "b",
+     "text": "The data are skewed",
+     "correct": false,
+     "why": "The reverse of the requirement."
+    },
+    {
+     "id": "c",
+     "text": "The data have an underlying normal distribution",
+     "correct": true,
+     "why": "Strictly, the sampling distribution of the mean — which normality of the data secures."
+    },
+    {
+     "id": "d",
+     "text": "There are more than 10 participants in the study",
+     "correct": false,
+     "why": "No fixed threshold; a t-test is defined for small n."
+    }
+   ],
+   "teach": "Say 'approximately normal' and, if you want the precise version, 'normality of the sampling distribution of the mean'. With larger samples the central limit theorem makes the test robust to non-normal raw data — which is why 'the data must be perfectly normal' is a mark-losing overstatement. Independence of observations is the assumption whose violation cannot be repaired.",
+   "precision": "Independence, approximate normality, and homogeneity of variance — with independence the least repairable.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 2,
+   "time": 40,
+   "context": null
+  },
+  {
+   "id": "pp16_4",
+   "kind": "multi",
+   "concepts": [
+    "causation",
+    "clinical_significance",
+    "control_group",
+    "iv_dv"
+   ],
+   "level": "discriminate",
+   "stem": "Which of the following statements are TRUE? (Select all that apply.)",
+   "options": [
+    {
+     "id": "a",
+     "text": "Correlations do not determine causality",
+     "correct": true,
+     "why": "Correct: association is necessary but not sufficient."
+    },
+    {
+     "id": "b",
+     "text": "Clinical significance is no different than statistical significance",
+     "correct": false,
+     "why": "They are independent. A trivial change can be statistically significant in a large sample."
+    },
+    {
+     "id": "c",
+     "text": "Control groups always receive no interventions",
+     "correct": false,
+     "why": "TAU, attention-matched and active comparators are all control conditions that involve intervention."
+    },
+    {
+     "id": "d",
+     "text": "In an experiment, the independent variable is manipulated by the experimenter",
+     "correct": true,
+     "why": "That manipulation is what distinguishes experimental from observational designs."
+    }
+   ],
+   "teach": "This is an all-or-nothing item in the real paper — you score only if you select every correct option and no incorrect one. Note that option C is the one candidates most often get wrong: in psychological trials the comparator is almost never 'nothing', and which comparator was used determines what the trial can claim.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 2,
+   "time": 50,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_5",
+   "kind": "multi",
+   "concepts": [
+    "variable_types"
+   ],
+   "level": "recall",
+   "stem": "The outcome score on a standardised IQ test is an example of: (Select all that apply.)",
+   "options": [
+    {
+     "id": "a",
+     "text": "Categorical data",
+     "correct": false,
+     "why": "IQ is not an unordered category."
+    },
+    {
+     "id": "b",
+     "text": "Interval data",
+     "correct": true,
+     "why": "Equal intervals by construction, with no true zero."
+    },
+    {
+     "id": "c",
+     "text": "Qualitative data",
+     "correct": false,
+     "why": "It is numeric."
+    },
+    {
+     "id": "d",
+     "text": "Quantitative data",
+     "correct": true,
+     "why": "It is a numeric quantity."
+    }
+   ],
+   "teach": "Two answers. Level of measurement (interval) and data type (quantitative) are different classifications, and the item tests whether you hold both at once. Note the subtlety: IQ has no true zero, so it is interval rather than ratio — you cannot say one person has twice the intelligence of another.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 2,
+   "time": 40,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_6",
+   "kind": "mcq",
+   "concepts": [
+    "iv_dv"
+   ],
+   "level": "recognise",
+   "stem": "In research the outcome variable is also known as:",
+   "options": [
+    {
+     "id": "a",
+     "text": "The Independent Variable",
+     "correct": false,
+     "why": "That is what is manipulated or classified."
+    },
+    {
+     "id": "b",
+     "text": "The Dependent Variable",
+     "correct": true,
+     "why": "It depends on the IV — it is what you measure."
+    },
+    {
+     "id": "c",
+     "text": "The Predictor Variable",
+     "correct": false,
+     "why": "A predictor sits on the IV side in non-experimental work."
+    },
+    {
+     "id": "d",
+     "text": "The Extraneous Variable",
+     "correct": false,
+     "why": "An uncontrolled variable that may affect the outcome."
+    }
+   ],
+   "teach": "Keep the two vocabularies apart. Experimental work: independent → dependent. Non-experimental work: predictor → outcome. Using 'predictor' does not license a causal claim, however much the word implies one.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 1,
+   "time": 25,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_7",
+   "kind": "mcq",
+   "concepts": [
+    "null_hypothesis"
+   ],
+   "level": "recognise",
+   "stem": "Which of these is the null hypothesis?",
+   "options": [
+    {
+     "id": "a",
+     "text": "There is an effect",
+     "correct": false,
+     "why": "That is the alternative hypothesis."
+    },
+    {
+     "id": "b",
+     "text": "There is no effect",
+     "correct": true,
+     "why": "The formal proposition of no difference or no association."
+    },
+    {
+     "id": "c",
+     "text": "The effect cannot be observed",
+     "correct": false,
+     "why": "A statement about measurement, not about the population."
+    },
+    {
+     "id": "d",
+     "text": "We don't know if there is an effect",
+     "correct": false,
+     "why": "That is the state of ignorance the test addresses, not the hypothesis."
+    }
+   ],
+   "teach": "Note that we never 'accept' the null. Failure to reject it means the data were not sufficiently surprising — which is compatible with there being no effect and with the study being too small to detect one. 'No evidence of effect' is not 'evidence of no effect'.",
+   "precision": "We reject or fail to reject the null; we never prove it.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 1,
+   "time": 25,
+   "context": null
+  },
+  {
+   "id": "pp16_8",
+   "kind": "mcq",
+   "concepts": [
+    "validity"
+   ],
+   "level": "recall",
+   "stem": "Face validity is:",
+   "options": [
+    {
+     "id": "a",
+     "text": "How much you agree with a response",
+     "correct": false,
+     "why": "Not a psychometric property."
+    },
+    {
+     "id": "b",
+     "text": "A way of making a diagnosis",
+     "correct": false,
+     "why": "Unrelated."
+    },
+    {
+     "id": "c",
+     "text": "The extent that a measure appears valid",
+     "correct": true,
+     "why": "Whether it looks right, to a lay reader or respondent."
+    },
+    {
+     "id": "d",
+     "text": "The level of agreement that exists between researchers",
+     "correct": false,
+     "why": "That is inter-rater reliability."
+    }
+   ],
+   "teach": "Face validity is the weakest form — it concerns appearance only. It still matters practically, because a measure that looks irrelevant to respondents damages engagement and completion. Do not confuse it with content validity, which asks whether the items cover the whole construct.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 2,
+   "time": 35,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_9",
+   "kind": "mcq",
+   "concepts": [
+    "power",
+    "sample_size"
+   ],
+   "level": "recall",
+   "stem": "Statistical power is used to determine:",
+   "options": [
+    {
+     "id": "a",
+     "text": "How many participants you need in a study",
+     "correct": true,
+     "why": "An a priori power calculation converts the smallest effect of interest into a target sample size."
+    },
+    {
+     "id": "b",
+     "text": "The correct statistical test",
+     "correct": false,
+     "why": "That follows from the design and variable types."
+    },
+    {
+     "id": "c",
+     "text": "The likelihood of a Type 1 Error",
+     "correct": false,
+     "why": "That is alpha. Power concerns Type II error: power = 1 − beta."
+    },
+    {
+     "id": "d",
+     "text": "The number of tests needed to get a significant result",
+     "correct": false,
+     "why": "That describes p-hacking."
+    }
+   ],
+   "teach": "Power sits on the Type II side of the ledger. The four quantities — effect size, alpha, power, sample size — are locked together: fix any three and the fourth follows. That is the whole logic of a power calculation, and it is why 'we recruited as many as we could' is not a sample size justification.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 2,
+   "time": 40,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_10",
+   "kind": "multi",
+   "concepts": [
+    "consent",
+    "ethics_approval"
+   ],
+   "level": "recall",
+   "stem": "Participant information sheets should include: (Select all that apply.)",
+   "options": [
+    {
+     "id": "a",
+     "text": "The purpose of the study",
+     "correct": true,
+     "why": "Required for informed consent."
+    },
+    {
+     "id": "b",
+     "text": "The researcher's personal mobile number",
+     "correct": false,
+     "why": "A boundary violation; contact is through an institutional route."
+    },
+    {
+     "id": "c",
+     "text": "A statement that participation is voluntary",
+     "correct": true,
+     "why": "Voluntariness is a condition of valid consent."
+    },
+    {
+     "id": "d",
+     "text": "The reasons why people have been asked to participate",
+     "correct": true,
+     "why": "Participants must understand why they specifically were approached."
+    }
+   ],
+   "teach": "Informed consent has four components: capacity, adequate information, voluntariness, and the right to withdraw without consequence. The distractor tests professional boundaries, not statistics — selection tests routinely blend the two.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 1,
+   "time": 40,
+   "context": null,
+   "precision": null
+  },
+  {
+   "id": "pp16_11",
+   "kind": "mcq",
+   "concepts": [
+    "interaction",
+    "rm_anova"
+   ],
+   "level": "apply",
+   "stem": "Which one of the following demonstrates that the change in QoL scores over time significantly differed between the two groups?",
+   "options": [
+    {
+     "id": "a",
+     "text": "A significant main effect of group",
+     "correct": false,
+     "why": "That says the groups differ on average across both time points — it could arise from a baseline difference alone."
+    },
+    {
+     "id": "b",
+     "text": "A significant main effect of time",
+     "correct": false,
+     "why": "That says scores changed overall, collapsing across groups — both groups improving would produce it."
+    },
+    {
+     "id": "c",
+     "text": "A significant group by time interaction",
+     "correct": true,
+     "why": "Differential change over time is, by definition, an interaction."
+    },
+    {
+     "id": "d",
+     "text": "All of these effects being non-significant",
+     "correct": false,
+     "why": "That would indicate no differential change."
+    }
+   ],
+   "teach": "This is the single highest-yield statistical idea in psychological trials. 'Did the groups change differently?' is always an interaction question. A main effect of time tells you everyone improved — which is exactly what regression to the mean, natural history and expectancy would also produce. The interaction is the only term that isolates differential change.",
+   "precision": "Differential change over time between groups = the group × time interaction.",
+   "context": "An RCT compared a new therapy for psychosis with a treatment-as-usual (TAU) control. Quality of life (QoL) was the primary outcome, higher scores indicating better QoL. The QoL data met the necessary assumptions and were analysed using ANOVA with the factors time (pre vs post) and group (new therapy vs TAU). Mean QoL before intervention was 35 (new therapy) and 34 (TAU). After intervention the new-therapy group scored 75 and the TAU group 33.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 3,
+   "time": 60
+  },
+  {
+   "id": "pp16_12",
+   "kind": "mcq",
+   "concepts": [
+    "ttest_independent",
+    "post_hoc",
+    "test_selection"
+   ],
+   "level": "apply",
+   "stem": "Which follow-up test could you use to confirm that the QoL scores for the intervention group differ from those for the control group, at the post-intervention time point?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Cohen's kappa",
+     "correct": false,
+     "why": "An index of inter-rater agreement, not a group comparison."
+    },
+    {
+     "id": "b",
+     "text": "An independent samples t-test",
+     "correct": true,
+     "why": "Two unrelated groups, one continuous outcome, at one time point."
+    },
+    {
+     "id": "c",
+     "text": "A Wilcoxon signed rank test for matched pairs",
+     "correct": false,
+     "why": "For related samples, and non-parametric — the stem states assumptions were met."
+    },
+    {
+     "id": "d",
+     "text": "A paired sample t-test",
+     "correct": false,
+     "why": "The two groups contain different people; they are not paired."
+    }
+   ],
+   "teach": "Walk the chain rather than pattern-matching: outcome is continuous → assumptions met → two groups → different people in each → independent-samples t-test. Candidates who reach for 'paired' are anchoring on the pre-post structure of the design instead of reading which comparison is actually being made.",
+   "context": "An RCT compared a new therapy for psychosis with a treatment-as-usual (TAU) control. Quality of life (QoL) was the primary outcome, higher scores indicating better QoL. The QoL data met the necessary assumptions and were analysed using ANOVA with the factors time (pre vs post) and group (new therapy vs TAU). Mean QoL before intervention was 35 (new therapy) and 34 (TAU). After intervention the new-therapy group scored 75 and the TAU group 33.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 3,
+   "time": 60,
+   "precision": null
+  },
+  {
+   "id": "pp16_13",
+   "kind": "mcq",
+   "concepts": [
+    "common_factors",
+    "causation",
+    "mechanism"
+   ],
+   "level": "discriminate",
+   "stem": "Assuming that the correct test shows that this difference is significant, it is reasonable to conclude that:",
+   "options": [
+    {
+     "id": "a",
+     "text": "The specific techniques used in the new therapy reduce QoL",
+     "correct": false,
+     "why": "The direction is wrong — QoL rose — and specificity is not established."
+    },
+    {
+     "id": "b",
+     "text": "The generic factors present in the new therapy (e.g. therapeutic alliance) reduce QoL",
+     "correct": false,
+     "why": "Wrong direction again."
+    },
+    {
+     "id": "c",
+     "text": "The new therapy seems effective, but it is not clear which components of it improve QoL",
+     "correct": true,
+     "why": "A TAU comparator cannot separate specific technique from alliance, attention and expectancy."
+    },
+    {
+     "id": "d",
+     "text": "The generic factors present in the new therapy improve QoL",
+     "correct": false,
+     "why": "Attributes the effect to common factors specifically — equally unwarranted."
+    }
+   ],
+   "teach": "The comparator determines the claim. Against TAU you can say the package works; you cannot say which ingredient did the work. To attribute the effect to a specific technique you need an active comparator matched for attention, credibility and therapist contact. This single point converts an average interview answer into a strong one.",
+   "precision": "TAU controls for time and natural change; only an active comparator isolates specific technique.",
+   "context": "An RCT compared a new therapy for psychosis with a treatment-as-usual (TAU) control. Quality of life (QoL) was the primary outcome, higher scores indicating better QoL. The QoL data met the necessary assumptions and were analysed using ANOVA with the factors time (pre vs post) and group (new therapy vs TAU). Mean QoL before intervention was 35 (new therapy) and 34 (TAU). After intervention the new-therapy group scored 75 and the TAU group 33.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 4,
+   "time": 70
+  },
+  {
+   "id": "pp16_14",
+   "kind": "mcq",
+   "concepts": [
+    "effect_size",
+    "meta_analysis"
+   ],
+   "level": "discriminate",
+   "stem": "When presenting their findings the authors also report the 'effect size'. The main reason they include this is:",
+   "options": [
+    {
+     "id": "a",
+     "text": "To allow the findings to be included in subsequent meta-analyses",
+     "correct": true,
+     "why": "Of the four options, the only defensible one — pooling requires a standardised effect."
+    },
+    {
+     "id": "b",
+     "text": "To indicate the direction of the effect",
+     "correct": false,
+     "why": "Direction is already given by the means."
+    },
+    {
+     "id": "c",
+     "text": "To highlight the level of statistical significance of the effect",
+     "correct": false,
+     "why": "That is the p-value's job; effect size is deliberately independent of it."
+    },
+    {
+     "id": "d",
+     "text": "To help tease apart the influence of generic and specific factors",
+     "correct": false,
+     "why": "That is a design question, not an analysis one."
+    }
+   ],
+   "teach": "Worth noticing how this item behaves. The textbook reason to report an effect size is to convey magnitude independently of sample size — and that option is not offered. When no option matches your first answer, do not abandon your reasoning: eliminate. B, C and D are each demonstrably false, so A survives. That is the skill the item actually rewards, and it transfers directly to interview questions where the framing is not the one you prepared.",
+   "context": "An RCT compared a new therapy for psychosis with a treatment-as-usual (TAU) control. Quality of life (QoL) was the primary outcome, higher scores indicating better QoL. The QoL data met the necessary assumptions and were analysed using ANOVA with the factors time (pre vs post) and group (new therapy vs TAU). Mean QoL before intervention was 35 (new therapy) and 34 (TAU). After intervention the new-therapy group scored 75 and the TAU group 33.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 4,
+   "time": 60,
+   "precision": null
+  },
+  {
+   "id": "pp16_15",
+   "kind": "mcq",
+   "concepts": [
+    "external_validity",
+    "sampling"
+   ],
+   "level": "discriminate",
+   "stem": "In order for the findings of this study to be generalised to other people with psychosis, the most important thing is that:",
+   "options": [
+    {
+     "id": "a",
+     "text": "A sufficiently large sample has been used to provide adequate power",
+     "correct": false,
+     "why": "Size buys precision, not representativeness. A large biased sample is still biased."
+    },
+    {
+     "id": "b",
+     "text": "The sample is sufficiently representative of people with psychosis",
+     "correct": true,
+     "why": "Generalisability is governed by who was sampled, not how many."
+    },
+    {
+     "id": "c",
+     "text": "The measure of QoL has good test re-test reliability",
+     "correct": false,
+     "why": "A measurement property; necessary but not what limits generalisation."
+    },
+    {
+     "id": "d",
+     "text": "The participants were not taking medication during the RCT",
+     "correct": false,
+     "why": "Would reduce representativeness, since most people with psychosis take medication."
+    }
+   ],
+   "teach": "Sample size and sample representativeness answer different questions, and candidates conflate them constantly. Size → precision and power → internal statistical conclusion validity. Composition → external validity. A trial of 2,000 self-selected, medication-free, English-speaking volunteers generalises worse than a well-sampled trial of 200.",
+   "precision": "Generalisability is a property of who was sampled, not of how many.",
+   "context": "An RCT compared a new therapy for psychosis with a treatment-as-usual (TAU) control. Quality of life (QoL) was the primary outcome, higher scores indicating better QoL. The QoL data met the necessary assumptions and were analysed using ANOVA with the factors time (pre vs post) and group (new therapy vs TAU). Mean QoL before intervention was 35 (new therapy) and 34 (TAU). After intervention the new-therapy group scored 75 and the TAU group 33.",
+   "source": "University of Surrey & Canterbury Christ Church, Selection 2016 written test, Part 1",
+   "difficulty": 3,
+   "time": 60
+  },
+  {
+   "id": "c_med_mod",
+   "kind": "contrast",
+   "concepts": [
+    "mediation",
+    "moderation"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each statement into the column where it belongs.",
+   "left": "Mediator (HOW / WHY)",
+   "right": "Moderator (FOR WHOM / WHEN)",
+   "probes": [
+    {
+     "text": "Lies on the causal pathway between X and Y",
+     "side": "L"
+    },
+    {
+     "text": "Changes the strength or direction of the X–Y relationship",
+     "side": "R"
+    },
+    {
+     "text": "Tested statistically as an interaction term",
+     "side": "R"
+    },
+    {
+     "text": "Must be measured after X and before Y in time",
+     "side": "L"
+    },
+    {
+     "text": "Rumination explains why loneliness leads to low mood",
+     "side": "L"
+    },
+    {
+     "text": "Therapy works better for people with higher baseline motivation",
+     "side": "R"
+    },
+    {
+     "text": "Answers: through what process does the effect occur?",
+     "side": "L"
+    },
+    {
+     "text": "Answers: under what conditions does the effect hold?",
+     "side": "R"
+    },
+    {
+     "text": "Is a target for intervention if you want to change the mechanism",
+     "side": "L"
+    },
+    {
+     "text": "Is a basis for deciding who should be offered the intervention",
+     "side": "R"
+    }
+   ],
+   "teach": "The one-line discriminator: a mediator is a link in the chain, a moderator is a dial on the chain. Two consequences follow that interviewers probe. First, temporal order — a mediator must be measured between X and Y, so a cross-sectional 'mediation analysis' cannot establish mediation whatever the software reports. Second, a variable can only mediate an effect that exists, so mediation analysis presupposes the effect.",
+   "precision": "Mediator = mechanism, on the pathway. Moderator = condition, interacts with the pathway.",
+   "difficulty": 3,
+   "time": 110,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_rel_val",
+   "kind": "contrast",
+   "concepts": [
+    "reliability",
+    "validity"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each statement into the column where it belongs.",
+   "left": "Reliability (consistency)",
+   "right": "Validity (is it the right thing?)",
+   "probes": [
+    {
+     "text": "Cronbach's alpha of .89 across the items",
+     "side": "L"
+    },
+    {
+     "text": "Scores correlate .81 with a diagnostic interview",
+     "side": "R"
+    },
+    {
+     "text": "Two raters agree on 85% of the codings",
+     "side": "L"
+    },
+    {
+     "text": "The scale predicts who is admitted within six months",
+     "side": "R"
+    },
+    {
+     "text": "Test-retest correlation of .90 over two weeks",
+     "side": "L"
+    },
+    {
+     "text": "The items look relevant to respondents",
+     "side": "R"
+    },
+    {
+     "text": "Can be high while the measure captures the wrong construct",
+     "side": "L"
+    },
+    {
+     "text": "Cannot exceed what the measure's consistency permits",
+     "side": "R"
+    },
+    {
+     "text": "The items cover every facet of the construct",
+     "side": "R"
+    }
+   ],
+   "teach": "A bathroom scale that reads 4 kg heavy every time is perfectly reliable and invalid. The asymmetry is the examinable point: reliability is necessary but not sufficient for validity, and unreliability places a ceiling on the validity a measure can achieve. This is why a Cronbach's alpha of .40 — as in the Birmingham 2014 exercise — sinks any conclusion drawn from that measure before you even look at its scores.",
+   "precision": "Reliability is necessary but not sufficient for validity; unreliability caps validity.",
+   "difficulty": 2,
+   "time": 100,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_inc_prev",
+   "kind": "contrast",
+   "concepts": [
+    "incidence",
+    "prevalence"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each statement into the column where it belongs.",
+   "left": "Incidence",
+   "right": "Prevalence",
+   "probes": [
+    {
+     "text": "New cases arising over a defined period",
+     "side": "L"
+    },
+    {
+     "text": "All existing cases at a point in time",
+     "side": "R"
+    },
+    {
+     "text": "Rises if a treatment keeps people alive longer without curing them",
+     "side": "R"
+    },
+    {
+     "text": "The natural output of a cohort study",
+     "side": "L"
+    },
+    {
+     "text": "What a single cross-sectional survey measures",
+     "side": "R"
+    },
+    {
+     "text": "Falls if a prevention programme works",
+     "side": "L"
+    },
+    {
+     "text": "Approximately incidence multiplied by average duration",
+     "side": "R"
+    },
+    {
+     "text": "Unaffected by how long the condition lasts",
+     "side": "L"
+    }
+   ],
+   "teach": "The trap is 'a rise in prevalence means more people are becoming unwell'. It may instead mean people are staying unwell for longer, or surviving longer, or being identified more. Prevalence ≈ incidence × duration. To make a claim about whether a problem is genuinely growing, you need incidence — and that requires following people over time.",
+   "precision": "Incidence = new cases per period. Prevalence = existing cases, a function of incidence and duration.",
+   "difficulty": 3,
+   "time": 90,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_cbt_act",
+   "kind": "contrast",
+   "concepts": [
+    "cbt_model",
+    "act",
+    "defusion"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each therapeutic move into the model it belongs to.",
+   "left": "CBT",
+   "right": "ACT",
+   "probes": [
+    {
+     "text": "Examine the evidence for and against the thought",
+     "side": "L"
+    },
+    {
+     "text": "Notice the thought as a thought and let it be present",
+     "side": "R"
+    },
+    {
+     "text": "Design an experiment to test a specific prediction",
+     "side": "L"
+    },
+    {
+     "text": "Ask what happens to your life when this thought is in charge",
+     "side": "R"
+    },
+    {
+     "text": "Identify the cognitive distortion in the appraisal",
+     "side": "L"
+    },
+    {
+     "text": "Clarify what you want to stand for and act on it now",
+     "side": "R"
+    },
+    {
+     "text": "Target the accuracy or helpfulness of the belief",
+     "side": "L"
+    },
+    {
+     "text": "Target the person's relationship with the belief",
+     "side": "R"
+    },
+    {
+     "text": "Build willingness to have discomfort in service of a value",
+     "side": "R"
+    },
+    {
+     "text": "Drop safety behaviours so the feared outcome can disconfirm",
+     "side": "L"
+    }
+   ],
+   "teach": "The clean contrast: CBT asks 'is this thought accurate or helpful?'; ACT asks 'what happens when this thought runs your behaviour?'. ACT does not dispute content at all. The overlap is real though — both are behavioural, both use exposure-like procedures, and modern CBT uses behavioural experiments rather than disputation. In interview, name the shared behavioural spine and then the divergence in target, and you will be ahead of most candidates.",
+   "precision": "CBT targets the content or usefulness of cognition; ACT targets the person's relationship to it.",
+   "difficulty": 3,
+   "time": 110,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_cbt_sys",
+   "kind": "contrast",
+   "concepts": [
+    "cbt_model",
+    "systemic",
+    "circular_causality"
+   ],
+   "level": "discriminate",
+   "stem": "A parent becomes increasingly protective as their child's anxiety increases. Sort each statement by the lens it comes from.",
+   "left": "CBT lens",
+   "right": "Systemic lens",
+   "probes": [
+    {
+     "text": "The child's threat appraisal drives avoidance",
+     "side": "L"
+    },
+    {
+     "text": "Each person's response is both a reaction to and a trigger for the other's",
+     "side": "R"
+    },
+    {
+     "text": "Accommodation removes opportunities for disconfirmation",
+     "side": "L"
+    },
+    {
+     "text": "The pattern maintains itself with no identifiable first cause",
+     "side": "R"
+    },
+    {
+     "text": "The problem is located in the child's cognitive-behavioural cycle",
+     "side": "L"
+    },
+    {
+     "text": "The parent's protectiveness is meaningful given their own history and fears",
+     "side": "R"
+    },
+    {
+     "text": "Intervention: graded behavioural experiments for the child",
+     "side": "L"
+    },
+    {
+     "text": "Intervention: work with the interactional sequence in the room",
+     "side": "R"
+    },
+    {
+     "text": "Ask who else in the wider system is invested in the child staying safe",
+     "side": "R"
+    }
+   ],
+   "teach": "What the systemic lens adds here is that the parent is not an obstacle to the child's treatment but a participant in a loop that makes sense from their position. What it can overlook is the specific mechanism — accommodation blocking disconfirmation — that CBT names precisely, and the individual's internal experience. Cardiff, UCL and UEA all ask for a formulation from a second, non-CBT model; this pair is the highest-frequency version of that question.",
+   "precision": "Linear causality asks what caused what; circular causality describes a self-maintaining recursive sequence.",
+   "difficulty": 4,
+   "time": 120,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_audit_eval_res",
+   "kind": "contrast",
+   "concepts": [
+    "service_evaluation"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each description into the right governance category.",
+   "left": "Audit / service evaluation",
+   "right": "Research",
+   "probes": [
+    {
+     "text": "Compares current practice against an existing standard",
+     "side": "L"
+    },
+    {
+     "text": "Aims to produce generalisable new knowledge",
+     "side": "R"
+    },
+    {
+     "text": "Requires NHS Research Ethics Committee review",
+     "side": "R"
+    },
+    {
+     "text": "Asks how well this service is doing what it already intends to do",
+     "side": "L"
+    },
+    {
+     "text": "Allocates people to conditions to test a hypothesis",
+     "side": "R"
+    },
+    {
+     "text": "Uses data already collected in routine care",
+     "side": "L"
+    },
+    {
+     "text": "Findings are intended to transfer beyond this service",
+     "side": "R"
+    },
+    {
+     "text": "Registered through local clinical governance",
+     "side": "L"
+    }
+   ],
+   "teach": "This distinction is examinable because it is a real decision trainees must make. The test is intent: are you measuring against an existing standard or describing your own service (audit/evaluation), or generating knowledge intended to transfer (research)? Note that the distinction governs the governance route, not the rigour — a service evaluation should still be methodologically sound, and calling something an evaluation to avoid ethics review is a governance breach.",
+   "difficulty": 3,
+   "time": 95,
+   "context": null,
+   "source": null,
+   "precision": null
+  },
+  {
+   "id": "c_rtm_effect",
+   "kind": "contrast",
+   "concepts": [
+    "regression_to_mean",
+    "natural_history",
+    "control_group"
+   ],
+   "level": "discriminate",
+   "stem": "A service selects the 20 most distressed people on its waiting list, offers a workshop, and finds scores significantly improved at follow-up. Sort each statement.",
+   "left": "Explains the improvement WITHOUT the workshop working",
+   "right": "Requires the workshop to have worked",
+   "probes": [
+    {
+     "text": "Those selected for extreme scores regress toward the mean on retest",
+     "side": "L"
+    },
+    {
+     "text": "Part of the original extremity was measurement error and transient state",
+     "side": "L"
+    },
+    {
+     "text": "Many conditions remit without intervention over the same period",
+     "side": "L"
+    },
+    {
+     "text": "Being offered help raised expectancy of improvement",
+     "side": "L"
+    },
+    {
+     "text": "Repeated completion of the measure changes how people respond",
+     "side": "L"
+    },
+    {
+     "text": "The specific skills taught produced the change",
+     "side": "R"
+    },
+    {
+     "text": "The change exceeded that seen in a matched untreated comparison",
+     "side": "R"
+    }
+   ],
+   "teach": "Selecting on an extreme score guarantees apparent improvement — this is arithmetic, not psychology. Six of these seven alternatives are available to any uncontrolled pre-post evaluation, which is why the design cannot support a claim that the intervention worked. In interview the strong move is not to list these but to say what would settle it: a comparison group selected the same way and measured the same way.",
+   "precision": "Regression to the mean is created by selection on extremity, not by the passage of time.",
+   "difficulty": 4,
+   "time": 110,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_capacity_mha",
+   "kind": "contrast",
+   "concepts": [
+    "mca",
+    "mha",
+    "capacity"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each situation into the legal framework that primarily applies.",
+   "left": "Mental Capacity Act",
+   "right": "Mental Health Act",
+   "probes": [
+    {
+     "text": "A man with advanced dementia cannot weigh a decision about a feeding tube",
+     "side": "L"
+    },
+    {
+     "text": "A woman with psychosis is detained for assessment of her mental disorder",
+     "side": "R"
+    },
+    {
+     "text": "Deciding where someone who lacks capacity should live, in their best interests",
+     "side": "L"
+    },
+    {
+     "text": "Treatment for mental disorder given against the wishes of a person with capacity",
+     "side": "R"
+    },
+    {
+     "text": "An unwise but capacitous decision to leave hospital against advice",
+     "side": "L"
+    },
+    {
+     "text": "Continuous supervision and control of a person who lacks capacity, not free to leave",
+     "side": "L"
+    },
+    {
+     "text": "Section 117 aftercare following discharge from treatment detention",
+     "side": "R"
+    }
+   ],
+   "teach": "The dividing line: the MCA is about decision-making ability, and only engages where capacity is absent; the MHA is about detention and treatment for mental disorder, and can apply to someone who retains capacity. Two precision traps interviewers use — an unwise decision is not evidence of incapacity, and capacity is decision-specific and time-specific rather than a global status.",
+   "precision": "MCA engages on absence of capacity. MHA engages on mental disorder and risk, capacity notwithstanding.",
+   "difficulty": 4,
+   "time": 105,
+   "context": null,
+   "source": null
+  },
+  {
+   "id": "c_equity",
+   "kind": "contrast",
+   "concepts": [
+    "equity_equality",
+    "access_inequality"
+   ],
+   "level": "discriminate",
+   "stem": "Sort each service response.",
+   "left": "Equality (same for all)",
+   "right": "Equity (according to need)",
+   "probes": [
+    {
+     "text": "Every referral is offered the same six-session package",
+     "side": "L"
+    },
+    {
+     "text": "Interpreter time is funded so appointment length is genuinely comparable",
+     "side": "R"
+    },
+    {
+     "text": "The leaflet is translated into the eight most common local languages",
+     "side": "R"
+    },
+    {
+     "text": "Appointments are offered 9–5 to everyone equally",
+     "side": "L"
+    },
+    {
+     "text": "Evening slots are protected for people who cannot take unpaid leave",
+     "side": "R"
+    },
+    {
+     "text": "The same self-referral website is available to the whole borough",
+     "side": "L"
+    },
+    {
+     "text": "Outreach clinics are placed in the two most deprived wards",
+     "side": "R"
+    }
+   ],
+   "teach": "The examinable line: offering an identical service to unequal starting positions preserves the inequality and calls it fairness. Every item in the left column is defensible and none is neutral in effect. The strong candidate names the mechanism — who is actually excluded by this arrangement, and what does that predict about who reaches us.",
+   "difficulty": 3,
+   "time": 90,
+   "context": null,
+   "source": null,
+   "precision": null
+  },
+  {
+   "id": "l_1",
+   "kind": "ladder",
+   "concepts": [
+    "test_selection",
+    "ttest_paired",
+    "clinical_significance"
+   ],
+   "level": "transfer",
+   "stem": "Your service runs an eight-week CBT group for social anxiety. Everyone completes the SPIN (a continuous symptom measure) at session one and at session eight. There is no comparison group. The service manager asks you whether the group works.",
+   "rungs": [
+    {
+     "q": "What is the outcome variable's type?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Continuous",
+       "correct": true,
+       "why": "SPIN total is a continuous score."
+      },
+      {
+       "id": "b",
+       "text": "Categorical",
+       "correct": false,
+       "why": "Not a category — it is a total score."
+      },
+      {
+       "id": "c",
+       "text": "Ordinal only",
+       "correct": false,
+       "why": "Treated as continuous by convention and by the measure's construction."
+      }
+     ]
+    },
+    {
+     "q": "How many measurement occasions, and from whom?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Two occasions, same people",
+       "correct": true,
+       "why": "Pre and post from each participant."
+      },
+      {
+       "id": "b",
+       "text": "Two independent groups",
+       "correct": false,
+       "why": "There is only one group here."
+      },
+      {
+       "id": "c",
+       "text": "Three or more occasions",
+       "correct": false,
+       "why": "Only session one and session eight."
+      }
+     ]
+    },
+    {
+     "q": "So are the observations independent or related?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Related — each person contributes both scores",
+       "correct": true,
+       "why": "This is what makes the comparison paired."
+      },
+      {
+       "id": "b",
+       "text": "Independent — different scores are different data points",
+       "correct": false,
+       "why": "The two scores come from the same person and are correlated."
+      }
+     ]
+    },
+    {
+     "q": "Which test answers 'did scores change?'",
+     "options": [
+      {
+       "id": "a",
+       "text": "Paired-samples t-test",
+       "correct": true,
+       "why": "Two related measurements on a continuous outcome."
+      },
+      {
+       "id": "b",
+       "text": "Independent-samples t-test",
+       "correct": false,
+       "why": "Would treat the same people as two separate groups."
+      },
+      {
+       "id": "c",
+       "text": "Repeated-measures ANOVA",
+       "correct": false,
+       "why": "Defensible with three or more occasions; unnecessary for two."
+      },
+      {
+       "id": "d",
+       "text": "Chi-square",
+       "correct": false,
+       "why": "For categorical data."
+      }
+     ]
+    },
+    {
+     "q": "What can a significant result establish?",
+     "options": [
+      {
+       "id": "a",
+       "text": "That scores changed more than would be expected by chance",
+       "correct": true,
+       "why": "That is all the design supports."
+      },
+      {
+       "id": "b",
+       "text": "That the CBT group caused the improvement",
+       "correct": false,
+       "why": "No comparator: regression to the mean, natural history and expectancy are all live."
+      },
+      {
+       "id": "c",
+       "text": "That the change matters clinically",
+       "correct": false,
+       "why": "That requires reliable change or an MCID, not a p-value."
+      }
+     ]
+    }
+   ],
+   "answer": "Paired-samples t-test — with the finding reported as 'scores improved' and explicitly not as 'the group worked'.",
+   "teach": "The statistics here are the easy part; the answer that distinguishes candidates is the last rung. An uncontrolled pre-post design cannot separate the intervention from regression to the mean, natural history, expectancy or repeated testing. Say so, then say what you would add — a waiting-list comparison, a benchmarked comparison against published effect sizes, or reliable change indices at the individual level — and you have given a research-supervisor answer rather than a student one.",
+   "difficulty": 2,
+   "time": 180,
+   "context": null,
+   "source": null,
+   "precision": null
+  },
+  {
+   "id": "l_2",
+   "kind": "ladder",
+   "concepts": [
+    "test_selection",
+    "interaction",
+    "rm_anova",
+    "itt"
+   ],
+   "level": "transfer",
+   "stem": "A CAMHS service pilots a new parent-led anxiety intervention. Forty families are randomised to the new intervention or to the standard clinician-led pathway. Child anxiety (a continuous measure) is collected at baseline, at end of treatment, and at three-month follow-up. Six families in the new arm and two in the standard arm drop out before the end of treatment.",
+   "rungs": [
+    {
+     "q": "What is the primary question the design is built to answer?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Did the two arms change differently over time?",
+       "correct": true,
+       "why": "Randomisation to two arms with repeated measurement."
+      },
+      {
+       "id": "b",
+       "text": "Did anxiety fall overall?",
+       "correct": false,
+       "why": "True but uninformative — both arms would be expected to fall."
+      },
+      {
+       "id": "c",
+       "text": "Which families improved most?",
+       "correct": false,
+       "why": "A secondary, exploratory question."
+      }
+     ]
+    },
+    {
+     "q": "How many factors, and of what kind?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Two: group (between-subjects) and time (within-subjects)",
+       "correct": true,
+       "why": "A mixed design."
+      },
+      {
+       "id": "b",
+       "text": "One: time",
+       "correct": false,
+       "why": "Ignores the randomisation, which is the point of the study."
+      },
+      {
+       "id": "c",
+       "text": "Two, both between-subjects",
+       "correct": false,
+       "why": "Time is measured within the same families."
+      }
+     ]
+    },
+    {
+     "q": "Which term tests the study's actual question?",
+     "options": [
+      {
+       "id": "a",
+       "text": "The group × time interaction",
+       "correct": true,
+       "why": "Differential change is always an interaction."
+      },
+      {
+       "id": "b",
+       "text": "The main effect of time",
+       "correct": false,
+       "why": "Both arms improving would produce this."
+      },
+      {
+       "id": "c",
+       "text": "The main effect of group",
+       "correct": false,
+       "why": "Could reflect a baseline imbalance."
+      }
+     ]
+    },
+    {
+     "q": "How should the eight dropouts be handled?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Intention-to-treat, analysing families in the arm they were randomised to",
+       "correct": true,
+       "why": "Preserves randomisation and estimates the effect of offering the intervention."
+      },
+      {
+       "id": "b",
+       "text": "Analyse only families who completed",
+       "correct": false,
+       "why": "Per-protocol: breaks randomisation and typically flatters the intervention."
+      },
+      {
+       "id": "c",
+       "text": "Exclude them and note it in the limitations",
+       "correct": false,
+       "why": "Same problem, with the bias acknowledged but not addressed."
+      }
+     ]
+    },
+    {
+     "q": "What does the differential attrition itself tell you?",
+     "options": [
+      {
+       "id": "a",
+       "text": "It is a finding about acceptability, not only a nuisance",
+       "correct": true,
+       "why": "Three times the dropout in the new arm is data about whether families can tolerate it."
+      },
+      {
+       "id": "b",
+       "text": "Nothing, provided the analysis is ITT",
+       "correct": false,
+       "why": "ITT handles the estimate; it does not make the pattern uninteresting."
+      },
+      {
+       "id": "c",
+       "text": "That the new intervention is ineffective",
+       "correct": false,
+       "why": "It speaks to acceptability, not efficacy."
+      }
+     ]
+    }
+   ],
+   "answer": "Mixed (2 × 3) ANOVA — or a linear mixed model, which handles missing occasions better — with the group × time interaction as the primary term, analysed by intention to treat.",
+   "teach": "Two moves lift this answer. First, naming the interaction as the test of the actual question rather than reporting main effects. Second, treating differential attrition as a finding: in a pilot, whether families can tolerate the intervention is arguably more important than the effect estimate, because a pilot exists to establish feasibility and acceptability, not efficacy. If you want the advanced version, mention that a linear mixed model uses all available data under a missing-at-random assumption rather than discarding incomplete cases.",
+   "difficulty": 4,
+   "time": 240,
+   "context": null,
+   "source": null,
+   "precision": null
+  },
+  {
+   "id": "l_3",
+   "kind": "ladder",
+   "concepts": [
+    "test_selection",
+    "chi_square",
+    "variable_types",
+    "absolute_relative_risk"
+   ],
+   "level": "transfer",
+   "stem": "You are evaluating whether a new opt-out booking system changes whether people attend their first appointment. You have 600 referrals from the six months before the change and 640 from the six months after. For each referral you know whether the person attended, did not attend, or cancelled in advance.",
+   "rungs": [
+    {
+     "q": "What kind of outcome variable is 'attended / DNA / cancelled'?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Categorical with three unordered levels",
+       "correct": true,
+       "why": "Nominal categories, not a quantity."
+      },
+      {
+       "id": "b",
+       "text": "Ordinal",
+       "correct": false,
+       "why": "There is no inherent rank order among these three."
+      },
+      {
+       "id": "c",
+       "text": "Continuous",
+       "correct": false,
+       "why": "It is not a measured quantity."
+      }
+     ]
+    },
+    {
+     "q": "What kind of comparison is being made?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Two independent groups of referrals, before and after",
+       "correct": true,
+       "why": "Different referrals in each period."
+      },
+      {
+       "id": "b",
+       "text": "Paired — the same people before and after",
+       "correct": false,
+       "why": "These are different referrals."
+      },
+      {
+       "id": "c",
+       "text": "One group measured twice",
+       "correct": false,
+       "why": "Same error."
+      }
+     ]
+    },
+    {
+     "q": "Which test fits?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Chi-square test of association",
+       "correct": true,
+       "why": "Categorical outcome by categorical group, independent observations."
+      },
+      {
+       "id": "b",
+       "text": "Independent-samples t-test",
+       "correct": false,
+       "why": "Requires a continuous outcome."
+      },
+      {
+       "id": "c",
+       "text": "McNemar's test",
+       "correct": false,
+       "why": "For paired categorical data — the right answer if the same people were followed."
+      },
+      {
+       "id": "d",
+       "text": "Correlation",
+       "correct": false,
+       "why": "Not a test of association between two nominal variables here."
+      }
+     ]
+    },
+    {
+     "q": "What is the main threat to concluding the system caused the change?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Anything else that changed between the two periods",
+       "correct": true,
+       "why": "A before-and-after design is confounded with time — staffing, season, referral criteria, publicity."
+      },
+      {
+       "id": "b",
+       "text": "The sample is too small",
+       "correct": false,
+       "why": "1,240 referrals is ample for this comparison."
+      },
+      {
+       "id": "c",
+       "text": "Chi-square is not powerful enough",
+       "correct": false,
+       "why": "Power is not the limiting issue here."
+      }
+     ]
+    },
+    {
+     "q": "Beyond significance, what should you report?",
+     "options": [
+      {
+       "id": "a",
+       "text": "The absolute difference in attendance rates, and what it means in appointments",
+       "correct": true,
+       "why": "Absolute change drives service relevance and is what a manager can act on."
+      },
+      {
+       "id": "b",
+       "text": "Only the p-value",
+       "correct": false,
+       "why": "With 1,240 referrals, trivial differences reach significance."
+      },
+      {
+       "id": "c",
+       "text": "The relative risk alone",
+       "correct": false,
+       "why": "Relative figures can look dramatic on a small base rate."
+      }
+     ]
+    }
+   ],
+   "answer": "Chi-square test of association, reported with absolute attendance rates and the difference in appointments per year — and framed as a service evaluation with a time-confounded design, not a trial.",
+   "teach": "Notice what makes this an interview answer rather than a statistics answer: the design is a before-and-after comparison, so the intervention is completely confounded with time. Everything else that changed in those six months rides along with the result. Say that, propose what would strengthen it — a stepped-wedge rollout across teams, or an interrupted time series with multiple pre-change data points — and translate the effect into appointments recovered per year, because that is the currency in which the finding will be used.",
+   "difficulty": 4,
+   "time": 240,
+   "context": null,
+   "source": null,
+   "precision": null
+  },
+  {
+   "id": "l_4",
+   "kind": "ladder",
+   "concepts": [
+    "qualitative_designs",
+    "epistemology",
+    "saturation",
+    "reflexivity"
+   ],
+   "level": "transfer",
+   "stem": "You want to understand why young Black men in your locality disengage from the early intervention in psychosis service after one or two appointments. Routine data show the differential clearly; nobody knows why.",
+   "rungs": [
+    {
+     "q": "What kind of question is this?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Exploratory — about meaning and experience",
+       "correct": true,
+       "why": "The 'why' here concerns how disengagement is experienced and made sense of."
+      },
+      {
+       "id": "b",
+       "text": "Confirmatory — testing a stated hypothesis",
+       "correct": false,
+       "why": "No candidate mechanism is specified."
+      },
+      {
+       "id": "c",
+       "text": "Descriptive — how many disengage",
+       "correct": false,
+       "why": "Already known from routine data."
+      }
+     ]
+    },
+    {
+     "q": "Which methodology fits best?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Reflexive thematic analysis across accounts",
+       "correct": true,
+       "why": "Patterns of meaning across a group, allowing a diverse sample and a service-relevant output."
+      },
+      {
+       "id": "b",
+       "text": "IPA",
+       "correct": false,
+       "why": "Defensible, but IPA requires a homogeneous sample and yields idiographic depth rather than service-level patterns."
+      },
+      {
+       "id": "c",
+       "text": "Grounded theory",
+       "correct": false,
+       "why": "Appropriate only if you intend to generate a theory with theoretical sampling to saturation."
+      },
+      {
+       "id": "d",
+       "text": "A survey with open comment boxes",
+       "correct": false,
+       "why": "Will not reach the accounts of people who have already left."
+      }
+     ]
+    },
+    {
+     "q": "What epistemological position should you state?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Critical realist — real experiences and real structures, accessed through interpretation",
+       "correct": true,
+       "why": "Coherent with claiming that racism has real effects while treating accounts as interpreted."
+      },
+      {
+       "id": "b",
+       "text": "Naive realist — the interviews reveal the truth directly",
+       "correct": false,
+       "why": "Incoherent with interpretative analysis."
+      },
+      {
+       "id": "c",
+       "text": "Radical constructionist",
+       "correct": false,
+       "why": "Defensible, but sits awkwardly with making service recommendations about real differentials."
+      }
+     ]
+    },
+    {
+     "q": "What is the most serious threat to the credibility of this study?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Who conducts the interviews, and the power relations in the encounter",
+       "correct": true,
+       "why": "A service clinician asking why people left the service will get a curated answer."
+      },
+      {
+       "id": "b",
+       "text": "The sample size",
+       "correct": false,
+       "why": "Qualitative adequacy is about richness and information power, not n."
+      },
+      {
+       "id": "c",
+       "text": "Lack of a control group",
+       "correct": false,
+       "why": "Not a relevant concept for this design."
+      }
+     ]
+    },
+    {
+     "q": "How should reflexivity be handled?",
+     "options": [
+      {
+       "id": "a",
+       "text": "Documented systematically — positionality, reflexive journal, team discussion of interpretations",
+       "correct": true,
+       "why": "Evidenced, not declared."
+      },
+      {
+       "id": "b",
+       "text": "A sentence in the limitations acknowledging the researcher's background",
+       "correct": false,
+       "why": "The most common weak version."
+      },
+      {
+       "id": "c",
+       "text": "By the researcher striving to be objective",
+       "correct": false,
+       "why": "Incoherent with a qualitative epistemology."
+      }
+     ]
+    }
+   ],
+   "answer": "Reflexive thematic analysis from a critical realist position, with peer or community interviewers, purposive sampling for information power, a documented reflexive process, and co-production with people who have used the service.",
+   "teach": "The examinable insight is that the method is not the hard part — the power relations in data collection are. If the service asks people why they left the service, the design has built the answer into the encounter. Proposing peer researchers or community-based interviewers, and co-producing the topic guide, shows you understand that qualitative rigour is about the conditions of production, not just the analysis. Note too that 'saturation' is a grounded theory concept that sits uneasily in reflexive TA — using it loosely is a precision error interviewers notice.",
+   "difficulty": 5,
+   "time": 270,
+   "context": null,
+   "source": null,
+   "precision": null
+  }
+ ]
+}
