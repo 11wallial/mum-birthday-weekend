@@ -7,9 +7,9 @@
    components. Violet is an accent, not an atmosphere — it marks the one
    thing worth pressing and the thing currently selected, and nothing else.
 
-   Two typefaces do structural work: Figtree for the interface, Newsreader
-   for clinical and exam material — so "the app" and "the thing you are
-   reading" never blur.
+   Two typefaces do structural work: Inter (variable, so the type scale can
+   use real intermediate weights) for the interface, Newsreader for clinical
+   and exam material — so "the app" and "the thing you are reading" never blur.
 
    Domain colours are the validated categorical slots 1-3; every domain
    colour appears beside its own text label, never alone.
@@ -78,7 +78,7 @@ html, body { margin: 0; padding: 0; }
   --sh-3: 0 4px 12px rgba(17,22,32,.08), 0 24px 56px rgba(17,22,32,.12);
   --sh-up: 0 -1px 3px rgba(17,22,32,.04), 0 -12px 32px rgba(17,22,32,.07);
 
-  --sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
   --ease: cubic-bezier(.22,.61,.36,1);
   --spring: cubic-bezier(.34,1.32,.64,1);
@@ -134,6 +134,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv05' 1, 'ss03' 1;   /* Inter: single-storey l, rounded quotes */
   overflow: hidden;
   height: 100vh; height: 100dvh;
 }

@@ -203,7 +203,7 @@ without saying "this is floating". The type scale is fixed at display / h1 / h2 
 h3 / body / small / micro. Motion is short and eased — a 1px hover lift, a 2%
 press, a 400ms entrance — never a bounce.
 
-**Two typefaces doing structural work.** Figtree for the interface, Newsreader for
+**Two typefaces doing structural work.** Inter for the interface, Newsreader for
 clinical and exam material. Vignettes, interview questions, transcripts and paper
 stimuli are all set in serif, so "the app" and "the thing you are reading" never
 blur. Interview questions are set as a large serif quotation, because somebody is

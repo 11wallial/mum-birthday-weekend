@@ -2,7 +2,7 @@
 <meta name="description" content="A preparation engine for UK Doctorate in Clinical Psychology selection, built from real past papers and one official marking scheme.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    DClinPsy Trainer — design system
@@ -13,9 +13,9 @@
    components. Violet is an accent, not an atmosphere — it marks the one
    thing worth pressing and the thing currently selected, and nothing else.
 
-   Two typefaces do structural work: Figtree for the interface, Newsreader
-   for clinical and exam material — so "the app" and "the thing you are
-   reading" never blur.
+   Two typefaces do structural work: Inter (variable, so the type scale can
+   use real intermediate weights) for the interface, Newsreader for clinical
+   and exam material — so "the app" and "the thing you are reading" never blur.
 
    Domain colours are the validated categorical slots 1-3; every domain
    colour appears beside its own text label, never alone.
@@ -84,7 +84,7 @@ html, body { margin: 0; padding: 0; }
   --sh-3: 0 4px 12px rgba(17,22,32,.08), 0 24px 56px rgba(17,22,32,.12);
   --sh-up: 0 -1px 3px rgba(17,22,32,.04), 0 -12px 32px rgba(17,22,32,.07);
 
-  --sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
   --ease: cubic-bezier(.22,.61,.36,1);
   --spring: cubic-bezier(.34,1.32,.64,1);
@@ -140,6 +140,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv05' 1, 'ss03' 1;   /* Inter: single-storey l, rounded quotes */
   overflow: hidden;
   height: 100vh; height: 100dvh;
 }
@@ -3107,7 +3108,7 @@ function buildAtlas(domain) {
       if (!pts.length) return;
       const cx = pts.reduce((a, q) => a + q.x, 0) / pts.length;
       const top = Math.min.apply(null, pts.map(q => q.y));
-      ctx.font = '800 10.5px Figtree, sans-serif';
+      ctx.font = '700 10.5px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = domCol[d];
       ctx.globalAlpha = .7;

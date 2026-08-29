@@ -865,7 +865,7 @@ function buildAtlas(domain) {
       if (!pts.length) return;
       const cx = pts.reduce((a, q) => a + q.x, 0) / pts.length;
       const top = Math.min.apply(null, pts.map(q => q.y));
-      ctx.font = '800 10.5px Figtree, sans-serif';
+      ctx.font = '700 10.5px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = domCol[d];
       ctx.globalAlpha = .7;
