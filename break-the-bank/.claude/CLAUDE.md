@@ -156,3 +156,21 @@ come from the lab's JSON, not from looking at the game.
   unseeded global RNG this way, and every external-call test still passed.
 - Doc comments (`##`) on every class and on anything whose *why* is not obvious
   from its name. Skip them on self-evident getters.
+
+## Packaging
+
+Builds are self-contained: nothing is fetched at launch. `tools/package/build.sh`
+exports Windows, Linux, macOS, Android and Web; `docs/PACKAGING.md` has the
+detail. Rules worth keeping:
+
+- Desktop presets embed the PCK. Do not split a build into binary + data.
+- `export_presets.cfg` is tracked, against Godot's default ignore. Keep it free
+  of credentials — CI supplies the Android keystore through editor settings.
+- Every `AudioStreamPlayer` sets `playback_type = PLAYBACK_TYPE_STREAM`. The web
+  export defaults to sample playback, which cannot play an `AudioStreamGenerator`
+  at all, so the procedural ambience silently fails without it.
+- Touch is not a separate build. `TouchBar.is_touch_device()` gates the on-screen
+  buttons and `TouchBar.hint()` picks the wording; never hard-code a key name in
+  a user-facing string.
+- Any input path that only a key can reach is a mobile bug. Every panel needs a
+  visible way out.

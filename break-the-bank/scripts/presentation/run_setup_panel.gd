@@ -44,6 +44,14 @@ func _ready() -> void:
 	var cycle_difficulty: Button = get_node_or_null(^"Panel/Rows/Buttons/Difficulty") as Button
 	if cycle_difficulty != null:
 		cycle_difficulty.pressed.connect(_on_cycle_difficulty)
+	# Escape and F2 both close this, and a touch device has neither.
+	var close_button: Button = get_node_or_null(^"Panel/Rows/Buttons/Close") as Button
+	if close_button != null:
+		close_button.pressed.connect(close)
+	var footer: Label = get_node_or_null(^"Panel/Rows/Footer") as Label
+	if footer != null:
+		footer.text = TouchBar.hint("F2 close     ENTER start typed seed",
+				"Close, or start a run with a button above")
 
 
 func is_open() -> bool:

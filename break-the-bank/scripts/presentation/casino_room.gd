@@ -18,6 +18,7 @@ extends Node3D
 @export var dressing_path: NodePath = ^"RoomDressing"
 @export var shop_path: NodePath = ^"ShopPanel"
 @export var setup_path: NodePath = ^"RunSetup"
+@export var touch_bar_path: NodePath = ^"TouchBar"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -31,6 +32,7 @@ var _audio: AudioDirector
 var _dressing: RoomDressing
 var _shop: ShopPanel
 var _setup: RunSetupPanel
+var _touch: TouchBar
 var _recorder: PlaytestRecorder
 var _profile: PlayerProfile
 var _catalogue: MetaCatalogue
@@ -51,6 +53,7 @@ func _ready() -> void:
 	_dressing = get_node_or_null(dressing_path) as RoomDressing
 	_shop = get_node_or_null(shop_path) as ShopPanel
 	_setup = get_node_or_null(setup_path) as RunSetupPanel
+	_touch = get_node_or_null(touch_bar_path) as TouchBar
 	_profile = PlayerProfile.load_or_new()
 	_catalogue = MetaCatalogue.new()
 	_catalogue.load_all()
@@ -64,6 +67,12 @@ func _ready() -> void:
 	if _shop != null:
 		_shop.buy_requested.connect(_on_buy_requested)
 		_shop.leave_requested.connect(_on_leave_requested)
+	# The bar reaches the same entry points as the keys it stands in for, so a
+	# tap and a keypress cannot drift apart.
+	if _touch != null:
+		_touch.camera_requested.connect(_on_touch_camera)
+		_touch.setup_requested.connect(_on_touch_setup)
+		_touch.new_run_requested.connect(_on_touch_new_run)
 	new_run(run_seed)
 
 
@@ -118,6 +127,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"bb_advance") or event.is_action_pressed(&"bb_confirm"):
 		_advance()
+
+
+func _on_touch_camera() -> void:
+	if _camera != null:
+		_camera.toggle_view()
+
+
+func _on_touch_setup() -> void:
+	if _setup != null and not _setup.is_open():
+		_setup.open(_profile, _catalogue, _current_seed)
+
+
+func _on_touch_new_run() -> void:
+	_end_recording(&"abandoned")
+	new_run(0)
 
 
 ## Steps the run from a tool or a test, bypassing input. Visual QA uses this.
@@ -181,8 +205,9 @@ func _prompt_ante() -> void:
 			* (1.0 - ArtifactEngine.ante_discount_percent(state) / 100.0)))
 	var short: int = ante - state.economy.cash
 	var verdict: String = "you are %d short" % short if short > 0 else "you can cover it"
-	_set_prompt("ANTE DUE  %d     CASH %d     %s\nSPACE to settle" % [
-		ante, state.economy.cash, verdict])
+	_set_prompt("ANTE DUE  %d     CASH %d     %s\n%s" % [
+		ante, state.economy.cash, verdict,
+		TouchBar.hint("SPACE to settle", "TAP to settle")])
 	if _camera != null:
 		_camera.set_view(CameraController.View.MACHINE)
 
@@ -249,7 +274,8 @@ func _finish_run(reason: String) -> void:
 		for unlock: UnlockDef in earned:
 			names.append(unlock.display_name)
 		lines.append("UNLOCKED: %s" % ", ".join(names))
-	lines.append("F5 for a new run     F2 for setup")
+	lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
+			"New run / Setup — the buttons top right"))
 	_set_prompt("\n".join(lines))
 	_end_recording(StringName(reason))
 

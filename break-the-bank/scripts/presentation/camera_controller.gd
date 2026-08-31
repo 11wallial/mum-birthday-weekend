@@ -15,6 +15,12 @@ enum View {
 
 const TRANSITION_TIME: float = 0.7
 
+## Aspect at which the framing was authored: the 1152x648 design viewport. A
+## screen wider than this keeps its vertical field; anything narrower — every
+## phone held upright — switches to a fixed horizontal field so the machine
+## still fits across the frame instead of running off both edges.
+const DESIGN_ASPECT: float = 16.0 / 9.0
+
 @export var camera_path: NodePath = ^"Camera3D"
 @export var machine_anchor_path: NodePath = ^"../MachineAnchor"
 @export var room_anchor_path: NodePath = ^"../RoomAnchor"
@@ -33,7 +39,22 @@ func _ready() -> void:
 	_camera = get_node_or_null(camera_path) as Camera3D
 	_anchors[View.MACHINE] = get_node_or_null(machine_anchor_path) as Node3D
 	_anchors[View.ROOM] = get_node_or_null(room_anchor_path) as Node3D
+	_fit_to_screen()
+	get_viewport().size_changed.connect(_fit_to_screen)
 	set_view(current_view, true)
+
+
+## Chooses which axis the field of view is measured on, from the window's shape.
+## A rotated phone and a resized desktop window both land here.
+func _fit_to_screen() -> void:
+	if _camera == null:
+		return
+	var size: Vector2 = Vector2(get_viewport().get_visible_rect().size)
+	if size.y <= 0.0:
+		return
+	var aspect: float = size.x / size.y
+	_camera.keep_aspect = (Camera3D.KEEP_HEIGHT if aspect >= DESIGN_ASPECT
+			else Camera3D.KEEP_WIDTH)
 
 
 func _process(delta: float) -> void:

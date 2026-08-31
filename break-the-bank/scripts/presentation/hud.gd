@@ -11,6 +11,7 @@ extends CanvasLayer
 @export var line_label_path: NodePath = ^"Panel/Rows/Line"
 @export var log_label_path: NodePath = ^"Panel/Rows/Log"
 @export var prompt_label_path: NodePath = ^"Prompt"
+@export var hint_label_path: NodePath = ^"Panel/Rows/Hint"
 
 const LOG_LINES: int = 6
 
@@ -20,6 +21,7 @@ var _floor: Label
 var _line: Label
 var _log: Label
 var _prompt: Label
+var _hint: Label
 var _lines: PackedStringArray = PackedStringArray()
 var _bus: EffectBus
 
@@ -31,6 +33,10 @@ func _ready() -> void:
 	_line = get_node_or_null(line_label_path) as Label
 	_log = get_node_or_null(log_label_path) as Label
 	_prompt = get_node_or_null(prompt_label_path) as Label
+	_hint = get_node_or_null(hint_label_path) as Label
+	# The scene carries the desktop wording; a touch build has no such keys.
+	if _hint != null and TouchBar.is_touch_device():
+		_hint.text = "TAP to spin / advance     buttons top-right"
 	set_prompt("")
 
 

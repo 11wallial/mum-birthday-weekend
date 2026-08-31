@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/presentation/room_dressing.gd" id="7_dressing"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_bar.tscn" id="10_touch"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_floor"]
 albedo_color = Color(0.15, 0.05, 0.08, 1)
@@ -90,3 +91,5 @@ positional_anchor_path = NodePath("../SlotMachine3D")
 [node name="ShopPanel" parent="." instance=ExtResource("8_shop")]
 
 [node name="RunSetup" parent="." instance=ExtResource("9_setup")]
+
+[node name="TouchBar" parent="." instance=ExtResource("10_touch")]

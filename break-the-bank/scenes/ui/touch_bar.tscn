@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/touch_bar.gd" id="1_touch"]
+
+[node name="TouchBar" type="CanvasLayer"]
+layer = 3
+script = ExtResource("1_touch")
+
+[node name="Row" type="HBoxContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -368.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 72.0
+grow_horizontal = 0
+theme_override_constants/separation = 8
+
+[node name="Camera" type="Button" parent="Row"]
+layout_mode = 2
+text = "View"
+
+[node name="Setup" type="Button" parent="Row"]
+layout_mode = 2
+text = "Setup"
+
+[node name="NewRun" type="Button" parent="Row"]
+layout_mode = 2
+text = "New run"

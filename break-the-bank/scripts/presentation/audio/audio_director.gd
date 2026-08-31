@@ -44,14 +44,20 @@ var _anchor: Node3D
 
 func _ready() -> void:
 	load_manifest()
+	# Every voice plays as a stream rather than a sample. The web export defaults
+	# to sample playback, which cannot play an [AudioStreamGenerator] at all —
+	# the ambience beds are generated, so on the web they would simply be silent
+	# and warn once per voice. Stream playback behaves the same on every target.
 	_anchor = get_node_or_null(positional_anchor_path) as Node3D
 	for i: int in FLAT_VOICES:
 		var player: AudioStreamPlayer = AudioStreamPlayer.new()
+		player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 		add_child(player)
 		_flat.append(player)
 	var parent: Node = _anchor if _anchor != null else self
 	for i: int in POSITIONAL_VOICES:
 		var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
+		player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 		player.max_distance = 18.0
 		player.unit_size = 4.0
 		parent.add_child(player)
@@ -147,6 +153,7 @@ func start_loop(cue: StringName) -> void:
 		return
 	if def.is_sourced():
 		var player: AudioStreamPlayer = AudioStreamPlayer.new()
+		player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 		player.stream = _stream_for(def)
 		player.bus = String(def.bus)
 		player.volume_db = def.base_volume_db + master_volume_db

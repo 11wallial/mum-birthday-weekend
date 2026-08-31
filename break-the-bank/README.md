@@ -6,10 +6,33 @@ you bolt parts onto, and a debt that compounds while you play.
 Built to the 3D roguelike build specification — Godot 4.4, Forward+, statically
 typed GDScript, with a headless simulation core that the 3D layer only watches.
 
-## Quick start
+## Playing it
+
+You do not need Godot to play. Every build is self-contained: the content, the
+UI and the audio are all inside the package, nothing is fetched at launch, and
+a first run offline behaves exactly like any other.
+
+| You have | Take | How it runs |
+| --- | --- | --- |
+| Windows | `BreakTheBank.exe` | One file. Double-click it. |
+| macOS | `BreakTheBank.zip` | Unzip, open the app. Unsigned, so the first launch is right-click → Open. |
+| Linux | `BreakTheBank.x86_64` | `chmod +x` once, then run it. |
+| Android | `BreakTheBank.apk` | Allow install from your browser or file manager, then open it. |
+| Anything with a browser | the `web/` folder | Serve it over HTTP and open `index.html`. |
+
+Builds come from the **Package playable builds** job on any CI run — open the
+run and download `breakthebank-desktop`, `breakthebank-android` or
+`breakthebank-web`. To build them yourself, see [docs/PACKAGING.md](docs/PACKAGING.md).
+
+The Android build locks to landscape and drives the whole game by touch. The web
+build is the fallback for anything else, phones included; it needs a web server
+rather than a `file://` path, because browsers refuse to load WebAssembly from
+the filesystem.
+
+## Working on it
 
 ```bash
-# Play it
+# Play it from source
 godot --path break-the-bank
 
 # Run the tests (see "GdUnit4" below for the one-time install)
@@ -23,17 +46,22 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 
 ### Controls
 
-| Action | Keyboard / mouse | Gamepad |
-| --- | --- | --- |
-| Spin, settle an ante, advance | Space, left click | A / Cross |
-| Buy artifact 1–5 in the draft | 1–5, or click the row | — |
-| Leave the draft | Space or Q | B / Circle |
-| Swap machine ↔ room view | Tab | Y / Triangle |
-| New run | F5 | — |
-| Run setup (seeds, daily, meta) | F2 | — |
+| Action | Keyboard / mouse | Gamepad | Touch |
+| --- | --- | --- | --- |
+| Spin, settle an ante, advance | Space, left click | A / Cross | tap the room |
+| Buy artifact 1–5 in the draft | 1–5, or click the row | — | tap the row |
+| Leave the draft | Space or Q | B / Circle | **Leave the shop** |
+| Swap machine ↔ room view | Tab | Y / Triangle | **View** |
+| New run | F5 | — | **New run** |
+| Run setup (seeds, daily, meta) | F2 | — | **Setup** |
 
 Bindings live in `project.godot` under `[input]` as `bb_*` actions; rebind there
 rather than in code.
+
+Touch is not a separate build. `TouchBar` shows its strip of buttons only when
+`DisplayServer.is_touchscreen_available()`, and the prompts that name a key ask
+`TouchBar.hint()` for the wording that suits the device — so one package reads
+correctly whether it is opened on a desktop or a phone.
 
 When a floor's spins run out the ante is not settled silently — the run pauses
 on what is due against what you hold, and waits. Clearing a floor opens the

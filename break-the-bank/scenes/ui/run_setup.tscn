@@ -87,6 +87,10 @@ text = "Random run"
 layout_mode = 2
 text = "Cycle starter"
 
+[node name="Close" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Close"
+
 [node name="Difficulty" type="Button" parent="Panel/Rows/Buttons"]
 layout_mode = 2
 text = "Cycle difficulty"

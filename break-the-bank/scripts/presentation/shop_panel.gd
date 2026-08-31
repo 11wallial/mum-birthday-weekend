@@ -15,10 +15,12 @@ const MAX_SLOTS: int = 5
 @export var rows_path: NodePath = ^"Panel/Rows/Offers"
 @export var title_path: NodePath = ^"Panel/Rows/Title"
 @export var footer_path: NodePath = ^"Panel/Rows/Footer"
+@export var leave_button_path: NodePath = ^"Panel/Rows/Leave"
 
 var _rows: VBoxContainer
 var _title: Label
 var _footer: Label
+var _leave: Button
 var _state: RunState
 var _open: bool = false
 
@@ -27,6 +29,12 @@ func _ready() -> void:
 	_rows = get_node_or_null(rows_path) as VBoxContainer
 	_title = get_node_or_null(title_path) as Label
 	_footer = get_node_or_null(footer_path) as Label
+	# A touch device has no Space key, so leaving has to be reachable by tap.
+	# The button is always present rather than touch-only: a visible exit is
+	# clearer than a documented one on every device.
+	_leave = get_node_or_null(leave_button_path) as Button
+	if _leave != null:
+		_leave.pressed.connect(_on_leave_pressed)
 	visible = false
 
 
@@ -62,8 +70,10 @@ func _redraw() -> void:
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	if _footer != null:
-		_footer.text = "1-%d or click to buy     SPACE / Q to leave" % maxi(
-				_state.shop_offers.size(), 1)
+		var offers: int = maxi(_state.shop_offers.size(), 1)
+		_footer.text = TouchBar.hint(
+				"1-%d or click to buy     SPACE / Q to leave" % offers,
+				"Tap an offer to buy")
 
 
 func _build_row(index: int) -> Control:
@@ -87,6 +97,10 @@ func _build_row(index: int) -> Control:
 
 func _on_row_pressed(index: int) -> void:
 	buy_requested.emit(index)
+
+
+func _on_leave_pressed() -> void:
+	leave_requested.emit()
 
 
 func _unhandled_input(event: InputEvent) -> void:

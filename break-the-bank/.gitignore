@@ -1,11 +1,17 @@
 # Godot 4
 .godot/
 /android/
-export_presets.cfg
 *.translation
+
+# export_presets.cfg IS tracked, against Godot's default. It is ignored by
+# default because it can carry keystore credentials; this one carries none —
+# CI supplies the Android debug keystore through editor settings — and the
+# packaging job cannot export without it.
+!export_presets.cfg
 
 # Build and lab output
 /build/
+/dist/
 /reports/
 *.tmp
 

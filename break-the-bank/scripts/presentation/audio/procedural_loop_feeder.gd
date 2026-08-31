@@ -14,6 +14,9 @@ var _phase: float = 0.0
 ## Starts synthesising [param def]. Safe to call again to switch cue.
 func begin(def: SoundDef) -> void:
 	_def = def
+	# A generator can only be driven through stream playback. The web export
+	# defaults to sample playback, where this voice would warn and stay silent.
+	playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	stream = ProceduralCues.make_generator(def)
 	bus = String(def.bus)
 	volume_db = def.base_volume_db

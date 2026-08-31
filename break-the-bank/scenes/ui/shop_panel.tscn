@@ -48,6 +48,11 @@ text = "THE SHOP"
 layout_mode = 2
 theme_override_constants/separation = 4
 
+[node name="Leave" type="Button" parent="Panel/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "Leave the shop"
+
 [node name="Footer" type="Label" parent="Panel/Rows"]
 layout_mode = 2
 modulate = Color(1, 1, 1, 0.6)
