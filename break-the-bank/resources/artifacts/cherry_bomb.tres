@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"cherry_bomb"
+display_name = "Cherry Bomb"
+description = "Fruit detonates on landing. Each Cherry pays 4 more."
+cost = 6
+trigger = 1
+effect = 2
+magnitude = 4.0
+cap = 0.0
+symbol_filter = &"cherry"
+pattern_filter = -1
+tags = Array[StringName]([&"luck"])
+min_floor = 1
+module_scene_path = ""

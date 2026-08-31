@@ -1,0 +1,127 @@
+## Reel construction, drawing and pattern detection.
+##
+## Every function here is static and side-effect free: give it the same reel and
+## the same [RngStream] state and it returns the same line. Nothing in this file
+## touches a node, a scene or the clock.
+class_name Probability
+extends RefCounted
+
+enum Pattern {
+	## No two symbols on the line match.
+	NONE,
+	## Exactly two symbols match.
+	PAIR,
+	## Three or more match, but not the whole line. Unreachable while
+	## [member BalanceConfig.reel_count] is 3; it exists for wider machines.
+	TRIPLE,
+	## Every symbol on the line matches.
+	JACKPOT,
+	## Every symbol is distinct and none is a curse.
+	CLEAN_SWEEP,
+}
+
+## One weighted entry on a reel.
+class ReelEntry extends RefCounted:
+	var symbol: SymbolDef
+	var weight: int
+
+	func _init(p_symbol: SymbolDef, p_weight: int) -> void:
+		symbol = p_symbol
+		weight = p_weight
+
+
+## Builds a reel from the content set, applying any per-run weight shifts.
+## [param weight_shifts] maps a symbol id to a flat weight delta; the empty
+## StringName key shifts every symbol.
+static func build_reel(symbols: Array[SymbolDef], weight_shifts: Dictionary = {}) -> Array[ReelEntry]:
+	var reel: Array[ReelEntry] = []
+	for symbol: SymbolDef in symbols:
+		var weight: int = symbol.base_weight
+		if weight_shifts.has(symbol.id):
+			weight += int(weight_shifts[symbol.id])
+		if weight_shifts.has(&""):
+			weight += int(weight_shifts[&""])
+		reel.append(ReelEntry.new(symbol, maxi(weight, 0)))
+	return reel
+
+
+static func reel_weights(reel: Array[ReelEntry]) -> PackedInt32Array:
+	var weights: PackedInt32Array = PackedInt32Array()
+	for entry: ReelEntry in reel:
+		weights.append(entry.weight)
+	return weights
+
+
+## Draws one symbol. Returns null only when every weight on the reel is zero.
+static func draw_symbol(reel: Array[ReelEntry], rng: RngStream) -> SymbolDef:
+	var index: int = rng.weighted_index(reel_weights(reel))
+	if index < 0:
+		return null
+	return reel[index].symbol
+
+
+## Draws a full line of [param reel_count] symbols.
+static func spin_line(reel: Array[ReelEntry], reel_count: int, rng: RngStream) -> Array[SymbolDef]:
+	var line: Array[SymbolDef] = []
+	for i: int in reel_count:
+		var symbol: SymbolDef = draw_symbol(reel, rng)
+		if symbol == null:
+			break
+		line.append(symbol)
+	return line
+
+
+## Classifies a line. Wilds join whichever group they can make largest.
+static func detect_pattern(line: Array[SymbolDef]) -> Pattern:
+	if line.size() < 2:
+		return Pattern.NONE
+	var wilds: int = 0
+	var counts: Dictionary = {}
+	for symbol: SymbolDef in line:
+		if symbol.is_wild:
+			wilds += 1
+			continue
+		var key: StringName = symbol.family if symbol.family != &"" else symbol.id
+		counts[key] = int(counts.get(key, 0)) + 1
+
+	var best: int = 0
+	for key: StringName in counts:
+		best = maxi(best, int(counts[key]))
+	best += wilds
+	if wilds == line.size():
+		best = line.size()
+
+	if best >= line.size():
+		return Pattern.JACKPOT
+	if best >= 3:
+		return Pattern.TRIPLE
+	if best == 2:
+		return Pattern.PAIR
+	if counts.size() == line.size() and not has_curse(line):
+		return Pattern.CLEAN_SWEEP
+	return Pattern.NONE
+
+
+static func has_curse(line: Array[SymbolDef]) -> bool:
+	for symbol: SymbolDef in line:
+		if symbol.is_curse:
+			return true
+	return false
+
+
+## Chance of drawing [param symbol_id] from [param reel], in 0.0..1.0.
+## Used by the balance lab to sanity-check a reel without sampling it.
+static func symbol_chance(reel: Array[ReelEntry], symbol_id: StringName) -> float:
+	var total: int = 0
+	var hits: int = 0
+	for entry: ReelEntry in reel:
+		total += entry.weight
+		if entry.symbol.id == symbol_id:
+			hits += entry.weight
+	if total <= 0:
+		return 0.0
+	return float(hits) / float(total)
+
+
+static func pattern_name(pattern: Pattern) -> String:
+	return String(Pattern.keys()[pattern])

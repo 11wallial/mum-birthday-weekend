@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"wild"
+display_name = "Wild Joker"
+base_value = 5
+base_weight = 4
+family = &""
+is_wild = true
+is_curse = false
+color = Color(0.78, 0.42, 0.95, 1)

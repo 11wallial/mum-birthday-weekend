@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"house_contract"
+display_name = "House Contract"
+description = "You renegotiate. Every ante costs 20% less."
+cost = 14
+trigger = 3
+effect = 7
+magnitude = 20.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"contract", &"greed"])
+min_floor = 5
+module_scene_path = ""

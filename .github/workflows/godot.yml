@@ -1,0 +1,120 @@
+name: Break the Bank
+
+on:
+  push:
+    paths:
+      - "break-the-bank/**"
+      - ".github/workflows/godot.yml"
+  pull_request:
+    paths:
+      - "break-the-bank/**"
+      - ".github/workflows/godot.yml"
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.4.1"
+  GDUNIT_VERSION: "v5.0.5"
+  PROJECT_DIR: break-the-bank
+
+jobs:
+  simulate:
+    name: Headless tests and balance batch
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL "$url" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Install GdUnit4
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/MikeSchulze/gdUnit4/archive/refs/tags/${GDUNIT_VERSION}.zip" -o /tmp/gdunit.zip
+          unzip -q /tmp/gdunit.zip -d /tmp/gdunit
+          mv /tmp/gdunit/gdUnit4-*/addons/gdUnit4 "${PROJECT_DIR}/addons/gdUnit4"
+
+      # The first headless run builds the .godot/ import cache; it is expected to
+      # report missing imports, so its exit code is not the signal we check.
+      - name: Import project
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --import --quit-after 200 || true
+
+      - name: Run test suites
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --continue -a tests
+
+      - name: Run balance batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          godot --headless --script tools/casino_lab/run_lab.gd -- \
+            --runs=5000 --seed=1 --out=res://reports/balance_report.json
+
+      - name: Upload balance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-report
+          path: ${{ env.PROJECT_DIR }}/reports/balance_report.json
+          if-no-files-found: warn
+
+  static-check:
+    name: GDScript parse check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL "$url" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # project.godot promotes untyped declarations to errors, so a clean
+      # headless boot is the strict-typing gate.
+      - name: Boot the project headless
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --import --quit-after 200 || true
+          godot --headless --check-only --script scripts/simulation/sim_engine.gd
+          godot --headless --quit-after 30 2>&1 | tee boot.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" boot.log; then
+            echo "::error::script errors during headless boot"
+            exit 1
+          fi

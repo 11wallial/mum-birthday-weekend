@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BalanceConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/balance_config.gd" id="1_balanceconfig"]
+
+[resource]
+script = ExtResource("1_balanceconfig")
+reel_count = 3
+starting_cash = 12
+starting_debt = 50
+spin_cost = 1
+base_multiplier = 0.0
+pattern_multipliers = PackedFloat32Array(0, 0.4, 1.2, 3, 0.6)
+curse_penalty = 2
+synergy_bonus = 0.5
+synergy_threshold = 3
+shop_inflation_percent = 15.0

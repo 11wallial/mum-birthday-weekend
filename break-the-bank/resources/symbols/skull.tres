@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"skull"
+display_name = "Skull"
+base_value = 0
+base_weight = 9
+family = &""
+is_wild = false
+is_curse = true
+color = Color(0.36, 0.38, 0.40, 1)

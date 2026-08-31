@@ -1,0 +1,56 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.04, 0.03, 0.06, 0.72)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -220.0
+offset_right = 520.0
+offset_bottom = -24.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Rows" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Floor" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = "FLOOR 1"
+
+[node name="Cash" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = "CASH  0"
+
+[node name="Debt" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = "DEBT  0"
+
+[node name="Line" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = "—"
+
+[node name="Log" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = ""
+
+[node name="Hint" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.55)
+text = "SPACE spin / advance     TAB camera     ESC new run"

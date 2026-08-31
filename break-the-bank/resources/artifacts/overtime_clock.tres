@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"overtime_clock"
+display_name = "Overtime Clock"
+description = "The floor closes late. +2 spins on every floor."
+cost = 9
+trigger = 0
+effect = 5
+magnitude = 2.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 1
+module_scene_path = ""

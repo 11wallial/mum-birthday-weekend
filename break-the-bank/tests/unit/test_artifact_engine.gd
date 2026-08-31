@@ -1,0 +1,115 @@
+extends GdUnitTestSuite
+
+var _state: RunState
+var _cherry: SymbolDef
+var _seven: SymbolDef
+var _skull: SymbolDef
+## cherry + cherry + seven: a PAIR worth 14 before modifiers.
+var _pair_line: Array[SymbolDef] = []
+
+
+func before_test() -> void:
+	_state = TestFixtures.run_state()
+	_cherry = _state.content.symbol_by_id(&"cherry")
+	_seven = _state.content.symbol_by_id(&"seven")
+	_skull = _state.content.symbol_by_id(&"skull")
+	_pair_line.assign([_cherry, _cherry, _seven])
+
+
+func _score(line: Array[SymbolDef]) -> ArtifactEngine.SpinContext:
+	return ArtifactEngine.evaluate_spin(_state, line, Probability.detect_pattern(line))
+
+
+func test_a_bare_line_pays_symbols_times_the_pattern_multiplier() -> void:
+	var ctx: ArtifactEngine.SpinContext = _score(_pair_line)
+	assert_int(ctx.base_payout).is_equal(14)
+	assert_float(ctx.multiplier).is_equal_approx(1.5, 0.001)
+	assert_int(ctx.total()).is_equal(21)
+
+
+func test_a_curse_costs_credits_and_the_pattern_bonus() -> void:
+	var line: Array[SymbolDef] = [_cherry, _seven, _skull]
+	var ctx: ArtifactEngine.SpinContext = _score(line)
+	assert_int(ctx.base_payout).is_equal(10)
+	assert_float(ctx.multiplier).is_equal_approx(1.0, 0.001)
+
+
+func test_flat_bonus_applies_before_the_multiplier() -> void:
+	_state.acquire(TestFixtures.artifact(&"charm", ArtifactDef.Effect.FLAT_BONUS, 3.0))
+	assert_int(_score(_pair_line).total()).is_equal(25)
+
+
+func test_mult_bonus_stacks_additively() -> void:
+	_state.acquire(TestFixtures.artifact(&"gears_a", ArtifactDef.Effect.MULT_BONUS, 0.5))
+	_state.acquire(TestFixtures.artifact(&"gears_b", ArtifactDef.Effect.MULT_BONUS, 1.0))
+	var ctx: ArtifactEngine.SpinContext = _score(_pair_line)
+	assert_float(ctx.multiplier).is_equal_approx(3.0, 0.001)
+	assert_int(ctx.total()).is_equal(42)
+
+
+func test_symbol_bonus_pays_once_per_matching_symbol() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(&"bomb", ArtifactDef.Effect.SYMBOL_BONUS, 4.0,
+			ArtifactDef.Trigger.SYMBOL_LANDED)
+	artifact.symbol_filter = &"cherry"
+	_state.acquire(artifact)
+	assert_int(_score(_pair_line).total()).is_equal(33)
+
+
+func test_symbol_bonus_stays_silent_when_nothing_matches() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(&"bomb", ArtifactDef.Effect.SYMBOL_BONUS, 4.0,
+			ArtifactDef.Trigger.SYMBOL_LANDED)
+	artifact.symbol_filter = &"diamond"
+	_state.acquire(artifact)
+	var ctx: ArtifactEngine.SpinContext = _score(_pair_line)
+	assert_array(ctx.triggered).is_empty()
+	assert_int(ctx.total()).is_equal(21)
+
+
+func test_pattern_mult_only_fires_on_its_pattern() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(&"ledger", ArtifactDef.Effect.PATTERN_MULT, 3.0)
+	artifact.pattern_filter = Probability.Pattern.JACKPOT
+	_state.acquire(artifact)
+	assert_int(_score(_pair_line).total()).is_equal(21)
+	var jackpot: Array[SymbolDef] = [_seven, _seven, _seven]
+	assert_float(_score(jackpot).multiplier).is_equal_approx(8.0, 0.001)
+
+
+func test_synergy_pays_once_the_tag_threshold_is_met() -> void:
+	for i: int in 3:
+		var artifact: ArtifactDef = TestFixtures.artifact(
+				StringName("gear_%d" % i), ArtifactDef.Effect.FLAT_BONUS, 0.0)
+		artifact.tags.assign([&"mechanical"])
+		_state.acquire(artifact)
+	assert_array(_state.active_synergies()).contains([&"mechanical"])
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(2.0, 0.001)
+
+
+func test_extra_spins_accumulate() -> void:
+	_state.acquire(TestFixtures.artifact(&"clock_a", ArtifactDef.Effect.EXTRA_SPINS, 2.0))
+	_state.acquire(TestFixtures.artifact(&"clock_b", ArtifactDef.Effect.EXTRA_SPINS, 1.0))
+	assert_int(ArtifactEngine.spin_bonus(_state)).is_equal(3)
+
+
+func test_ante_discount_is_capped_below_a_free_ride() -> void:
+	for i: int in 6:
+		_state.acquire(TestFixtures.artifact(
+				StringName("contract_%d" % i), ArtifactDef.Effect.ANTE_DISCOUNT, 20.0))
+	assert_float(ArtifactEngine.ante_discount_percent(_state)).is_equal_approx(90.0, 0.001)
+
+
+func test_weight_shift_artifacts_rebuild_the_reel_on_acquisition() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(&"coil", ArtifactDef.Effect.WEIGHT_SHIFT, 15.0,
+			ArtifactDef.Trigger.SPIN_STARTED)
+	artifact.symbol_filter = &"seven"
+	var before: float = Probability.symbol_chance(_state.reel(), &"seven")
+	_state.acquire(artifact)
+	assert_float(Probability.symbol_chance(_state.reel(), &"seven")).is_greater(before)
+
+
+func test_interest_artifacts_pay_from_banked_cash() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(&"key", ArtifactDef.Effect.INTEREST, 10.0,
+			ArtifactDef.Trigger.FLOOR_CLEARED)
+	artifact.cap = 15.0
+	_state.acquire(artifact)
+	_state.economy.credit(190, &"payout")
+	assert_int(ArtifactEngine.apply_floor_interest(_state)).is_equal(15)

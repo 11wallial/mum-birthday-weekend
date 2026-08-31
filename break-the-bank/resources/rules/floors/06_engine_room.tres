@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FloorDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_def.gd" id="1_floordef"]
+
+[resource]
+script = ExtResource("1_floordef")
+index = 6
+display_name = "The Engine Room"
+description = "Every machine on the floor, wired to yours."
+ante = 3000
+spins = 12
+debt_interest_percent = 15.0
+shop_slots = 4
+payout_scale = 1.4
+environment_id = &"engine_room"

@@ -1,0 +1,128 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/slot_view_3d.gd" id="1_slotview"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_cabinet"]
+albedo_color = Color(0.11, 0.09, 0.13, 1)
+metallic = 0.7
+roughness = 0.35
+
+[sub_resource type="StandardMaterial3D" id="Mat_trim"]
+albedo_color = Color(0.85, 0.62, 0.22, 1)
+metallic = 0.9
+roughness = 0.2
+emission_enabled = true
+emission = Color(0.7, 0.42, 0.1, 1)
+emission_energy_multiplier = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_reel"]
+albedo_color = Color(0.93, 0.92, 0.89, 1)
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="Mesh_cabinet"]
+size = Vector3(1.1, 1.9, 0.7)
+
+[sub_resource type="BoxMesh" id="Mesh_trim"]
+size = Vector3(1.16, 0.09, 0.76)
+
+[sub_resource type="CylinderMesh" id="Mesh_reel"]
+top_radius = 0.16
+bottom_radius = 0.16
+height = 0.24
+radial_segments = 24
+
+[sub_resource type="BoxMesh" id="Mesh_anchor_plate"]
+size = Vector3(0.2, 0.2, 0.2)
+
+[sub_resource type="Gradient" id="Grad_coin"]
+colors = PackedColorArray(1, 0.85, 0.35, 1, 1, 0.55, 0.1, 0)
+
+[node name="SlotMachine3D" type="Node3D"]
+script = ExtResource("1_slotview")
+reel_roots = Array[NodePath]([NodePath("Reels/Reel0"), NodePath("Reels/Reel1"), NodePath("Reels/Reel2")])
+
+[node name="Cabinet" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+mesh = SubResource("Mesh_cabinet")
+surface_material_override/0 = SubResource("Mat_cabinet")
+
+[node name="Trim" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.86, 0)
+mesh = SubResource("Mesh_trim")
+surface_material_override/0 = SubResource("Mat_trim")
+
+[node name="Reels" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0.36)
+
+[node name="Reel0" type="Node3D" parent="Reels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0, 0)
+
+[node name="Face" type="MeshInstance3D" parent="Reels/Reel0"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("Mesh_reel")
+surface_material_override/0 = SubResource("Mat_reel")
+
+[node name="Symbol" type="Label3D" parent="Reels/Reel0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
+pixel_size = 0.0016
+text = "—"
+font_size = 96
+outline_size = 0
+modulate = Color(0.1, 0.09, 0.11, 1)
+
+[node name="Reel1" type="Node3D" parent="Reels"]
+
+[node name="Face" type="MeshInstance3D" parent="Reels/Reel1"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("Mesh_reel")
+surface_material_override/0 = SubResource("Mat_reel")
+
+[node name="Symbol" type="Label3D" parent="Reels/Reel1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
+pixel_size = 0.0016
+text = "—"
+font_size = 96
+outline_size = 0
+modulate = Color(0.1, 0.09, 0.11, 1)
+
+[node name="Reel2" type="Node3D" parent="Reels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 0, 0)
+
+[node name="Face" type="MeshInstance3D" parent="Reels/Reel2"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("Mesh_reel")
+surface_material_override/0 = SubResource("Mat_reel")
+
+[node name="Symbol" type="Label3D" parent="Reels/Reel2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
+pixel_size = 0.0016
+text = "—"
+font_size = 96
+outline_size = 0
+modulate = Color(0.1, 0.09, 0.11, 1)
+
+[node name="ModuleAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72, 0.7, 0)
+
+[node name="PayoutParticles" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0.45)
+emitting = false
+amount = 48
+lifetime = 1.4
+one_shot = true
+explosiveness = 0.85
+mesh = SubResource("Mesh_anchor_plate")
+direction = Vector3(0, 1, 0.4)
+spread = 35.0
+gravity = Vector3(0, -6, 0)
+initial_velocity_min = 2.5
+initial_velocity_max = 4.5
+scale_amount_min = 0.06
+scale_amount_max = 0.12
+color_ramp = SubResource("Grad_coin")
+
+[node name="MachineLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.9)
+light_color = Color(1, 0.78, 0.42, 1)
+light_energy = 1.0
+omni_range = 4.5

@@ -1,0 +1,139 @@
+## Monte Carlo harness over the headless simulation.
+##
+## The lab is the reason the simulation has no engine dependencies: with the bus
+## muted, a run is a few thousand integer operations, so 100k runs fit in a CI
+## job rather than a weekend.
+class_name CasinoLab
+extends RefCounted
+
+## Percentile boundaries reported for every distribution.
+const PERCENTILES: Array = [50.0, 95.0, 99.0]
+
+## Simulates [param count] runs from consecutive seeds and returns the report.
+static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
+	var content: ContentDB = ContentDB.shared()
+	var bus: EffectBus = EffectBus.new()
+	bus.muted = true
+	var engine: SimEngine = SimEngine.new(content, bus)
+
+	var earnings: PackedInt32Array = PackedInt32Array()
+	var spins: PackedInt32Array = PackedInt32Array()
+	var floors: PackedInt32Array = PackedInt32Array()
+	var wins: int = 0
+	var end_reasons: Dictionary = {}
+	var floor_deaths: Dictionary = {}
+	var artifact_runs: Dictionary = {}
+	var artifact_wins: Dictionary = {}
+	var synergy_runs: Dictionary = {}
+	var synergy_wins: Dictionary = {}
+
+	var started: int = Time.get_ticks_msec()
+	for i: int in count:
+		var state: RunState = engine.simulate_run(base_seed + i)
+		var won: bool = state.phase == RunState.Phase.WON
+		earnings.append(state.economy.lifetime_earned)
+		spins.append(state.spins_taken)
+		floors.append(state.floors_cleared)
+		if won:
+			wins += 1
+		else:
+			floor_deaths[state.floor_index] = int(floor_deaths.get(state.floor_index, 0)) + 1
+		var reason: String = String(state.end_reason)
+		end_reasons[reason] = int(end_reasons.get(reason, 0)) + 1
+		for artifact: ArtifactDef in state.owned:
+			var key: String = String(artifact.id)
+			artifact_runs[key] = int(artifact_runs.get(key, 0)) + 1
+			if won:
+				artifact_wins[key] = int(artifact_wins.get(key, 0)) + 1
+		for tag: StringName in state.active_synergies():
+			var tag_key: String = String(tag)
+			synergy_runs[tag_key] = int(synergy_runs.get(tag_key, 0)) + 1
+			if won:
+				synergy_wins[tag_key] = int(synergy_wins.get(tag_key, 0)) + 1
+
+	var win_rate: float = float(wins) / float(maxi(count, 1))
+	return {
+		"runs": count,
+		"base_seed": base_seed,
+		"elapsed_ms": Time.get_ticks_msec() - started,
+		"win_rate": win_rate,
+		"death_rate": 1.0 - win_rate,
+		"earnings": describe(earnings),
+		"spins_per_run": describe(spins),
+		"floors_cleared": describe(floors),
+		"end_reasons": end_reasons,
+		"deaths_by_floor": floor_deaths,
+		"artifact_win_rates": _rates(artifact_runs, artifact_wins, win_rate),
+		"synergy_win_rates": _rates(synergy_runs, synergy_wins, win_rate),
+		"anomalies": [],
+	}
+
+
+## Mean, median and tail percentiles of a sample.
+static func describe(sample: PackedInt32Array) -> Dictionary:
+	if sample.is_empty():
+		return {"count": 0, "mean": 0.0, "min": 0, "max": 0}
+	var sorted: PackedInt32Array = sample.duplicate()
+	sorted.sort()
+	var total: int = 0
+	for value: int in sorted:
+		total += value
+	var out: Dictionary = {
+		"count": sorted.size(),
+		"mean": float(total) / float(sorted.size()),
+		"min": sorted[0],
+		"max": sorted[sorted.size() - 1],
+	}
+	for p: float in PERCENTILES:
+		out["p%d" % int(p)] = percentile(sorted, p)
+	return out
+
+
+## Nearest-rank percentile of an already sorted sample.
+static func percentile(sorted_sample: PackedInt32Array, p: float) -> int:
+	if sorted_sample.is_empty():
+		return 0
+	var rank: int = int(ceil(p / 100.0 * float(sorted_sample.size())))
+	return sorted_sample[clampi(rank - 1, 0, sorted_sample.size() - 1)]
+
+
+## Flags win rates far from the batch baseline — the artifacts and tag combos
+## worth a human look. [param lift] is the win-rate delta counted as broken.
+static func find_anomalies(report: Dictionary, lift: float = 0.25) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var baseline: float = float(report.get("win_rate", 0.0))
+	for group: String in ["artifact_win_rates", "synergy_win_rates"]:
+		var rates: Dictionary = report.get(group, {})
+		for key: String in rates:
+			var entry: Dictionary = rates[key]
+			# A handful of runs cannot tell a broken combo from a lucky one.
+			if int(entry.get("runs", 0)) < 30:
+				continue
+			var delta: float = float(entry.get("win_rate", 0.0)) - baseline
+			if absf(delta) >= lift:
+				out.append({
+					"group": group,
+					"id": key,
+					"runs": entry.get("runs", 0),
+					"win_rate": entry.get("win_rate", 0.0),
+					"baseline": baseline,
+					"delta": delta,
+					"verdict": "overpowered" if delta > 0.0 else "underpowered",
+				})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return absf(float(a["delta"])) > absf(float(b["delta"])))
+	return out
+
+
+static func _rates(runs: Dictionary, wins: Dictionary, _baseline: float) -> Dictionary:
+	var out: Dictionary = {}
+	var keys: Array = runs.keys()
+	keys.sort()
+	for key: String in keys:
+		var seen: int = int(runs[key])
+		var won: int = int(wins.get(key, 0))
+		out[key] = {
+			"runs": seen,
+			"wins": won,
+			"win_rate": float(won) / float(maxi(seen, 1)),
+		}
+	return out

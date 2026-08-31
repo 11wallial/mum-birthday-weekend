@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FloorDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_def.gd" id="1_floordef"]
+
+[resource]
+script = ExtResource("1_floordef")
+index = 4
+display_name = "The Vault"
+description = "Money that sits still starts to breed."
+ante = 1040
+spins = 10
+debt_interest_percent = 12.0
+shop_slots = 4
+payout_scale = 1.2
+environment_id = &"vault"

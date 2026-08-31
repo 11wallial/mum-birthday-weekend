@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"bar"
+display_name = "Bar"
+base_value = 6
+base_weight = 12
+family = &"bar"
+is_wild = false
+is_curse = false
+color = Color(0.30, 0.32, 0.38, 1)

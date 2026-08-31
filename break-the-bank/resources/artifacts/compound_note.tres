@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"compound_note"
+display_name = "Compound Note"
+description = "Slow money, patient money. Pays 5% of cash per floor, up to 40."
+cost = 16
+trigger = 3
+effect = 4
+magnitude = 5.0
+cap = 40.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"contract"])
+min_floor = 4
+module_scene_path = ""

@@ -1,0 +1,30 @@
+; Engine configuration file.
+; Break the Bank — 3D systems-heavy slot roguelike.
+
+config_version=5
+
+[application]
+
+config/name="Break the Bank"
+config/description="A systems-heavy slot machine roguelike with a headless simulation core."
+run/main_scene="res://scenes/3d/casino_room.tscn"
+config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.svg"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/return_value_discarded=0
+
+[dotnet]
+
+project/assembly_name="Break the Bank"
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+environment/defaults/default_environment="res://scenes/3d/default_env.tres"
+anti_aliasing/quality/msaa_3d=2

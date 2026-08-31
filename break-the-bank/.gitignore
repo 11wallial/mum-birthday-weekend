@@ -1,0 +1,10 @@
+# Godot 4
+.godot/
+/android/
+export_presets.cfg
+*.translation
+
+# Build and lab output
+/build/
+/reports/
+*.tmp

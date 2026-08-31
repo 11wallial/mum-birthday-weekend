@@ -1,0 +1,67 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
+[ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
+[ext_resource type="PackedScene" path="res://scenes/3d/slot_machine_3d.tscn" id="3_machine"]
+[ext_resource type="Script" path="res://scripts/presentation/camera_controller.gd" id="4_camera"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.15, 0.05, 0.08, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.09, 0.07, 0.1, 1)
+roughness = 0.9
+
+[sub_resource type="PlaneMesh" id="Mesh_floor"]
+size = Vector2(14, 14)
+
+[sub_resource type="BoxMesh" id="Mesh_wall"]
+size = Vector3(14, 5, 0.3)
+
+[node name="CasinoRoom" type="Node3D"]
+script = ExtResource("1_room")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="BackWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -3.2)
+mesh = SubResource("Mesh_wall")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="SlotMachine3D" parent="." instance=ExtResource("3_machine")]
+
+[node name="KeyLight" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 4.2, 1.1)
+light_color = Color(1, 0.87, 0.68, 1)
+light_energy = 6.0
+spot_range = 9.0
+spot_angle = 38.0
+
+[node name="NeonFill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4, 2.4, 1.6)
+light_color = Color(0.45, 0.3, 1, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="MachineAnchor" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.36, 1.55)
+
+[node name="RoomAnchor" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9397, -0.342, 0, 0.342, 0.9397, 0, 3.4, 5.2)
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_camera")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.36, 1.55)
+fov = 60.0
+current = true
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
