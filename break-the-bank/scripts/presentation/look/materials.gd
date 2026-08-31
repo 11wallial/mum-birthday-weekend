@@ -1,0 +1,187 @@
+## The material palette the machine and the room are built from.
+##
+## Every material is a named surface with a story — painted steel that has been
+## chipped, brass that has been handled, concrete that has been stood on — rather
+## than a colour with a metallic slider. They are built once and shared, so a
+## thousand rivets cost one material.
+##
+## The palette is deliberately narrow and desaturated: worn olive, oxide, brass
+## and cream, with saturation spent only on the four things that must be read at
+## a glance — the phosphor readout, the sign, the payline and the jackpot seven.
+class_name Materials
+extends RefCounted
+
+# The set's neutrals. Nothing here is a pure grey; each carries a little of the
+# warm cast the key light throws, so an unlit face still belongs to the room.
+const PAINT: Color = Color(0.153, 0.161, 0.129)
+const PAINT_LIGHT: Color = Color(0.216, 0.224, 0.184)
+const OXIDE: Color = Color(0.353, 0.180, 0.094)
+const STEEL: Color = Color(0.404, 0.400, 0.392)
+const BRASS: Color = Color(0.663, 0.494, 0.208)
+const ENAMEL: Color = Color(0.808, 0.769, 0.686)
+const CONCRETE: Color = Color(0.169, 0.161, 0.149)
+const RUBBER: Color = Color(0.267, 0.078, 0.063)
+const TIMBER: Color = Color(0.286, 0.212, 0.145)
+const PAPER: Color = Color(0.792, 0.769, 0.714)
+
+# The four saturated accents, and the only saturated colours in the set.
+const PHOSPHOR: Color = Color(0.353, 1.0, 0.427)
+const SIGN: Color = Color(1.0, 0.376, 0.078)
+const JACKPOT: Color = Color(0.847, 0.153, 0.129)
+const LAMP: Color = Color(1.0, 0.831, 0.616)
+
+static var _cache: Dictionary = {}
+
+
+## Chipped industrial paint over steel: the machine's chassis and the room.
+static func painted(tint: Color = PAINT, seed_value: int = 11) -> StandardMaterial3D:
+	return _build("paint:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = tint
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.018, 1.7, 0.62)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.55, 0.95)
+		material.normal_enabled = true
+		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.8)
+		material.normal_scale = 0.16
+		material.metallic = 0.25
+		material.metallic_specular = 0.4
+		_triplanar(material, 1.0)
+		return material)
+
+
+## Bare metal that has rusted where it was left wet. Used for the frame ends,
+## the plinth straps and anything that reads as structural.
+static func rusted(seed_value: int = 23) -> StandardMaterial3D:
+	return _build("rust:%d" % seed_value, func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = OXIDE
+		material.albedo_texture = ProcTextures.streaks(seed_value, 0.38)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.7, 1.0)
+		material.normal_enabled = true
+		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.4, 0.09)
+		material.normal_scale = 0.3
+		material.metallic = 0.15
+		_triplanar(material, 1.0)
+		return material)
+
+
+## Handled brass: bright where a hand has polished it, dark in the recesses.
+static func brass(seed_value: int = 37) -> StandardMaterial3D:
+	return _build("brass:%d" % seed_value, func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = BRASS
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.05, 1.2, 0.55)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.18, 0.62)
+		material.normal_enabled = true
+		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.5, 0.12)
+		material.normal_scale = 0.12
+		material.metallic = 1.0
+		_triplanar(material, 1.1)
+		return material)
+
+
+## Machined steel: bezels, hinges, the lever shaft. Cleaner than the chassis
+## because these are the parts that get touched.
+static func machined(tint: Color = STEEL, seed_value: int = 53) -> StandardMaterial3D:
+	return _build("steel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = tint
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.06, 1.0, 0.62)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.22, 0.55)
+		material.metallic = 1.0
+		_triplanar(material, 0.9)
+		return material)
+
+
+## Baked enamel, as on a reel strip or a dial face: smooth, near-dielectric, and
+## only lightly soiled, so printed symbols stay legible against it.
+static func enamel(tint: Color = ENAMEL, seed_value: int = 67) -> StandardMaterial3D:
+	return _build("enamel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = tint
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.09, 1.0, 0.72)
+		material.roughness = 0.38
+		material.metallic = 0.0
+		_triplanar(material, 1.4)
+		return material)
+
+
+## Poured concrete: the plinth and the floor. Coarse, matte, water-stained.
+static func concrete(seed_value: int = 83) -> StandardMaterial3D:
+	return _build("concrete:%d" % seed_value, func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = CONCRETE
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.014, 2.0, 0.58)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.82, 1.0)
+		material.normal_enabled = true
+		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.1, 0.14)
+		material.normal_scale = 0.22
+		material.metallic = 0.0
+		_triplanar(material, 1.1)
+		return material)
+
+
+## Perished rubber hose. Matte and slightly dusty, never shiny.
+static func rubber(tint: Color = RUBBER, seed_value: int = 97) -> StandardMaterial3D:
+	return _build("rubber:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = tint
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.11, 1.3, 0.6)
+		material.roughness = 0.85
+		material.metallic = 0.0
+		_triplanar(material, 1.6)
+		return material)
+
+
+## Oiled hardwood, for the lever grip and anything that predates the machine.
+static func timber(seed_value: int = 101) -> StandardMaterial3D:
+	return _build("timber:%d" % seed_value, func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = TIMBER
+		material.albedo_texture = ProcTextures.streaks(seed_value, 0.62)
+		material.roughness = 0.6
+		material.metallic = 0.0
+		_triplanar(material, 1.2)
+		return material)
+
+
+## An emissive surface that also survives being unlit — a sign, a phosphor
+## screen, a payline. [param energy] is in the same units as a light's.
+static func glowing(tint: Color, energy: float = 2.0) -> StandardMaterial3D:
+	return _build("glow:%s:%f" % [tint.to_html(false), energy], func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = tint
+		material.emission_enabled = true
+		material.emission = tint
+		material.emission_energy_multiplier = energy
+		material.roughness = 0.5
+		return material)
+
+
+## Applies world-space triplanar mapping. Every mesh in the set is an untextured
+## primitive with no meaningful UVs, so projecting from world space is the only
+## way the maps land at a consistent physical scale — and it means a 0.2m bolt
+## and a 14m floor show grain of the same size.
+static func phosphor_glass() -> StandardMaterial3D:
+	return _build("phosphor", func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = Color(0.024, 0.055, 0.031)
+		material.emission_enabled = true
+		material.emission = Color(0.055, 0.161, 0.086)
+		material.emission_energy_multiplier = 0.5
+		material.emission_texture = ProcTextures.scanlines()
+		material.roughness = 0.18
+		material.metallic = 0.0
+		return material)
+
+
+static func _triplanar(material: StandardMaterial3D, scale: float) -> void:
+	material.uv1_triplanar = true
+	material.uv1_world_triplanar = true
+	material.uv1_scale = Vector3(scale, scale, scale)
+
+
+static func _build(key: String, factory: Callable) -> StandardMaterial3D:
+	if not _cache.has(key):
+		_cache[key] = factory.call()
+	return _cache[key] as StandardMaterial3D

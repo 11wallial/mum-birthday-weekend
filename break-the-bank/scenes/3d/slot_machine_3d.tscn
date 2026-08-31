@@ -1,131 +1,51 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=4 format=3]
+
+; The machine's geometry is not authored here. MachineFrame builds it in code at
+; _ready, because its character comes from a density of rivets, hoses and trims
+; that would be unmaintainable as a few hundred hand-placed nodes. What remains
+; in the scene is the handful of things the simulation drives.
 
 [ext_resource type="Script" path="res://scripts/presentation/slot_view_3d.gd" id="1_slotview"]
 
-[sub_resource type="StandardMaterial3D" id="Mat_cabinet"]
-albedo_color = Color(0.19, 0.16, 0.23, 1)
-metallic = 0.55
-roughness = 0.35
-
-[sub_resource type="StandardMaterial3D" id="Mat_trim"]
-albedo_color = Color(0.85, 0.62, 0.22, 1)
-metallic = 0.9
-roughness = 0.2
-emission_enabled = true
-emission = Color(0.7, 0.42, 0.1, 1)
-emission_energy_multiplier = 0.6
-
-[sub_resource type="StandardMaterial3D" id="Mat_reel"]
-albedo_color = Color(0.55, 0.53, 0.5, 1)
-roughness = 0.65
-
-[sub_resource type="BoxMesh" id="Mesh_cabinet"]
-size = Vector3(1.1, 1.9, 0.7)
-
-[sub_resource type="BoxMesh" id="Mesh_trim"]
-size = Vector3(1.16, 0.09, 0.76)
-
-[sub_resource type="CylinderMesh" id="Mesh_reel"]
-top_radius = 0.16
-bottom_radius = 0.16
-height = 0.24
-radial_segments = 24
-
-[sub_resource type="BoxMesh" id="Mesh_anchor_plate"]
-size = Vector3(0.2, 0.2, 0.2)
+[sub_resource type="BoxMesh" id="Mesh_coin"]
+size = Vector3(0.16, 0.16, 0.02)
 
 [sub_resource type="Gradient" id="Grad_coin"]
-colors = PackedColorArray(1, 0.85, 0.35, 1, 1, 0.55, 0.1, 0)
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 0.87, 0.45, 1, 0.94, 0.6, 0.16, 1, 0.6, 0.24, 0.05, 0)
 
 [node name="SlotMachine3D" type="Node3D"]
 script = ExtResource("1_slotview")
-reel_roots = Array[NodePath]([NodePath("Reels/Reel0"), NodePath("Reels/Reel1"), NodePath("Reels/Reel2")])
-
-[node name="Cabinet" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-mesh = SubResource("Mesh_cabinet")
-surface_material_override/0 = SubResource("Mat_cabinet")
-
-[node name="Trim" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.86, 0)
-mesh = SubResource("Mesh_trim")
-surface_material_override/0 = SubResource("Mat_trim")
-
-[node name="Reels" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0.36)
-
-[node name="Reel0" type="Node3D" parent="Reels"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0, 0)
-
-[node name="Face" type="MeshInstance3D" parent="Reels/Reel0"]
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
-mesh = SubResource("Mesh_reel")
-surface_material_override/0 = SubResource("Mat_reel")
-
-[node name="Symbol" type="Label3D" parent="Reels/Reel0"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
-pixel_size = 0.0011
-text = "?"
-font_size = 60
-outline_size = 10
-outline_modulate = Color(0.05, 0.04, 0.06, 1)
-modulate = Color(0.95, 0.94, 0.92, 1)
-
-[node name="Reel1" type="Node3D" parent="Reels"]
-
-[node name="Face" type="MeshInstance3D" parent="Reels/Reel1"]
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
-mesh = SubResource("Mesh_reel")
-surface_material_override/0 = SubResource("Mat_reel")
-
-[node name="Symbol" type="Label3D" parent="Reels/Reel1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
-pixel_size = 0.0011
-text = "?"
-font_size = 60
-outline_size = 10
-outline_modulate = Color(0.05, 0.04, 0.06, 1)
-modulate = Color(0.95, 0.94, 0.92, 1)
-
-[node name="Reel2" type="Node3D" parent="Reels"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 0, 0)
-
-[node name="Face" type="MeshInstance3D" parent="Reels/Reel2"]
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
-mesh = SubResource("Mesh_reel")
-surface_material_override/0 = SubResource("Mat_reel")
-
-[node name="Symbol" type="Label3D" parent="Reels/Reel2"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
-pixel_size = 0.0011
-text = "?"
-font_size = 60
-outline_size = 10
-outline_modulate = Color(0.05, 0.04, 0.06, 1)
-modulate = Color(0.95, 0.94, 0.92, 1)
 
 [node name="ModuleAnchor" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72, 0.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.24, 1.62, 0.12)
 
 [node name="PayoutParticles" type="CPUParticles3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.08, 0.5)
 emitting = false
 amount = 48
-lifetime = 0.9
+lifetime = 1.1
 one_shot = true
-explosiveness = 0.95
-mesh = SubResource("Mesh_anchor_plate")
-direction = Vector3(0, 1, 0.35)
-spread = 16.0
-gravity = Vector3(0, -11, 0)
-initial_velocity_min = 1.6
-initial_velocity_max = 2.8
-scale_amount_min = 0.025
-scale_amount_max = 0.05
+explosiveness = 0.92
+mesh = SubResource("Mesh_coin")
+direction = Vector3(0, 1, 0.5)
+spread = 22.0
+gravity = Vector3(0, -9.5, 0)
+initial_velocity_min = 1.8
+initial_velocity_max = 3.4
+angular_velocity_min = -420.0
+angular_velocity_max = 420.0
+scale_amount_min = 0.5
+scale_amount_max = 1.0
 color_ramp = SubResource("Grad_coin")
 
+; The machine's own pilot lamp, behind the bezel. It flares on a payout, and the
+; rest of the time it is what keeps the brass gearbox on the unlit flank from
+; disappearing — the key light comes from the far side and never reaches it.
 [node name="MachineLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0.62)
-light_color = Color(1, 0.78, 0.42, 1)
-light_energy = 0.28
-omni_range = 4.5
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.12, 0.62)
+light_color = Color(1, 0.741, 0.435, 1)
+light_energy = 2.4
+light_specular = 0.8
+omni_range = 3.4
+omni_attenuation = 1.5

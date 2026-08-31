@@ -22,23 +22,33 @@ const TRANSITION_TIME: float = 0.7
 const DESIGN_ASPECT: float = 16.0 / 9.0
 
 @export var camera_path: NodePath = ^"Camera3D"
-@export var machine_anchor_path: NodePath = ^"../MachineAnchor"
-@export var room_anchor_path: NodePath = ^"../RoomAnchor"
+
+## Each view is a position and a point to look at, rather than an authored
+## transform. Writing a [Transform3D] by hand means writing a basis by hand, and
+## a basis written by hand is a basis silently mis-signed — that mistake has
+## already aimed this camera at the ceiling once. A look-at target cannot be
+## wrong in that way, and it is also the thing a person actually wants to adjust.
+@export var machine_eye: Vector3 = Vector3(0.85, 1.38, 3.55)
+@export var machine_target: Vector3 = Vector3(-0.18, 1.0, 0.05)
+@export var machine_fov: float = 52.0
+@export var room_eye: Vector3 = Vector3(2.8, 2.55, 6.6)
+@export var room_target: Vector3 = Vector3(-0.15, 1.1, -0.2)
+@export var room_fov: float = 55.0
 ## Peak positional offset of a payout shake, in metres.
 @export var shake_strength: float = 0.06
 
 var current_view: View = View.MACHINE
 
 var _camera: Camera3D
-var _anchors: Dictionary = {}
 var _shake: float = 0.0
 var _rest: Transform3D = Transform3D.IDENTITY
+## Drift is what stops a static shot reading as a screenshot: the camera never
+## quite settles, so the room feels observed rather than diagrammed.
+var _drift: float = 0.0
 
 
 func _ready() -> void:
 	_camera = get_node_or_null(camera_path) as Camera3D
-	_anchors[View.MACHINE] = get_node_or_null(machine_anchor_path) as Node3D
-	_anchors[View.ROOM] = get_node_or_null(room_anchor_path) as Node3D
 	_fit_to_screen()
 	get_viewport().size_changed.connect(_fit_to_screen)
 	set_view(current_view, true)
@@ -58,26 +68,36 @@ func _fit_to_screen() -> void:
 
 
 func _process(delta: float) -> void:
-	if _camera == null or _shake <= 0.0:
+	if _camera == null:
 		return
-	_shake = maxf(0.0, _shake - delta * 3.0)
+	_drift += delta
 	var offset: Vector3 = Vector3(
-		randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * shake_strength * _shake
+			sin(_drift * 0.31) * 0.012,
+			sin(_drift * 0.23 + 1.7) * 0.009,
+			sin(_drift * 0.17 + 0.4) * 0.008)
+	if _shake > 0.0:
+		_shake = maxf(0.0, _shake - delta * 3.0)
+		offset += Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) \
+				* shake_strength * _shake
 	_camera.global_transform = _rest.translated_local(offset)
 
 
 func set_view(view: View, immediate: bool = false) -> void:
 	current_view = view
-	var anchor: Node3D = _anchors.get(view, null) as Node3D
-	if _camera == null or anchor == null:
+	if _camera == null:
 		return
-	_rest = anchor.global_transform
+	var eye: Vector3 = machine_eye if view == View.MACHINE else room_eye
+	var target: Vector3 = machine_target if view == View.MACHINE else room_target
+	var fov: float = machine_fov if view == View.MACHINE else room_fov
+	_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target, Vector3.UP)
 	if immediate:
 		_camera.global_transform = _rest
+		_camera.fov = fov
 		return
-	var tween: Tween = create_tween()
+	var tween: Tween = create_tween().set_parallel(true)
 	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(_camera, "global_transform", _rest, TRANSITION_TIME)
+	tween.tween_property(_camera, "fov", fov, TRANSITION_TIME)
 
 
 func toggle_view() -> void:
@@ -86,6 +106,4 @@ func toggle_view() -> void:
 
 ## Kicks the camera. [param intensity] is normalised 0..1 by the caller.
 func shake(intensity: float) -> void:
-	if _camera != null:
-		_rest = _camera.global_transform if _shake <= 0.0 else _rest
 	_shake = maxf(_shake, clampf(intensity, 0.0, 1.0))

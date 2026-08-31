@@ -13,15 +13,15 @@ const SPIN_DURATION: float = 0.45
 const REEL_STAGGER: float = 0.14
 const SETTLE_DURATION: float = 0.2
 
-## One [Node3D] per reel, each holding a [Label3D] named "Symbol" and a
-## [MeshInstance3D] named "Face".
-@export var reel_roots: Array[NodePath] = []
 @export var module_anchor_path: NodePath = ^"ModuleAnchor"
 @export var payout_particles_path: NodePath = ^"PayoutParticles"
 @export var machine_light_path: NodePath = ^"MachineLight"
 
 var _reels: Array[Node3D] = []
 var _module_anchor: Node3D
+var _lever: Node3D
+var _odds: Label3D
+var _readout: Label3D
 var _particles: CPUParticles3D
 var _light: OmniLight3D
 var _audio: AudioDirector
@@ -34,10 +34,13 @@ var _busy: bool = false
 
 
 func _ready() -> void:
-	for path: NodePath in reel_roots:
-		var reel: Node3D = get_node_or_null(path) as Node3D
-		if reel != null:
-			_reels.append(reel)
+	# The machine is generated rather than authored, so it has to exist before
+	# anything below can be resolved against it.
+	var parts: Dictionary = MachineFrame.new().build(self)
+	_reels.assign(parts.get("reels", []))
+	_lever = parts.get("lever", null) as Node3D
+	_odds = parts.get("odds", null) as Label3D
+	_readout = parts.get("readout", null) as Label3D
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
 	_particles = get_node_or_null(payout_particles_path) as CPUParticles3D
 	_light = get_node_or_null(machine_light_path) as OmniLight3D
@@ -80,6 +83,7 @@ func is_busy() -> bool:
 ## Spins every reel, then stops them left to right.
 func _play_spin(payout: int, multiplier: float) -> void:
 	_busy = true
+	_throw_lever()
 	var last: int = _reels.size() - 1
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
@@ -110,7 +114,39 @@ func _settle_reel(index: int) -> void:
 
 func _finish_spin(payout: int, multiplier: float) -> void:
 	_busy = false
+	_set_odds(multiplier)
 	_celebrate(payout, multiplier)
+
+
+## Snaps the arm down and lets it drift back up. The throw is deliberately
+## faster than the return: a lever that falls slowly reads as weightless.
+func _throw_lever() -> void:
+	if _lever == null:
+		return
+	var tween: Tween = create_tween()
+	tween.tween_property(_lever, "rotation:x", 0.85, 0.12) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(_lever, "rotation:x", -0.5, 0.55) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Writes the spin's multiplier onto the readout above the reels. The value is
+## already on the HUD; putting it on the machine is what makes the machine the
+## thing being read rather than a backdrop to a text overlay.
+func _set_odds(multiplier: float) -> void:
+	if _odds == null:
+		return
+	_odds.text = "%.0fx" % maxf(multiplier, 1.0) if multiplier < 100.0 \
+			else "%dx" % int(multiplier)
+	var flash: Tween = create_tween()
+	flash.tween_property(_odds, "modulate", Color(1.0, 0.95, 0.7), 0.08)
+	flash.tween_property(_odds, "modulate", Color(0.72, 0.68, 0.58), 0.45)
+
+
+## Puts the run's debt on the machine's own monitor, in phosphor green.
+func set_readout(debt: int, floor_name: String) -> void:
+	if _readout != null:
+		_readout.text = "%s\nDEBT %d" % [floor_name.to_upper(), debt]
 
 
 func _celebrate(payout: int, multiplier: float) -> void:

@@ -1,21 +1,52 @@
 [gd_resource type="Environment" format=3]
 
+; The grade. The room is lit by one warm bulb and nothing else, so the whole
+; frame has to hold together across four stops of falloff: bright brass under the
+; lamp, readable paint in the mid, and a near-black that still has colour in it.
+;
+; AgX rather than Filmic. Filmic clips the bulb and the phosphor screen to white
+; and takes the hue with it; AgX rolls highlights off and desaturates as it goes,
+; which is exactly the response the reference has and the reason the palette can
+; afford saturated accents at all.
+
 [resource]
 background_mode = 1
-background_color = Color(0.027, 0.024, 0.043, 1)
+background_color = Color(0.02, 0.018, 0.016, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.24, 0.17, 0.31, 1)
-ambient_light_energy = 0.55
-tonemap_mode = 2
-tonemap_exposure = 1.1
+ambient_light_color = Color(0.192, 0.169, 0.145, 1)
+ambient_light_energy = 0.13
+tonemap_mode = 4
+tonemap_exposure = 1.05
+tonemap_white = 4.0
+ssao_enabled = true
+ssao_radius = 0.7
+ssao_intensity = 2.4
+ssao_power = 1.6
+ssao_light_affect = 0.2
+ssil_enabled = false
 glow_enabled = true
-glow_intensity = 0.7
-glow_bloom = 0.15
+glow_intensity = 0.45
+glow_strength = 0.9
+glow_bloom = 0.08
+glow_blend_mode = 1
+glow_hdr_threshold = 1.1
 fog_enabled = true
-fog_light_color = Color(0.29, 0.15, 0.33, 1)
-fog_density = 0.015
+fog_mode = 0
+fog_light_color = Color(0.176, 0.153, 0.129, 1)
+fog_light_energy = 0.8
+fog_sun_scatter = 0.1
+fog_density = 0.008
+fog_aerial_perspective = 0.3
+fog_height = 0.0
+fog_height_density = 0.02
 volumetric_fog_enabled = true
-volumetric_fog_density = 0.02
-volumetric_fog_emission = Color(0.1, 0.05, 0.14, 1)
+volumetric_fog_density = 0.028
+volumetric_fog_albedo = Color(0.898, 0.812, 0.694, 1)
+volumetric_fog_emission = Color(0.031, 0.024, 0.02, 1)
+volumetric_fog_gi_inject = 0.4
+volumetric_fog_anisotropy = 0.35
+volumetric_fog_length = 24.0
 adjustment_enabled = true
-adjustment_saturation = 1.15
+adjustment_brightness = 1.0
+adjustment_contrast = 1.22
+adjustment_saturation = 0.82

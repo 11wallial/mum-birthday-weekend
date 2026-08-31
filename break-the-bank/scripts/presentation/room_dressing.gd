@@ -11,7 +11,8 @@ const CREDITS_PER_BLOCK: int = 25
 const MAX_BLOCKS: int = 60
 const BLOCK_SIZE: Vector3 = Vector3(0.16, 0.035, 0.24)
 
-@export var stack_origin: Vector3 = Vector3(1.15, 0.0, 0.35)
+## On the floor to the right of the plinth, clear of the machine's own spool.
+@export var stack_origin: Vector3 = Vector3(1.95, 0.0, 1.45)
 @export var stack_spacing: float = 0.24
 
 var _blocks: int = 0
@@ -24,14 +25,10 @@ var _marker_material: StandardMaterial3D
 func _ready() -> void:
 	_cash_mesh = BoxMesh.new()
 	_cash_mesh.size = BLOCK_SIZE
-	_cash_material = StandardMaterial3D.new()
-	_cash_material.albedo_color = Color(0.62, 0.72, 0.45)
-	_cash_material.roughness = 0.8
-	_marker_material = StandardMaterial3D.new()
-	_marker_material.albedo_color = Color(0.85, 0.62, 0.22)
-	_marker_material.emission_enabled = true
-	_marker_material.emission = Color(0.7, 0.42, 0.1)
-	_marker_material.emission_energy_multiplier = 1.4
+	# Banded paper rather than flat green: the stacks sit on the same floor as
+	# the machine, so they have to take the same grade to look like they belong.
+	_cash_material = Materials.enamel(Color(0.451, 0.475, 0.353), 73)
+	_marker_material = Materials.glowing(Materials.SIGN, 1.2)
 
 
 func bind(bus: EffectBus) -> void:
@@ -103,4 +100,4 @@ func _add_floor_marker(floor_index: int) -> void:
 	marker.material_override = _marker_material
 	marker.set_meta(&"kind", &"marker")
 	add_child(marker)
-	marker.position = Vector3(-1.15 - 0.16 * float(floor_index - 1), 0.25, 0.4)
+	marker.position = Vector3(-1.75 - 0.17 * float(floor_index - 1), 0.25, 1.3)

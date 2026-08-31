@@ -19,6 +19,7 @@ extends Node3D
 @export var shop_path: NodePath = ^"ShopPanel"
 @export var setup_path: NodePath = ^"RunSetup"
 @export var touch_bar_path: NodePath = ^"TouchBar"
+@export var room_set_path: NodePath = ^"RoomSet"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -33,6 +34,9 @@ var _dressing: RoomDressing
 var _shop: ShopPanel
 var _setup: RunSetupPanel
 var _touch: TouchBar
+## The wall sign naming the current floor. Diegetic: the player reads where they
+## are off the room, not off an overlay.
+var _floor_sign: Label3D
 var _recorder: PlaytestRecorder
 var _profile: PlayerProfile
 var _catalogue: MetaCatalogue
@@ -54,6 +58,9 @@ func _ready() -> void:
 	_shop = get_node_or_null(shop_path) as ShopPanel
 	_setup = get_node_or_null(setup_path) as RunSetupPanel
 	_touch = get_node_or_null(touch_bar_path) as TouchBar
+	var room_root: Node3D = get_node_or_null(room_set_path) as Node3D
+	if room_root != null:
+		_floor_sign = RoomSet.new().build(room_root).get("sign", null) as Label3D
 	_profile = PlayerProfile.load_or_new()
 	_catalogue = MetaCatalogue.new()
 	_catalogue.load_all()
@@ -255,6 +262,22 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_finish_run(String(payload.get("end_reason", "")))
 		_:
 			pass
+	# The sign and the machine's own monitor track the run on every event, so
+	# they can never disagree with the HUD about where the player is.
+	_refresh_diegetic()
+
+
+## Writes the run's state onto the two surfaces in the world that carry it: the
+## floor sign on the back wall, and the debt readout on the machine's monitor.
+func _refresh_diegetic() -> void:
+	if state == null:
+		return
+	var floor_def: FloorDef = state.current_floor()
+	var floor_name: String = floor_def.display_name if floor_def != null else ""
+	if _floor_sign != null:
+		_floor_sign.text = "FLOOR %d: %s" % [state.floor_index, floor_name.to_upper()]
+	if _slot_view != null:
+		_slot_view.set_readout(state.economy.debt, floor_name)
 
 
 ## Folds the finished run into the profile and the local board, and tells the
