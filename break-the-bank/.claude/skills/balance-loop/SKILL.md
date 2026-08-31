@@ -30,9 +30,18 @@ The report carries:
 - `earnings`, `spins_per_run`, `floors_cleared` — mean, min, max, p50, p95, p99.
   A p99 far above p95 means a build that runs away with the game.
 - `artifact_win_rates`, `synergy_win_rates` — win rate conditional on owning
-  the artifact or having the tag combo active.
-- `anomalies` — artifacts and synergies whose win rate sits 25+ points off the
-  batch baseline, worst first. Thin samples (<30 runs) are excluded on purpose.
+  the artifact or having the tag combo active, each with the `baseline` it is
+  measured against and a `baseline_note` naming that cohort.
+- `anomalies` — entries sitting 25+ points off **their own baseline**, worst
+  first. Thin samples (<30 runs) are excluded on purpose.
+
+Read a win rate against its `baseline`, never against the headline `win_rate`.
+An artifact that unlocks on floor 5 is only ever owned by runs that reached
+floor 5, so its raw win rate mostly measures the player who got there: judged
+against the whole batch, every late artifact looks overpowered. The baseline is
+therefore the win rate among runs that cleared enough floors to be offered it
+(and, for a tag, among runs that owned enough artifacts for a synergy to exist
+at all).
 
 ## 3. Change one thing
 

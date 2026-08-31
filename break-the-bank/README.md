@@ -102,19 +102,24 @@ glowing core — so a build is visible on the machine, not just in a list.
 
 `tools/casino_lab/` runs the simulation in bulk and writes JSON telemetry: win
 and death rates, deaths by floor, mean/p50/p95/p99 for earnings, spins and floors
-cleared, per-artifact and per-synergy win rates, and an `anomalies` list flagging
-anything sitting 25+ points off the batch baseline.
+cleared, per-artifact and per-synergy win rates, and an `anomalies` list.
+
+Each win rate is judged against its own cohort rather than the headline number:
+an artifact that unlocks on floor 5 is only owned by runs that reached floor 5,
+so against the whole batch every late artifact looks overpowered. The baseline
+is the win rate among runs that got far enough to be offered it, and `anomalies`
+flags entries 25+ points off *that*.
 
 The shipped numbers were calibrated against a target death curve rather than
-guessed. As of the current content set, over 8,000 seeded runs with the built-in
-(deliberately mediocre) shop policy:
+guessed. Over 5,000 seeded runs (14 seconds headless) with the built-in,
+deliberately mediocre shop policy:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | ~40% |
-| Mean floors cleared | ~4.1 of 7 |
-| Mean spins per run | ~52 |
-| Deaths by floor | spread across floors 1–5, thinning through 6–7 |
+| Win rate | 40.5% |
+| Mean floors cleared | 4.09 of 7 |
+| Earnings | mean 5,324 · p50 3,586 · p95 11,950 · p99 12,459 |
+| Deaths by floor | 643 · 511 · 542 · 621 · 563 · 46 · 29, then 21 to the final debt |
 
 Two known balance problems, both recorded in `.claude/skills/balance-loop`:
 

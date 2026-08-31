@@ -70,7 +70,8 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 		print("anomalies:")
 		for entry: Variant in anomalies:
 			var row: Dictionary = entry
-			print("  %-18s %-12s runs %-6d win %.1f%% (%+.1f pts)" % [
+			print("  %-18s %-12s runs %-6d win %.1f%% vs %.1f%% cohort (%+.1f pts)" % [
 				String(row["id"]), String(row["verdict"]), int(row["runs"]),
-				float(row["win_rate"]) * 100.0, float(row["delta"]) * 100.0])
+				float(row["win_rate"]) * 100.0, float(row["baseline"]) * 100.0,
+				float(row["delta"]) * 100.0])
 	print("report → %s" % out_path)

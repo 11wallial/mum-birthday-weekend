@@ -26,6 +26,15 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 	var artifact_wins: Dictionary = {}
 	var synergy_runs: Dictionary = {}
 	var synergy_wins: Dictionary = {}
+	# Runs and wins bucketed by how many floors they cleared, so an artifact can
+	# be compared against the cohort that got far enough to be offered it.
+	var runs_by_depth: PackedInt32Array = PackedInt32Array()
+	var wins_by_depth: PackedInt32Array = PackedInt32Array()
+	runs_by_depth.resize(content.floors.size() + 1)
+	wins_by_depth.resize(content.floors.size() + 1)
+	# Same idea for tags: a synergy needs enough artifacts to exist at all.
+	var stocked_runs: int = 0
+	var stocked_wins: int = 0
 
 	var started: int = Time.get_ticks_msec()
 	for i: int in count:
@@ -38,6 +47,14 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 			wins += 1
 		else:
 			floor_deaths[state.floor_index] = int(floor_deaths.get(state.floor_index, 0)) + 1
+		var depth: int = clampi(state.floors_cleared, 0, runs_by_depth.size() - 1)
+		runs_by_depth[depth] += 1
+		if won:
+			wins_by_depth[depth] += 1
+		if state.owned.size() >= content.balance.synergy_threshold:
+			stocked_runs += 1
+			if won:
+				stocked_wins += 1
 		var reason: String = String(state.end_reason)
 		end_reasons[reason] = int(end_reasons.get(reason, 0)) + 1
 		for artifact: ArtifactDef in state.owned:
@@ -63,8 +80,10 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 		"floors_cleared": describe(floors),
 		"end_reasons": end_reasons,
 		"deaths_by_floor": floor_deaths,
-		"artifact_win_rates": _rates(artifact_runs, artifact_wins, win_rate),
-		"synergy_win_rates": _rates(synergy_runs, synergy_wins, win_rate),
+		"artifact_win_rates": _artifact_rates(
+				artifact_runs, artifact_wins, content, runs_by_depth, wins_by_depth),
+		"synergy_win_rates": _rates(
+				synergy_runs, synergy_wins, _ratio(stocked_wins, stocked_runs)),
 		"anomalies": [],
 	}
 
@@ -97,15 +116,20 @@ static func percentile(sorted_sample: PackedInt32Array, p: float) -> int:
 	return sorted_sample[clampi(rank - 1, 0, sorted_sample.size() - 1)]
 
 
-## Flags win rates far from the batch baseline — the artifacts and tag combos
-## worth a human look. [param lift] is the win-rate delta counted as broken.
+## Flags win rates far from their comparison cohort — the artifacts and tag
+## combos worth a human look. [param lift] is the win-rate delta counted as
+## broken.
+##
+## Each entry is judged against its own baseline (see [method _artifact_rates]),
+## falling back to the batch win rate for entries that carry none.
 static func find_anomalies(report: Dictionary, lift: float = 0.25) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	var baseline: float = float(report.get("win_rate", 0.0))
+	var batch_baseline: float = float(report.get("win_rate", 0.0))
 	for group: String in ["artifact_win_rates", "synergy_win_rates"]:
 		var rates: Dictionary = report.get(group, {})
 		for key: String in rates:
 			var entry: Dictionary = rates[key]
+			var baseline: float = float(entry.get("baseline", batch_baseline))
 			# A handful of runs cannot tell a broken combo from a lucky one.
 			if int(entry.get("runs", 0)) < 30:
 				continue
@@ -124,7 +148,7 @@ static func find_anomalies(report: Dictionary, lift: float = 0.25) -> Array[Dict
 	return out
 
 
-static func _rates(runs: Dictionary, wins: Dictionary, _baseline: float) -> Dictionary:
+static func _rates(runs: Dictionary, wins: Dictionary, baseline: float) -> Dictionary:
 	var out: Dictionary = {}
 	var keys: Array = runs.keys()
 	keys.sort()
@@ -134,6 +158,51 @@ static func _rates(runs: Dictionary, wins: Dictionary, _baseline: float) -> Dict
 		out[key] = {
 			"runs": seen,
 			"wins": won,
-			"win_rate": float(won) / float(maxi(seen, 1)),
+			"win_rate": _ratio(won, seen),
+			"baseline": baseline,
 		}
 	return out
+
+
+## Per-artifact rates, each against the cohort that reached the floor where the
+## artifact first appears in a shop.
+##
+## Comparing against the whole batch instead would flag every late artifact as
+## overpowered: owning one that unlocks on floor 5 already means surviving to
+## floor 5, so its win rate measures the player who got there, not the artifact.
+static func _artifact_rates(runs: Dictionary, wins: Dictionary, content: ContentDB,
+		runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array) -> Dictionary:
+	var out: Dictionary = {}
+	var keys: Array = runs.keys()
+	keys.sort()
+	for key: String in keys:
+		var seen: int = int(runs[key])
+		var won: int = int(wins.get(key, 0))
+		var artifact: ArtifactDef = content.artifact_by_id(StringName(key))
+		# An artifact is first offered in the shop after its min_floor is cleared.
+		var unlock_depth: int = artifact.min_floor if artifact != null else 0
+		out[key] = {
+			"runs": seen,
+			"wins": won,
+			"win_rate": _ratio(won, seen),
+			"baseline": _depth_baseline(runs_by_depth, wins_by_depth, unlock_depth),
+			"baseline_note": "runs clearing %d+ floors" % unlock_depth,
+		}
+	return out
+
+
+## Win rate among runs that cleared at least [param from_depth] floors.
+static func _depth_baseline(runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array,
+		from_depth: int) -> float:
+	var seen: int = 0
+	var won: int = 0
+	for depth: int in range(clampi(from_depth, 0, runs_by_depth.size()), runs_by_depth.size()):
+		seen += runs_by_depth[depth]
+		won += wins_by_depth[depth]
+	return _ratio(won, seen)
+
+
+static func _ratio(part: int, whole: int) -> float:
+	if whole <= 0:
+		return 0.0
+	return float(part) / float(whole)

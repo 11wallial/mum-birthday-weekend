@@ -57,6 +57,18 @@ func test_anomaly_detection_ignores_thin_samples() -> void:
 	assert_array(CasinoLab.find_anomalies(thin)).is_empty()
 
 
+func test_a_late_artifact_is_judged_against_the_runs_that_reach_it() -> void:
+	# Owning an artifact that unlocks late already implies surviving that far.
+	# Judged against the whole batch it looks broken; against its own cohort it
+	# is unremarkable, and only the second reading is worth acting on.
+	var rates: Dictionary = _report["artifact_win_rates"]
+	assert_bool(rates.has("house_contract")).override_failure_message(
+			"no run in the batch bought house_contract; the cohort test cannot run").is_true()
+	var late: Dictionary = rates["house_contract"]
+	assert_float(float(late["baseline"])).is_greater(float(_report["win_rate"]))
+	assert_str(String(late["baseline_note"])).is_equal("runs clearing 5+ floors")
+
+
 func test_anomaly_detection_flags_a_dominant_artifact() -> void:
 	var loud: Dictionary = {
 		"win_rate": 0.2,
