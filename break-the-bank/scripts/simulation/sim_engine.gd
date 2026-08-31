@@ -204,7 +204,7 @@ func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
 	var offers: Array[ArtifactDef] = []
 	var slots: int = mini(floor_def.shop_slots, pool.size())
 	for i: int in slots:
-		var index: int = state.shop_rng.randi_range(0, pool.size() - 1)
+		var index: int = state.shop_rng.next_int(0, pool.size() - 1)
 		offers.append(pool[index])
 		pool.remove_at(index)
 	return offers

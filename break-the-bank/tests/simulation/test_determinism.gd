@@ -30,6 +30,15 @@ func test_every_run_terminates_in_a_final_phase() -> void:
 		assert_str(String(state.end_reason)).is_not_equal("nonterminating")
 
 
+func test_spins_consume_the_seeded_reel_stream() -> void:
+	# A run whose reels never touch reel_rng is drawing from somewhere else, and
+	# nothing above this line would notice: the snapshots would still match in
+	# shape while the money diverged.
+	var state: RunState = _engine().simulate_run(7)
+	assert_int(state.spins_taken).is_greater(0)
+	assert_int(state.reel_rng.draws).is_greater_equal(state.spins_taken)
+
+
 func test_a_muted_bus_records_nothing() -> void:
 	var bus: EffectBus = EffectBus.new()
 	bus.muted = true

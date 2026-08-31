@@ -81,5 +81,9 @@ come from the lab's JSON, not from looking at the game.
 - Static types everywhere; `project.godot` promotes untyped declarations to
   errors, so an untyped local will fail the build, not just warn.
 - `StringName` (`&"id"`) for identifiers that get compared in loops.
+- Never name a method after a `@GlobalScope` utility (`randi_range`, `randf`,
+  `lerp`, ...). An unqualified internal call binds to the global, not to your
+  method, and it fails silently — `RngStream.weighted_index` drew from Godot's
+  unseeded global RNG this way, and every external-call test still passed.
 - Doc comments (`##`) on every class and on anything whose *why* is not obvious
   from its name. Skip them on self-evident getters.

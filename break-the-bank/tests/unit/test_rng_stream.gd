@@ -5,18 +5,18 @@ func test_same_seed_and_name_replay_identically() -> void:
 	var a: RngStream = RngStream.new(1234, &"reels")
 	var b: RngStream = RngStream.new(1234, &"reels")
 	for i: int in 50:
-		assert_int(a.randi_range(0, 999)).is_equal(b.randi_range(0, 999))
+		assert_int(a.next_int(0, 999)).is_equal(b.next_int(0, 999))
 
 
 func test_named_streams_are_independent() -> void:
 	# The point of named streams: burning shop draws must not shift the reels.
 	var reels_a: RngStream = RngStream.new(99, &"reels")
 	var shop: RngStream = RngStream.new(99, &"shop")
-	var first: int = reels_a.randi_range(0, 1000000)
+	var first: int = reels_a.next_int(0, 1000000)
 	for i: int in 25:
-		shop.randi_range(0, 1000000)
+		shop.next_int(0, 1000000)
 	var reels_b: RngStream = RngStream.new(99, &"reels")
-	assert_int(reels_b.randi_range(0, 1000000)).is_equal(first)
+	assert_int(reels_b.next_int(0, 1000000)).is_equal(first)
 
 
 func test_different_names_derive_different_seeds() -> void:
@@ -38,8 +38,19 @@ func test_weighted_index_reports_an_empty_reel() -> void:
 	assert_int(RngStream.new(5, &"t").weighted_index(PackedInt32Array([0, 0]))).is_equal(-1)
 
 
+func test_weighted_index_draws_from_this_stream_not_the_global_rng() -> void:
+	# Regression: weighted_index once called the @GlobalScope randi_range instead
+	# of its own method, so reel draws came from Godot's unseeded global RNG.
+	var weights: PackedInt32Array = PackedInt32Array([3, 5, 7])
+	var a: RngStream = RngStream.new(31337, &"reels")
+	var b: RngStream = RngStream.new(31337, &"reels")
+	for i: int in 100:
+		assert_int(a.weighted_index(weights)).is_equal(b.weighted_index(weights))
+	assert_int(a.draws).is_equal(100)
+
+
 func test_draw_count_is_tracked() -> void:
 	var rng: RngStream = RngStream.new(5, &"t")
-	rng.randi_range(0, 1)
-	rng.randf()
+	rng.next_int(0, 1)
+	rng.next_float()
 	assert_int(rng.draws).is_equal(2)

@@ -33,12 +33,19 @@ static func derive_seed(master_seed: int, stream_name: StringName) -> int:
 
 
 ## Returns an integer in [param from]..[param to] inclusive.
-func randi_range(from: int, to: int) -> int:
+##
+## Deliberately not named [code]randi_range[/code]: an unqualified call to a
+## method sharing a @GlobalScope utility's name binds to the global, so an
+## internal caller would silently draw from Godot's unseeded global RNG instead
+## of this stream. Every draw here must go through one seeded generator.
+func next_int(from: int, to: int) -> int:
 	draws += 1
 	return _rng.randi_range(from, to)
 
 
-func randf() -> float:
+## Returns a float in 0.0..1.0. Named to avoid the @GlobalScope [code]randf[/code],
+## for the same reason as [method next_int].
+func next_float() -> float:
 	draws += 1
 	return _rng.randf()
 
@@ -50,7 +57,7 @@ func weighted_index(weights: PackedInt32Array) -> int:
 		total += maxi(w, 0)
 	if total <= 0:
 		return -1
-	var roll: int = randi_range(1, total)
+	var roll: int = next_int(1, total)
 	var running: int = 0
 	for i: int in weights.size():
 		running += maxi(weights[i], 0)
