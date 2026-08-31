@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"machine_hum_loop"
+file_name = "mechanical/machine_hum_loop.wav"
+category = 1
+bus = &"Ambience"
+duration_ms = Vector2i(4000, 8000)
+frequency_notes = "Cabinet idle: 50/60 Hz transformer hum plus faint 400 Hz fan. Sits under everything."
+pitch_jitter = Vector2(0.995, 1.005)
+volume_jitter_db = Vector2(-0.5, 0.5)
+base_volume_db = -24.0
+positional = true
+loops = true
+max_voices = 1
+priority = 1
+duck_music_db = 0.0
+fallback = 4
+fallback_hz = 60.0

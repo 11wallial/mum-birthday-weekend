@@ -72,6 +72,11 @@ jobs:
           godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
             --runs=5000 --seed=1 --out=res://reports/balance_report.json
 
+      # An audio asset with no licence row is a release blocker, not a warning.
+      - name: Audit audio licences
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . --script res://tools/audio/audit.gd -- --strict
+
       - name: Upload balance report
         if: always()
         uses: actions/upload-artifact@v4

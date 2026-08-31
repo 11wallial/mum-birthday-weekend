@@ -111,9 +111,18 @@ tool is for. Look at the PNGs before claiming a scene change works.
 
 ## Audio
 
-Cues are synthesised by `tools/audio/make_cues.py` into `assets/audio/`. Change
-the generator, not the WAVs, and re-run it. `AudioDirector` degrades to silence
-if a cue is missing, so a stripped asset folder is not a crash.
+Manifest-driven; see `docs/AUDIO.md` for the full design. Rules that matter here:
+
+- Every cue is a `.tres` in `resources/audio/cues/`. Never hard-code a filename,
+  a volume or a pitch in code — add or edit a `SoundDef`.
+- A cue with no sourced file is synthesised by `ProceduralCues`, so a missing
+  asset is audible-but-obviously-temporary rather than silent. Do not "fix" a
+  placeholder by deleting the cue.
+- Sourced files land at exactly the manifest's `file_name` and need a row in
+  `assets/audio/CREDITS.md`. `tools/audio/audit.gd --strict` fails without one,
+  and CI runs it: an asset nobody can trace is an asset nobody can clear.
+- Buses are `Master / Music / SFX / UI / Ambience` from `default_bus_layout.tres`.
+  Route through `SoundDef.bus`; do not set a bus name at a call site.
 
 ## Godot MCP surface
 

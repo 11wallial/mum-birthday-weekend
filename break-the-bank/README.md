@@ -219,8 +219,26 @@ xvfb-run -a godot --rendering-driver opengl3 \
 It renders under Compatibility rather than Forward+, so volumetric fog and glow
 are absent from the shots; geometry, scale and framing are exact.
 
-Audio cues are synthesised by `tools/audio/make_cues.py` rather than sourced, so
-they are reproducible and tiny. Edit the generator and re-run it.
+## Audio
+
+Audio is manifest-driven: every cue is declared in `resources/audio/cues/*.tres`
+and nothing in code names a file or a volume. A cue whose asset has not been
+sourced yet is **synthesised on demand**, so the manifest can be complete long
+before the library is, and replacing a placeholder with a recording is a file
+drop with no code change.
+
+```bash
+# What is sourced, what is still a placeholder, what is missing a licence
+godot --headless --path . --script res://tools/audio/audit.gd
+# Hear the intended shape of every placeholder before sourcing it
+godot --headless --path . --script res://tools/audio/bake_placeholders.gd -- \
+    --out=res://placeholder_preview
+```
+
+The full asset manifest, sourcing strategy and bus architecture are in
+[docs/AUDIO.md](docs/AUDIO.md). Every sourced file must have a row in
+`assets/audio/CREDITS.md`; `audit.gd --strict` fails the build otherwise, and CI
+runs it.
 
 ## GdUnit4
 

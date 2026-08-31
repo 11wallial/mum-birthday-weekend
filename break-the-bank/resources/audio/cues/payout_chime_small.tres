@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"payout_chime_small"
+file_name = "mechanical/payout_chime_small.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(400, 700)
+frequency_notes = "Two-note rise, warm bell timbre around 660-880 Hz. Routine win."
+pitch_jitter = Vector2(0.97, 1.03)
+volume_jitter_db = Vector2(-1.5, 1.5)
+base_volume_db = -5.0
+positional = false
+loops = false
+max_voices = 2
+priority = 7
+duck_music_db = 0.0
+fallback = 2
+fallback_hz = 660.0

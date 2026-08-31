@@ -70,3 +70,10 @@ enum Effect {
 
 func has_tag(tag: StringName) -> bool:
 	return tags.has(tag)
+
+
+## Impact tier 1-4, derived from how deep the artifact unlocks. Presentation
+## uses it to scale feedback: a floor 7 payoff should not sound, or feel, like a
+## floor 1 trinket.
+func tier() -> int:
+	return clampi(int(ceil(float(min_floor) / 2.0)), 1, 4)

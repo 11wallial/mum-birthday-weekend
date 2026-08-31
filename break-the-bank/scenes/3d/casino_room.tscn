@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/3d/slot_machine_3d.tscn" id="3_machine"]
 [ext_resource type="Script" path="res://scripts/presentation/camera_controller.gd" id="4_camera"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
-[ext_resource type="Script" path="res://scripts/presentation/audio_director.gd" id="6_audio"]
+[ext_resource type="Script" path="res://scripts/presentation/audio/audio_director.gd" id="6_audio"]
 [ext_resource type="Script" path="res://scripts/presentation/room_dressing.gd" id="7_dressing"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
@@ -83,6 +83,7 @@ script = ExtResource("7_dressing")
 
 [node name="AudioDirector" type="Node" parent="."]
 script = ExtResource("6_audio")
+positional_anchor_path = NodePath("../SlotMachine3D")
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]
 

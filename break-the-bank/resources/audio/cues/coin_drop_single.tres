@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"coin_drop_single"
+file_name = "mechanical/coin_drop_single.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(90, 140)
+frequency_notes = "One coin into a metal tray. Bright 2-6 kHz ring over a 400 Hz body."
+pitch_jitter = Vector2(0.9, 1.1)
+volume_jitter_db = Vector2(-3.0, 2.0)
+base_volume_db = -9.0
+positional = true
+loops = false
+max_voices = 6
+priority = 4
+duck_music_db = 0.0
+fallback = 1
+fallback_hz = 2600.0

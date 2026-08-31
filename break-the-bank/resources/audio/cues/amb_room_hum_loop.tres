@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"amb_room_hum_loop"
+file_name = "ambience/amb_room_hum_loop.wav"
+category = 3
+bus = &"Ambience"
+duration_ms = Vector2i(20000, 40000)
+frequency_notes = "Basement air: 60-120 Hz rumble, gentle 2 kHz air. Seamless, no identifiable events."
+pitch_jitter = Vector2(1.0, 1.0)
+volume_jitter_db = Vector2(-0.5, 0.5)
+base_volume_db = -26.0
+positional = false
+loops = true
+max_voices = 1
+priority = 1
+duck_music_db = 0.0
+fallback = 4
+fallback_hz = 80.0

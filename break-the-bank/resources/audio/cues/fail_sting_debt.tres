@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"fail_sting_debt"
+file_name = "logic/fail_sting_debt.wav"
+category = 2
+bus = &"Music"
+duration_ms = Vector2i(1400, 2000)
+frequency_notes = "Lower and slower than fail_sting_ante, with a 55 Hz sub tail. The debt took the run."
+pitch_jitter = Vector2(0.99, 1.01)
+volume_jitter_db = Vector2(-1.0, 0.5)
+base_volume_db = -5.0
+positional = false
+loops = false
+max_voices = 1
+priority = 10
+duck_music_db = 10.0
+fallback = 3
+fallback_hz = 294.0

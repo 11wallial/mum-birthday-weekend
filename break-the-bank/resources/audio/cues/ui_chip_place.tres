@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"ui_chip_place"
+file_name = "ui/ui_chip_place.wav"
+category = 0
+bus = &"UI"
+duration_ms = Vector2i(80, 130)
+frequency_notes = "Single clay chip on felt. 300 Hz-1.5 kHz knock, short felt-damped tail."
+pitch_jitter = Vector2(0.93, 1.07)
+volume_jitter_db = Vector2(-3.0, 2.0)
+base_volume_db = -7.0
+positional = false
+loops = false
+max_voices = 4
+priority = 4
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 900.0

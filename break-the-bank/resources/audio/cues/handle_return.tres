@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"handle_return"
+file_name = "mechanical/handle_return.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(200, 300)
+frequency_notes = "Spring return, softer than the pull, tail into a light metal rest."
+pitch_jitter = Vector2(0.96, 1.04)
+volume_jitter_db = Vector2(-2.0, 1.0)
+base_volume_db = -8.0
+positional = true
+loops = false
+max_voices = 1
+priority = 5
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 900.0

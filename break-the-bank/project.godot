@@ -11,6 +11,10 @@ run/main_scene="res://scenes/3d/casino_room.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
 [debug]
 
 gdscript/warnings/untyped_declaration=2

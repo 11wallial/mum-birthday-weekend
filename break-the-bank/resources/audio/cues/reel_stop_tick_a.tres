@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"reel_stop_tick_a"
+file_name = "mechanical/reel_stop_tick_a.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(60, 100)
+frequency_notes = "Detent land, variant A. Punchy 120-250 Hz thock with 3 kHz tip."
+pitch_jitter = Vector2(0.94, 1.06)
+volume_jitter_db = Vector2(-2.0, 1.5)
+base_volume_db = -4.0
+positional = true
+loops = false
+max_voices = 3
+priority = 8
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 1600.0

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"artifact_t1_trigger"
+file_name = "logic/artifact_t1_trigger.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(180, 260)
+frequency_notes = "Tier 1: light mechanical tick with a short 900 Hz ring. Cheap, frequent, must not fatigue."
+pitch_jitter = Vector2(0.94, 1.06)
+volume_jitter_db = Vector2(-2.5, 1.5)
+base_volume_db = -12.0
+positional = false
+loops = false
+max_voices = 4
+priority = 3
+duck_music_db = 0.0
+fallback = 1
+fallback_hz = 900.0

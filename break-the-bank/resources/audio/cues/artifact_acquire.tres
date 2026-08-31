@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"artifact_acquire"
+file_name = "logic/artifact_acquire.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(300, 450)
+frequency_notes = "A part bolting onto the frame: ratchet then a settling metal clunk."
+pitch_jitter = Vector2(0.96, 1.04)
+volume_jitter_db = Vector2(-2.0, 1.5)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 2
+priority = 7
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 800.0
