@@ -51,6 +51,7 @@ func _initialize() -> void:
 	for i: int in spins:
 		_shots.append({"name": "04_spin_%d" % (i + 1), "action": "spin"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
+	_shots.append({"name": "06_run_setup", "action": "setup"})
 
 
 func _process(delta: float) -> bool:
@@ -90,6 +91,9 @@ func _apply(action: String) -> void:
 		"machine":
 			if _root_node.has_method("debug_set_view"):
 				_root_node.call("debug_set_view", 0)
+		"setup":
+			if _root_node.has_method("debug_open_setup"):
+				_root_node.call("debug_open_setup")
 		_:
 			pass
 

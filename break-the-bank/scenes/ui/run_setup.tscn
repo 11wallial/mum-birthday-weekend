@@ -1,0 +1,102 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/run_setup_panel.gd" id="1_setup"]
+
+[sub_resource type="StyleBoxFlat" id="Style_setup"]
+bg_color = Color(0.04, 0.03, 0.07, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.85, 0.75)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+
+[node name="RunSetup" type="CanvasLayer"]
+layer = 3
+script = ExtResource("1_setup")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -450.0
+offset_top = -200.0
+offset_right = 450.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_setup")
+
+[node name="Rows" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "BREAK THE BANK — RUN SETUP"
+
+[node name="Status" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+text = "RUNS 0     WINS 0"
+
+[node name="Ruleset" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+modulate = Color(0.85, 0.8, 1, 1)
+text = "STARTER  Standard        DIFFICULTY  Standard"
+
+[node name="SeedRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SeedLabel" type="Label" parent="Panel/Rows/SeedRow"]
+layout_mode = 2
+text = "SEED"
+
+[node name="SeedField" type="LineEdit" parent="Panel/Rows/SeedRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "SOLAR-MIRTH-CANDLE-OX-DRIFT, a number, or any phrase"
+
+[node name="Buttons" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Start" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Start this seed"
+
+[node name="Daily" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Daily challenge"
+
+[node name="Random" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Random run"
+
+[node name="Starter" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Cycle starter"
+
+[node name="Difficulty" type="Button" parent="Panel/Rows/Buttons"]
+layout_mode = 2
+text = "Cycle difficulty"
+
+[node name="Unlocks" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.75)
+text = "UNLOCKED"
+
+[node name="Footer" type="Label" parent="Panel/Rows"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.5)
+text = "F2 close     ENTER start typed seed"

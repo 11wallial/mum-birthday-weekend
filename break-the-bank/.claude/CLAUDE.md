@@ -86,6 +86,15 @@ batch stops measuring the game a person plays.
 is open. Put guards like that in `_advance()` rather than in `_unhandled_input`,
 so tools and tests are held to them too.
 
+## Meta-progression
+
+Anything persistent lives in `scripts/meta/` and reaches a run only as
+[RunOptions]. Never let the simulation read a profile: the lab passes default
+options so its numbers keep describing the full content set.
+
+Saves are plain JSON, and every loader treats a corrupt or newer-version file as
+"start fresh" rather than failing. Keep it that way.
+
 ## Visual QA
 
 Framing, scale and lighting cannot be asserted, only looked at. There is no GPU
@@ -128,6 +137,10 @@ come from the lab's JSON, not from looking at the game.
   the room camera at the ceiling, pointed the key light up, and turned the reel
   drums face-on. Author a rotated node, then check it with
   `tools/visual_qa/screenshot.gd` rather than by inspection.
+- A `const` cannot be initialised with a packed-array constructor
+  (`PackedStringArray([...])`) — it is not a constant expression, the whole
+  class silently fails to load, and callers report "nonexistent function". Use
+  `const X: Array = [...]`. CI parse-checks every script for this.
 - Never name a method after a `@GlobalScope` utility (`randi_range`, `randf`,
   `lerp`, ...). An unqualified internal call binds to the global, not to your
   method, and it fails silently — `RngStream.weighted_index` drew from Godot's

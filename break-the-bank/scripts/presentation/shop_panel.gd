@@ -52,6 +52,9 @@ func _redraw() -> void:
 	if _rows == null or _state == null:
 		return
 	for child: Node in _rows.get_children():
+		# Removed as well as freed: queue_free() defers, so a redraw in the same
+		# frame as a purchase would stack a second set of rows on the first.
+		_rows.remove_child(child)
 		child.queue_free()
 	if _title != null:
 		_title.text = "THE SHOP — FLOOR %d CLEARED     CASH %d     DEBT %d" % [

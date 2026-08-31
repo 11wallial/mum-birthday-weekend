@@ -27,8 +27,8 @@ func get_bus() -> EffectBus:
 
 ## Builds a fresh run without playing it. Use this when the presentation layer
 ## drives spins interactively.
-func start_run(run_seed: int) -> RunState:
-	var state: RunState = RunState.new(run_seed, _content, _bus)
+func start_run(run_seed: int, options: RunOptions = null) -> RunState:
+	var state: RunState = RunState.new(run_seed, _content, _bus, options)
 	state.phase = RunState.Phase.SETUP
 	_bus.emit_event(EffectBus.Event.RUN_STARTED, {
 		"seed": run_seed, "cash": state.economy.cash, "debt": state.economy.debt,
@@ -38,8 +38,8 @@ func start_run(run_seed: int) -> RunState:
 
 
 ## Plays a run to its end and returns the final state.
-func simulate_run(run_seed: int) -> RunState:
-	var state: RunState = start_run(run_seed)
+func simulate_run(run_seed: int, options: RunOptions = null) -> RunState:
+	var state: RunState = start_run(run_seed, options)
 	var guard: int = 0
 	while not state.is_over():
 		step(state)
@@ -74,7 +74,8 @@ func begin_floor(state: RunState) -> void:
 		_finish_run(state)
 		return
 	state.phase = RunState.Phase.SPINNING
-	state.spins_remaining = floor_def.spins + ArtifactEngine.spin_bonus(state)
+	state.spins_remaining = (floor_def.spins + ArtifactEngine.spin_bonus(state)
+			+ state.options.bonus_spins)
 	_bus.emit_event(EffectBus.Event.FLOOR_STARTED, {
 		"floor": floor_def.index,
 		"name": floor_def.display_name,
@@ -187,7 +188,8 @@ func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> voi
 
 func _ante_for(state: RunState, floor_def: FloorDef) -> int:
 	var discount: float = ArtifactEngine.ante_discount_percent(state)
-	return maxi(0, int(round(float(floor_def.ante) * (1.0 - discount / 100.0))))
+	var ante: float = float(floor_def.ante) * state.options.ante_scale
+	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
 
 
 ## Buys offer [param index]. Returns true when the purchase happened.
@@ -241,7 +243,8 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
 	var pool: Array[ArtifactDef] = []
 	for artifact: ArtifactDef in _content.artifacts:
-		if artifact.min_floor <= floor_def.index and not state.owns(artifact.id):
+		if (artifact.min_floor <= floor_def.index and not state.owns(artifact.id)
+				and state.options.allows(artifact)):
 			pool.append(artifact)
 	var offers: Array[ArtifactDef] = []
 	var slots: int = mini(floor_def.shop_slots, pool.size())

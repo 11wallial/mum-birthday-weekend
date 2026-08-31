@@ -1,0 +1,162 @@
+## Choosing what run to play: a typed seed, the daily challenge, or a fresh one.
+##
+## Also where the meta lives — unlock progress, starter and difficulty — because
+## those are decisions made between runs, not during one.
+class_name RunSetupPanel
+extends CanvasLayer
+
+signal start_requested(run_seed: int, daily_key: String)
+signal starter_changed(starter_id: StringName)
+signal difficulty_changed(difficulty_id: StringName)
+
+@export var seed_field_path: NodePath = ^"Panel/Rows/SeedRow/SeedField"
+@export var status_path: NodePath = ^"Panel/Rows/Status"
+@export var unlocks_path: NodePath = ^"Panel/Rows/Unlocks"
+@export var ruleset_path: NodePath = ^"Panel/Rows/Ruleset"
+
+var _seed_field: LineEdit
+var _status: Label
+var _unlocks: Label
+var _ruleset: Label
+var _profile: PlayerProfile
+var _catalogue: MetaCatalogue
+var _open: bool = false
+
+
+func _ready() -> void:
+	_seed_field = get_node_or_null(seed_field_path) as LineEdit
+	_status = get_node_or_null(status_path) as Label
+	_unlocks = get_node_or_null(unlocks_path) as Label
+	_ruleset = get_node_or_null(ruleset_path) as Label
+	visible = false
+	var start: Button = get_node_or_null(^"Panel/Rows/Buttons/Start") as Button
+	if start != null:
+		start.pressed.connect(_on_start_pressed)
+	var daily: Button = get_node_or_null(^"Panel/Rows/Buttons/Daily") as Button
+	if daily != null:
+		daily.pressed.connect(_on_daily_pressed)
+	var random: Button = get_node_or_null(^"Panel/Rows/Buttons/Random") as Button
+	if random != null:
+		random.pressed.connect(_on_random_pressed)
+	var cycle_starter: Button = get_node_or_null(^"Panel/Rows/Buttons/Starter") as Button
+	if cycle_starter != null:
+		cycle_starter.pressed.connect(_on_cycle_starter)
+	var cycle_difficulty: Button = get_node_or_null(^"Panel/Rows/Buttons/Difficulty") as Button
+	if cycle_difficulty != null:
+		cycle_difficulty.pressed.connect(_on_cycle_difficulty)
+
+
+func is_open() -> bool:
+	return _open
+
+
+func open(profile: PlayerProfile, catalogue: MetaCatalogue, last_seed: int) -> void:
+	_profile = profile
+	_catalogue = catalogue
+	_open = true
+	visible = true
+	if _seed_field != null:
+		_seed_field.text = SeedBook.to_code(last_seed)
+		_seed_field.grab_focus()
+	_redraw()
+
+
+func close() -> void:
+	_open = false
+	visible = false
+
+
+func _redraw() -> void:
+	if _profile == null:
+		return
+	if _status != null:
+		_status.text = "RUNS %d     WINS %d     BEST FLOOR %d     EARNED %d     DEBT CLEARED %d" % [
+			_profile.runs_played, _profile.wins, _profile.best_floor,
+			_profile.lifetime_earned, _profile.debt_cleared]
+	if _ruleset != null:
+		_ruleset.text = "STARTER  %s        DIFFICULTY  %s        TODAY  %s" % [
+			_name_of(MetaCatalogue.STARTERS, _profile.selected_starter),
+			_name_of(MetaCatalogue.DIFFICULTIES, _profile.selected_difficulty),
+			SeedBook.to_code(SeedBook.today_seed())]
+	if _unlocks != null and _catalogue != null:
+		_unlocks.text = _unlock_text()
+
+
+## Shows what is earned and, for the rest, exactly what it would take. A locked
+## list with no requirements is just a list of things you do not have.
+func _unlock_text() -> String:
+	var earned: Array[String] = []
+	var pending: Array[Dictionary] = []
+	var stats: Dictionary = _profile.stats()
+	for unlock: UnlockDef in _catalogue.unlocks:
+		if _profile.has_unlock(unlock.id):
+			earned.append(unlock.display_name)
+		else:
+			pending.append({
+				"text": "%s — %s" % [unlock.display_name, unlock.requirement_text()],
+				# "Next" has to mean nearest, or the list is just a subset.
+				"remaining": unlock.remaining(stats),
+			})
+	pending.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["remaining"]) < int(b["remaining"]))
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("UNLOCKED (%d/%d): %s" % [
+		earned.size(), _catalogue.unlocks.size(),
+		", ".join(earned) if not earned.is_empty() else "nothing yet"])
+	for i: int in mini(pending.size(), 4):
+		lines.append("   next: %s" % String(pending[i]["text"]))
+	return "\n".join(lines)
+
+
+func _name_of(table: Dictionary, id: StringName) -> String:
+	if table.has(id):
+		return String((table[id] as Dictionary)["name"])
+	return String(id)
+
+
+func _on_start_pressed() -> void:
+	var text: String = _seed_field.text if _seed_field != null else ""
+	var parsed: int = SeedBook.parse(text)
+	start_requested.emit(parsed if parsed >= 0 else randi(), "")
+
+
+func _on_daily_pressed() -> void:
+	start_requested.emit(SeedBook.today_seed(), SeedBook.today_key())
+
+
+func _on_random_pressed() -> void:
+	start_requested.emit(randi(), "")
+
+
+func _on_cycle_starter() -> void:
+	var options: Array[StringName] = _catalogue.available_starters(_profile)
+	_profile.selected_starter = _next(options, _profile.selected_starter)
+	starter_changed.emit(_profile.selected_starter)
+	_redraw()
+
+
+func _on_cycle_difficulty() -> void:
+	var options: Array[StringName] = _catalogue.available_difficulties(_profile)
+	_profile.selected_difficulty = _next(options, _profile.selected_difficulty)
+	difficulty_changed.emit(_profile.selected_difficulty)
+	_redraw()
+
+
+static func _next(options: Array[StringName], current: StringName) -> StringName:
+	if options.is_empty():
+		return current
+	var index: int = options.find(current)
+	return options[(index + 1) % options.size()]
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _open:
+		return
+	# Typing a seed must not also spin the reels behind the panel.
+	if _seed_field != null and _seed_field.has_focus() and event is InputEventKey:
+		if event.is_action_pressed(&"bb_confirm"):
+			_on_start_pressed()
+			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"bb_cancel") or event.is_action_pressed(&"bb_menu"):
+		close()
+		get_viewport().set_input_as_handled()

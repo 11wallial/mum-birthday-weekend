@@ -110,6 +110,24 @@ jobs:
 
       # project.godot promotes untyped declarations to errors, so a clean
       # headless boot is the strict-typing gate.
+      # A const initialised with a packed-array constructor is not a constant
+      # expression: the class fails to load, and only code that touches it
+      # notices. Check every script, not just what the main scene reaches.
+      - name: Parse every script
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          godot --headless --import --quit-after 200 || true
+          failed=0
+          while IFS= read -r script; do
+            rel="${script#./}"
+            if godot --headless --check-only --script "res://$rel" 2>&1 | grep -qE "Parse Error|Failed to load script"; then
+              echo "::error file=${PROJECT_DIR}/$rel::script fails to parse"
+              failed=1
+            fi
+          done < <(find scripts tools tests -name '*.gd')
+          exit $failed
+
       - name: Boot the project headless
         working-directory: ${{ env.PROJECT_DIR }}
         run: |

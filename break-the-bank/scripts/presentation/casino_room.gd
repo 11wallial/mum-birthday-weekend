@@ -17,6 +17,7 @@ extends Node3D
 @export var audio_path: NodePath = ^"AudioDirector"
 @export var dressing_path: NodePath = ^"RoomDressing"
 @export var shop_path: NodePath = ^"ShopPanel"
+@export var setup_path: NodePath = ^"RunSetup"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -29,7 +30,15 @@ var _hud: Node
 var _audio: AudioDirector
 var _dressing: RoomDressing
 var _shop: ShopPanel
+var _setup: RunSetupPanel
 var _recorder: PlaytestRecorder
+var _profile: PlayerProfile
+var _catalogue: MetaCatalogue
+var _board: Leaderboard
+## Daily-challenge key for the current run, empty for an ordinary run.
+var _daily_key: String = ""
+## Seed of the run in progress, so the setup panel can offer it back.
+var _current_seed: int = 0
 ## True once the floor's spins are gone and the ante has not yet been settled.
 var _ante_pending: bool = false
 
@@ -41,6 +50,15 @@ func _ready() -> void:
 	_audio = get_node_or_null(audio_path) as AudioDirector
 	_dressing = get_node_or_null(dressing_path) as RoomDressing
 	_shop = get_node_or_null(shop_path) as ShopPanel
+	_setup = get_node_or_null(setup_path) as RunSetupPanel
+	_profile = PlayerProfile.load_or_new()
+	_catalogue = MetaCatalogue.new()
+	_catalogue.load_all()
+	# A profile from an older build may already meet newer conditions.
+	_profile.evaluate(_catalogue.unlocks)
+	_board = Leaderboard.load_or_new()
+	if _setup != null:
+		_setup.start_requested.connect(_on_start_requested)
 	if _slot_view != null and _audio != null:
 		_slot_view.set_audio(_audio)
 	if _shop != null:
@@ -50,8 +68,10 @@ func _ready() -> void:
 
 
 ## Starts a run. Pass 0 for a random seed.
-func new_run(chosen_seed: int) -> void:
+func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	var actual_seed: int = chosen_seed if chosen_seed != 0 else randi()
+	_current_seed = actual_seed
+	_daily_key = daily_key
 	engine = SimEngine.new()
 	# A human is the shop policy here, so the automatic one is cleared and the
 	# shop stays open until the player leaves it.
@@ -73,11 +93,19 @@ func new_run(chosen_seed: int) -> void:
 		_recorder = PlaytestRecorder.new()
 		add_child(_recorder)
 		_recorder.begin(actual_seed)
-	state = engine.start_run(actual_seed)
-	print("Break the Bank — run seed %d" % actual_seed)
+	state = engine.start_run(actual_seed, _catalogue.options_for(_profile, ContentDB.shared()))
+	print("Break the Bank — seed %d (%s)%s" % [
+		actual_seed, SeedBook.to_code(actual_seed),
+		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"bb_menu"):
+		if _setup != null and not _setup.is_open():
+			_setup.open(_profile, _catalogue, _current_seed)
+		return
+	if _setup != null and _setup.is_open():
+		return
 	if event.is_action_pressed(&"bb_new_run"):
 		_end_recording(&"abandoned")
 		new_run(0)
@@ -105,6 +133,12 @@ func debug_shop_open() -> bool:
 ## Leaves the draft without buying. For tools and tests.
 func debug_leave_shop() -> void:
 	_on_leave_requested()
+
+
+## Opens the run-setup panel. For tools and tests.
+func debug_open_setup() -> void:
+	if _setup != null:
+		_setup.open(_profile, _catalogue, _current_seed)
 
 
 ## Forces a camera framing by [enum CameraController.View] index.
@@ -174,6 +208,13 @@ func _on_leave_requested() -> void:
 	engine.leave_shop(state)
 
 
+func _on_start_requested(run_seed: int, daily_key: String) -> void:
+	if _setup != null:
+		_setup.close()
+	_end_recording(&"abandoned")
+	new_run(run_seed, daily_key)
+
+
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
 		EffectBus.Event.PAYOUT_CALCULATED:
@@ -186,10 +227,31 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			if _camera != null:
 				_camera.set_view(CameraController.View.ROOM)
 		EffectBus.Event.RUN_ENDED:
-			_set_prompt("RUN OVER — %s\nF5 for a new run" % String(payload.get("end_reason", "")))
-			_end_recording(StringName(payload.get("end_reason", &"")))
+			_finish_run(String(payload.get("end_reason", "")))
 		_:
 			pass
+
+
+## Folds the finished run into the profile and the local board, and tells the
+## player what it earned them.
+func _finish_run(reason: String) -> void:
+	var earned: Array[UnlockDef] = _profile.record_run(state, _catalogue.unlocks)
+	_profile.save()
+	var entry: Dictionary = _board.submit(state, _daily_key)
+	_board.save()
+	var rank: int = _board.rank_of(int(entry["score"]), String(entry["ruleset"]))
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("RUN OVER — %s" % reason)
+	lines.append("%s     score %d     rank %d on this ruleset" % [
+		SeedBook.to_code(state.seed_value), int(entry["score"]), rank])
+	if not earned.is_empty():
+		var names: PackedStringArray = PackedStringArray()
+		for unlock: UnlockDef in earned:
+			names.append(unlock.display_name)
+		lines.append("UNLOCKED: %s" % ", ".join(names))
+	lines.append("F5 for a new run     F2 for setup")
+	_set_prompt("\n".join(lines))
+	_end_recording(StringName(reason))
 
 
 func _end_recording(reason: StringName) -> void:

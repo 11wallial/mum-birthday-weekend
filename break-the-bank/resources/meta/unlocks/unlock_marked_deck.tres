@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_marked_deck"
+display_name = "Marked Deck"
+description = "Every ante costs a quarter more."
+kind = 2
+target_id = &"marked_deck"
+condition = 1
+threshold = 1

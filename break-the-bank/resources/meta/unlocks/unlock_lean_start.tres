@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_lean_start"
+display_name = "Lean Start"
+description = "Less of both, and one more spin a floor."
+kind = 1
+target_id = &"lean"
+condition = 2
+threshold = 2

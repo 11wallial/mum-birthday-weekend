@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/presentation/audio_director.gd" id="6_audio"]
 [ext_resource type="Script" path="res://scripts/presentation/room_dressing.gd" id="7_dressing"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
+[ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_floor"]
 albedo_color = Color(0.15, 0.05, 0.08, 1)
@@ -86,3 +87,5 @@ script = ExtResource("6_audio")
 [node name="HUD" parent="." instance=ExtResource("5_hud")]
 
 [node name="ShopPanel" parent="." instance=ExtResource("8_shop")]
+
+[node name="RunSetup" parent="." instance=ExtResource("9_setup")]

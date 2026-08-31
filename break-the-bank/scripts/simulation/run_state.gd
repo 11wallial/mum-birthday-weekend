@@ -19,6 +19,8 @@ var content: ContentDB
 var config: BalanceConfig
 var economy: CoreEconomy
 var bus: EffectBus
+## Meta-progression settings for this run. Never null.
+var options: RunOptions
 
 var phase: Phase = Phase.SETUP
 ## 1-based index of the floor being played.
@@ -47,12 +49,16 @@ var _reel_cache: Array[Probability.ReelEntry] = []
 var _reel_cache_dirty: bool = true
 
 
-func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus) -> void:
+func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
+		p_options: RunOptions = null) -> void:
 	seed_value = p_seed
 	content = p_content
 	config = p_content.balance
 	bus = p_bus
+	options = p_options if p_options != null else RunOptions.new()
 	economy = CoreEconomy.new(config, p_bus)
+	economy.cash += options.bonus_cash
+	economy.debt = maxi(0, economy.debt + options.bonus_debt)
 	reel_rng = RngStream.new(p_seed, &"reels")
 	shop_rng = RngStream.new(p_seed, &"shop")
 
@@ -137,6 +143,7 @@ func snapshot() -> Dictionary:
 		"owned": owned_ids,
 		"synergies": active_synergies().map(func(t: StringName) -> String: return String(t)),
 		"end_reason": String(end_reason),
+		"ruleset": options.ruleset_key(),
 		"reel_draws": reel_rng.draws,
 	}
 	data.merge(economy.snapshot())

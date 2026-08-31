@@ -30,6 +30,7 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 | Leave the draft | Space or Q | B / Circle |
 | Swap machine ↔ room view | Tab | Y / Triangle |
 | New run | F5 | — |
+| Run setup (seeds, daily, meta) | F2 | — |
 
 Bindings live in `project.godot` under `[input]` as `bb_*` actions; rebind there
 rather than in code.
@@ -160,6 +161,30 @@ What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 2. **Floor 5 is the sharpest step.** It kills more runs than any other floor
    (1,891 of 10,000). Deliberate for now — the Back Office is where the run is
    meant to be decided — but it is the first number to revisit.
+
+## Seeds, dailies and meta-progression
+
+A seed is a run, so a shared seed is a shared run. Seeds are shown and entered as
+five spoken words — `SOLAR-MIRTH-CANDLE-OX-DRIFT` — which survive being read
+aloud or typed back in. The setup panel (F2) also accepts a plain number, or any
+phrase: `mum's birthday` hashes to a stable run you can tell someone about
+without explaining what a seed is.
+
+The **daily challenge** derives its seed from the UTC date, so everyone plays the
+same run and the day turns over at the same instant everywhere.
+
+**Meta-progression** persists in `user://profile.json` as plain JSON — readable,
+hand-editable, and unable to execute anything on load, which a `.tres` save
+could. Thirteen unlocks gate the most distinctive artifacts plus two starter
+variants and two difficulty modifiers; the panel shows what each still needs,
+nearest first. Unlocks reach the simulation only as `RunOptions`, so the core
+stays pure and the balance lab can pass the default (nothing restricted) and go
+on measuring the whole content set.
+
+**Leaderboard telemetry** is written to `user://leaderboard.json`, scored per
+ruleset — a Marked Deck run is not comparable to a standard one — and per daily
+key. There is no server: `Leaderboard.submit()` is the single seam a backend
+would replace, and it already records everything a remote board would need.
 
 ## Playtesting
 
