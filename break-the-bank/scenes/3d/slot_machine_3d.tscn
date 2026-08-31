@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://scripts/presentation/slot_view_3d.gd" id="1_slotview"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_cabinet"]
-albedo_color = Color(0.11, 0.09, 0.13, 1)
-metallic = 0.7
+albedo_color = Color(0.19, 0.16, 0.23, 1)
+metallic = 0.55
 roughness = 0.35
 
 [sub_resource type="StandardMaterial3D" id="Mat_trim"]
@@ -16,8 +16,8 @@ emission = Color(0.7, 0.42, 0.1, 1)
 emission_energy_multiplier = 0.6
 
 [sub_resource type="StandardMaterial3D" id="Mat_reel"]
-albedo_color = Color(0.93, 0.92, 0.89, 1)
-roughness = 0.55
+albedo_color = Color(0.55, 0.53, 0.5, 1)
+roughness = 0.65
 
 [sub_resource type="BoxMesh" id="Mesh_cabinet"]
 size = Vector3(1.1, 1.9, 0.7)
@@ -58,48 +58,51 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0.36)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0, 0)
 
 [node name="Face" type="MeshInstance3D" parent="Reels/Reel0"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
 mesh = SubResource("Mesh_reel")
 surface_material_override/0 = SubResource("Mat_reel")
 
 [node name="Symbol" type="Label3D" parent="Reels/Reel0"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
-pixel_size = 0.0016
-text = "—"
-font_size = 96
-outline_size = 0
-modulate = Color(0.1, 0.09, 0.11, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
+pixel_size = 0.0011
+text = "?"
+font_size = 60
+outline_size = 10
+outline_modulate = Color(0.05, 0.04, 0.06, 1)
+modulate = Color(0.95, 0.94, 0.92, 1)
 
 [node name="Reel1" type="Node3D" parent="Reels"]
 
 [node name="Face" type="MeshInstance3D" parent="Reels/Reel1"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
 mesh = SubResource("Mesh_reel")
 surface_material_override/0 = SubResource("Mat_reel")
 
 [node name="Symbol" type="Label3D" parent="Reels/Reel1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
-pixel_size = 0.0016
-text = "—"
-font_size = 96
-outline_size = 0
-modulate = Color(0.1, 0.09, 0.11, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
+pixel_size = 0.0011
+text = "?"
+font_size = 60
+outline_size = 10
+outline_modulate = Color(0.05, 0.04, 0.06, 1)
+modulate = Color(0.95, 0.94, 0.92, 1)
 
 [node name="Reel2" type="Node3D" parent="Reels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 0, 0)
 
 [node name="Face" type="MeshInstance3D" parent="Reels/Reel2"]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
 mesh = SubResource("Mesh_reel")
 surface_material_override/0 = SubResource("Mat_reel")
 
 [node name="Symbol" type="Label3D" parent="Reels/Reel2"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14)
-pixel_size = 0.0016
-text = "—"
-font_size = 96
-outline_size = 0
-modulate = Color(0.1, 0.09, 0.11, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.21)
+pixel_size = 0.0011
+text = "?"
+font_size = 60
+outline_size = 10
+outline_modulate = Color(0.05, 0.04, 0.06, 1)
+modulate = Color(0.95, 0.94, 0.92, 1)
 
 [node name="ModuleAnchor" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72, 0.7, 0)
@@ -108,21 +111,21 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72, 0.7, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0.45)
 emitting = false
 amount = 48
-lifetime = 1.4
+lifetime = 0.9
 one_shot = true
-explosiveness = 0.85
+explosiveness = 0.95
 mesh = SubResource("Mesh_anchor_plate")
-direction = Vector3(0, 1, 0.4)
-spread = 35.0
-gravity = Vector3(0, -6, 0)
-initial_velocity_min = 2.5
-initial_velocity_max = 4.5
-scale_amount_min = 0.06
-scale_amount_max = 0.12
+direction = Vector3(0, 1, 0.35)
+spread = 16.0
+gravity = Vector3(0, -11, 0)
+initial_velocity_min = 1.6
+initial_velocity_max = 2.8
+scale_amount_min = 0.025
+scale_amount_max = 0.05
 color_ramp = SubResource("Grad_coin")
 
 [node name="MachineLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0.62)
 light_color = Color(1, 0.78, 0.42, 1)
-light_energy = 1.0
+light_energy = 0.28
 omni_range = 4.5

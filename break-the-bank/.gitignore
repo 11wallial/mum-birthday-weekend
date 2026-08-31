@@ -8,3 +8,8 @@ export_presets.cfg
 /build/
 /reports/
 *.tmp
+
+# GdUnit4 is installed locally / in CI, never vendored
+addons/gdUnit4/
+shots/
+reports/

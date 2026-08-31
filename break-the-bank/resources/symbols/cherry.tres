@@ -11,4 +11,5 @@ base_weight = 22
 family = &"fruit"
 is_wild = false
 is_curse = false
+glyph = "CH"
 color = Color(0.86, 0.24, 0.28, 1)

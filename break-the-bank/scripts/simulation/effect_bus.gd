@@ -32,6 +32,13 @@ var recording: bool = false
 var event_log: Array[Dictionary] = []
 
 
+## True when nothing is listening. Hot emitters check this before building a
+## payload: a muted bus still costs a Dictionary allocation per call otherwise,
+## and the spin path emits several per spin across millions of batch spins.
+func is_live() -> bool:
+	return not muted
+
+
 func emit_event(kind: Event, payload: Dictionary = {}) -> void:
 	if muted:
 		return

@@ -11,4 +11,5 @@ base_weight = 12
 family = &"bar"
 is_wild = false
 is_curse = false
+glyph = "BAR"
 color = Color(0.30, 0.32, 0.38, 1)

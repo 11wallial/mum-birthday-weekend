@@ -11,4 +11,5 @@ base_weight = 20
 family = &"fruit"
 is_wild = false
 is_curse = false
+glyph = "LE"
 color = Color(0.94, 0.85, 0.26, 1)

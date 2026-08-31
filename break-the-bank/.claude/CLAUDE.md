@@ -64,6 +64,26 @@ never turn a correctness test red. `tests/simulation/` asserts on the shipped
 content, but only on guardrails — "the game is neither unwinnable nor free",
 not "the win rate is 40%".
 
+## Visual QA
+
+Framing, scale and lighting cannot be asserted, only looked at. There is no GPU
+here, so the scene renders under a software driver:
+
+```
+xvfb-run -a godot --rendering-driver opengl3 \
+    --script res://tools/visual_qa/screenshot.gd -- --out=res://shots --spins=6
+```
+
+That is the Compatibility renderer, not Forward+: no volumetric fog, weaker
+glow. Geometry, transforms, scale and framing are exact, and those are what the
+tool is for. Look at the PNGs before claiming a scene change works.
+
+## Audio
+
+Cues are synthesised by `tools/audio/make_cues.py` into `assets/audio/`. Change
+the generator, not the WAVs, and re-run it. `AudioDirector` degrades to silence
+if a cue is missing, so a stripped asset folder is not a crash.
+
 ## Godot MCP surface
 
 Keep the exposed tool set small and high signal:
@@ -81,6 +101,11 @@ come from the lab's JSON, not from looking at the game.
 - Static types everywhere; `project.godot` promotes untyped declarations to
   errors, so an untyped local will fail the build, not just warn.
 - `StringName` (`&"id"`) for identifiers that get compared in loops.
+- `Transform3D(...)` with twelve floats takes basis **rows**, while `basis.x/y/z`
+  are **columns**. Reasoning in columns silently mis-signs rotations: it aimed
+  the room camera at the ceiling, pointed the key light up, and turned the reel
+  drums face-on. Author a rotated node, then check it with
+  `tools/visual_qa/screenshot.gd` rather than by inspection.
 - Never name a method after a `@GlobalScope` utility (`randi_range`, `randf`,
   `lerp`, ...). An unqualified internal call binds to the global, not to your
   method, and it fails silently — `RngStream.weighted_index` drew from Godot's

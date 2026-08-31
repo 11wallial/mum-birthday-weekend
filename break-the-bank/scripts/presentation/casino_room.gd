@@ -12,6 +12,8 @@ extends Node3D
 @export var slot_view_path: NodePath = ^"SlotMachine3D"
 @export var camera_path: NodePath = ^"CameraRig"
 @export var hud_path: NodePath = ^"HUD"
+@export var audio_path: NodePath = ^"AudioDirector"
+@export var dressing_path: NodePath = ^"RoomDressing"
 
 var engine: SimEngine
 var state: RunState
@@ -19,12 +21,18 @@ var state: RunState
 var _slot_view: SlotView3D
 var _camera: CameraController
 var _hud: Node
+var _audio: AudioDirector
+var _dressing: RoomDressing
 
 
 func _ready() -> void:
 	_slot_view = get_node_or_null(slot_view_path) as SlotView3D
 	_camera = get_node_or_null(camera_path) as CameraController
 	_hud = get_node_or_null(hud_path)
+	_audio = get_node_or_null(audio_path) as AudioDirector
+	_dressing = get_node_or_null(dressing_path) as RoomDressing
+	if _slot_view != null and _audio != null:
+		_slot_view.set_audio(_audio)
 	new_run(run_seed)
 
 
@@ -38,6 +46,10 @@ func new_run(chosen_seed: int) -> void:
 		_slot_view.bind(bus)
 	if _hud != null and _hud.has_method("bind"):
 		_hud.call("bind", bus)
+	if _audio != null:
+		_audio.bind(bus)
+	if _dressing != null:
+		_dressing.bind(bus)
 	state = engine.start_run(actual_seed)
 	print("Break the Bank — run seed %d" % actual_seed)
 
@@ -54,10 +66,25 @@ func _unhandled_input(event: InputEvent) -> void:
 func _advance() -> void:
 	if state == null or state.is_over():
 		return
+	# Never let the run outrun the reels: a second press mid-spin would show a
+	# payout for symbols the player has not been shown yet.
+	if _slot_view != null and _slot_view.is_busy():
+		return
 	engine.step(state)
 	if _camera != null:
 		_camera.set_view(CameraController.View.ROOM if state.phase == RunState.Phase.SHOPPING
 				else CameraController.View.MACHINE)
+
+
+## Steps the run from a tool or a test, bypassing input. Visual QA uses this.
+func debug_advance() -> void:
+	_advance()
+
+
+## Forces a camera framing by [enum CameraController.View] index.
+func debug_set_view(view: int) -> void:
+	if _camera != null:
+		_camera.set_view(view as CameraController.View)
 
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:

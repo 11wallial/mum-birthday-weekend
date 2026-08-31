@@ -50,7 +50,8 @@ The simulation never calls into the presentation layer. It emits events on
 listen. Three properties fall out of that, and all three are load-bearing:
 
 - **Headless.** `SimEngine.new().simulate_run(seed)` returns a finished run
-  without loading a single node, which is what makes 100k-run batches practical.
+  without loading a single node. Measured throughput is ~415 runs/second, so a
+  10k batch is ~25 seconds and a 100k batch about four minutes.
 - **Deterministic.** Every subsystem draws from its own named `RngStream`, so a
   new die roll in the shop cannot shift the reels. A seed replays exactly.
 - **Severable.** Delete `scripts/presentation/` and the game still runs and
@@ -129,6 +130,24 @@ Two known balance problems, both recorded in `.claude/skills/balance-loop`:
    artifacts before those antes can be tuned safely.
 2. **Debt barely bites.** Starting debt of 50 compounds to roughly 120 by the
    end, against final cash in the thousands. It decides only a handful of runs.
+
+## Visual QA
+
+Transforms, framing and lighting are checked by looking, not by assertion —
+`tools/visual_qa/screenshot.gd` boots the real scene under a software GL driver
+and writes a storyboard of PNGs:
+
+```bash
+cd break-the-bank
+xvfb-run -a godot --rendering-driver opengl3 \
+    --script res://tools/visual_qa/screenshot.gd -- --out=res://shots --spins=6
+```
+
+It renders under Compatibility rather than Forward+, so volumetric fog and glow
+are absent from the shots; geometry, scale and framing are exact.
+
+Audio cues are synthesised by `tools/audio/make_cues.py` rather than sourced, so
+they are reproducible and tiny. Edit the generator and re-run it.
 
 ## GdUnit4
 

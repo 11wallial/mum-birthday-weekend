@@ -87,20 +87,27 @@ func spin(state: RunState) -> ArtifactEngine.SpinContext:
 	state.economy.debit(state.config.spin_cost, &"spin_cost")
 	state.spins_remaining -= 1
 	state.spins_taken += 1
-	_bus.emit_event(EffectBus.Event.SPIN_STARTED, {
-		"spin": state.spins_taken,
-		"spins_remaining": state.spins_remaining,
-		"cash": state.economy.cash,
-	})
-
-	var line: Array[SymbolDef] = Probability.spin_line(state.reel(), state.config.reel_count, state.reel_rng)
-	for i: int in line.size():
-		_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, {
-			"reel": i, "symbol": line[i].id, "value": line[i].base_value,
+	if _bus.is_live():
+		_bus.emit_event(EffectBus.Event.SPIN_STARTED, {
+			"spin": state.spins_taken,
+			"spins_remaining": state.spins_remaining,
+			"cash": state.economy.cash,
 		})
 
+	var line: Array[SymbolDef] = Probability.spin_line(state.reel(), state.config.reel_count, state.reel_rng)
+	if _bus.is_live():
+		for i: int in line.size():
+			var symbol: SymbolDef = line[i]
+			# Glyph and colour ride along so the reel view never has to look a
+			# symbol back up; the payload is only built when someone listens.
+			_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, {
+				"reel": i, "symbol": symbol.id, "value": symbol.base_value,
+				"glyph": symbol.glyph, "color": symbol.color,
+			})
+
 	var pattern: Probability.Pattern = Probability.detect_pattern(line)
-	_bus.emit_event(EffectBus.Event.PATTERN_MATCHED, {"pattern": Probability.pattern_name(pattern)})
+	if _bus.is_live():
+		_bus.emit_event(EffectBus.Event.PATTERN_MATCHED, {"pattern": Probability.pattern_name(pattern)})
 
 	var ctx: ArtifactEngine.SpinContext = ArtifactEngine.evaluate_spin(state, line, pattern)
 	var payout: int = ctx.total()
@@ -108,6 +115,8 @@ func spin(state: RunState) -> ArtifactEngine.SpinContext:
 	state.last_pattern = pattern
 	state.last_payout = payout
 	state.economy.credit(payout, &"payout")
+	if not _bus.is_live():
+		return ctx
 	_bus.emit_event(EffectBus.Event.PAYOUT_CALCULATED, {
 		"payout": payout,
 		"base": ctx.base_payout,

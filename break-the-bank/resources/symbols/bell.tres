@@ -11,4 +11,5 @@ base_weight = 16
 family = &""
 is_wild = false
 is_curse = false
+glyph = "BL"
 color = Color(0.96, 0.72, 0.22, 1)

@@ -19,7 +19,10 @@ extends Resource
 @export var is_wild: bool = false
 ## Pays nothing and suppresses the line multiplier when it lands.
 @export var is_curse: bool = false
-## Emissive tint used by the 3D reel material.
+## Short token painted on the reel face. Two or three characters: a reel is
+## ~0.3m wide, and an id like "double_bar" is metres long at readable sizes.
+@export var glyph: String = "?"
+## Tint for the glyph and for this symbol's effects in the 3D layer.
 @export var color: Color = Color.WHITE
 
 
