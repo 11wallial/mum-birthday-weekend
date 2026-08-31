@@ -61,11 +61,24 @@ nothing about either.
 Re-run with the same seed and runs. Report the delta in win rate,
 `deaths_by_floor`, and the anomaly list — before and after, not just after.
 
+## Sweeping
+
+`tools/casino_lab/sweep.gd` varies one knob across values and prints the curve,
+which is how the shipped antes were chosen. Use it before editing a `.tres`:
+
+```
+godot --headless --path . --script res://tools/casino_lab/sweep.gd -- \
+    --knob=ante --floor=6 --values=3800,4200,4600 --runs=2500
+```
+
+Knobs: `ante`, `spins`, `payout_scale` (with `--floor`), `debt`, `service`,
+`debt_growth`, `synergy_bonus`.
+
 ## Known sensitivities
 
-- The late-floor antes sit close to a cliff: past floor 5 the naive shop policy
-  has bought most of the pool, so income plateaus and a modest ante increase can
-  swing the win rate by tens of points. Move floors 6 and 7 in small steps.
+- Debt compounds at 80% per floor and its vig is charged before the ante, so
+  `debt_growth` and `service` move the win rate as hard as any ante. Sweep them
+  together with floor 6 rather than one at a time.
 - `SimEngine.default_shop_policy` buys the most expensive affordable artifact.
   It is deliberately mediocre. A change that only helps optimal play will not
   show up in the batch — check it with a custom `shop_policy` instead of

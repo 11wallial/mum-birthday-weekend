@@ -63,6 +63,12 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 	print("floors cleared mean %.2f  max %d" % [
 		float(floors.get("mean", 0.0)), int(floors.get("max", 0))])
 	print("deaths by floor %s" % JSON.stringify(report.get("deaths_by_floor", {})))
+	var debt: Dictionary = report.get("debt", {})
+	var serviced: Dictionary = debt.get("serviced", {})
+	print("debt           vig paid mean %.0f  p95 %d   defaulted %.1f%% of runs   paydown owned %.1f%%" % [
+		float(serviced.get("mean", 0.0)), int(serviced.get("p95", 0)),
+		float(debt.get("default_rate", 0.0)) * 100.0,
+		float(debt.get("paydown_owned_rate", 0.0)) * 100.0])
 	var anomalies: Array = report.get("anomalies", [])
 	if anomalies.is_empty():
 		print("anomalies      none above threshold")

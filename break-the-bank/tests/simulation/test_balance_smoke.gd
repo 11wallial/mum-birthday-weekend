@@ -48,6 +48,26 @@ func test_the_batch_is_reproducible() -> void:
 	assert_dict(again["earnings"]).is_equal(_report["earnings"])
 
 
+func test_debt_is_a_live_mechanic_not_a_footnote() -> void:
+	# Milestone 2 asked debt to influence runs rather than sit unused. These are
+	# the loosest bounds that still distinguish "does something" from "inert".
+	var debt: Dictionary = _report["debt"]
+	assert_float(float(debt["default_rate"])).is_greater(0.0)
+	assert_float(float((debt["serviced"] as Dictionary)["mean"])).is_greater(1.0)
+	var reasons: Dictionary = _report["end_reasons"]
+	assert_bool(reasons.has("debt_unpaid")).override_failure_message(
+			"no run in the batch lost to the final debt repayment").is_true()
+
+
+func test_the_late_floors_are_reachable_and_lethal() -> void:
+	# The floor 6 cliff this milestone existed to fix: deaths should appear on
+	# the late floors without the win rate collapsing to nothing.
+	var deaths: Dictionary = _report["deaths_by_floor"]
+	assert_bool(deaths.has(6)).override_failure_message(
+			"floor 6 killed nobody: the late-game antes are free").is_true()
+	assert_float(float(_report["win_rate"])).is_greater(0.05)
+
+
 func test_anomaly_detection_ignores_thin_samples() -> void:
 	var thin: Dictionary = {
 		"win_rate": 0.5,

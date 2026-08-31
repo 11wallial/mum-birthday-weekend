@@ -34,6 +34,17 @@ enum Effect {
 	WEIGHT_SHIFT,
 	## Reduces the floor ante by [member magnitude] percent.
 	ANTE_DISCOUNT,
+	## Scores the line [member magnitude] extra times: payout x (1 + magnitude).
+	RETRIGGER,
+	## Curses stop suppressing the pattern bonus and pay [member magnitude] each
+	## instead of costing the curse penalty.
+	CURSE_WARD,
+	## Adds [member magnitude] to the multiplier per floor already cleared.
+	MULT_PER_FLOOR,
+	## Adds [member magnitude] to the multiplier per artifact owned.
+	MULT_PER_ARTIFACT,
+	## Wipes [member magnitude] percent of outstanding debt when a floor clears.
+	DEBT_PAYDOWN,
 }
 
 @export var id: StringName = &""

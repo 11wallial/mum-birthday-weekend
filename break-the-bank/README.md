@@ -78,6 +78,13 @@ pattern bonus. Clear the ante, shop for artifacts, take the next floor. Clear al
 seven and you still have to repay the debt that has been compounding since the
 first spin.
 
+Debt is a running cost, not a closing bill. From floor 2 it charges a vig — a
+percentage of the principal, in cash, due *before* the ante, so every floor it
+competes with survival. Paying the vig is interest only and never reduces what
+you owe; the principal comes down through `DEBT_PAYDOWN` artifacts or not at
+all, and it compounds 80% per floor. Miss a payment and the shortfall returns as
+principal with a penalty on top.
+
 | Floor | Name | Ante | Spins | What it introduces |
 | --- | --- | --- | --- | --- |
 | 1 | The Basement | 40 | 8 | Base slot mechanics |
@@ -85,12 +92,14 @@ first spin.
 | 3 | The High Roller Room | 235 | 10 | High-stakes modifiers |
 | 4 | The Vault | 1,040 | 10 | Capital and interest |
 | 5 | The Back Office | 2,500 | 11 | Rule manipulation, contracts |
-| 6 | The Engine Room | 3,000 | 12 | Machine interconnection |
-| 7 | The House | 4,400 | 14 | Casino-wide rules, final encounter |
+| 6 | The Engine Room | 4,600 | 12 | Machine interconnection |
+| 7 | The House | 12,000 | 14 | Casino-wide rules, final encounter |
 
-Artifacts are data, not scripts: a small closed vocabulary of effects
+Artifacts are data, not scripts: a closed vocabulary of thirteen effects
 (`FLAT_BONUS`, `MULT_BONUS`, `SYMBOL_BONUS`, `PATTERN_MULT`, `INTEREST`,
-`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`) resolved in `ArtifactEngine`.
+`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`, and the late-game
+`RETRIGGER`, `CURSE_WARD`, `MULT_PER_FLOOR`, `MULT_PER_ARTIFACT`,
+`DEBT_PAYDOWN`) resolved in `ArtifactEngine`.
 That keeps balance edits confined to `.tres` files and keeps the effect surface
 small enough to reason about. Owning three artifacts sharing a tag lights a
 synergy and adds to every line's multiplier.
@@ -111,25 +120,31 @@ so against the whole batch every late artifact looks overpowered. The baseline
 is the win rate among runs that got far enough to be offered it, and `anomalies`
 flags entries 25+ points off *that*.
 
-The shipped numbers were calibrated against a target death curve rather than
-guessed. Over 5,000 seeded runs (14 seconds headless) with the built-in,
+The shipped numbers were calibrated with `tools/casino_lab/sweep.gd` against a
+target win rate of 15–20%. Over 10,000 seeded runs with the built-in,
 deliberately mediocre shop policy:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | 40.5% |
-| Mean floors cleared | 4.09 of 7 |
-| Earnings | mean 5,324 · p50 3,586 · p95 11,950 · p99 12,459 |
-| Deaths by floor | 643 · 511 · 542 · 621 · 563 · 46 · 29, then 21 to the final debt |
+| Win rate | 17.5% |
+| Mean floors cleared | 3.41 of 7 |
+| Earnings | mean 7,646 · p50 1,560 · p95 34,394 · p99 39,600 |
+| Deaths by floor | 1251 · 1482 · 1080 · 1265 · 1891 · 987 · 126, then 167 to the final debt |
+| Debt | vig mean 196 (p95 598) · 4.5% of runs default · 25.4% buy a paydown |
 
-Two known balance problems, both recorded in `.claude/skills/balance-loop`:
+The floor 6 cliff is gone. Twelve Tier 3/4 artifacts (unlocking on floors 4–7)
+keep income growing past floor 5, so the ante that once collapsed the win rate
+from 40% to under 1% now costs about four points: 3,000 → 4,200 moves it 31% →
+26%, and the shipped 4,600 lands at 17.5%.
 
-1. **Late floors sit on a cliff.** By floor 5 the naive policy has bought most of
-   the artifact pool, so income plateaus; raising floor 6's ante from 3,000 to
-   4,200 drops the win rate from ~40% to under 1%. The pool needs more late-game
-   artifacts before those antes can be tuned safely.
-2. **Debt barely bites.** Starting debt of 50 compounds to roughly 120 by the
-   end, against final cash in the thousands. It decides only a handful of runs.
+What remains worth knowing, recorded in `.claude/skills/balance-loop`:
+
+1. **Payouts are enormously spread.** Mean earnings are 7,646 against a median
+   of 1,560 — most runs die early and a few run away with it. That is roguelike
+   shaped, but it means the mean is a poor summary; read p50 and p95.
+2. **Floor 5 is the sharpest step.** It kills more runs than any other floor
+   (1,891 of 10,000). Deliberate for now — the Back Office is where the run is
+   meant to be decided — but it is the first number to revisit.
 
 ## Visual QA
 

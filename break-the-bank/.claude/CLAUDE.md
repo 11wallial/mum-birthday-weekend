@@ -43,6 +43,17 @@ in one place (`ArtifactEngine`). Prefer expressing a new artifact with the
 existing effects; add a new `Effect` only when the idea genuinely cannot be
 composed, and handle it in `ArtifactEngine._apply_one` plus its own helper.
 
+To choose a number rather than check one, sweep it — this mutates content in
+memory and writes nothing:
+
+```
+godot --headless --path . --script res://tools/casino_lab/sweep.gd -- \
+    --knob=ante --floor=6 --values=3800,4200,4600 --runs=2500
+```
+
+Knobs: `ante`, `spins`, `payout_scale` (all with `--floor`), `debt`, `service`,
+`debt_growth`, `synergy_bonus`.
+
 After any balance edit, run the lab and compare against the previous report:
 
 ```

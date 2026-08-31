@@ -15,11 +15,14 @@ class SpinContext extends RefCounted:
 	## Credits added before multiplication.
 	var flat_bonus: float = 0.0
 	var multiplier: float = 1.0
+	## Extra scoring passes over the same line. 1.0 means the line pays twice.
+	var retriggers: float = 0.0
 	## Ids of the artifacts that contributed, in resolution order.
 	var triggered: Array[StringName] = []
 
 	func total() -> int:
-		return maxi(0, int(floor((float(base_payout) + flat_bonus) * maxf(multiplier, 0.0))))
+		var base: float = (float(base_payout) + flat_bonus) * maxf(multiplier, 0.0)
+		return maxi(0, int(floor(base * (1.0 + maxf(retriggers, 0.0)))))
 
 
 ## Scores one line. Returns the context so callers (and tests) can inspect the
@@ -31,14 +34,19 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef], pattern: Prob
 	ctx.pattern = pattern
 	ctx.multiplier = config.base_multiplier
 
-	var cursed: bool = Probability.has_curse(line)
+	var ward: float = _curse_ward(state)
+	var warded: bool = ward > 0.0
+	var cursed: bool = Probability.has_curse(line) and not warded
 	for symbol: SymbolDef in line:
-		if symbol.is_curse:
-			ctx.base_payout -= config.curse_penalty
-		else:
+		if not symbol.is_curse:
 			ctx.base_payout += symbol.base_value
+		elif warded:
+			ctx.base_payout += int(ward)
+		else:
+			ctx.base_payout -= config.curse_penalty
 
-	# A curse on the line costs the player the pattern bonus entirely.
+	# A curse on the line costs the player the pattern bonus entirely, unless a
+	# ward has turned the skulls into payroll.
 	if not cursed and pattern < config.pattern_multipliers.size():
 		ctx.multiplier += config.pattern_multipliers[pattern]
 
@@ -49,10 +57,32 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef], pattern: Prob
 	for _tag: StringName in state.active_synergies():
 		ctx.multiplier += config.synergy_bonus
 
+	# Scaling effects read the run rather than the line, so they resolve once
+	# the per-artifact pass is done and the owned set is known.
+	for artifact: ArtifactDef in state.owned:
+		match artifact.effect:
+			ArtifactDef.Effect.MULT_PER_FLOOR:
+				ctx.multiplier += artifact.magnitude * float(state.floors_cleared)
+			ArtifactDef.Effect.MULT_PER_ARTIFACT:
+				ctx.multiplier += artifact.magnitude * float(state.owned.size())
+			ArtifactDef.Effect.RETRIGGER:
+				ctx.retriggers += artifact.magnitude
+			_:
+				pass
+
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def != null:
 		ctx.multiplier *= floor_def.payout_scale
 	return ctx
+
+
+## Credits each curse pays instead of costing, or 0.0 when unwarded.
+static func _curse_ward(state: RunState) -> float:
+	var best: float = 0.0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == ArtifactDef.Effect.CURSE_WARD:
+			best = maxf(best, artifact.magnitude)
+	return best
 
 
 ## Extra spins granted for the coming floor.
@@ -86,6 +116,21 @@ static func apply_floor_interest(state: RunState) -> int:
 				"artifact": artifact.id, "effect": "INTEREST", "amount": amount,
 			})
 	return paid
+
+
+## Wipes debt for every DEBT_PAYDOWN artifact. Returns the credits of debt cleared.
+static func apply_debt_paydown(state: RunState) -> int:
+	var cleared: int = 0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect != ArtifactDef.Effect.DEBT_PAYDOWN or state.economy.debt <= 0:
+			continue
+		var wiped: int = state.economy.forgive_debt(artifact.magnitude)
+		if wiped > 0:
+			cleared += wiped
+			state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
+				"artifact": artifact.id, "effect": "DEBT_PAYDOWN", "amount": wiped,
+			})
+	return cleared
 
 
 static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinContext) -> void:
@@ -127,6 +172,7 @@ static func _apply_one(artifact: ArtifactDef, ctx: SpinContext) -> bool:
 			ctx.multiplier += artifact.magnitude
 			return true
 		_:
-			# EXTRA_SPINS, WEIGHT_SHIFT, INTEREST and ANTE_DISCOUNT resolve
-			# outside the spin, in their own helpers above.
+			# EXTRA_SPINS, WEIGHT_SHIFT, INTEREST, ANTE_DISCOUNT, CURSE_WARD,
+			# DEBT_PAYDOWN and the scaling effects all resolve elsewhere: in
+			# evaluate_spin after this pass, or in their own helpers above.
 			return false

@@ -106,6 +106,48 @@ func test_weight_shift_artifacts_rebuild_the_reel_on_acquisition() -> void:
 	assert_float(Probability.symbol_chance(_state.reel(), &"seven")).is_greater(before)
 
 
+func test_retrigger_scores_the_line_again() -> void:
+	_state.acquire(TestFixtures.artifact(&"drums", ArtifactDef.Effect.RETRIGGER, 1.0))
+	# The pair pays 21 once, so scoring it twice pays 42.
+	assert_int(_score(_pair_line).total()).is_equal(42)
+
+
+func test_a_ward_turns_curses_into_payers_and_restores_the_pattern() -> void:
+	var line: Array[SymbolDef] = [_cherry, _cherry, _skull]
+	# Unwarded: the skull costs 2 and kills the pair bonus.
+	var bare: ArtifactEngine.SpinContext = _score(line)
+	assert_int(bare.base_payout).is_equal(2)
+	assert_float(bare.multiplier).is_equal_approx(1.0, 0.001)
+
+	_state.acquire(TestFixtures.artifact(&"ward", ArtifactDef.Effect.CURSE_WARD, 6.0))
+	var warded: ArtifactEngine.SpinContext = _score(line)
+	assert_int(warded.base_payout).is_equal(10)
+	assert_float(warded.multiplier).is_equal_approx(1.5, 0.001)
+
+
+func test_mult_per_floor_scales_with_progress() -> void:
+	_state.acquire(TestFixtures.artifact(&"flywheel", ArtifactDef.Effect.MULT_PER_FLOOR, 0.5))
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(1.5, 0.001)
+	_state.floors_cleared = 4
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(3.5, 0.001)
+
+
+func test_mult_per_artifact_scales_with_the_build() -> void:
+	_state.acquire(TestFixtures.artifact(&"coupling", ArtifactDef.Effect.MULT_PER_ARTIFACT, 0.25))
+	# One artifact owned: +0.25 on top of the pair's 1.5.
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(1.75, 0.001)
+	_state.acquire(TestFixtures.artifact(&"filler", ArtifactDef.Effect.FLAT_BONUS, 0.0))
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(2.0, 0.001)
+
+
+func test_debt_paydown_wipes_a_share_of_the_principal() -> void:
+	_state.economy.debt = 400
+	_state.acquire(TestFixtures.artifact(&"clause", ArtifactDef.Effect.DEBT_PAYDOWN, 25.0,
+			ArtifactDef.Trigger.FLOOR_CLEARED))
+	assert_int(ArtifactEngine.apply_debt_paydown(_state)).is_equal(100)
+	assert_int(_state.economy.debt).is_equal(300)
+
+
 func test_interest_artifacts_pay_from_banked_cash() -> void:
 	var artifact: ArtifactDef = TestFixtures.artifact(&"key", ArtifactDef.Effect.INTEREST, 10.0,
 			ArtifactDef.Trigger.FLOOR_CLEARED)

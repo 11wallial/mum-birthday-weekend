@@ -12,6 +12,10 @@ var debt: int = 0
 var lifetime_earned: int = 0
 var lifetime_spent: int = 0
 var interest_earned: int = 0
+## Credits paid to service debt across the run. Telemetry only.
+var debt_serviced: int = 0
+## Times the player could not meet a service payment in full.
+var defaults: int = 0
 
 var _bus: EffectBus
 
@@ -54,6 +58,38 @@ func settle_ante(amount: int) -> bool:
 	return paid
 
 
+## Charges the floor's debt service: interest only, so paying it never touches
+## the principal. The principal comes down through DEBT_PAYDOWN artifacts or is
+## settled in full at the end of the run — which is what makes buying down debt
+## a real decision instead of a rounding error.
+##
+## A shortfall is added to the principal with a penalty on top, so a missed
+## payment compounds into every floor that follows.
+## Returns the credits actually paid.
+func service_debt(service_percent: float, penalty_percent: float) -> int:
+	if debt <= 0 or service_percent <= 0.0:
+		return 0
+	var due: int = int(ceil(float(debt) * service_percent / 100.0))
+	var paid: int = mini(due, maxi(cash, 0))
+	if paid > 0:
+		debit(paid, &"debt_service")
+		debt_serviced += paid
+	var shortfall: int = due - paid
+	if shortfall > 0:
+		defaults += 1
+		debt += shortfall + int(ceil(float(shortfall) * penalty_percent / 100.0))
+	return paid
+
+
+## Wipes [param percent] of the outstanding debt. Returns the credits cleared.
+func forgive_debt(percent: float) -> int:
+	if debt <= 0 or percent <= 0.0:
+		return 0
+	var wiped: int = mini(debt, int(ceil(float(debt) * percent / 100.0)))
+	debt -= wiped
+	return wiped
+
+
 ## Applies compounding interest to outstanding debt at the end of a floor.
 func accrue_debt_interest(percent: float) -> int:
 	if debt <= 0 or percent <= 0.0:
@@ -91,4 +127,6 @@ func snapshot() -> Dictionary:
 		"lifetime_earned": lifetime_earned,
 		"lifetime_spent": lifetime_spent,
 		"interest_earned": interest_earned,
+		"debt_serviced": debt_serviced,
+		"defaults": defaults,
 	}

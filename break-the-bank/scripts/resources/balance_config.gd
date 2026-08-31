@@ -26,3 +26,13 @@ extends Resource
 @export var synergy_threshold: int = 3
 ## Shop price inflation per cleared floor, as a percent of base cost.
 @export var shop_inflation_percent: float = 15.0
+## Percent of outstanding debt demanded in cash when a floor is cleared. This is
+## the vig: it is charged before the ante, so debt competes with survival every
+## floor rather than being a single bill at the end of the run.
+@export var debt_service_percent: float = 20.0
+## Penalty added to the principal, as a percent of the shortfall, when the
+## service payment cannot be met in full.
+@export var debt_default_penalty_percent: float = 50.0
+## Floors cleared before the vig starts. The first floor is the tutorial; a
+## debt payment on top of the opening ante just ends runs before they begin.
+@export var debt_grace_floors: int = 1

@@ -61,6 +61,36 @@ func test_interest_on_an_empty_purse_pays_nothing() -> void:
 	assert_int(_economy.pay_interest(10.0, 0.0)).is_equal(0)
 
 
+func test_servicing_debt_is_interest_only() -> void:
+	# The vig never touches the principal — that is what makes buying debt down
+	# a decision rather than a formality.
+	assert_int(_economy.service_debt(20.0, 50.0)).is_equal(10)
+	assert_int(_economy.cash).is_equal(90)
+	assert_int(_economy.debt).is_equal(50)
+	assert_int(_economy.debt_serviced).is_equal(10)
+
+
+func test_a_missed_payment_compounds_with_a_penalty() -> void:
+	_economy.debit(96, &"spin_cost")
+	# 20% of 50 is due, only 4 cash on hand: the 6 short returns as 9 of debt.
+	assert_int(_economy.service_debt(20.0, 50.0)).is_equal(4)
+	assert_int(_economy.cash).is_equal(0)
+	assert_int(_economy.debt).is_equal(59)
+	assert_int(_economy.defaults).is_equal(1)
+
+
+func test_servicing_nothing_costs_nothing() -> void:
+	_economy.debt = 0
+	assert_int(_economy.service_debt(20.0, 50.0)).is_equal(0)
+	assert_int(_economy.cash).is_equal(100)
+
+
+func test_forgiving_debt_never_goes_below_zero() -> void:
+	assert_int(_economy.forgive_debt(100.0)).is_equal(50)
+	assert_int(_economy.debt).is_equal(0)
+	assert_int(_economy.forgive_debt(50.0)).is_equal(0)
+
+
 func test_shop_prices_inflate_per_cleared_floor() -> void:
 	var artifact: ArtifactDef = TestFixtures.artifact(&"x", ArtifactDef.Effect.FLAT_BONUS, 1.0)
 	artifact.cost = 10

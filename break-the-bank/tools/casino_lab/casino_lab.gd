@@ -35,6 +35,9 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 	# Same idea for tags: a synergy needs enough artifacts to exist at all.
 	var stocked_runs: int = 0
 	var stocked_wins: int = 0
+	var serviced: PackedInt32Array = PackedInt32Array()
+	var defaulted_runs: int = 0
+	var paydown_runs: int = 0
 
 	var started: int = Time.get_ticks_msec()
 	for i: int in count:
@@ -55,6 +58,13 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 			stocked_runs += 1
 			if won:
 				stocked_wins += 1
+		serviced.append(state.economy.debt_serviced)
+		if state.economy.defaults > 0:
+			defaulted_runs += 1
+		for artifact: ArtifactDef in state.owned:
+			if artifact.effect == ArtifactDef.Effect.DEBT_PAYDOWN:
+				paydown_runs += 1
+				break
 		var reason: String = String(state.end_reason)
 		end_reasons[reason] = int(end_reasons.get(reason, 0)) + 1
 		for artifact: ArtifactDef in state.owned:
@@ -79,11 +89,16 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 		"spins_per_run": describe(spins),
 		"floors_cleared": describe(floors),
 		"end_reasons": end_reasons,
+		"debt": {
+			"serviced": describe(serviced),
+			"default_rate": _ratio(defaulted_runs, count),
+			"paydown_owned_rate": _ratio(paydown_runs, count),
+		},
 		"deaths_by_floor": floor_deaths,
 		"artifact_win_rates": _artifact_rates(
 				artifact_runs, artifact_wins, content, runs_by_depth, wins_by_depth),
-		"synergy_win_rates": _rates(
-				synergy_runs, synergy_wins, _ratio(stocked_wins, stocked_runs)),
+		"synergy_win_rates": _synergy_rates(synergy_runs, synergy_wins, content,
+				runs_by_depth, wins_by_depth, _ratio(stocked_wins, stocked_runs)),
 		"anomalies": [],
 	}
 
@@ -189,6 +204,46 @@ static func _artifact_rates(runs: Dictionary, wins: Dictionary, content: Content
 			"baseline_note": "runs clearing %d+ floors" % unlock_depth,
 		}
 	return out
+
+
+## Per-tag rates against the cohort that could actually light the synergy.
+##
+## A tag is only active once [member BalanceConfig.synergy_threshold] artifacts
+## carrying it are owned, so the cohort is runs that cleared far enough to be
+## offered that many — the threshold-th smallest min_floor among its members.
+## Baselining tags against "owns 3+ artifacts" instead left late tags looking
+## broken for the same survivorship reason artifacts once did.
+static func _synergy_rates(runs: Dictionary, wins: Dictionary, content: ContentDB,
+		runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array,
+		fallback: float) -> Dictionary:
+	var out: Dictionary = {}
+	var keys: Array = runs.keys()
+	keys.sort()
+	for key: String in keys:
+		var seen: int = int(runs[key])
+		var won: int = int(wins.get(key, 0))
+		var depth: int = _tag_unlock_depth(content, StringName(key))
+		out[key] = {
+			"runs": seen,
+			"wins": won,
+			"win_rate": _ratio(won, seen),
+			"baseline": _depth_baseline(runs_by_depth, wins_by_depth, depth) if depth > 0 else fallback,
+			"baseline_note": "runs clearing %d+ floors" % depth if depth > 0 else "runs owning 3+ artifacts",
+		}
+	return out
+
+
+## Floors that must be cleared before enough artifacts carrying [param tag] can
+## be owned for its synergy to light. Zero when the tag can never reach it.
+static func _tag_unlock_depth(content: ContentDB, tag: StringName) -> int:
+	var floors: Array[int] = []
+	for artifact: ArtifactDef in content.artifacts:
+		if artifact.has_tag(tag):
+			floors.append(artifact.min_floor)
+	if floors.size() < content.balance.synergy_threshold:
+		return 0
+	floors.sort()
+	return floors[content.balance.synergy_threshold - 1]
 
 
 ## Win rate among runs that cleared at least [param from_depth] floors.

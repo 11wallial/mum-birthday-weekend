@@ -6,7 +6,7 @@
 script = ExtResource("1_balanceconfig")
 reel_count = 3
 starting_cash = 12
-starting_debt = 50
+starting_debt = 120
 spin_cost = 1
 base_multiplier = 0.0
 pattern_multipliers = PackedFloat32Array(0, 0.4, 1.2, 3, 0.6)
@@ -14,3 +14,6 @@ curse_penalty = 2
 synergy_bonus = 0.5
 synergy_threshold = 3
 shop_inflation_percent = 15.0
+debt_service_percent = 12.0
+debt_default_penalty_percent = 50.0
+debt_grace_floors = 1

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"ledger_rewrite"
+display_name = "Ledger Rewrite"
+description = "You edit the record after the fact. Clean sweeps gain +4.0x."
+cost = 26
+trigger = 2
+effect = 3
+magnitude = 4.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = 4
+tags = Array[StringName]([&"contract", &"greed"])
+min_floor = 5
+module_scene_path = ""

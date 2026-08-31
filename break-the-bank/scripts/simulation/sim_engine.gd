@@ -135,16 +135,24 @@ func _close_floor(state: RunState) -> void:
 		_finish_run(state)
 		return
 	ArtifactEngine.apply_floor_interest(state)
+	# The vig comes first: debt is serviced out of the same cash the ante needs,
+	# which is what makes carrying it a real decision rather than a late bill.
+	var serviced: int = 0
+	if state.floors_cleared >= state.config.debt_grace_floors:
+		serviced = state.economy.service_debt(
+				state.config.debt_service_percent, state.config.debt_default_penalty_percent)
 	var ante: int = _ante_for(state, floor_def)
 	if not state.economy.settle_ante(ante):
 		_end_run(state, RunState.Phase.LOST, &"ante_unpaid")
 		return
 	state.economy.accrue_debt_interest(floor_def.debt_interest_percent)
+	ArtifactEngine.apply_debt_paydown(state)
 	state.floors_cleared += 1
 	_bus.emit_event(EffectBus.Event.FLOOR_CLEARED, {
 		"floor": floor_def.index,
 		"cash": state.economy.cash,
 		"debt": state.economy.debt,
+		"serviced": serviced,
 	})
 	state.phase = RunState.Phase.SHOPPING
 	_run_shop(state, floor_def)
