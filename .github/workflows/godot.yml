@@ -58,16 +58,18 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: godot --headless --import --quit-after 200 || true
 
+      # GdUnit4 refuses to start under --headless without this flag (exit 103).
+      # These suites never touch InputEvent, which is the only thing it guards.
       - name: Run test suites
         working-directory: ${{ env.PROJECT_DIR }}
-        run: godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --continue -a tests
+        run: godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode --continue -a tests
 
       - name: Run balance batch
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           mkdir -p reports
-          godot --headless --script tools/casino_lab/run_lab.gd -- \
+          godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
             --runs=5000 --seed=1 --out=res://reports/balance_report.json
 
       - name: Upload balance report

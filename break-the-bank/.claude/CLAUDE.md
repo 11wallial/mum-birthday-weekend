@@ -46,14 +46,18 @@ composed, and handle it in `ArtifactEngine._apply_one` plus its own helper.
 After any balance edit, run the lab and compare against the previous report:
 
 ```
-godot --headless --script tools/casino_lab/run_lab.gd -- --runs=10000 --out=res://reports/balance_report.json
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=10000 --out=res://reports/balance_report.json
 ```
 
 ## Tests
 
 ```
-godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --continue -a tests
+godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode --continue -a tests
 ```
+
+`--ignoreHeadlessMode` is required: GdUnit4 otherwise exits 103 under
+`--headless`. Its guard is about `InputEvent` delivery, which no suite here
+relies on.
 
 `tests/unit/` asserts on hand-built fixtures (`TestFixtures`) so balance changes
 never turn a correctness test red. `tests/simulation/` asserts on the shipped

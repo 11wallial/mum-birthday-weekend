@@ -4,7 +4,7 @@ argument-hint: "[path] (default tests)"
 ---
 
 ```
-godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --continue -a ${1:-tests}
+godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode --continue -a ${1:-tests}
 ```
 
 Report each failing assertion with its suite, test name, and the expected vs

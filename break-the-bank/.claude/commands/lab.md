@@ -6,7 +6,7 @@ argument-hint: "[runs] (default 10000)"
 Run the headless Monte Carlo batch:
 
 ```
-godot --headless --script tools/casino_lab/run_lab.gd -- \
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
     --runs=${1:-10000} --seed=1 --out=res://reports/balance_report.json
 ```
 

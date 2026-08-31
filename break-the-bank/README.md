@@ -14,10 +14,10 @@ godot --path break-the-bank
 
 # Run the tests (see "GdUnit4" below for the one-time install)
 cd break-the-bank
-godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --continue -a tests
+godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode --continue -a tests
 
 # Run 10,000 headless runs and write the telemetry
-godot --headless --script tools/casino_lab/run_lab.gd -- \
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
     --runs=10000 --seed=1 --out=res://reports/balance_report.json
 ```
 
@@ -134,6 +134,9 @@ curl -fsSL https://github.com/MikeSchulze/gdUnit4/archive/refs/tags/v5.0.5.zip -
 unzip -q /tmp/gdunit.zip -d /tmp/gdunit
 mv /tmp/gdunit/gdUnit4-*/addons/gdUnit4 break-the-bank/addons/gdUnit4
 ```
+
+`--ignoreHeadlessMode` is required — GdUnit4 exits 103 under `--headless`
+without it. Its guard concerns `InputEvent` delivery, which no suite here uses.
 
 `tests/unit/` asserts against hand-built fixtures so balance changes never turn a
 correctness test red. `tests/simulation/` asserts against the shipped content,

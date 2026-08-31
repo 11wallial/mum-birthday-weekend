@@ -12,7 +12,7 @@ which floor is actually killing people.
 ## 1. Measure
 
 ```
-godot --headless --script tools/casino_lab/run_lab.gd -- \
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
     --runs=10000 --seed=1 --out=res://reports/balance_report.json
 ```
 
