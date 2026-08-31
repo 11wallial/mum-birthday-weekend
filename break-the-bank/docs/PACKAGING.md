@@ -13,7 +13,7 @@ behaves exactly like one that has.
 | Windows | `dist/windows/BreakTheBank.exe` | One file — the PCK is embedded |
 | Linux | `dist/linux/BreakTheBank.x86_64` | One file — the PCK is embedded |
 | macOS | `dist/macos/BreakTheBank.zip` | A `.app` bundle, universal, unsigned |
-| Android | `dist/android/BreakTheBank.apk` | arm64 + x86_64, signed with the debug key |
+| Android | `dist/android/BreakTheBank.apk` | arm64 + x86_64, signed with the release keystore |
 | Web | `dist/web/` | `index.html` plus wasm, PCK and a service worker |
 
 `dist/` is ignored by git. Builds are published as CI artifacts instead, so the
@@ -33,11 +33,20 @@ wrapped around, a 1.2 GB download from the Godot release page for the matching
 version.
 
 Android additionally needs the Android SDK and a keystore, because an APK that
-is not signed will not install at all. The script skips Android rather than
-failing when `ANDROID_HOME` is unset, so a desktop-only machine still builds
-everything else. CI installs the SDK, generates a debug keystore and writes both
-paths into a throwaway editor profile — Godot reads them from editor settings,
-not from the project.
+is not signed will not install at all. Two settings live outside the project:
+
+- **The SDK path** comes from Godot's *editor settings*, not the project, so CI
+  writes a throwaway editor profile carrying `export/android/android_sdk_path`.
+- **The keystore** comes from the environment —
+  `GODOT_ANDROID_KEYSTORE_RELEASE_PATH`, `_USER` and `_PASSWORD`. That seam
+  exists so a signing key never has to be written into `export_presets.cfg`,
+  which is tracked.
+
+Note the *release* keystore specifically: `--export-release` ignores the debug
+one, which is the mistake that made the first packaging run fail.
+
+The script skips Android rather than failing when either is missing, so a
+desktop-only machine still builds everything else.
 
 ## Verifying a build
 
@@ -45,8 +54,10 @@ An export that fails still leaves a file behind, so file existence proves
 nothing. What is actually checked:
 
 - `build.sh` fails on a zero-byte output.
-- CI re-checks every expected path and greps the APK for `META-INF`, which is
-  absent from an unsigned package.
+- CI re-checks every expected path and runs `apksigner verify` on the APK. That
+  check is not cosmetic: Godot downgrades a failed signing to a *warning* and
+  still writes the APK, so an export can "succeed" and hand you a package no
+  device will install.
 - The Linux binary is booted under `xvfb` with the software GL driver, and the
   web build is loaded in headless Chromium and screenshotted, on both a desktop
   and a phone viewport. Both are checked for script errors, not just for

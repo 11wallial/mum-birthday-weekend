@@ -19,8 +19,13 @@ DIST="$PROJECT_DIR/dist"
 GODOT="${GODOT:-godot}"
 
 # Android is the one target that needs a toolchain beyond Godot's own export
-# templates: the APK has to be signed, and that means the Android SDK. It is
-# skipped rather than failed when absent, so a desktop-only host still builds.
+# templates: the APK has to be signed, and that means the Android SDK plus a
+# keystore. Godot takes the keystore from GODOT_ANDROID_KEYSTORE_RELEASE_PATH /
+# _USER / _PASSWORD, which is how a key stays out of the tracked presets file.
+# Both are skipped rather than failed when absent, so a desktop-only host still
+# builds everything else — and a missing keystore is caught here rather than in
+# Godot, which downgrades a failed signing to a warning and writes an APK that
+# cannot be installed.
 ALL_TARGETS=(linux windows web android macos)
 TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then
@@ -59,9 +64,15 @@ for target in "${TARGETS[@]}"; do
         exit 2
     fi
 
-    if [ "$target" = "android" ] && [ -z "${ANDROID_HOME:-}${ANDROID_SDK_ROOT:-}" ]; then
-        skipped+=("android (no ANDROID_HOME; the APK must be signed)")
-        continue
+    if [ "$target" = "android" ]; then
+        if [ -z "${ANDROID_HOME:-}${ANDROID_SDK_ROOT:-}" ]; then
+            skipped+=("android (no ANDROID_HOME or ANDROID_SDK_ROOT)")
+            continue
+        fi
+        if [ -z "${GODOT_ANDROID_KEYSTORE_RELEASE_PATH:-}" ]; then
+            skipped+=("android (no GODOT_ANDROID_KEYSTORE_RELEASE_PATH; an unsigned APK will not install)")
+            continue
+        fi
     fi
 
     out="$(output_for "$target")"

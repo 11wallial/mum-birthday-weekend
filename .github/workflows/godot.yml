@@ -204,16 +204,24 @@ jobs:
       - name: Install build-tools
         run: sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Generate the debug keystore
+      # An APK must be signed to install, and --export-release signs with the
+      # *release* keystore, not the debug one. There is no distribution key
+      # here, so a throwaway self-signed key is generated per run: it makes the
+      # package installable for testing and is deliberately not an identity
+      # anything should be published under.
+      - name: Generate a signing key
         run: |
           set -euo pipefail
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android \
-            -keystore "$HOME/debug.keystore" -storepass android -dname "CN=Android Debug,O=Android,C=US" \
-            -validity 9999 -deststoretype pkcs12
+          keytool -keyalg RSA -keysize 2048 -genkeypair -alias breakthebank \
+            -keystore "$HOME/release.keystore" -storepass android -keypass android \
+            -dname "CN=Break the Bank CI,O=Break the Bank,C=GB" \
+            -validity 10000 -deststoretype pkcs12
 
-      # Godot reads the SDK path and keystore from editor settings, not the
-      # project, so they are written into a throwaway editor profile here.
-      - name: Point Godot at the Android toolchain
+      # Godot takes the SDK path from editor settings — there is no project
+      # setting for it — so a throwaway editor profile carries it. The keystore
+      # goes through the environment instead, which is the seam Godot provides
+      # precisely so credentials never have to be written to a file.
+      - name: Point Godot at the Android SDK
         run: |
           set -euo pipefail
           settings_dir="$HOME/.config/godot"
@@ -223,9 +231,6 @@ jobs:
 
           [resource]
           export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
-          export/android/debug_keystore = "$HOME/debug.keystore"
-          export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_pass = "android"
           EOF
 
       - name: Import project
@@ -234,7 +239,12 @@ jobs:
 
       - name: Build every target
         working-directory: ${{ env.PROJECT_DIR }}
-        run: tools/package/build.sh
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: breakthebank
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: android
+        run: |
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$HOME/release.keystore"
+          tools/package/build.sh
 
       # A zero-byte or missing output means the export silently failed; the
       # build script already checks that, so this is the shape check.
@@ -248,8 +258,11 @@ jobs:
             [ -s "$f" ] || { echo "::error::missing or empty: $f"; exit 1; }
             echo "ok  $(du -h "$f" | cut -f1)  $f"
           done
-          unzip -l dist/android/BreakTheBank.apk | grep -q "META-INF" \
-            || { echo "::error::APK is unsigned"; exit 1; }
+          # Godot downgrades a failed signing to a warning and still writes the
+          # APK, so this is the step that decides whether the package installs.
+          apksigner="$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort | tail -1)"
+          "$apksigner" verify --verbose --print-certs dist/android/BreakTheBank.apk \
+            || { echo "::error::APK is unsigned or its signature is invalid"; exit 1; }
 
       - name: Upload desktop builds
         uses: actions/upload-artifact@v4
