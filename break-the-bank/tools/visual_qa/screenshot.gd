@@ -79,7 +79,10 @@ func _apply(action: String) -> void:
 		return
 	match action:
 		"spin":
-			if _root_node.has_method("debug_advance"):
+			# A draft blocks the run until it is answered, so drive through it.
+			if _root_node.has_method("debug_shop_open") and _root_node.call("debug_shop_open"):
+				_root_node.call("debug_leave_shop")
+			elif _root_node.has_method("debug_advance"):
 				_root_node.call("debug_advance")
 		"room":
 			if _root_node.has_method("debug_set_view"):

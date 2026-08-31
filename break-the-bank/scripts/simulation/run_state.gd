@@ -35,6 +35,10 @@ var last_line: Array[SymbolDef] = []
 var last_pattern: Probability.Pattern = Probability.Pattern.NONE
 ## Reason the run ended, e.g. &"ante_unpaid" or &"cleared_all_floors".
 var end_reason: StringName = &""
+## Artifacts on offer while [member phase] is SHOPPING, and what each costs.
+## Both are cleared when the shop closes.
+var shop_offers: Array[ArtifactDef] = []
+var shop_prices: Array[int] = []
 
 var reel_rng: RngStream
 var shop_rng: RngStream
@@ -51,6 +55,13 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus) -> void:
 	economy = CoreEconomy.new(config, p_bus)
 	reel_rng = RngStream.new(p_seed, &"reels")
 	shop_rng = RngStream.new(p_seed, &"shop")
+
+
+## True when [param index] names an offer the player can currently afford.
+func can_buy(index: int) -> bool:
+	if phase != Phase.SHOPPING or index < 0 or index >= shop_offers.size():
+		return false
+	return economy.can_afford(shop_prices[index])
 
 
 func current_floor() -> FloorDef:

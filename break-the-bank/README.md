@@ -21,8 +21,23 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
     --runs=10000 --seed=1 --out=res://reports/balance_report.json
 ```
 
-In game: **space** spins and advances, **tab** swaps between the machine view
-and the room view, **esc** starts a fresh run.
+### Controls
+
+| Action | Keyboard / mouse | Gamepad |
+| --- | --- | --- |
+| Spin, settle an ante, advance | Space, left click | A / Cross |
+| Buy artifact 1–5 in the draft | 1–5, or click the row | — |
+| Leave the draft | Space or Q | B / Circle |
+| Swap machine ↔ room view | Tab | Y / Triangle |
+| New run | F5 | — |
+
+Bindings live in `project.godot` under `[input]` as `bb_*` actions; rebind there
+rather than in code.
+
+When a floor's spins run out the ante is not settled silently — the run pauses
+on what is due against what you hold, and waits. Clearing a floor opens the
+draft, which stays open until you leave it: unaffordable offers stay listed,
+because knowing what you cannot afford is most of the decision.
 
 ## Architecture
 
@@ -145,6 +160,24 @@ What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 2. **Floor 5 is the sharpest step.** It kills more runs than any other floor
    (1,891 of 10,000). Deliberate for now — the Back Office is where the run is
    meant to be decided — but it is the first number to revisit.
+
+## Playtesting
+
+Every played run is recorded to `user://playtests/` — each spin, purchase and
+pass, with deliberation time. Because a seed replays exactly, the same seed can
+be re-run with the built-in policy and the two diffed:
+
+```bash
+godot --headless --path . --script res://tools/playtest/compare.gd
+```
+
+It prints outcome, floors, spins and earnings side by side, plus the artifacts
+each took that the other did not and what the human passed on. Set
+`record_playtest = false` on the room to turn recording off.
+
+**Not yet done:** no human has played this. The instrument exists; the sessions
+it is for have not happened, so there are no findings about where player
+judgement beats or trails the policy.
 
 ## Visual QA
 

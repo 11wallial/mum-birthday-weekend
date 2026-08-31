@@ -70,6 +70,21 @@ static func content() -> ContentDB:
 	return db
 
 
+## Fixture content with a stocked shop, for exercising the draft.
+## Kept separate from [method content] so existing suites keep their empty shop.
+static func content_with_shop() -> ContentDB:
+	var db: ContentDB = content()
+	var cheap: ArtifactDef = artifact(&"cheap_charm", ArtifactDef.Effect.FLAT_BONUS, 1.0)
+	cheap.cost = 2
+	var dear: ArtifactDef = artifact(&"dear_engine", ArtifactDef.Effect.MULT_BONUS, 1.0)
+	dear.cost = 9999
+	db.artifacts.assign([cheap, dear])
+	# The plain fixture floors carry no shop slots; a draft needs some.
+	for floor_def: FloorDef in db.floors:
+		floor_def.shop_slots = 2
+	return db
+
+
 ## A run wired to the fixture content, ready to spin.
 static func run_state(run_seed: int = 42, db: ContentDB = null) -> RunState:
 	var content_db: ContentDB = db if db != null else content()

@@ -75,6 +75,17 @@ never turn a correctness test red. `tests/simulation/` asserts on the shipped
 content, but only on guardrails — "the game is neither unwinnable nor free",
 not "the win rate is 40%".
 
+## Input and the draft
+
+Input actions are `bb_*` in `project.godot`; add bindings there, never with
+`InputMap` calls at runtime. The draft buys through `SimEngine.buy_offer`, which
+is the same call the headless shop policy makes — keep it that way, or the
+batch stops measuring the game a person plays.
+
+`CasinoRoom._advance()` refuses to step while the reels are turning or a draft
+is open. Put guards like that in `_advance()` rather than in `_unhandled_input`,
+so tools and tests are held to them too.
+
 ## Visual QA
 
 Framing, scale and lighting cannot be asserted, only looked at. There is no GPU

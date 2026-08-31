@@ -30,7 +30,9 @@ func get_bus() -> EffectBus:
 func start_run(run_seed: int) -> RunState:
 	var state: RunState = RunState.new(run_seed, _content, _bus)
 	state.phase = RunState.Phase.SETUP
-	_bus.emit_event(EffectBus.Event.RUN_STARTED, {"seed": run_seed, "cash": state.economy.cash})
+	_bus.emit_event(EffectBus.Event.RUN_STARTED, {
+		"seed": run_seed, "cash": state.economy.cash, "debt": state.economy.debt,
+	})
 	begin_floor(state)
 	return state
 
@@ -54,7 +56,7 @@ func step(state: RunState) -> void:
 	if state.is_over():
 		return
 	if state.phase == RunState.Phase.SHOPPING:
-		_advance_floor(state)
+		leave_shop(state)
 		return
 	if state.spins_remaining <= 0:
 		_close_floor(state)
@@ -188,28 +190,51 @@ func _ante_for(state: RunState, floor_def: FloorDef) -> int:
 	return maxi(0, int(round(float(floor_def.ante) * (1.0 - discount / 100.0))))
 
 
+## Buys offer [param index]. Returns true when the purchase happened.
+##
+## This is the whole purchase API: the UI calls it on a click, and the headless
+## shop policy calls it too, so an automated batch and a human play the same
+## code path rather than two implementations that drift apart.
+func buy_offer(state: RunState, index: int) -> bool:
+	if not state.can_buy(index):
+		return false
+	state.economy.debit(state.shop_prices[index], &"artifact")
+	state.acquire(state.shop_offers[index])
+	state.shop_offers.remove_at(index)
+	state.shop_prices.remove_at(index)
+	return true
+
+
+## Closes the shop and moves to the next floor.
+func leave_shop(state: RunState) -> void:
+	if state.phase != RunState.Phase.SHOPPING:
+		return
+	state.shop_offers.clear()
+	state.shop_prices.clear()
+	_advance_floor(state)
+
+
 func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 	var offers: Array[ArtifactDef] = _roll_offers(state, floor_def)
-	var prices: Array[int] = []
+	state.shop_offers = offers
+	state.shop_prices = []
 	for artifact: ArtifactDef in offers:
-		prices.append(state.economy.price_of(artifact, state.config, state.floors_cleared))
+		state.shop_prices.append(
+				state.economy.price_of(artifact, state.config, state.floors_cleared))
 	var offer_ids: Array[String] = []
 	for artifact: ArtifactDef in offers:
 		offer_ids.append(String(artifact.id))
 	_bus.emit_event(EffectBus.Event.SHOP_OPENED, {
-		"floor": floor_def.index, "offers": offer_ids, "prices": prices,
+		"floor": floor_def.index, "offers": offer_ids, "prices": state.shop_prices.duplicate(),
 	})
-	if offers.is_empty() or not shop_policy.is_valid():
+	# With no policy the shop stays open for a player to work; a batch run hands
+	# it to the policy immediately.
+	if not shop_policy.is_valid():
 		return
-	var choice: int = int(shop_policy.call(state, offers, prices))
-	while choice >= 0 and choice < offers.size() and state.economy.can_afford(prices[choice]):
-		state.economy.debit(prices[choice], &"artifact")
-		state.acquire(offers[choice])
-		offers.remove_at(choice)
-		prices.remove_at(choice)
-		if offers.is_empty():
+	while not state.shop_offers.is_empty():
+		var choice: int = int(shop_policy.call(state, state.shop_offers, state.shop_prices))
+		if not buy_offer(state, choice):
 			break
-		choice = int(shop_policy.call(state, offers, prices))
 
 
 ## Picks this floor's shop stock, without repeats, from the shop stream.

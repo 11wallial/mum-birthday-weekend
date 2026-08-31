@@ -10,6 +10,7 @@ extends CanvasLayer
 @export var floor_label_path: NodePath = ^"Panel/Rows/Floor"
 @export var line_label_path: NodePath = ^"Panel/Rows/Line"
 @export var log_label_path: NodePath = ^"Panel/Rows/Log"
+@export var prompt_label_path: NodePath = ^"Prompt"
 
 const LOG_LINES: int = 6
 
@@ -18,6 +19,7 @@ var _debt: Label
 var _floor: Label
 var _line: Label
 var _log: Label
+var _prompt: Label
 var _lines: PackedStringArray = PackedStringArray()
 var _bus: EffectBus
 
@@ -28,6 +30,8 @@ func _ready() -> void:
 	_floor = get_node_or_null(floor_label_path) as Label
 	_line = get_node_or_null(line_label_path) as Label
 	_log = get_node_or_null(log_label_path) as Label
+	_prompt = get_node_or_null(prompt_label_path) as Label
+	set_prompt("")
 
 
 func bind(bus: EffectBus) -> void:
@@ -39,6 +43,15 @@ func bind(bus: EffectBus) -> void:
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
+		EffectBus.Event.RUN_STARTED:
+			_set_text(_cash, "CASH  %d" % int(payload.get("cash", 0)))
+			_set_text(_debt, "DEBT  %d" % int(payload.get("debt", 0)))
+			_lines.clear()
+			_push("Seed %d" % int(payload.get("seed", 0)))
+		EffectBus.Event.ANTE_SETTLED:
+			_set_text(_line, "ANTE %d %s" % [
+				int(payload.get("ante", 0)),
+				"paid" if bool(payload.get("paid", false)) else "UNPAID"])
 		EffectBus.Event.CASH_CHANGED:
 			_set_text(_cash, "CASH  %d" % int(payload.get("cash", 0)))
 		EffectBus.Event.FLOOR_STARTED:
@@ -61,6 +74,15 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_push("Run ended: %s" % String(payload.get("end_reason", "")))
 		_:
 			pass
+
+
+## Centre-screen callout for the moments that need a decision or an epitaph.
+## An empty string hides it.
+func set_prompt(text: String) -> void:
+	if _prompt == null:
+		return
+	_prompt.text = text
+	_prompt.visible = not text.is_empty()
 
 
 func _push(text: String) -> void:
