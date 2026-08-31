@@ -165,7 +165,13 @@ detail. Rules worth keeping:
 
 - Desktop presets embed the PCK. Do not split a build into binary + data.
 - `export_presets.cfg` is tracked, against Godot's default ignore. Keep it free
-  of credentials — CI supplies the Android keystore through editor settings.
+  of credentials: the Android keystore comes from
+  `GODOT_ANDROID_KEYSTORE_RELEASE_PATH` / `_USER` / `_PASSWORD`, and only the
+  SDK path lives in editor settings. `--export-release` reads the *release*
+  keystore and ignores the debug one.
+- Godot downgrades a failed APK signing to a warning and writes the file anyway,
+  so "the export succeeded" says nothing about whether it installs. Verify with
+  `apksigner verify`, as CI does.
 - Every `AudioStreamPlayer` sets `playback_type = PLAYBACK_TYPE_STREAM`. The web
   export defaults to sample playback, which cannot play an `AudioStreamGenerator`
   at all, so the procedural ambience silently fails without it.
