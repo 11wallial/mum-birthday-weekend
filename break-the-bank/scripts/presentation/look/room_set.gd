@@ -39,6 +39,7 @@ func build(root: Node3D) -> Dictionary:
 	_vault_door()
 	var bulb: MeshInstance3D = _pendant()
 	_wall_wash()
+	_strip_light()
 	_dust()
 	return {"sign": sign_label, "bulb": bulb}
 
@@ -50,7 +51,7 @@ func _wall_wash() -> void:
 	var wash: OmniLight3D = OmniLight3D.new()
 	wash.name = "WallWash"
 	wash.light_color = Color(0.596, 0.51, 0.404)
-	wash.light_energy = 1.5
+	wash.light_energy = 2.0
 	wash.light_specular = 0.15
 	wash.omni_range = 7.5
 	wash.omni_attenuation = 1.1
@@ -249,6 +250,30 @@ func _pendant() -> MeshInstance3D:
 	_root.add_child(key)
 	_aim(key, LAMP + Vector3(0.0, -0.08, 0.0), LAMP_TARGET)
 	return bulb
+
+
+## A dead fluorescent tube over the left of the room: cold and weak. It is not
+## there to light the machine — the pendant does that — but to keep the floor
+## either side of the plinth readable, which is where a run's winnings and its
+## floor markers pile up. Without it the pulled-back survey view, whose whole
+## job is to show what the run has accumulated, was a lit island in black.
+func _strip_light() -> void:
+	var strip: Node3D = _group(&"StripLight")
+	strip.position = Vector3(-2.25, CEILING - 0.34, 1.5)
+	_box(strip, Vector3(0.16, 0.1, 1.5), Vector3.ZERO,
+			Materials.machined(Color(0.298, 0.290, 0.278), 74))
+	_box(strip, Vector3(0.11, 0.03, 1.36), Vector3(0.0, -0.06, 0.0),
+			Materials.glowing(Color(0.667, 0.749, 0.847), 1.8))
+	var tube: OmniLight3D = OmniLight3D.new()
+	tube.name = "Tube"
+	tube.light_color = Color(0.686, 0.769, 0.882)
+	tube.light_energy = 2.2
+	tube.light_specular = 0.35
+	tube.omni_range = 6.5
+	tube.omni_attenuation = 1.5
+	tube.shadow_enabled = false
+	tube.position = Vector3(0.0, -0.2, 0.0)
+	strip.add_child(tube)
 
 
 ## Dust hanging in the light. It is the cheapest thing in the scene and does more

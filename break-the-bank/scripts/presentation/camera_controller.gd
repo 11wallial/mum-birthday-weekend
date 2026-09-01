@@ -31,9 +31,9 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 @export var machine_eye: Vector3 = Vector3(0.72, 1.44, 3.62)
 @export var machine_target: Vector3 = Vector3(-0.12, 1.16, 0.05)
 @export var machine_fov: float = 55.0
-@export var room_eye: Vector3 = Vector3(2.8, 2.55, 6.6)
-@export var room_target: Vector3 = Vector3(-0.15, 1.1, -0.2)
-@export var room_fov: float = 55.0
+@export var room_eye: Vector3 = Vector3(2.05, 2.0, 5.05)
+@export var room_target: Vector3 = Vector3(-0.25, 0.9, 0.15)
+@export var room_fov: float = 62.0
 ## How far the camera rises and how much further up it looks on a tall screen.
 ## With a fixed horizontal field, every pixel of extra height is extra vertical
 ## field, and on a phone held upright all of it lands on empty ceiling and blown

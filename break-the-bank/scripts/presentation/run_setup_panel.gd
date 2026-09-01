@@ -192,12 +192,23 @@ static func _next(options: Array[StringName], current: StringName) -> StringName
 func _unhandled_input(event: InputEvent) -> void:
 	if not _open:
 		return
-	# Typing a seed must not also spin the reels behind the panel.
-	if _seed_field != null and _seed_field.has_focus() and event is InputEventKey:
-		if event.is_action_pressed(&"bb_confirm"):
-			_on_start_pressed()
-			get_viewport().set_input_as_handled()
-		return
-	if event.is_action_pressed(&"bb_cancel") or event.is_action_pressed(&"bb_menu"):
-		close()
+	var typing: bool = _seed_field != null and _seed_field.has_focus()
+	if event.is_action_pressed(&"bb_confirm") and typing:
+		# Enter in the seed field starts that seed rather than spinning behind.
+		_on_start_pressed()
+	elif event.is_action_pressed(&"bb_cancel") or event.is_action_pressed(&"bb_menu"):
+		# Escape backs out one step at a time: out of the seed field first, then
+		# out of the panel. Closing straight from a half-typed seed loses it.
+		if typing:
+			_seed_field.release_focus()
+		else:
+			close()
+	# Whatever the key was, it stops here. A modal panel owns the keyboard while
+	# it is up: unhandled input propagates in reverse tree order, so this panel
+	# sees a key before the draft does, and anything it lets past reaches the
+	# draft underneath — a number typed over the setup panel was buying an
+	# artifact the player could not even see. Controls inside the panel are
+	# unaffected, because a focused LineEdit takes its keys through _gui_input,
+	# which runs before this and never reaches here at all.
+	if event is InputEventKey:
 		get_viewport().set_input_as_handled()
