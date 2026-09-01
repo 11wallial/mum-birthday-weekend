@@ -178,6 +178,22 @@ Rules that cost real time to learn:
 - A modal panel must swallow every key while it is up. Unhandled input goes in
   reverse tree order, and a panel that only consumes the keys it uses lets the
   rest reach the draft underneath.
+- **In an unshaded spatial shader, ALBEDO is the final colour.** EMISSION is
+  never read in that mode; writing a screen's picture to it ships a black
+  monitor, with no error to say why.
+- **Bind a ViewportTexture only after its viewport is in the tree.** Fetched at
+  construction it never resolves, and the material samples black forever.
+- The reel strip and the window plates are one texture: `ReelPrint` bakes the
+  cells once on the GPU, the drum wraps all of them, and a landed plate is the
+  same bake addressed one cell at a time. `BAND_ANGLE` is exactly one cell, so
+  a plate stays registered with the printing behind it — change either and you
+  must change both.
+- A glow faked by scaling a crisp text copy doubles its ends and reads as a
+  misprint. Nudge same-size copies in each direction instead.
+- Compatibility clamps highlights where Forward+ rolls them off. A light tuned
+  on desktop can burn the same surface white on the web build; scale the
+  offender by `RenderingServer.get_current_rendering_method()` rather than
+  splitting the whole rig.
 
 ## Audio
 
