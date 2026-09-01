@@ -28,12 +28,32 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 ## a basis written by hand is a basis silently mis-signed — that mistake has
 ## already aimed this camera at the ceiling once. A look-at target cannot be
 ## wrong in that way, and it is also the thing a person actually wants to adjust.
-@export var machine_eye: Vector3 = Vector3(0.78, 1.66, 4.05)
-@export var machine_target: Vector3 = Vector3(-0.1, 1.3, 0.05)
+## The machine view is not authored, it is computed: a box around the whole
+## machine — plinth to monitor, gearbox to lever — held square-on and fitted to
+## whatever shape the screen is. The old three-quarter framing cropped the
+## flanks on a wide window and the crown on a phone, and every fix was a new
+## magic eye position; fitting the box is the fix that stays fixed.
+@export var machine_frame_center: Vector3 = Vector3(0.03, 1.18, 0.15)
+@export var machine_frame_extents: Vector2 = Vector2(1.68, 1.36)
+## Breathing room between the camera and the frame box, on top of the fitted
+## distance — the machine's front hardware protrudes toward the lens.
+@export var machine_depth_margin: float = 0.95
 @export var machine_fov: float = 55.0
-@export var room_eye: Vector3 = Vector3(2.15, 2.2, 5.4)
-@export var room_target: Vector3 = Vector3(-0.25, 1.05, 0.15)
+## A hair above dead centre, so the frontal view keeps the machine's top
+## surfaces without stopping being square-on.
+@export var machine_eye_lift: float = 0.14
 @export var room_fov: float = 62.0
+
+## The room is read from a ring of anchored viewpoints, walked with the arrow
+## keys: the wide establisher, the left angle onto the door and the sign, the
+## right flank over the spool, and the back corner. Anchors rather than a free
+## orbit, because each is a place future appliances can be composed for.
+const ROOM_VIEWS: Array = [
+	{"eye": Vector3(2.15, 2.2, 5.4), "target": Vector3(-0.25, 1.05, 0.15)},
+	{"eye": Vector3(-3.4, 2.0, 4.6), "target": Vector3(0.9, 1.1, -0.8)},
+	{"eye": Vector3(3.9, 1.8, 2.4), "target": Vector3(-0.8, 1.15, 0.2)},
+	{"eye": Vector3(-3.6, 2.1, -1.6), "target": Vector3(0.6, 1.0, 3.2)},
+]
 ## How far the camera rises and how much further up it looks on a tall screen.
 ## With a fixed horizontal field, every pixel of extra height is extra vertical
 ## field, and on a phone held upright all of it lands on empty ceiling and blown
@@ -54,6 +74,8 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 @export var shake_strength: float = 0.06
 
 var current_view: View = View.MACHINE
+## Where on the ring of room viewpoints the camera last stood.
+var _room_index: int = 0
 
 var _camera: Camera3D
 var _shake: float = 0.0
@@ -109,13 +131,39 @@ func set_view(view: View, immediate: bool = false) -> void:
 	current_view = view
 	if _camera == null:
 		return
-	var eye: Vector3 = machine_eye if view == View.MACHINE else room_eye
-	var target: Vector3 = machine_target if view == View.MACHINE else room_target
-	var fov: float = machine_fov if view == View.MACHINE else room_fov
-	eye += Vector3.UP * portrait_eye_rise * _portrait
-	target += Vector3.UP * portrait_target_rise * _portrait
-	eye += (eye - target).normalized() * portrait_dolly_out * _portrait
-	fov -= portrait_fov_narrowing * _portrait
+	var eye: Vector3
+	var target: Vector3
+	var fov: float
+	if view == View.MACHINE:
+		# Fit the frame box to the screen's shape. The fov's meaning follows
+		# keep_aspect — vertical on a wide screen, horizontal on a tall one —
+		# so both axes' required distances come from the same half-angle.
+		var size: Vector2 = Vector2(get_viewport().get_visible_rect().size)
+		var aspect: float = size.x / maxf(size.y, 1.0)
+		fov = machine_fov
+		var half_tan: float = tan(deg_to_rad(fov * 0.5))
+		var tan_v: float = half_tan if aspect >= DESIGN_ASPECT else half_tan / aspect
+		var tan_h: float = half_tan * aspect if aspect >= DESIGN_ASPECT else half_tan
+		# A tall screen cannot hold the whole flank without drowning the
+		# machine in vertical air, so the box tightens to the machine's core
+		# as the screen narrows — the monitor and the spool are the crop.
+		var extents: Vector2 = machine_frame_extents.lerp(
+				Vector2(1.3, 1.3), _portrait)
+		var margin: float = lerpf(machine_depth_margin, 0.5, _portrait)
+		var distance: float = maxf(extents.y / tan_v,
+				extents.x / tan_h) + margin
+		target = machine_frame_center
+		eye = machine_frame_center \
+				+ Vector3(0.0, machine_eye_lift, distance)
+	else:
+		var anchor: Dictionary = ROOM_VIEWS[_room_index]
+		eye = anchor["eye"]
+		target = anchor["target"]
+		fov = room_fov
+		eye += Vector3.UP * portrait_eye_rise * _portrait
+		target += Vector3.UP * portrait_target_rise * _portrait
+		eye += (eye - target).normalized() * portrait_dolly_out * _portrait
+		fov -= portrait_fov_narrowing * _portrait
 	_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target, Vector3.UP)
 	if immediate:
 		_camera.global_transform = _rest
@@ -129,6 +177,15 @@ func set_view(view: View, immediate: bool = false) -> void:
 
 func toggle_view() -> void:
 	set_view(View.ROOM if current_view == View.MACHINE else View.MACHINE)
+
+
+## Steps to the next or previous anchor on the room's ring of viewpoints.
+## Only meaningful pulled back; at the machine the arrows belong to the game.
+func cycle_room_view(direction: int) -> void:
+	if current_view != View.ROOM:
+		return
+	_room_index = posmod(_room_index + direction, ROOM_VIEWS.size())
+	set_view(View.ROOM)
 
 
 ## Kicks the camera. [param intensity] is normalised 0..1 by the caller.

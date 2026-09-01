@@ -15,7 +15,7 @@ uniform vec3 phosphor : source_color = vec3(0.353, 1.0, 0.427);
 // How far the glass bows toward the viewer at the centre, in metres.
 uniform float bulge = 0.045;
 // How much the picture bows with it.
-uniform float curve = 0.1;
+uniform float curve = 0.06;
 uniform float scan_count = 96.0;
 uniform float brightness = 1.6;
 

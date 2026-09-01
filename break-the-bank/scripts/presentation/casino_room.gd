@@ -159,6 +159,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"bb_camera") and _camera != null:
 		_camera.toggle_view()
+	# Pulled back, the arrows walk the ring of room viewpoints. At the machine
+	# they stay free for whatever the machine grows next.
+	if _camera != null and _camera.current_view == CameraController.View.ROOM:
+		if event.is_action_pressed(&"bb_view_prev"):
+			_camera.cycle_room_view(-1)
+		elif event.is_action_pressed(&"bb_view_next"):
+			_camera.cycle_room_view(1)
 		return
 	# The draft and the back office consume their own input while open.
 	if _shop != null and _shop.is_open():
