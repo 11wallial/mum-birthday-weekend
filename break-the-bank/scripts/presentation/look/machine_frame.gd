@@ -58,6 +58,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	_chassis()
 	var reels: Array[Node3D] = _reel_bank(reel_count)
 	_bezel(reel_count)
+	_button_row(reel_count)
 	var gearbox: Node3D = _gearbox()
 	_hoses()
 	var screen: MeshInstance3D = _monitor()
@@ -156,7 +157,7 @@ func _chassis() -> void:
 ## that has to change, so it is the only part that is thrown away.
 func rebuild_window(root: Node3D, reel_count: int) -> Array[Node3D]:
 	_root = root
-	for group_name: StringName in [&"Reels", &"Bezel"]:
+	for group_name: StringName in [&"Reels", &"Bezel", &"Buttons"]:
 		var old: Node = root.get_node_or_null(NodePath(group_name))
 		if old != null:
 			# Removed as well as freed: queue_free defers, and the new bank is
@@ -165,6 +166,7 @@ func rebuild_window(root: Node3D, reel_count: int) -> Array[Node3D]:
 			old.queue_free()
 	var reels: Array[Node3D] = _reel_bank(reel_count)
 	_bezel(reel_count)
+	_button_row(reel_count)
 	return reels
 
 
@@ -355,6 +357,85 @@ func _strip_material() -> StandardMaterial3D:
 	return material
 
 
+## One physical button per reel, on a console shelf under the window: the
+## fruit-machine row, on the machine rather than on an overlay. The buttons
+## render ControlDeck's own per-reel model — SlotView3D relights them on every
+## deck refresh and clicks re-enter through the same intent path the deck and
+## the number keys use, so the chassis and the overlay can never disagree.
+func _button_row(reel_count: int) -> void:
+	var row: Node3D = _group(&"Buttons")
+	var count: int = maxi(reel_count, 1)
+	var centre: float = float(count - 1) * 0.5
+	# The shelf, tilted toward the player the way a console apron sits.
+	var shelf: Node3D = Node3D.new()
+	shelf.position = Vector3(0.0, CHASSIS_Y - 0.5, CHASSIS.z + 0.1)
+	shelf.rotation.x = 0.42
+	row.add_child(shelf)
+	var width: float = float(count - 1) * REEL_SPACING + 0.4
+	Prims.box(shelf, Vector3(width, 0.05, 0.24), Vector3.ZERO,
+			Materials.weathered("painted_metal", Materials.PAINT, 0.9, 1.0,
+					0.3, 0.3, Materials.painted(Materials.PAINT, 35)))
+	for sx: float in [-1.0, 1.0]:
+		Prims.box(shelf, Vector3(0.05, 0.09, 0.26),
+				Vector3(sx * (width * 0.5 - 0.02), -0.04, 0.0),
+				Materials.rusted(36))
+	for i: int in count:
+		var x: float = (float(i) - centre) * REEL_SPACING
+		var button: Node3D = Node3D.new()
+		button.name = "ReelButton%d" % i
+		button.position = Vector3(x, 0.03, -0.02)
+		shelf.add_child(button)
+		# Bezel ring, then the lamp cap the state lights.
+		Prims.cylinder(button, 0.08, 0.028, Vector3.ZERO, Vector3.ZERO,
+				Materials.brass(37), 18)
+		var cap: MeshInstance3D = Prims.cylinder(button, 0.064, 0.036,
+				Vector3(0.0, 0.014, 0.0), Vector3.ZERO,
+				_button_lamp_material(), 18)
+		cap.name = "Lamp"
+		# The caption sits on the apron's front face, upright to the player —
+		# printed on the cap it is edge-on to a square camera and unreadable.
+		var caption: Label3D = Label3D.new()
+		caption.name = "Caption"
+		caption.text = ""
+		caption.font_size = 40
+		caption.pixel_size = 0.0012
+		caption.modulate = Color(0.9, 0.86, 0.78)
+		caption.outline_size = 8
+		caption.outline_modulate = Color(0.05, 0.045, 0.04, 0.9)
+		caption.shaded = false
+		caption.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		# A placard hung off the apron's lip, backed dark so the word reads
+		# whatever the key light is doing to the shelf.
+		Prims.box(button, Vector3(0.19, 0.058, 0.012),
+				Vector3(0.0, -0.05, 0.135), Materials.cavity())
+		caption.position = Vector3(0.0, -0.05, 0.143)
+		caption.rotation.x = 0.0
+		button.add_child(caption)
+		# The pick body. SlotView3D wires input_event and reads the action
+		# the deck's model last assigned from metadata on the button.
+		var pick: Area3D = Area3D.new()
+		pick.name = "Pick"
+		var shape: CollisionShape3D = CollisionShape3D.new()
+		var cylinder: CylinderShape3D = CylinderShape3D.new()
+		cylinder.radius = 0.075
+		cylinder.height = 0.09
+		shape.shape = cylinder
+		pick.add_child(shape)
+		button.add_child(pick)
+
+
+## A lamp cap starts dark; SlotView3D drives its albedo and emission from the
+## deck's model. Unique per button, since every button is its own lamp.
+func _button_lamp_material() -> StandardMaterial3D:
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = Color(0.16, 0.14, 0.12)
+	material.roughness = 0.25
+	material.metallic = 0.0
+	material.emission_enabled = false
+	material.emission = Color(1.0, 0.72, 0.3)
+	return material
+
+
 ## The two lamps a fruit machine puts by every drum: HOLD under it, and the
 ## nudge chevron over it.
 ##
@@ -363,19 +444,10 @@ func _strip_material() -> StandardMaterial3D:
 ## whose state lives only in a panel at the bottom of the screen is a control
 ## the player has to keep translating back to the drum it belongs to.
 func _reel_lamps(reel: Node3D) -> void:
-	var lamp: MeshInstance3D = MeshInstance3D.new()
-	lamp.name = "HoldLamp"
-	var glass: CylinderMesh = CylinderMesh.new()
-	glass.top_radius = 0.05
-	glass.bottom_radius = 0.055
-	glass.height = 0.03
-	glass.radial_segments = 18
-	lamp.mesh = glass
-	lamp.transform.basis = Basis(Vector3(1.0, 0.0, 0.0), PI * 0.5)
-	lamp.position = Vector3(0.0, -0.47, REEL_RADIUS - 0.02)
-	lamp.material_override = Materials.lamp_glass(Color(0.55, 0.36, 0.12), 0.0)
-	reel.add_child(lamp)
-
+	# The HoldLamp fixture that used to hang here is gone: the console's
+	# physical button under each reel IS the hold lamp now, and the old glass
+	# sat exactly on the frontal camera's sight-line to it — three dark discs
+	# eclipsing the one control row the machine grew them for.
 	var chevron: MeshInstance3D = MeshInstance3D.new()
 	chevron.name = "NudgeArrow"
 	var head: CylinderMesh = CylinderMesh.new()
@@ -1180,11 +1252,14 @@ func _mounts() -> Array[Node3D]:
 	# flank forward of z 0.1, and the lever mount takes the right flank at y 1.0.
 	var places: Array[Array] = [
 		[Vector3(0.805, CHASSIS_Y + 0.1, CHASSIS.z + 0.05), Vector3.ZERO],
-		[Vector3(-0.68, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
-		[Vector3(0.68, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
+		# The plinth-cap pockets moved to the plinth's face when the button
+		# console took the apron: a module bolted where the buttons live
+		# would eclipse the one control row the player cannot lose.
+		[Vector3(-0.68, 0.24, 0.578), Vector3.ZERO],
+		[Vector3(0.68, 0.24, 0.578), Vector3.ZERO],
 		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y + 0.34, -0.16), Vector3(0.0, PI * 0.5, 0.0)],
 		[Vector3(-CHASSIS.x - 0.07, CHASSIS_Y + 0.28, -0.22), Vector3(0.0, -PI * 0.5, 0.0)],
-		[Vector3(0.0, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
+		[Vector3(-1.0, 0.24, 0.578), Vector3.ZERO],
 		[Vector3(-0.9, CHASSIS_Y + CHASSIS.y + 0.14, 0.28), Vector3(-0.7, 0.0, 0.0)],
 		[Vector3(0.86, CHASSIS_Y + CHASSIS.y + 0.14, 0.28), Vector3(-0.7, 0.0, 0.0)],
 		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y - 0.3, -0.16), Vector3(0.0, PI * 0.5, 0.0)],

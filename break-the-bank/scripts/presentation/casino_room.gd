@@ -98,6 +98,13 @@ func _ready() -> void:
 		_shop.market_requested.connect(_on_market_requested)
 	if _deck != null:
 		_deck.action_requested.connect(_on_deck_action)
+		# The machine's physical buttons render the deck's model and their
+		# clicks come back through the same handler: one model, two renderers,
+		# one intent path.
+		if _slot_view != null:
+			_deck.reels_modelled.connect(_slot_view.set_reel_controls)
+	if _slot_view != null:
+		_slot_view.control_pressed.connect(_on_deck_action)
 	if _contracts != null:
 		_contracts.sign_requested.connect(_on_sign_requested)
 	# The bar reaches the same entry points as the keys it stands in for, so a

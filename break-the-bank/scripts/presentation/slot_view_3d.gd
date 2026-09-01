@@ -97,6 +97,9 @@ var _busy: bool = false
 ## the credits actually move. A verdict on an unsettled board would call a line
 ## dead while the player was still holding a nudge worth forty credits.
 signal result_judged(result: Result, payout: int, settled: bool)
+## A physical reel button was clicked. Same shape as the deck's
+## action_requested, and the room routes both through one handler.
+signal control_pressed(action: StringName, index: int)
 ## Artifacts acquired this run. Drives how hard the reels are backlit.
 var _upgrades: int = 0
 ## What one spin needs to be worth on this floor. Set from FLOOR_STARTED.
@@ -425,6 +428,77 @@ func _set_odds(multiplier: float) -> void:
 			digit.modulate = Color(1.0, 0.72, 0.32) * 2.0
 			flash.tween_property(digit, "modulate",
 					Color(1.0, 0.55, 0.14) * 1.5, 0.4)
+
+
+## Relights the physical button row from ControlDeck's per-reel model. The
+## deck computes what each reel offers; these lamps only say it in hardware.
+func set_reel_controls(models: Array) -> void:
+	var row: Node3D = get_node_or_null(^"Buttons") as Node3D
+	if row == null:
+		return
+	var shelf: Node3D = row.get_child(0) as Node3D if row.get_child_count() > 0 \
+			else null
+	if shelf == null:
+		return
+	for child: Node in shelf.get_children():
+		var button: Node3D = child as Node3D
+		if button == null or not String(button.name).begins_with("ReelButton"):
+			continue
+		var index: int = int(String(button.name).trim_prefix("ReelButton"))
+		var model: Dictionary = {}
+		for candidate: Dictionary in models:
+			if int(candidate.get("index", -1)) == index:
+				model = candidate
+				break
+		_dress_button(button, model)
+
+
+func _dress_button(button: Node3D, model: Dictionary) -> void:
+	var lamp: MeshInstance3D = button.get_node_or_null(^"Lamp") as MeshInstance3D
+	var caption: Label3D = button.get_node_or_null(^"Caption") as Label3D
+	var material: StandardMaterial3D = \
+			(lamp.material_override as StandardMaterial3D) if lamp != null else null
+	button.set_meta(&"action", model.get("action", &""))
+	button.set_meta(&"enabled", bool(model.get("enabled", false)))
+	if not button.has_meta(&"wired"):
+		button.set_meta(&"wired", true)
+		var pick: Area3D = button.get_node_or_null(^"Pick") as Area3D
+		if pick != null:
+			pick.input_event.connect(_on_button_input.bind(button))
+	if caption != null:
+		caption.text = String(model.get("label", ""))
+		caption.visible = not model.is_empty()
+	if material == null:
+		return
+	if model.is_empty() or not bool(model.get("enabled", false)):
+		# Dark: the machine is not offering this button right now.
+		material.albedo_color = Color(0.16, 0.14, 0.12)
+		material.emission_enabled = false
+		return
+	var nudging: bool = StringName(model.get("action", &"")) == &"nudge"
+	var lamp_tint: Color = Color(0.5, 0.75, 1.0) if nudging \
+			else Color(1.0, 0.72, 0.3)
+	material.albedo_color = lamp_tint * 0.7
+	material.emission_enabled = true
+	material.emission = lamp_tint
+	# Offered reads as lit even under the key light; taken reads as ON.
+	material.emission_energy_multiplier = 3.2 if bool(model.get("lit", false)) \
+			else 1.6
+
+
+func _on_button_input(_camera: Node, event: InputEvent, _at: Vector3,
+		_normal: Vector3, _shape: int, button: Node3D) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click == null or not click.pressed \
+			or click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not bool(button.get_meta(&"enabled", false)):
+		return
+	var action: StringName = button.get_meta(&"action", &"") as StringName
+	if action == &"":
+		return
+	var index: int = int(String(button.name).trim_prefix("ReelButton"))
+	control_pressed.emit(action, index)
 
 
 ## Lights the ladder up to [param rung], and leaves the one above it waiting.

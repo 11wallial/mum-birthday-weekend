@@ -12,6 +12,11 @@ extends CanvasLayer
 ## Emitted when the player asks for something. [param index] names a reel for
 ## the hold and nudge actions and is ignored by the rest.
 signal action_requested(action: StringName, index: int)
+## The per-reel controls as data, emitted on every refresh: an array of
+## dictionaries with action, index, label, note, enabled and lit. The machine's
+## physical button row renders exactly this, so the buttons on the chassis and
+## the chips on the overlay can never disagree — one model, two renderers.
+signal reels_modelled(models: Array)
 
 const SPIN: StringName = &"spin"
 const HOLD: StringName = &"hold"
@@ -42,6 +47,8 @@ var _actions: HBoxContainer
 var _extras: HBoxContainer
 var _status: HBoxContainer
 var _state: RunState
+## What _build_reels last computed, for reels_modelled.
+var _reel_models: Array = []
 var _scale: float = 1.0
 ## Set while the reels are still turning: the machine must not offer a decision
 ## about a board the player has not been shown.
@@ -109,16 +116,19 @@ func _fit() -> void:
 func refresh() -> void:
 	if _reels == null or _actions == null or _status == null or _extras == null:
 		return
+	_reel_models = []
 	_clear(_status)
 	_clear(_reels)
 	_clear(_extras)
 	_clear(_actions)
-	if _state == null or _state.is_over() or _shelved:
-		return
-	_build_status()
-	if _state.phase == RunState.Phase.SPINNING:
-		_build_reels()
-		_build_actions()
+	if _state != null and not _state.is_over() and not _shelved:
+		_build_status()
+		if _state.phase == RunState.Phase.SPINNING:
+			_build_reels()
+			_build_actions()
+	# Emitted on every path, empty included: a button row showing controls
+	# the deck no longer offers is worse than a dark one.
+	reels_modelled.emit(_reel_models)
 
 
 func _build_status() -> void:
@@ -151,6 +161,7 @@ func _build_reels() -> void:
 		return
 	var nudging: bool = (_state.decision == RunState.Decision.NUDGE
 			and not _held_back)
+	_reel_models = []
 	if not nudging and (_state.is_deciding() or _held_back):
 		return
 	for i: int in board.reel_count():
@@ -162,6 +173,10 @@ func _build_reels() -> void:
 			_reel_button(NUDGE, i, "NUDGE", incoming,
 					("+%d" % gain) if gain > 0 else "no better",
 					board.can_nudge(i), gain > 0, board.reel_count())
+			_reel_models.append({"action": NUDGE, "index": i,
+					"label": "NUDGE", "note": ("+%d" % gain) if gain > 0
+					else "no better", "enabled": board.can_nudge(i),
+					"lit": gain > 0})
 		else:
 			var locked: bool = board.is_held(i)
 			var barred: bool = (not locked
@@ -169,6 +184,10 @@ func _build_reels() -> void:
 			_reel_button(HOLD, i, "HELD" if locked else "HOLD", standing,
 					"%d cr" % _state.config.spin_cost if not locked else "locked",
 					not barred, locked, board.reel_count())
+			_reel_models.append({"action": HOLD, "index": i,
+					"label": "HELD" if locked else "HOLD",
+					"note": "%d cr" % _state.config.spin_cost if not locked
+					else "locked", "enabled": not barred, "lit": locked})
 
 
 func _build_actions() -> void:
