@@ -63,7 +63,12 @@ func _process(delta: float) -> bool:
 		0:
 			if _root_node.has_method("debug_fit_modules"):
 				_root_node.call("debug_fit_modules", _choices())
-			_wait = SETTLE
+			# Four floors down, a few hundred banked, and lit as the vault. The
+			# empty room has been looked at plenty; this is the one a player
+			# spends the back half of a run in.
+			if _root_node.has_method("debug_dress_room"):
+				_root_node.call("debug_dress_room", 4, 620, &"vault")
+			_wait = SETTLE + FloorMood.TRANSITION
 			_stage = 1
 		1:
 			_capture("modules_machine")

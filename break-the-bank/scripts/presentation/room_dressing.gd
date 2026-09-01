@@ -6,6 +6,11 @@
 class_name RoomDressing
 extends Node3D
 
+## Where the first plaque hangs and how far apart the row is spaced. On the back
+## wall above the dado rail, well clear of the floor sign and the door.
+const PLAQUE_ORIGIN: Vector3 = Vector3(-2.55, 1.72, -3.24)
+const PLAQUE_SPACING: float = 0.42
+
 ## Credits represented by one stack block.
 const CREDITS_PER_BLOCK: int = 25
 const MAX_BLOCKS: int = 60
@@ -92,12 +97,41 @@ func _spawn_block(index: int) -> void:
 	tween.tween_property(block, "position", target, 0.28).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
 
+## Mounts a plaque on the back wall for a floor that has been cleared.
+##
+## These used to be orange sticks on the floor beside the machine, which read as
+## debris rather than as a record. A row of engraved plates going up the wall is
+## the same information as a trophy shelf: how far this run got, readable from
+## across the room, and it survives everything else the room accumulates.
 func _add_floor_marker(floor_index: int) -> void:
-	var marker: MeshInstance3D = MeshInstance3D.new()
-	var mesh: BoxMesh = BoxMesh.new()
-	mesh.size = Vector3(0.07, 0.5, 0.07)
-	marker.mesh = mesh
-	marker.material_override = _marker_material
-	marker.set_meta(&"kind", &"marker")
-	add_child(marker)
-	marker.position = Vector3(-1.75 - 0.17 * float(floor_index - 1), 0.25, 1.3)
+	var plaque: Node3D = Node3D.new()
+	plaque.name = "Plaque%d" % floor_index
+	plaque.set_meta(&"kind", &"marker")
+	add_child(plaque)
+	plaque.position = Vector3(
+			PLAQUE_ORIGIN.x + PLAQUE_SPACING * float(floor_index - 1),
+			PLAQUE_ORIGIN.y, PLAQUE_ORIGIN.z)
+
+	Prims.box(plaque, Vector3(0.3, 0.22, 0.03), Vector3.ZERO,
+			Materials.painted(Color(0.098, 0.09, 0.082), 33))
+	Prims.box(plaque, Vector3(0.25, 0.17, 0.02), Vector3(0.0, 0.0, 0.02),
+			_marker_material)
+	for sx: float in [-1.0, 1.0]:
+		Prims.sphere(plaque, 0.012, Vector3(sx * 0.12, 0.083, 0.022),
+				Materials.machined(Materials.STEEL, 79))
+
+	var number: Label3D = Label3D.new()
+	number.name = "Number"
+	number.text = str(floor_index)
+	number.font_size = 96
+	number.pixel_size = 0.0014
+	number.modulate = Color(0.086, 0.075, 0.055)
+	number.outline_size = 0
+	number.shaded = false
+	number.position = Vector3(0.0, 0.0, 0.032)
+	plaque.add_child(number)
+	# Arrives struck, then settles, so clearing a floor is seen being recorded.
+	plaque.scale = Vector3.ONE * 1.6
+	var tween: Tween = create_tween()
+	tween.tween_property(plaque, "scale", Vector3.ONE, 0.45) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

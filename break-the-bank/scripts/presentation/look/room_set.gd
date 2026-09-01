@@ -41,7 +41,18 @@ func build(root: Node3D) -> Dictionary:
 	_wall_wash()
 	_strip_light()
 	_dust()
-	return {"sign": sign_label, "bulb": bulb}
+	# The lights come back out because [FloorMood] has to reach them every floor.
+	# They are built here so each stays with its fixture; handing back references
+	# is how that survives contact with something that needs to change them.
+	return {
+		"sign": sign_label,
+		"sign_spill": _root.get_node_or_null(^"FloorSign/Spill"),
+		"bulb": bulb,
+		"key": _root.get_node_or_null(^"Key"),
+		"cold": _root.get_node_or_null(^"StripLight/Tube"),
+		"wash": _root.get_node_or_null(^"WallWash"),
+		"ceiling": _root.get_node_or_null(^"CeilingWash"),
+	}
 
 
 ## A dim, wide light aimed at the back wall. Everything past the lamp's throw had

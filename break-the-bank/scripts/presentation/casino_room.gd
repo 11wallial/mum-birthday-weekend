@@ -37,6 +37,10 @@ var _touch: TouchBar
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
+## The room's lights, handed back by [RoomSet] so [FloorMood] can reach them.
+var _room_parts: Dictionary = {}
+## The environment the mood pass tweens. Held rather than looked up each floor.
+var _environment: Environment
 var _recorder: PlaytestRecorder
 var _profile: PlayerProfile
 var _catalogue: MetaCatalogue
@@ -60,7 +64,14 @@ func _ready() -> void:
 	_touch = get_node_or_null(touch_bar_path) as TouchBar
 	var room_root: Node3D = get_node_or_null(room_set_path) as Node3D
 	if room_root != null:
-		_floor_sign = RoomSet.new().build(room_root).get("sign", null) as Label3D
+		_room_parts = RoomSet.new().build(room_root)
+		_floor_sign = _room_parts.get("sign", null) as Label3D
+	var world: WorldEnvironment = get_node_or_null(^"WorldEnvironment") as WorldEnvironment
+	if world != null:
+		# Duplicated, because the mood pass tweens it: without this the run would
+		# write its lighting changes back into the .tres on disk.
+		_environment = world.environment.duplicate() as Environment
+		world.environment = _environment
 	_profile = PlayerProfile.load_or_new()
 	_catalogue = MetaCatalogue.new()
 	_catalogue.load_all()
@@ -207,6 +218,18 @@ func debug_fit_modules(ids: PackedStringArray) -> void:
 		_slot_view.debug_fit(StringName(id))
 
 
+## Dresses the room as though [param floors] floors had been cleared and
+## [param cash] banked, and lights it as [param mood]. Visual QA only: the run's
+## state is untouched. A real run reaches a full room slowly, and the full room
+## is the one worth looking at.
+func debug_dress_room(floors: int, cash: int, mood: StringName) -> void:
+	if _dressing != null:
+		for i: int in floors:
+			_dressing.call("_add_floor_marker", i + 1)
+		_dressing.call("_sync_stacks", cash)
+	FloorMood.apply(mood, _room_parts, _environment, self)
+
+
 ## Opens the run-setup panel. For tools and tests.
 func debug_open_setup() -> void:
 	if _setup != null:
@@ -299,6 +322,9 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			if _camera != null:
 				# Shake scales with how far above a routine spin this landed.
 				_camera.shake(clampf(float(payload.get("payout", 0)) / 60.0, 0.0, 1.0))
+		EffectBus.Event.FLOOR_STARTED:
+			FloorMood.apply(StringName(payload.get("environment", &"")),
+					_room_parts, _environment, self)
 		EffectBus.Event.SHOP_OPENED:
 			if _shop != null:
 				_shop.open(state)
