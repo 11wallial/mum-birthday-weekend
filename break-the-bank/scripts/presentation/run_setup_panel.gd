@@ -23,6 +23,38 @@ var _catalogue: MetaCatalogue
 var _open: bool = false
 
 
+## Puts the panel in the same clothes as the draft and the room. Applied from
+## code rather than authored per-scene so the four panels cannot drift apart.
+func _dress() -> void:
+	var panel: PanelContainer = get_node_or_null(^"Panel") as PanelContainer
+	if panel != null:
+		panel.add_theme_stylebox_override(&"panel", UiSkin.panel())
+	var buttons: Node = get_node_or_null(^"Panel/Rows/Buttons")
+	if buttons != null:
+		for child: Node in buttons.get_children():
+			var button: Button = child as Button
+			if button != null:
+				UiSkin.dress_button(button)
+				button.custom_minimum_size = Vector2(0.0, 46.0)
+	for path: NodePath in [^"Panel/Rows/Title", ^"Panel/Rows/Ruleset"]:
+		var label: Label = get_node_or_null(path) as Label
+		if label != null:
+			label.add_theme_color_override(&"font_color", UiSkin.AMBER)
+	for path: NodePath in [^"Panel/Rows/Status", ^"Panel/Rows/Unlocks", ^"Panel/Rows/Footer"]:
+		var label: Label = get_node_or_null(path) as Label
+		if label != null:
+			label.add_theme_color_override(&"font_color", UiSkin.INK_MUTED)
+	var seed_label: Label = get_node_or_null(^"Panel/Rows/SeedRow/SeedLabel") as Label
+	if seed_label != null:
+		seed_label.add_theme_color_override(&"font_color", UiSkin.INK)
+	var field: LineEdit = get_node_or_null(seed_field_path) as LineEdit
+	if field != null:
+		field.add_theme_stylebox_override(&"normal", UiSkin.button(&"normal"))
+		field.add_theme_stylebox_override(&"focus", UiSkin.button(&"hover"))
+		field.add_theme_color_override(&"font_color", UiSkin.INK)
+		field.add_theme_color_override(&"caret_color", UiSkin.AMBER)
+
+
 func _ready() -> void:
 	_seed_field = get_node_or_null(seed_field_path) as LineEdit
 	_status = get_node_or_null(status_path) as Label
@@ -48,6 +80,7 @@ func _ready() -> void:
 	var close_button: Button = get_node_or_null(^"Panel/Rows/Buttons/Close") as Button
 	if close_button != null:
 		close_button.pressed.connect(close)
+	_dress()
 	var footer: Label = get_node_or_null(^"Panel/Rows/Footer") as Label
 	if footer != null:
 		footer.text = TouchBar.hint("F2 close     ENTER start typed seed",

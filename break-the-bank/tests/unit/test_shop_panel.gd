@@ -28,6 +28,27 @@ func _rows() -> Array[Node]:
 	return container.get_children()
 
 
+## Every piece of text a row displays, joined.
+##
+## A row is a laid-out grid of labels rather than one padded string — the price
+## has to sit in its own right-aligned column, which a single Button.text cannot
+## do in a proportional font. So the assertion is on what the row shows, not on
+## which node happens to hold it.
+func _row_text(row: Node) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	var pending: Array[Node] = [row]
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		var label: Label = node as Label
+		if label != null:
+			parts.append(label.text)
+		var button: Button = node as Button
+		if button != null and not button.text.is_empty():
+			parts.append(button.text)
+		pending.append_array(node.get_children())
+	return " ".join(parts)
+
+
 func test_the_panel_starts_hidden() -> void:
 	assert_bool(_panel.visible).is_false()
 	assert_bool(_panel.is_open()).is_false()
@@ -44,9 +65,14 @@ func test_each_row_names_its_artifact_and_price() -> void:
 	_panel.open(_state)
 	var rows: Array[Node] = _rows()
 	for i: int in rows.size():
-		var button: Button = rows[i] as Button
-		assert_str(button.text).contains(_state.shop_offers[i].display_name)
-		assert_str(button.text).contains(str(_state.shop_prices[i]))
+		var shown: String = _row_text(rows[i])
+		assert_str(shown).contains(_state.shop_offers[i].display_name)
+		assert_str(shown).contains(str(_state.shop_prices[i]))
+		# The description is what a draft decision is actually made on — but the
+		# fixtures carry none, so asserting it unconditionally would be a claim
+		# about TestFixtures rather than about the panel.
+		if not _state.shop_offers[i].description.is_empty():
+			assert_str(shown).contains(_state.shop_offers[i].description)
 
 
 func test_unaffordable_rows_are_shown_but_disabled() -> void:

@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_out_dir = String(args.get("out", "user://shots"))
 	var spins: int = int(args.get("spins", 6))
 	_settle = float(args.get("settle", DEFAULT_SETTLE))
+
 	DirAccess.make_dir_recursive_absolute(_out_dir)
 
 	var packed: PackedScene = load(scene_path) as PackedScene
@@ -50,6 +51,10 @@ func _initialize() -> void:
 	_shots.append({"name": "03_machine_view_back", "action": "machine"})
 	for i: int in spins:
 		_shots.append({"name": "04_spin_%d" % (i + 1), "action": "spin"})
+	# The draft is a screen a player spends real time reading, so it gets its own
+	# frame. "spin" drives through it; this one stops on it.
+	for i: int in 14:
+		_shots.append({"name": "04b_to_draft_%d" % i, "action": "until_draft"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
 	_shots.append({"name": "06_run_setup", "action": "setup"})
 
@@ -69,7 +74,12 @@ func _process(delta: float) -> bool:
 		_wait = _settle
 		return false
 
-	_capture(String(shot["name"]))
+	var name: String = String(shot["name"])
+	var draft_open: bool = _root_node != null \
+			and _root_node.has_method("debug_shop_open") \
+			and bool(_root_node.call("debug_shop_open"))
+	if not name.begins_with("04b_") or draft_open:
+		_capture("04b_draft" if name.begins_with("04b_") else name)
 	_index += 1
 	_applied = false
 	return false
@@ -79,6 +89,13 @@ func _apply(action: String) -> void:
 	if _root_node == null:
 		return
 	match action:
+		"until_draft":
+			# Advance only while the draft is closed; once it opens, hold.
+			if _root_node.has_method("debug_shop_open") \
+					and bool(_root_node.call("debug_shop_open")):
+				return
+			if _root_node.has_method("debug_advance"):
+				_root_node.call("debug_advance")
 		"spin":
 			# A draft blocks the run until it is answered, so drive through it.
 			if _root_node.has_method("debug_shop_open") and _root_node.call("debug_shop_open"):

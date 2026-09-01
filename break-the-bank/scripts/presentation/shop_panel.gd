@@ -23,6 +23,8 @@ var _footer: Label
 var _leave: Button
 var _state: RunState
 var _open: bool = false
+## Type scale, matched to the window the same way the HUD's is.
+var _scale: float = 1.0
 
 
 func _ready() -> void:
@@ -35,7 +37,31 @@ func _ready() -> void:
 	_leave = get_node_or_null(leave_button_path) as Button
 	if _leave != null:
 		_leave.pressed.connect(_on_leave_pressed)
+		UiSkin.dress_button(_leave)
+	var panel: PanelContainer = get_node_or_null(^"Panel") as PanelContainer
+	if panel != null:
+		panel.add_theme_stylebox_override(&"panel", UiSkin.panel())
+	_fit_type()
+	get_viewport().size_changed.connect(_fit_type)
 	visible = false
+
+
+## Keeps the draft legible on a phone. Same reasoning as [RunHUD]: the canvas is
+## stretched to fit, so without this the text is drawn at about half size.
+func _fit_type() -> void:
+	var window: Window = get_window()
+	if window == null or window.size.x <= 0:
+		return
+	_scale = clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	if _title != null:
+		_title.add_theme_font_size_override(&"font_size", int(roundf(18.0 * _scale)))
+	if _footer != null:
+		_footer.add_theme_font_size_override(&"font_size", int(roundf(14.0 * _scale)))
+	if _leave != null:
+		_leave.add_theme_font_size_override(&"font_size", int(roundf(17.0 * _scale)))
+		_leave.custom_minimum_size = Vector2(0.0, 52.0 * _scale)
+	if _open:
+		_redraw()
 
 
 func is_open() -> bool:
@@ -65,8 +91,9 @@ func _redraw() -> void:
 		_rows.remove_child(child)
 		child.queue_free()
 	if _title != null:
-		_title.text = "THE SHOP — FLOOR %d CLEARED     CASH %d     DEBT %d" % [
+		_title.text = "THE DRAFT — FLOOR %d CLEARED      CASH %d      DEBT %d" % [
 			_state.floors_cleared, _state.economy.cash, _state.economy.debt]
+		_title.add_theme_color_override(&"font_color", UiSkin.AMBER)
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	if _footer != null:
@@ -76,23 +103,77 @@ func _redraw() -> void:
 				"Tap an offer to buy")
 
 
+## One offer, laid out rather than padded into a single string.
+##
+## The old row was `"%d.  %-18s  %4d cr   %s"`, which only lines up in a
+## monospaced font — and the UI font is proportional, so the prices wandered.
+## Real columns also let the price sit in amber against a cream name, which is
+## the distinction that matters when you are deciding what you can afford.
 func _build_row(index: int) -> Control:
 	var artifact: ArtifactDef = _state.shop_offers[index]
 	var price: int = _state.shop_prices[index]
 	var affordable: bool = _state.can_buy(index)
 
 	var button: Button = Button.new()
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.disabled = not affordable
 	button.focus_mode = Control.FOCUS_NONE
-	button.text = "%d.  %-18s  %4d cr   %s" % [
-		index + 1, artifact.display_name, price, artifact.description]
-	button.tooltip_text = artifact.description
-	# Unaffordable rows stay listed: knowing what you cannot afford is most of
-	# the decision in a shop.
-	button.modulate = Color(1, 1, 1, 1) if affordable else Color(1, 0.6, 0.6, 0.55)
+	button.mouse_default_cursor_shape = (Control.CURSOR_POINTING_HAND if affordable
+			else Control.CURSOR_ARROW)
+	button.add_theme_stylebox_override(&"normal", UiSkin.row(affordable))
+	button.add_theme_stylebox_override(&"hover", UiSkin.row(affordable, true))
+	button.add_theme_stylebox_override(&"pressed", UiSkin.row(affordable, true))
+	button.add_theme_stylebox_override(&"disabled", UiSkin.row(affordable))
+	button.add_theme_stylebox_override(&"focus", UiSkin.row(affordable, true))
 	button.pressed.connect(_on_row_pressed.bind(index))
+
+	# The label grid sits inside the button and ignores the pointer, so the whole
+	# row stays one hit target — which on a phone is the only usable size.
+	var grid: VBoxContainer = VBoxContainer.new()
+	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grid.add_theme_constant_override(&"separation", int(roundf(2.0 * _scale)))
+	# Inset by the row stylebox's own padding. A full-rect preset zeroes the
+	# offsets, which puts the text under the border and runs the price off the
+	# right edge — the stylebox pads the *background*, not the children.
+	grid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	grid.offset_left = 20.0 * _scale
+	grid.offset_right = -14.0 * _scale
+	grid.offset_top = 10.0 * _scale
+	grid.offset_bottom = -10.0 * _scale
+
+	var head: HBoxContainer = HBoxContainer.new()
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
+	head.add_child(_cell("%d." % (index + 1), 17.0,
+			UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
+	var name_cell: Label = _cell(artifact.display_name, 17.0,
+			UiSkin.INK if affordable else UiSkin.DENIED)
+	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(name_cell)
+	var price_cell: Label = _cell("%d cr" % price, 17.0,
+			UiSkin.AMBER if affordable else UiSkin.DENIED)
+	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	head.add_child(price_cell)
+	grid.add_child(head)
+
+	var body: Label = _cell(artifact.description, 14.0, UiSkin.INK_MUTED)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_child(body)
+
+	button.add_child(grid)
+	# The button has to be told how tall its own contents are: a Button is not a
+	# container, so nothing else will size it around them.
+	button.custom_minimum_size = Vector2(0.0, 58.0 * _scale)
 	return button
+
+
+func _cell(text: String, size: float, tint: Color) -> Label:
+	var label: Label = Label.new()
+	label.text = text
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
+	label.add_theme_color_override(&"font_color", tint)
+	return label
 
 
 func _on_row_pressed(index: int) -> void:
