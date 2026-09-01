@@ -52,6 +52,8 @@ func _choices() -> PackedStringArray:
 		"flywheel",          # MULT_PER_FLOOR, mechanical
 		"power_coupling",    # MULT_PER_ARTIFACT, chaos
 		"overdraft_clause",  # DEBT_PAYDOWN, bank
+		"marker_note",       # DEBT_LEVERAGE, bank
+		"loose_screw",       # SPIN_REFUND, mechanical
 	])
 
 

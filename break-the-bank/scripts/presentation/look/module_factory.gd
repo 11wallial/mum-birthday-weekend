@@ -58,6 +58,8 @@ static func build(artifact: ArtifactDef) -> Node3D:
 		ArtifactDef.Effect.MULT_PER_FLOOR: _flywheel(root, finish)
 		ArtifactDef.Effect.MULT_PER_ARTIFACT: _manifold(root, finish)
 		ArtifactDef.Effect.DEBT_PAYDOWN: _shredder(root, finish)
+		ArtifactDef.Effect.DEBT_LEVERAGE: _scale(root, finish)
+		ArtifactDef.Effect.SPIN_REFUND: _freewheel(root, finish)
 		_: _gears(root, finish)
 	return root
 
@@ -282,6 +284,52 @@ static func _manifold(root: Node3D, finish: Finish) -> void:
 				Vector3(0.0, 0.0, PI * 0.5), Materials.glowing(finish.glow, 0.9), 10)
 	Prims.cylinder(root, 0.044, 0.02, Vector3(-0.12, 0.0, 0.04),
 			Vector3(0.0, 0.0, PI * 0.5), finish.trim, 16)
+
+
+## DEBT_LEVERAGE: a balance, tipped. What is owed on one pan, what it is worth
+## on the other, and the beam leaning toward the debt.
+static func _scale(root: Node3D, finish: Finish) -> void:
+	Prims.cylinder(root, 0.022, 0.16, Vector3(0.0, -0.04, 0.04),
+			Vector3.ZERO, finish.trim, 12)
+	var beam: Node3D = Prims.group(root, &"Beam")
+	beam.position = Vector3(0.0, 0.045, 0.04)
+	# Tipped rather than level: a balance at rest says nothing, and the point of
+	# the artifact is that it is out of balance in your favour.
+	beam.rotation.z = -0.26
+	Prims.box(beam, Vector3(0.24, 0.016, 0.016), Vector3.ZERO, finish.body)
+	for sx: float in [-1.0, 1.0]:
+		Prims.segment(beam, Vector3(sx * 0.11, 0.0, 0.0),
+				Vector3(sx * 0.11, -0.05, 0.0), 0.004, finish.trim)
+		Prims.cylinder(beam, 0.042, 0.008, Vector3(sx * 0.11, -0.055, 0.0),
+				FACING, finish.body, 14)
+	# Chits stacked on the low pan: the debt, and what it is buying.
+	for i: int in 3:
+		Prims.cylinder(beam, 0.026, 0.007,
+				Vector3(-0.11, -0.062 - float(i) * 0.009, 0.0), FACING,
+				Materials.glowing(finish.glow, 0.8), 10)
+	Prims.sphere(root, 0.02, Vector3(0.0, 0.045, 0.04), finish.trim)
+
+
+## SPIN_REFUND: a freewheel with a tooth missing off the ratchet, so the counter
+## does not always advance.
+static func _freewheel(root: Node3D, finish: Finish) -> void:
+	var drive: Node3D = Prims.group(root, &"Drive")
+	drive.position = Vector3(-0.01, 0.0, 0.05)
+	Prims.cylinder(drive, 0.078, 0.024, Vector3.ZERO, FACING, finish.body, 20)
+	# One tooth short of a full ring. The gap is the mechanism, so it is built
+	# rather than implied.
+	for i: int in 11:
+		var angle: float = TAU * float(i) / 12.0
+		var tooth: MeshInstance3D = Prims.box(drive, Vector3(0.02, 0.028, 0.026),
+				Vector3(cos(angle) * 0.088, sin(angle) * 0.088, 0.0), finish.body)
+		tooth.rotation.z = angle
+	var pawl: MeshInstance3D = Prims.box(root, Vector3(0.11, 0.018, 0.018),
+			Vector3(0.085, 0.085, 0.058), finish.trim)
+	pawl.rotation.z = -0.7
+	Prims.segment(root, Vector3(0.13, 0.115, 0.058), Vector3(0.115, -0.06, 0.058),
+			0.007, finish.trim)
+	Prims.sphere(root, 0.018, Vector3(0.115, -0.07, 0.058),
+			Materials.glowing(finish.glow, 1.0))
 
 
 ## DEBT_PAYDOWN: a shredder, with the paper still coming out of it.
