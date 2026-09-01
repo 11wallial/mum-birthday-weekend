@@ -18,5 +18,5 @@ loops = false
 max_voices = 1
 priority = 9
 duck_music_db = 5.0
-fallback = 2
-fallback_hz = 880.0
+fallback = 8
+fallback_hz = 620.0

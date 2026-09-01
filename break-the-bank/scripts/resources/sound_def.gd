@@ -29,6 +29,17 @@ enum Fallback {
 	DRONE,
 	## Slow amplitude-modulated tone: sirens and alarms.
 	SIREN,
+	## Pressurised air: a hiss that opens, falls in pitch and shuts with a thud.
+	## The handle, and anything else driven by a cylinder.
+	PNEUMATIC,
+	## Two hits a beat apart — a bright strike, then a low damped body. The
+	## cha-chunk of a reel locking, which one click can never be.
+	CLACK,
+	## Inharmonic partials with staggered decays, the way a struck bell rings.
+	## A plain harmonic tone reads as a test signal; a bell reads as a payout.
+	BELL,
+	## A scatter of short metallic pings at irregular times: coins arriving.
+	COINS,
 }
 
 @export var id: StringName = &""

@@ -56,6 +56,42 @@ func test_rendering_is_deterministic_per_cue() -> void:
 	assert_array(ProceduralCues.make_wav(def).data).is_equal(ProceduralCues.make_wav(def).data)
 
 
+## Where the buffer's energy sits, in four equal slices. A crude envelope, but
+## enough to tell a shape from a different shape.
+func _envelope(def: SoundDef) -> PackedFloat32Array:
+	var data: PackedByteArray = ProceduralCues.make_wav(def).data
+	var frames: int = data.size() / 2
+	var slices: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
+	for i: int in frames:
+		slices[mini(3, i * 4 / maxi(frames, 1))] += \
+				absf(float(data.decode_s16(i * 2)) / 32768.0)
+	var total: float = maxf(0.0001, slices[0] + slices[1] + slices[2] + slices[3])
+	for i: int in 4:
+		slices[i] /= total
+	return slices
+
+
+func test_a_reel_lock_is_two_hits_not_one() -> void:
+	# The cha-chunk. A single decaying transient — which is what every one of
+	# these cues used to be — puts nearly all its energy in the first quarter;
+	# a lock has a second, lower hit behind the strike.
+	var lock: SoundDef = load("res://resources/audio/cues/reel_stop_final.tres")
+	var tick: SoundDef = load("res://resources/audio/cues/reel_stop_tick_a.tres")
+	var lock_shape: PackedFloat32Array = _envelope(lock)
+	var tick_shape: PackedFloat32Array = _envelope(tick)
+	assert_float(tick_shape[0]).is_greater(0.85)
+	assert_float(lock_shape[1]).is_greater(0.2)
+
+
+func test_the_handle_does_not_sound_like_a_click() -> void:
+	# A pull is a stroke: energy spread across it, ending on a thud. It shared a
+	# fallback with the reel ticks and was literally the same sound.
+	var handle: SoundDef = load("res://resources/audio/cues/handle_pull.tres")
+	var shape: PackedFloat32Array = _envelope(handle)
+	assert_float(shape[0]).is_less(0.75)
+	assert_float(shape[2]).is_greater(0.06)
+
+
 func test_different_cues_render_differently() -> void:
 	var a: SoundDef = _def(&"cue_a", SoundDef.Fallback.CLICK, Vector2i(90, 110))
 	var b: SoundDef = _def(&"cue_b", SoundDef.Fallback.CLICK, Vector2i(90, 110))

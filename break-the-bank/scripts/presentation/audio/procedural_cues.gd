@@ -22,6 +22,84 @@ const MAX_ONESHOT_SECONDS: float = 3.0
 const LOOP_SECONDS: float = 1.0
 
 
+## Carries the noise filter's state back out of the helpers below. GDScript has
+## no out-parameters, and threading a filter through a match arm any other way
+## costs more clarity than one file-local float does.
+static var _last_noise: float = 0.0
+
+
+## A cylinder venting: noise through a closing filter, falling in pitch, shut off
+## by a thud. Three stages, because a single decaying hiss reads as a leak rather
+## than as something being pulled.
+static func _pneumatic(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	# The filter closes as the stroke completes, so the hiss darkens.
+	var cutoff: float = lerpf(0.55, 0.08, progress)
+	_last_noise = state + cutoff * (rng.randf_range(-1.0, 1.0) - state)
+	# Loud at the break, easing as the pressure equalises.
+	var hiss: float = _last_noise * (1.0 - progress) * 0.8
+	# The rod itself, falling as it extends.
+	var rod: float = 0.3 * sin(TAU * hz * (1.0 - 0.45 * progress) * t) \
+			* exp(-progress * 3.0)
+	# And the stop it hits at the end of travel.
+	var thud: float = 0.0
+	if progress > 0.72:
+		var hit: float = (progress - 0.72) / 0.28
+		thud = 0.55 * sin(TAU * hz * 0.45 * t) * exp(-hit * 9.0)
+	return hiss + rod + thud
+
+
+## Cha-chunk. A bright strike, then a low body a fraction later — the second hit
+## is what makes it a lock rather than a click.
+static func _clack(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.7 * (rng.randf_range(-1.0, 1.0) - state)
+	# The strike: bright, and gone almost immediately.
+	var strike: float = _last_noise * exp(-progress * 55.0) * 0.9
+	strike += 0.4 * sin(TAU * hz * 2.4 * t) * exp(-progress * 60.0)
+	# The body, one beat behind, low and damped.
+	var body: float = 0.0
+	if progress > 0.18:
+		var since: float = (progress - 0.18) / 0.82
+		body = 0.75 * sin(TAU * hz * 0.5 * t) * exp(-since * 7.0)
+		body += 0.25 * _last_noise * exp(-since * 16.0)
+	return strike + body
+
+
+## A struck bell. The partial ratios are a bell's, not a harmonic series, and the
+## higher ones decay first — which is the whole difference between a bell and an
+## organ pipe.
+static func _bell(hz: float, t: float, progress: float) -> float:
+	const RATIOS: Array = [1.0, 2.76, 5.4, 8.93]
+	const WEIGHTS: Array = [1.0, 0.6, 0.36, 0.22]
+	var value: float = 0.0
+	for i: int in RATIOS.size():
+		var decay: float = 3.0 + float(i) * 3.4
+		value += float(WEIGHTS[i]) * sin(TAU * hz * float(RATIOS[i]) * t) \
+				* exp(-progress * decay)
+	# A touch of strike noise at the very start, so it is hit rather than faded in.
+	value += 0.3 * sin(TAU * hz * 11.0 * t) * exp(-progress * 90.0)
+	return value * 0.55
+
+
+## Coins landing: a scatter of short pings at irregular times. Deterministic from
+## the grain index, so the cue is the same every launch without carrying state.
+static func _coins(hz: float, t: float, progress: float, seconds: float) -> float:
+	const GRAINS: int = 22
+	var value: float = 0.0
+	for i: int in GRAINS:
+		# Uneven spacing: evenly spaced grains read as a machine gun.
+		var at: float = fposmod(sin(float(i) * 12.9898) * 43758.5453, 1.0)
+		# Front-loaded, the way a handful of coins actually lands.
+		at = at * at * seconds
+		if t < at:
+			continue
+		var age: float = (t - at) / seconds
+		var ping: float = hz * (2.0 + fposmod(sin(float(i) * 78.233) * 3721.7, 1.6))
+		value += 0.34 * sin(TAU * ping * (t - at)) * exp(-age * 46.0)
+	return value * (1.0 - progress * 0.35)
+
+
 ## Renders [param def] to a finite stream. Loops come back seamless.
 static func make_wav(def: SoundDef) -> AudioStreamWAV:
 	var seconds: float = LOOP_SECONDS if def.loops else clampf(
@@ -61,6 +139,16 @@ static func make_wav(def: SoundDef) -> AudioStreamWAV:
 			SoundDef.Fallback.SIREN:
 				var sweep: float = hz * (1.0 + 0.35 * sin(TAU * 0.7 * t))
 				value = sin(TAU * sweep * t) * (0.7 + 0.3 * sin(TAU * 1.4 * t))
+			SoundDef.Fallback.PNEUMATIC:
+				value = _pneumatic(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.CLACK:
+				value = _clack(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.BELL:
+				value = _bell(hz, t, progress)
+			SoundDef.Fallback.COINS:
+				value = _coins(hz, t, progress, seconds)
 		if not def.loops:
 			value *= _edge_fade(progress)
 		data.encode_s16(i * 2, int(clampf(value, -1.0, 1.0) * 32767.0 * 0.7))
