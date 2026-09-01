@@ -59,6 +59,14 @@ static func bake(host: Node, on_ready: Callable) -> void:
 	if _strip != null:
 		on_ready.call()
 		return
+	# A headless process has no rendering device, so the viewport grab comes
+	# back null and the bake cannot happen at all. Callers already cope with a
+	# strip that never arrives — the drums keep their plain paper and every
+	# symbol falls back to its glyph — so the run boots instead of dying on the
+	# grab. This is the path CI, the balance batch and the tests take.
+	if DisplayServer.get_name() == "headless":
+		on_ready.call()
+		return
 	_pending.append(on_ready)
 	if _baking:
 		return
@@ -83,12 +91,19 @@ static func _bake_async(host: Node) -> void:
 	# grab returns an empty target.
 	await host.get_tree().process_frame
 	await host.get_tree().process_frame
-	var image: Image = viewport.get_texture().get_image()
+	var target: ViewportTexture = viewport.get_texture()
+	var image: Image = target.get_image() if target != null else null
 	viewport.queue_free()
-	# The strip is read at grazing angles around the whole drum, so it needs the
-	# mip chain a render target does not carry.
-	image.generate_mipmaps()
-	_strip = ImageTexture.create_from_image(image)
+	if image != null:
+		# The strip is read at grazing angles around the whole drum, so it needs
+		# the mip chain a render target does not carry.
+		image.generate_mipmaps()
+		_strip = ImageTexture.create_from_image(image)
+	else:
+		# A driver that cannot hand back the target leaves the machine on plain
+		# paper rather than taking the run down with it; clearing the order is
+		# what makes cell_of say so, so callers fall back to the glyph.
+		_order.clear()
 	_baking = false
 	var callbacks: Array[Callable] = _pending.duplicate()
 	_pending.clear()
