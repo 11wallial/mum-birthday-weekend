@@ -13,3 +13,4 @@ debt_interest_percent = 80.0
 shop_slots = 4
 payout_scale = 1.3
 environment_id = &"back_office"
+grants = Array[StringName]([&"contracts"])

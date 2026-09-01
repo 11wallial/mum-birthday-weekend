@@ -13,3 +13,4 @@ debt_interest_percent = 80.0
 shop_slots = 5
 payout_scale = 1.6
 environment_id = &"the_house"
+grants = Array[StringName]([&"heat"])

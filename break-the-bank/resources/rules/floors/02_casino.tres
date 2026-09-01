@@ -13,3 +13,4 @@ debt_interest_percent = 80.0
 shop_slots = 3
 payout_scale = 1.05
 environment_id = &"casino"
+grants = Array[StringName]([&"market"])

@@ -12,6 +12,13 @@ enum Event {
 	SPIN_STARTED,
 	SYMBOL_LANDED,
 	PATTERN_MATCHED,
+	## The board's value is known but not yet banked. This is what the machine
+	## animates to; PAYOUT_CALCULATED means the credits actually moved.
+	SPIN_RESOLVED,
+	NUDGES_AWARDED,
+	REEL_NUDGED,
+	GAMBLE_OFFERED,
+	GAMBLE_RESOLVED,
 	PAYOUT_CALCULATED,
 	ARTIFACT_TRIGGERED,
 	CASH_CHANGED,
@@ -19,6 +26,10 @@ enum Event {
 	FLOOR_CLEARED,
 	SHOP_OPENED,
 	ARTIFACT_ACQUIRED,
+	ARTIFACT_SOLD,
+	SHOP_REROLLED,
+	SLATE_SIGNED,
+	SYSTEM_GRANTED,
 	RUN_ENDED,
 }
 

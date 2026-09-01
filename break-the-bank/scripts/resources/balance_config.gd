@@ -33,6 +33,25 @@ extends Resource
 ## Penalty added to the principal, as a percent of the shortfall, when the
 ## service payment cannot be met in full.
 @export var debt_default_penalty_percent: float = 50.0
+## Highest multiple of [member spin_cost] a single spin may be wagered at.
+@export var max_stake: int = 5
+## Most nudges one board can be owed, however they were earned.
+@export var max_nudges: int = 3
+## Chance of winning each rung of the gamble ladder, in 0.0..1.0. The first rung
+## is an even coin flip and every rung after it is worse: the ladder is where the
+## player is taught what a house edge feels like, by paying for it.
+@export var gamble_odds: PackedFloat32Array = PackedFloat32Array([0.5, 0.45, 0.4, 0.35])
+
+## Credits the first reroll of a draft costs. Each further reroll in the same
+## draft costs the previous one multiplied by [member reroll_growth].
+@export var reroll_base_cost: int = 4
+@export var reroll_growth: float = 2.0
+## Share of an artifact's current price returned when it is sold back. Well
+## under half: a build has to be able to change its mind, but not for free.
+@export var sellback_percent: float = 45.0
+## Markup added to anything bought on the slate, on top of it becoming debt.
+@export var slate_markup_percent: float = 40.0
+
 ## Floors cleared before the vig starts. The first floor is the tutorial; a
 ## debt payment on top of the opening ante just ends runs before they begin.
 @export var debt_grace_floors: int = 1

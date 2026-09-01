@@ -54,6 +54,9 @@ enum Effect {
 	## way to buy tempo — only payout — so every artifact competed on the same
 	## axis.
 	SPIN_REFUND,
+	## Adds [member magnitude] nudges to every award the machine makes. Buys
+	## control over the board rather than a bigger number off it.
+	NUDGE_BONUS,
 }
 
 @export var id: StringName = &""

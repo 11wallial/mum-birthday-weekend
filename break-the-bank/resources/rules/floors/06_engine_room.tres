@@ -13,3 +13,4 @@ debt_interest_percent = 80.0
 shop_slots = 4
 payout_scale = 1.4
 environment_id = &"engine_room"
+grants = Array[StringName]([&"expansion"])

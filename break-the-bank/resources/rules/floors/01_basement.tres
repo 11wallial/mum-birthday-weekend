@@ -13,3 +13,4 @@ debt_interest_percent = 0.0
 shop_slots = 3
 payout_scale = 1.0
 environment_id = &"basement"
+grants = Array[StringName]([&"hold"])

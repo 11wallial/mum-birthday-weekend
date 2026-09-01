@@ -41,6 +41,14 @@ static func floor_def(index: int, ante: int, spins: int) -> FloorDef:
 	return def
 
 
+## A floor that hands the player systems as it opens.
+static func floor_granting(index: int, ante: int, spins: int,
+		grants: Array[StringName]) -> FloorDef:
+	var def: FloorDef = floor_def(index, ante, spins)
+	def.grants = grants
+	return def
+
+
 static func config() -> BalanceConfig:
 	var cfg: BalanceConfig = BalanceConfig.new()
 	cfg.reel_count = 3
@@ -53,6 +61,9 @@ static func config() -> BalanceConfig:
 	cfg.synergy_bonus = 0.5
 	cfg.synergy_threshold = 3
 	cfg.shop_inflation_percent = 0.0
+	cfg.max_stake = 5
+	cfg.max_nudges = 3
+	cfg.gamble_odds = PackedFloat32Array([0.5, 0.4])
 	return cfg
 
 
@@ -83,6 +94,28 @@ static func content_with_shop() -> ContentDB:
 	for floor_def: FloorDef in db.floors:
 		floor_def.shop_slots = 2
 	return db
+
+
+## An RNG stream that always draws at the bottom of its range, so a chance test
+## can assert on the branch instead of on a seed that happens to take it.
+static func always_wins() -> RngStream:
+	return RiggedStream.new(0.0)
+
+
+## The same, always drawing at the top.
+static func always_loses() -> RngStream:
+	return RiggedStream.new(0.999999)
+
+
+class RiggedStream extends RngStream:
+	var _value: float
+
+	func _init(value: float) -> void:
+		super._init(0, &"rigged")
+		_value = value
+
+	func next_float() -> float:
+		return _value
 
 
 ## A run wired to the fixture content, ready to spin.

@@ -17,3 +17,6 @@ extends Resource
 @export var payout_scale: float = 1.0
 ## Environment preset used by the 3D presentation layer.
 @export var environment_id: StringName = &"basement"
+## Systems this floor hands the player, by [Systems] name. Granted when the
+## floor begins, and never taken back: a floor is a new verb, not a new number.
+@export var grants: Array[StringName] = []

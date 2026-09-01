@@ -27,7 +27,11 @@ class SpinContext extends RefCounted:
 
 ## Scores one line. Returns the context so callers (and tests) can inspect the
 ## breakdown, not just the number.
-static func evaluate_spin(state: RunState, line: Array[SymbolDef], pattern: Probability.Pattern) -> SpinContext:
+## Set [param announce] false to score without emitting: previewing a nudge, or
+## rescoring a board the player has changed, must not fill the telemetry with
+## artifact triggers that never happened.
+static func evaluate_spin(state: RunState, line: Array[SymbolDef],
+		pattern: Probability.Pattern, announce: bool = true) -> SpinContext:
 	var config: BalanceConfig = state.config
 	var ctx: SpinContext = SpinContext.new()
 	ctx.line = line
@@ -50,9 +54,9 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef], pattern: Prob
 	if not cursed and pattern < config.pattern_multipliers.size():
 		ctx.multiplier += config.pattern_multipliers[pattern]
 
-	_apply(state, ArtifactDef.Trigger.SPIN_STARTED, ctx)
-	_apply(state, ArtifactDef.Trigger.SYMBOL_LANDED, ctx)
-	_apply(state, ArtifactDef.Trigger.PAYOUT_CALCULATED, ctx)
+	_apply(state, ArtifactDef.Trigger.SPIN_STARTED, ctx, announce)
+	_apply(state, ArtifactDef.Trigger.SYMBOL_LANDED, ctx, announce)
+	_apply(state, ArtifactDef.Trigger.PAYOUT_CALCULATED, ctx, announce)
 
 	for _tag: StringName in state.active_synergies():
 		ctx.multiplier += config.synergy_bonus
@@ -91,6 +95,25 @@ static func _curse_ward(state: RunState) -> float:
 		if artifact.effect == ArtifactDef.Effect.CURSE_WARD:
 			best = maxf(best, artifact.magnitude)
 	return best
+
+
+## What [param line] would be worth to this run, scored silently.
+##
+## The nudge hint and the automated policy both have to know whether a move
+## helps before it is made, and a preview that emitted — or that drew a
+## replacement symbol — would change the run just by being looked at.
+static func score_line(state: RunState, line: Array[SymbolDef]) -> int:
+	var pattern: Probability.Pattern = Probability.detect_pattern(line)
+	return evaluate_spin(state, line, pattern, false).total()
+
+
+## Extra nudges the run's hardware adds to every award.
+static func nudge_bonus(state: RunState) -> int:
+	var total: int = 0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == ArtifactDef.Effect.NUDGE_BONUS:
+			total += int(artifact.magnitude)
+	return total
 
 
 ## Extra spins granted for the coming floor.
@@ -158,13 +181,16 @@ static func apply_debt_paydown(state: RunState) -> int:
 	return cleared
 
 
-static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinContext) -> void:
+static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinContext,
+		announce: bool) -> void:
 	for artifact: ArtifactDef in state.owned:
 		if artifact.trigger != trigger:
 			continue
 		var contributed: bool = _apply_one(artifact, ctx)
 		if contributed:
 			ctx.triggered.append(artifact.id)
+			if not announce:
+				continue
 			state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
 				"artifact": artifact.id,
 				"effect": String(ArtifactDef.Effect.keys()[artifact.effect]),
@@ -198,6 +224,7 @@ static func _apply_one(artifact: ArtifactDef, ctx: SpinContext) -> bool:
 			return true
 		_:
 			# EXTRA_SPINS, WEIGHT_SHIFT, INTEREST, ANTE_DISCOUNT, CURSE_WARD,
-			# DEBT_PAYDOWN and the scaling effects all resolve elsewhere: in
-			# evaluate_spin after this pass, or in their own helpers above.
+			# DEBT_PAYDOWN, NUDGE_BONUS and the scaling effects all resolve
+			# elsewhere: in evaluate_spin after this pass, or in their own
+			# helpers above.
 			return false
