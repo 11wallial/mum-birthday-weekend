@@ -183,6 +183,7 @@ theme_override_styles/panel = SubResource("Style_prompt")
 
 [node name="Text" type="Label" parent="Prompt"]
 layout_mode = 2
+autowrap_mode = 3
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("Style_none")
 horizontal_alignment = 1

@@ -149,6 +149,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"bb_menu"):
 		if _setup != null and not _setup.is_open():
 			_setup.open(_profile, _catalogue, _current_seed)
+			_sync_deck()
 		return
 	if _setup != null and _setup.is_open():
 		return
@@ -223,6 +224,7 @@ func _on_touch_camera() -> void:
 func _on_touch_setup() -> void:
 	if _setup != null and not _setup.is_open():
 		_setup.open(_profile, _catalogue, _current_seed)
+		_sync_deck()
 
 
 func _on_touch_new_run() -> void:
@@ -306,6 +308,7 @@ func debug_dress_room(floors: int, cash: int, mood: StringName) -> void:
 func debug_open_setup() -> void:
 	if _setup != null:
 		_setup.open(_profile, _catalogue, _current_seed)
+		_sync_deck()
 
 
 ## Drops the run onto [param floor_index] with everything that floor would have
@@ -334,6 +337,7 @@ func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 	# from the framing that surveys the room.
 	if _camera != null:
 		_camera.set_view(CameraController.View.MACHINE)
+	_sync_deck()
 	_refresh_diegetic()
 
 
@@ -363,6 +367,7 @@ func debug_open_contracts() -> void:
 		state.phase = RunState.Phase.SIGNING
 		if _contracts != null:
 			_contracts.open(state)
+		_sync_deck()
 
 
 ## Forces a camera framing by [enum CameraController.View] index.
@@ -423,13 +428,23 @@ func _advance() -> void:
 	_after_input()
 
 
-func _shelve_deck(shelved: bool) -> void:
-	if _deck != null:
-		_deck.shelve(shelved)
+## Clears the deck whenever a panel owns the screen.
+##
+## Derived from what is actually open rather than tracked by whoever opened it:
+## shelving on open and un-shelving on close left the deck hidden for the rest
+## of the run down every path that closed a panel some other way.
+func _sync_deck() -> void:
+	if _deck == null:
+		return
+	var modal: bool = ((_shop != null and _shop.is_open())
+			or (_contracts != null and _contracts.is_open())
+			or (_setup != null and _setup.is_open()))
+	_deck.shelve(modal)
 
 
 ## Redraws the deck, the lamps and the prompt after a hand-made move.
 func _after_input() -> void:
+	_sync_deck()
 	if _deck != null:
 		_deck.refresh()
 	# The machine carries the same state the deck does. A hold that only lit a
@@ -481,7 +496,6 @@ func _on_leave_requested() -> void:
 		_recorder.record_leave_shop(state)
 	if _shop != null:
 		_shop.close()
-	_shelve_deck(false)
 	# Back to the machine. Opening the draft pulls the camera out to survey the
 	# room; leaving it has to put the camera back, or the whole rest of the run
 	# is played from the far framing the draft borrowed.
@@ -493,6 +507,7 @@ func _on_leave_requested() -> void:
 func _on_start_requested(run_seed: int, daily_key: String) -> void:
 	if _setup != null:
 		_setup.close()
+	_sync_deck()
 	_end_recording(&"abandoned")
 	new_run(run_seed, daily_key)
 
@@ -513,14 +528,12 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			# A callout left over from the floor that just ended would sit on
 			# top of the panel the player is being asked to read.
 			_clear_prompt()
-			_shelve_deck(true)
 			if _shop != null:
 				_shop.open(state)
 			if _camera != null:
 				_camera.set_view(CameraController.View.ROOM)
 		EffectBus.Event.CONTRACTS_OFFERED:
 			_clear_prompt()
-			_shelve_deck(true)
 			if _contracts != null:
 				_contracts.open(state)
 			if _camera != null:
@@ -537,6 +550,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	# The sign and the machine's own monitor track the run on every event, so
 	# they can never disagree with the HUD about where the player is.
 	_refresh_diegetic()
+	_sync_deck()
 	if _deck != null:
 		_deck.refresh()
 
@@ -695,7 +709,6 @@ func _on_sign_requested(index: int) -> void:
 			if index >= 0 and index < state.contract_offers.size() else &""
 	if engine.sign_contract(state, index) and _contracts != null:
 		_record(&"sign", {"contract": String(signed), "passed": passed})
-		_shelve_deck(false)
 		_contracts.close()
 		if _camera != null:
 			_camera.set_view(CameraController.View.MACHINE)
@@ -767,7 +780,7 @@ func _announce_floor(payload: Dictionary) -> void:
 			and state.economy.debt > 0:
 		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [
 			int(payload.get("ante", 0)), state.economy.debt])
-		lines.append("Clear the ante and the debt, or the House keeps you.")
+		lines.append("Clear both, or the House keeps you.")
 	if lines.is_empty():
 		return
 	lines.append(TouchBar.hint("SPACE to begin", "TAP to begin"))

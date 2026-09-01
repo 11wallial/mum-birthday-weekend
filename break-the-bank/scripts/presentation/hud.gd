@@ -24,6 +24,9 @@ extends CanvasLayer
 const LOG_LINES: int = 4
 ## The viewport width the type sizes were chosen at.
 const DESIGN_WIDTH: float = 1152.0
+## Height the callout allows per line of text, and for its own padding.
+const PROMPT_LINE: float = 26.0
+const PROMPT_PADDING: float = 26.0
 
 var _cash: Label
 var _ante: Label
@@ -129,8 +132,10 @@ func _place_rows(scale_up: float) -> void:
 	var prompt: Control = _prompt_panel
 	if prompt != null and prompt.anchor_top == 0.0:
 		prompt.offset_left = -700.0 * scale_up
-		prompt.offset_top = 18.0 * scale_up
-		prompt.offset_bottom = 96.0 * scale_up
+	# Re-laying the callout at the new scale is set_prompt's job, and it holds
+	# the text; re-running it keeps the height in step with the type.
+	if _prompt != null:
+		set_prompt(_prompt.text, _prompt_panel != null and _prompt_panel.anchor_top > 0.0)
 	var gauges: Control = get_node_or_null(^"Gauges") as Control
 	if gauges != null:
 		gauges.offset_left = 22.0 * scale_up
@@ -326,8 +331,14 @@ func set_prompt(text: String, centred: bool = false) -> void:
 	_prompt_panel.anchor_bottom = 0.5 if centred else 0.0
 	_prompt_panel.offset_left = (-380.0 if centred else -700.0) * _scale
 	_prompt_panel.offset_right = (380.0 if centred else -22.0) * _scale
-	_prompt_panel.offset_top = (-70.0 if centred else 18.0) * _scale
-	_prompt_panel.offset_bottom = (70.0 if centred else 96.0) * _scale
+	# Height from the content rather than a fixed box. Anchored to the top, a
+	# panel whose text outgrows its offsets grows the wrong way and the first
+	# line ends up above the screen — which is where the run's last warning was
+	# going, on the one floor that most needed reading.
+	var rows: int = maxi(text.split("\n").size(), 1)
+	var height: float = PROMPT_PADDING + PROMPT_LINE * float(rows)
+	_prompt_panel.offset_top = (-height * 0.5 if centred else 18.0) * _scale
+	_prompt_panel.offset_bottom = (height * 0.5 if centred else 18.0 + height) * _scale
 
 
 func _push(text: String) -> void:

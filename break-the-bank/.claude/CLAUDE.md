@@ -88,6 +88,10 @@ worth knowing before touching the simulation:
 - Every verb is a public `SimEngine` method the automated policy also calls, so
   a hand-played run and a batch exercise one code path. `clear_policies()` hands
   them all back for a human.
+- `AutoPlayer` is that policy — a competent player's habits, kept out of the
+  engine so "what the game allows" and "what a player does" stay separable. Add
+  a verb and give `AutoPlayer` an opinion about it, or the lab measures a game
+  with that system switched off.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.

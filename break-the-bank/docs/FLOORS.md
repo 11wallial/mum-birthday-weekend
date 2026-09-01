@@ -85,6 +85,10 @@ Contracts are data (`ContractDef`), resolved in `ContractEngine`, with a
 deliberately small clause vocabulary. A contract that only gave would be a
 shopping list; the second half is the floor.
 
+The office opens on the way *into* floor five, not out of it. Waiting for the
+system to be granted first cost the mechanic a third of the run it gets to
+exist for.
+
 ## 6 — The Engine Room · **THE WORKS**
 
 Reels and scoring rows bolt on permanently, and they can be fitted **between
@@ -125,11 +129,11 @@ run's.
 Every dial is in `resources/rules/balance_config.tres`; nothing above is a
 constant in the simulation.
 
-The automated policies in `SimEngine` drive the same public calls a player's
-hands do — `toggle_hold`, `nudge`, `gamble`, `deposit`, `buy_row`, `launder`,
-`sign_contract` — so the lab measures the game people play rather than a
-stripped-down version of it. `SimEngine.clear_policies()` hands all of them back
-when a human is at the machine.
+`AutoPlayer` drives the same public calls a player's hands do — `toggle_hold`,
+`nudge`, `gamble`, `deposit`, `buy_row`, `launder`, `sign_contract` — so the lab
+measures the game people play rather than a stripped-down version of it.
+`SimEngine.clear_policies()` hands all of them back when a human is at the
+machine.
 
 At the time of writing the batch lands around a 19% win rate with deaths
 climbing floor by floor, plus a further fifth of runs that clear the House and
