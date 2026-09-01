@@ -109,9 +109,18 @@ func spin(state: RunState) -> ArtifactEngine.SpinContext:
 			var symbol: SymbolDef = line[i]
 			# Glyph and colour ride along so the reel view never has to look a
 			# symbol back up; the payload is only built when someone listens.
+			# The band rides along so the machine can show what nearly landed.
+			# It scores nothing; see Probability.spin_band.
+			var band: Array[SymbolDef] = Probability.spin_band(state.reel(), state.band_rng)
+			var above: SymbolDef = band[0] if band.size() > 0 else null
+			var below: SymbolDef = band[1] if band.size() > 1 else null
 			_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, {
 				"reel": i, "symbol": symbol.id, "value": symbol.base_value,
 				"glyph": symbol.glyph, "color": symbol.color,
+				"above": above.id if above != null else &"",
+				"above_color": above.color if above != null else Color.WHITE,
+				"below": below.id if below != null else &"",
+				"below_color": below.color if below != null else Color.WHITE,
 			})
 
 	var pattern: Probability.Pattern = Probability.detect_pattern(line)

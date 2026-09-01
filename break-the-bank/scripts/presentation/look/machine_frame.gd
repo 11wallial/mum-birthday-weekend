@@ -16,12 +16,17 @@ extends RefCounted
 ## Half-extents of the main chassis. The machine reads as a horizontal press
 ## rather than an upright cabinet, which is the single biggest thing separating
 ## a slot machine you feed from a fruit machine you stand at.
-const CHASSIS: Vector3 = Vector3(0.95, 0.48, 0.42)
+const CHASSIS: Vector3 = Vector3(0.98, 0.62, 0.42)
 ## Centre height of the chassis: the plinth's top plus half the chassis.
-const CHASSIS_Y: float = 0.9
+const CHASSIS_Y: float = 1.04
 const PLINTH_TOP: float = 0.42
-const REEL_RADIUS: float = 0.2
-const REEL_SPACING: float = 0.37
+## Big enough that three symbols fit around the front of the drum without the
+## outer two curving away out of sight.
+const REEL_RADIUS: float = 0.38
+const REEL_SPACING: float = 0.43
+## How far round the drum the symbols above and below the payline sit, in
+## radians. At this radius that puts them roughly 0.22m either side of centre.
+const BAND_ANGLE: float = 0.62
 ## Distance from the machine's centre plane to the front face of a reel drum.
 const REEL_Z: float = 0.3
 ## Modules are authored around a 0.26m bracket; at that size they read as
@@ -47,10 +52,12 @@ func build(root: Node3D) -> Dictionary:
 	var odds: Label3D = _odds_display()
 	var lever: Node3D = _lever()
 	var spool: Node3D = _spool()
+	var crown: Array[Node3D] = _crown()
 	_rivets()
 	var mounts: Array[Node3D] = _mounts()
 	return {
 		"mounts": mounts,
+		"crown": crown,
 		"reels": reels,
 		"gearbox": gearbox,
 		"screen": screen,
@@ -99,8 +106,8 @@ func _chassis() -> void:
 				Materials.machined(Materials.STEEL, 55))
 	# A recessed housing behind the reels, so the drums sit in shadow rather than
 	# on a flat panel. This is most of what sells the depth of the front face.
-	_box(chassis, Vector3(1.28, 0.62, 0.3),
-			Vector3(0.0, CHASSIS_Y + 0.04, CHASSIS.z - 0.28),
+	_box(chassis, Vector3(1.44, 0.84, 0.34),
+			Vector3(0.0, CHASSIS_Y + 0.05, CHASSIS.z - 0.3),
 			Materials.cavity())
 	# Ventilation louvres on the lower front, an inspection hatch on the left.
 	for i: int in 5:
@@ -120,8 +127,8 @@ func _reel_bank() -> Array[Node3D]:
 	var drum: CylinderMesh = CylinderMesh.new()
 	drum.top_radius = REEL_RADIUS
 	drum.bottom_radius = REEL_RADIUS
-	drum.height = 0.3
-	drum.radial_segments = 32
+	drum.height = 0.38
+	drum.radial_segments = 40
 	var reels: Array[Node3D] = []
 	for i: int in 3:
 		var reel: Node3D = Node3D.new()
@@ -137,6 +144,32 @@ func _reel_bank() -> Array[Node3D]:
 		face.transform.basis = Basis(Vector3(0.0, 0.0, 1.0), PI * 0.5)
 		face.material_override = Materials.enamel(Materials.ENAMEL, 67 + i)
 		reel.add_child(face)
+
+		# Three symbols per reel, printed round the drum: what landed, and what
+		# nearly did either side of it. A window showing one symbol per reel
+		# throws away most of what a slot machine is for — the near miss is the
+		# drama, and you cannot have one you were never shown.
+		#
+		# The band symbols ride the drum's surface at BAND_ANGLE, turned to face
+		# out, so they are genuinely printed on it rather than floating flat.
+		for slot: int in 3:
+			var offset: float = float(slot - 1) * BAND_ANGLE
+			var printed: Sprite3D = Sprite3D.new()
+			printed.name = ["Above", "Payline", "Below"][slot]
+			printed.pixel_size = 0.0021
+			printed.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+			printed.shaded = false
+			printed.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+			printed.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			printed.visible = false
+			# The band is dimmer than the payline: it is context, not the result.
+			printed.modulate = (Color(1, 1, 1, 1) if slot == 1
+					else Color(0.62, 0.6, 0.58))
+			printed.position = Vector3(0.0,
+					sin(-offset) * (REEL_RADIUS + 0.006),
+					cos(offset) * (REEL_RADIUS + 0.006))
+			printed.rotation.x = offset
+			reel.add_child(printed)
 
 		# The backlight behind a symbol. A quad rather than a Sprite3D because
 		# it has to blend additively, and setting a material_override on a
@@ -165,19 +198,6 @@ func _reel_bank() -> Array[Node3D]:
 		# sprite where SymbolArt has art, and the glyph token as text where it
 		# does not. New content therefore lands legible without needing art
 		# first, which is the whole reason the text path survives.
-		var art: Sprite3D = Sprite3D.new()
-		art.name = "Art"
-		art.pixel_size = 0.0028
-		art.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-		art.shaded = false
-		# Discard rather than blend: the sprite sits a few millimetres off a
-		# curved drum, and alpha blending there sorts against the drum badly.
-		art.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-		art.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		art.visible = false
-		art.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.005)
-		reel.add_child(art)
-
 		var symbol: Label3D = Label3D.new()
 		symbol.name = "Symbol"
 		symbol.text = "?"
@@ -199,17 +219,25 @@ func _bezel() -> void:
 	var y: float = CHASSIS_Y + 0.05
 	var z: float = CHASSIS.z + 0.02
 	var steel: StandardMaterial3D = Materials.chrome()
-	_box(bezel, Vector3(1.34, 0.07, 0.09), Vector3(0.0, y + 0.29, z), steel)
-	_box(bezel, Vector3(1.34, 0.07, 0.09), Vector3(0.0, y - 0.29, z), steel)
+	_box(bezel, Vector3(1.5, 0.08, 0.09), Vector3(0.0, y + 0.37, z), steel)
+	_box(bezel, Vector3(1.5, 0.08, 0.09), Vector3(0.0, y - 0.37, z), steel)
 	for sx: float in [-1.0, 1.0]:
-		_box(bezel, Vector3(0.07, 0.65, 0.09), Vector3(sx * 0.635, y, z), steel)
+		_box(bezel, Vector3(0.08, 0.82, 0.09), Vector3(sx * 0.71, y, z), steel)
 	# Divider bars between the three windows.
 	for sx: float in [-1.0, 1.0]:
-		_box(bezel, Vector3(0.035, 0.58, 0.07),
+		_box(bezel, Vector3(0.035, 0.72, 0.07),
 				Vector3(sx * REEL_SPACING * 0.5, y, z), steel)
-	# The payline: the one thing on the machine that must be found instantly.
-	_box(bezel, Vector3(1.24, 0.012, 0.012), Vector3(0.0, y, z + 0.04),
-			Materials.glowing(Materials.JACKPOT, 1.6))
+	# The payline, across the middle row only. It is the one thing on the machine
+	# that must be found instantly, and now that three rows are visible it is
+	# also the only thing saying which of them counts.
+	_box(bezel, Vector3(1.4, 0.014, 0.014), Vector3(0.0, y, z + 0.04),
+			Materials.glowing(Materials.JACKPOT, 1.8))
+	for sx: float in [-1.0, 1.0]:
+		# Arrowheads at each end of the payline, pointing in at the row it marks.
+		var head: MeshInstance3D = _box(bezel, Vector3(0.05, 0.05, 0.014),
+				Vector3(sx * 0.7, y, z + 0.04),
+				Materials.glowing(Materials.JACKPOT, 1.8))
+		head.rotation.z = PI * 0.25
 
 
 ## The brass mechanism on the left flank — a combination dial on a gear housing.
@@ -272,14 +300,14 @@ func _hoses() -> void:
 ## can be drawn onto it, and it is emissive so it survives the room going dark.
 func _monitor() -> MeshInstance3D:
 	var monitor: Node3D = _group(&"Monitor")
-	monitor.position = Vector3(-0.86, CHASSIS_Y + 0.95, 0.1)
+	monitor.position = Vector3(-0.88, CHASSIS_Y + 1.02, 0.1)
 	monitor.rotation = Vector3(0.0, 0.34, 0.0)
 	# The arm: a post off the chassis shoulder and an elbow up to the housing.
-	_segment(_root, Vector3(-0.72, CHASSIS_Y + 0.4, 0.1),
-			Vector3(-0.86, CHASSIS_Y + 0.8, 0.1), 0.055,
+	_segment(_root, Vector3(-0.74, CHASSIS_Y + 0.56, 0.1),
+			Vector3(-0.88, CHASSIS_Y + 0.86, 0.1), 0.055,
 			Materials.machined(Color(0.42, 0.41, 0.4), 60))
 	# A bolted foot where the arm meets the chassis shoulder.
-	_box(_root, Vector3(0.22, 0.08, 0.22), Vector3(-0.72, CHASSIS_Y + 0.44, 0.1),
+	_box(_root, Vector3(0.22, 0.08, 0.22), Vector3(-0.74, CHASSIS_Y + 0.6, 0.1),
 			Materials.rusted(31))
 	_cylinder(monitor, 0.07, 0.12, Vector3(0.0, -0.3, 0.0), Vector3.ZERO,
 			Materials.machined(Materials.STEEL, 61))
@@ -316,10 +344,10 @@ func _monitor() -> MeshInstance3D:
 ## place a nixie tube bank would sit.
 func _odds_display() -> Label3D:
 	var housing: Node3D = _group(&"Odds")
-	housing.position = Vector3(0.16, CHASSIS_Y + 0.72, 0.18)
-	_box(housing, Vector3(0.86, 0.26, 0.16), Vector3.ZERO,
+	housing.position = Vector3(0.62, CHASSIS_Y + 0.92, 0.2)
+	_box(housing, Vector3(0.7, 0.24, 0.16), Vector3.ZERO,
 			Materials.painted(Materials.PAINT, 17))
-	_box(housing, Vector3(0.78, 0.19, 0.02), Vector3(0.0, 0.0, 0.085),
+	_box(housing, Vector3(0.62, 0.17, 0.02), Vector3(0.0, 0.0, 0.085),
 			Materials.readout_face())
 	# The mounting stalk down to the chassis top.
 	_segment(housing, Vector3(0.0, -0.13, 0.0), Vector3(0.0, -0.34, -0.1), 0.03,
@@ -431,6 +459,87 @@ func _rivets() -> void:
 	_root.add_child(instance)
 
 
+## The works, along the top of the chassis: gearing, pipework and cable.
+##
+## The machine reads as a box with a window in it until you can see what is
+## driving it. This is the row of exposed mechanism the reference puts above the
+## reels — a train of gears of different sizes, a pressure line running the width
+## with a valve wheel on it, gauges, and cable draped between the two.
+##
+## It sits at the back of the crown, forward of z 0 being left clear for bought
+## hardware. Returns the turning parts so a spin drives them along with the
+## machine's own drums.
+func _crown() -> Array[Node3D]:
+	var crown: Node3D = _group(&"Crown")
+	var top: float = CHASSIS_Y + CHASSIS.y
+	var brass: StandardMaterial3D = Materials.brass(45)
+	var steel: StandardMaterial3D = Materials.machined(Color(0.42, 0.41, 0.40), 80)
+	var pipe: StandardMaterial3D = Materials.rusted(32)
+	var drives: Array[Node3D] = []
+
+	# A gear train, sizes descending left to right so it reads as a reduction
+	# rather than as a row of identical wheels.
+	var sizes: Array[float] = [0.23, 0.16, 0.2, 0.135]
+	var xs: Array[float] = [-0.72, -0.36, -0.02, 0.26]
+	for i: int in sizes.size():
+		var gear: Node3D = Node3D.new()
+		gear.name = "Drive%d" % i
+		crown.add_child(gear)
+		gear.position = Vector3(xs[i], top + sizes[i] * 0.58, 0.2)
+		var radius: float = sizes[i]
+		Prims.cylinder(gear, radius * 0.82, 0.05, Vector3.ZERO,
+				Vector3(PI * 0.5, 0.0, 0.0), brass, 20)
+		Prims.ring(gear, int(8.0 + radius * 40.0), radius,
+				Vector3(radius * 0.24, radius * 0.3, 0.05), 0.0, brass)
+		# A hub and a spindle, so the gear is mounted rather than floating.
+		Prims.cylinder(gear, radius * 0.24, 0.09, Vector3.ZERO,
+				Vector3(PI * 0.5, 0.0, 0.0), steel, 12)
+		drives.append(gear)
+
+	# The pressure line: a pipe across the full width with a valve wheel and a
+	# pair of gauges hung off it.
+	_segment(crown, Vector3(-CHASSIS.x + 0.04, top + 0.34, -0.02),
+			Vector3(CHASSIS.x - 0.04, top + 0.34, -0.02), 0.045, pipe)
+	for i: int in 5:
+		var x: float = lerpf(-CHASSIS.x + 0.2, CHASSIS.x - 0.2, float(i) / 4.0)
+		_box(crown, Vector3(0.07, 0.16, 0.13), Vector3(x, top + 0.28, -0.02), steel)
+	var valve: Node3D = Node3D.new()
+	valve.name = "Drive_valve"
+	crown.add_child(valve)
+	valve.position = Vector3(0.62, top + 0.34, -0.02)
+	Prims.cylinder(valve, 0.11, 0.022, Vector3.ZERO, Vector3.ZERO, brass, 18)
+	for i: int in 5:
+		var angle: float = TAU * float(i) / 5.0
+		var spoke: MeshInstance3D = Prims.box(valve, Vector3(0.022, 0.2, 0.016),
+				Vector3.ZERO, brass)
+		spoke.rotation.y = angle
+	drives.append(valve)
+
+	for i: int in 2:
+		var gx: float = -0.9 + float(i) * 0.22
+		Prims.cylinder(crown, 0.062, 0.04, Vector3(gx, top + 0.2, 0.22),
+				Vector3(PI * 0.5, 0.0, 0.0), brass, 16)
+		Prims.cylinder(crown, 0.05, 0.012, Vector3(gx, top + 0.2, 0.245),
+				Vector3(PI * 0.5, 0.0, 0.0), Materials.readout_face(), 16)
+		var needle: MeshInstance3D = Prims.box(crown, Vector3(0.008, 0.045, 0.004),
+				Vector3(gx, top + 0.215, 0.252), Materials.glowing(Materials.SIGN, 1.2))
+		needle.rotation.z = 0.6 - float(i) * 1.1
+
+	# Cable, sagging between the pipe and the back of the chassis. Straight cable
+	# reads as conduit; the sag is what makes it look run rather than designed.
+	var rubber: StandardMaterial3D = Materials.rubber(Color(0.31, 0.09, 0.07), 99)
+	for run: int in 3:
+		var from: Vector3 = Vector3(-0.5 + float(run) * 0.42, top + 0.3, -0.05)
+		var to: Vector3 = Vector3(-0.34 + float(run) * 0.42, top - 0.04, -CHASSIS.z + 0.05)
+		for seg: int in 5:
+			var t0: float = float(seg) / 5.0
+			var t1: float = float(seg + 1) / 5.0
+			var bend: Vector3 = (from + to) * 0.5 + Vector3(0.0, -0.14, -0.05)
+			_segment(crown, _quadratic(from, bend, to, t0),
+					_quadratic(from, bend, to, t1), 0.019, rubber)
+	return drives
+
+
 ## Where bought hardware bolts on, in the order it is used.
 ##
 ## Ordered by how visible each spot is rather than by where it is convenient to
@@ -460,9 +569,8 @@ func _mounts() -> Array[Node3D]:
 		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y + 0.34, -0.16), Vector3(0.0, PI * 0.5, 0.0)],
 		[Vector3(-CHASSIS.x - 0.07, CHASSIS_Y + 0.28, -0.22), Vector3(0.0, -PI * 0.5, 0.0)],
 		[Vector3(0.0, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
-		[Vector3(-0.78, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
-		[Vector3(0.66, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
-		[Vector3(0.92, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
+		[Vector3(-0.9, CHASSIS_Y + CHASSIS.y + 0.14, 0.28), Vector3(-0.7, 0.0, 0.0)],
+		[Vector3(0.86, CHASSIS_Y + CHASSIS.y + 0.14, 0.28), Vector3(-0.7, 0.0, 0.0)],
 		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y - 0.3, -0.16), Vector3(0.0, PI * 0.5, 0.0)],
 		[Vector3(-CHASSIS.x - 0.07, CHASSIS_Y - 0.26, -0.22), Vector3(0.0, -PI * 0.5, 0.0)],
 		# The far pocket last: the monitor arm and the gearbox both crowd it.

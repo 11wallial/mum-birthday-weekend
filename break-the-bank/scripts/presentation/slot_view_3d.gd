@@ -86,6 +86,9 @@ func _ready() -> void:
 	_reels.assign(parts.get("reels", []))
 	_lever = parts.get("lever", null) as Node3D
 	_mounts.assign(parts.get("mounts", []))
+	# The machine's own gearing turns on a spin alongside any bought hardware:
+	# a train of cogs sitting dead above turning reels is scenery, not works.
+	_drives.assign(parts.get("crown", []))
 	_odds = parts.get("odds", null) as Label3D
 	_readout = parts.get("readout", null) as Label3D
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
@@ -182,19 +185,35 @@ func _settle_reel(index: int) -> void:
 ## Puts one landed symbol on one reel, preferring drawn art and falling back to
 ## the glyph token. Exactly one of the two nodes is ever visible.
 func _show_symbol(reel: Node3D, landed: Dictionary) -> void:
-	var art: Sprite3D = reel.get_node_or_null(^"Art") as Sprite3D
+	var payline: ImageTexture = _face(reel, ^"Payline",
+			StringName(landed.get("symbol", &"")), landed.get("color", Color.WHITE))
+	# The band above and below scores nothing. It is there so the player can see
+	# what nearly landed, which is most of what makes a spin worth watching.
+	_face(reel, ^"Above", StringName(landed.get("above", &"")),
+			landed.get("above_color", Color.WHITE))
+	_face(reel, ^"Below", StringName(landed.get("below", &"")),
+			landed.get("below_color", Color.WHITE))
+	# The glyph text remains the fallback for a symbol with no drawing, on the
+	# payline only: an unreadable near miss is worse than none.
 	var label: Label3D = reel.get_node_or_null(^"Symbol") as Label3D
-	var tint: Color = landed.get("color", Color.WHITE)
-	var texture: ImageTexture = SymbolArt.texture_for(
-			StringName(landed.get("symbol", &"")), tint)
-	if art != null:
-		art.texture = texture
-		art.visible = texture != null
 	if label != null:
 		label.text = String(landed.get("glyph", "?"))
-		label.modulate = tint
-		label.visible = texture == null
-	_set_glow(reel, tint, float(landed.get("value", 0)))
+		label.modulate = landed.get("color", Color.WHITE)
+		label.visible = payline == null
+	_set_glow(reel, landed.get("color", Color.WHITE), float(landed.get("value", 0)))
+
+
+## Puts one symbol on one row of one reel. Returns the art, or null when the
+## symbol has no drawing.
+func _face(reel: Node3D, row: NodePath, symbol_id: StringName,
+		tint: Color) -> ImageTexture:
+	var sprite: Sprite3D = reel.get_node_or_null(row) as Sprite3D
+	if sprite == null:
+		return null
+	var texture: ImageTexture = SymbolArt.texture_for(symbol_id, tint)
+	sprite.texture = texture
+	sprite.visible = texture != null
+	return texture
 
 
 ## Lights the strip behind a symbol in proportion to what it is worth, scaled by

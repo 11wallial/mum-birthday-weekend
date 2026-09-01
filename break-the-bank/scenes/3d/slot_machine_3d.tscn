@@ -58,10 +58,21 @@ color_ramp = SubResource("Grad_coin")
 ; The machine's own pilot lamp, behind the bezel. It flares on a payout, and the
 ; rest of the time it is what keeps the brass gearbox on the unlit flank from
 ; disappearing — the key light comes from the far side and never reaches it.
+; A second, cooler fill from the front and above, aimed across the works along
+; the top of the chassis. The room's one bulb is behind and to the right of the
+; machine, so the brass gearing it drives was the least lit thing on it.
+[node name="WorksFill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 2.05, 0.95)
+light_color = Color(1, 0.878, 0.729, 1)
+light_energy = 1.35
+light_specular = 1.0
+omni_range = 2.6
+omni_attenuation = 1.6
+
 [node name="MachineLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.12, 0.62)
 light_color = Color(1, 0.741, 0.435, 1)
-light_energy = 1.0
+light_energy = 0.75
 light_specular = 0.8
 omni_range = 3.4
 omni_attenuation = 1.5

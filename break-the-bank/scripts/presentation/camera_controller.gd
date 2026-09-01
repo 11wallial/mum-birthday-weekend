@@ -28,11 +28,11 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 ## a basis written by hand is a basis silently mis-signed — that mistake has
 ## already aimed this camera at the ceiling once. A look-at target cannot be
 ## wrong in that way, and it is also the thing a person actually wants to adjust.
-@export var machine_eye: Vector3 = Vector3(0.72, 1.44, 3.62)
-@export var machine_target: Vector3 = Vector3(-0.12, 1.16, 0.05)
+@export var machine_eye: Vector3 = Vector3(0.78, 1.66, 4.05)
+@export var machine_target: Vector3 = Vector3(-0.1, 1.3, 0.05)
 @export var machine_fov: float = 55.0
-@export var room_eye: Vector3 = Vector3(2.05, 2.0, 5.05)
-@export var room_target: Vector3 = Vector3(-0.25, 0.9, 0.15)
+@export var room_eye: Vector3 = Vector3(2.15, 2.2, 5.4)
+@export var room_target: Vector3 = Vector3(-0.25, 1.05, 0.15)
 @export var room_fov: float = 62.0
 ## How far the camera rises and how much further up it looks on a tall screen.
 ## With a fixed horizontal field, every pixel of extra height is extra vertical

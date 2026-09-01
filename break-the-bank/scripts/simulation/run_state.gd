@@ -46,6 +46,9 @@ var reel_rng: RngStream
 var shop_rng: RngStream
 ## Draws for anything that changes the run's pacing rather than its contents.
 var tempo_rng: RngStream
+## Draws for the symbols either side of the payline. Cosmetic, and separate so
+## showing more of the reels cannot move what lands on it.
+var band_rng: RngStream
 
 var _reel_cache: Array[Probability.ReelEntry] = []
 var _reel_cache_dirty: bool = true
@@ -64,6 +67,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	reel_rng = RngStream.new(p_seed, &"reels")
 	shop_rng = RngStream.new(p_seed, &"shop")
 	tempo_rng = RngStream.new(p_seed, &"tempo")
+	band_rng = RngStream.new(p_seed, &"band")
 
 
 ## True when [param index] names an offer the player can currently afford.

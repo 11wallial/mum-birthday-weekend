@@ -71,6 +71,27 @@ static func spin_line(reel: Array[ReelEntry], reel_count: int, rng: RngStream) -
 	return line
 
 
+## The symbols either side of the payline on one reel, for the machine to show.
+##
+## Purely what the player sees: these never score. A slot machine is read
+## vertically as well as horizontally — most of the drama is in what nearly
+## landed — and a window showing exactly one symbol per reel throws all of that
+## away. Each stop is an independent draw from the same weighted reel, which is
+## how a virtual-reel machine works, so the near miss the player sees is a real
+## one and not a decoration invented by the view.
+##
+## Drawn from a stream of its own, so a machine that shows more of its reels
+## cannot change which symbols land on the payline of an existing seed.
+static func spin_band(reel: Array[ReelEntry], rng: RngStream) -> Array[SymbolDef]:
+	var band: Array[SymbolDef] = []
+	for i: int in 2:
+		var symbol: SymbolDef = draw_symbol(reel, rng)
+		if symbol == null:
+			break
+		band.append(symbol)
+	return band
+
+
 ## Classifies a line. Wilds join whichever group they can make largest.
 static func detect_pattern(line: Array[SymbolDef]) -> Pattern:
 	if line.size() < 2:
