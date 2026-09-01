@@ -68,6 +68,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var crown: Array[Node3D] = _crown()
 	var ladder: Array[Node3D] = _ladder()
 	_rivets()
+	_wear()
 	var mounts: Array[Node3D] = _mounts()
 	return {
 		"mounts": mounts,
@@ -686,10 +687,20 @@ func _spool() -> Node3D:
 	# The tape hanging off the spool. Panels overlap along the run rather than
 	# butting: a gap between two thin plates shows their unlit edges, and a row
 	# of those reads as piano keys instead of paper.
+	# Printed, not blank: a receipt spool that has paid out nothing but paper
+	# is scenery, and the print is rows of faded figures at exactly the scale
+	# a passing glance expects. It runs all the way to the floor and pools
+	# there, because paper that stops in mid-air breaks the one job it has.
+	var printed: StandardMaterial3D = StandardMaterial3D.new()
+	printed.albedo_texture = ProcTextures.receipt(70)
+	printed.roughness = 0.85
+	printed.metallic = 0.0
 	var run: Array[Vector3] = [
 		Vector3(1.3, PLINTH_TOP + 0.14, 0.5),
 		Vector3(1.31, PLINTH_TOP + 0.11, 0.62),
 		Vector3(1.33, PLINTH_TOP - 0.1, 0.68),
+		Vector3(1.34, 0.12, 0.73),
+		Vector3(1.33, 0.012, 0.78),
 	]
 	for i: int in run.size() - 1:
 		var from: Vector3 = run[i]
@@ -697,9 +708,75 @@ func _spool() -> Node3D:
 		var delta: Vector3 = to - from
 		var panel: MeshInstance3D = _box(_root,
 				Vector3(0.19, 0.004, delta.length() * 1.35),
-				(from + to) * 0.5, paper)
+				(from + to) * 0.5, printed)
 		panel.rotation = Vector3(-atan2(delta.y, delta.z), 0.0, sin(float(i) * 1.7) * 0.06)
+	# The pooled loops where the run lands.
+	for loop_config: Array in [[0.1, 0.006, Vector3(1.3, 0.006, 0.82)],
+			[0.075, 0.006, Vector3(1.38, 0.014, 0.79)]]:
+		_cylinder(_root, float(loop_config[0]), float(loop_config[1]),
+				loop_config[2] as Vector3, Vector3.ZERO, printed)
 	return spool
+
+
+## Wear with a location and a cause: rust weeping down from fasteners, and
+## stains pooled where things stand. Uniform noise gets you variation; it does
+## not get you the record of something having happened at a particular bolt,
+## which is what separates a worn machine from a dirty screenshot.
+func _wear() -> void:
+	var wear_root: Node3D = _group(&"Wear")
+	var front: float = CHASSIS.z + 0.004
+	var rivet_y: float = CHASSIS_Y + CHASSIS.y - 0.06
+	# Under a deterministic handful of the top-edge rivets. Every rivet weeping
+	# reads as a pattern; a machine rusts where its luck ran out.
+	for i: Array in [[0, 0.34], [2, 0.22], [5, 0.4], [7, 0.27]]:
+		var x: float = lerpf(-CHASSIS.x + 0.1, CHASSIS.x - 0.1, float(i[0]) / 7.0)
+		_wear_card(wear_root, Vector2(0.09, float(i[1])),
+				Vector3(x, rivet_y - 0.05 - float(i[1]) * 0.5, front),
+				ProcTextures.weep(71 + int(i[0])))
+	# Under the bezel's lower corner bolts, where the window frame drains.
+	for sx: float in [-1.0, 1.0]:
+		_wear_card(wear_root, Vector2(0.11, 0.3),
+				Vector3(sx * 0.6, CHASSIS_Y - 0.24 - 0.15, front + 0.06),
+				ProcTextures.weep(79, Color(0.3, 0.18, 0.1)))
+	# Off the inspection hatch's lower edge.
+	_wear_card(wear_root, Vector2(0.1, 0.24),
+			Vector3(-0.5, CHASSIS_Y - 0.33 - 0.12, front + 0.012),
+			ProcTextures.weep(81))
+	# The straps bleed onto the plinth's concrete — iron staining stone is the
+	# oldest wear there is, and it is what bolts the two materials together.
+	for sx: float in [-1.0, 1.0]:
+		_wear_card(wear_root, Vector2(0.16, 0.3),
+				Vector3(sx * 0.86, PLINTH_TOP - 0.13, 0.579),
+				ProcTextures.weep(83, Color(0.32, 0.17, 0.09)))
+	# Pooled stains on the plinth cap: oil under the machine's working flank,
+	# damp under the spool where the paper lands.
+	var oil: MeshInstance3D = Prims.quad(wear_root, Vector2(0.72, 0.5),
+			Vector3(0.35, PLINTH_TOP + 0.058, 0.42),
+			_wear_material(ProcTextures.stain(85)))
+	oil.rotation.x = -PI * 0.5
+	var damp: MeshInstance3D = Prims.quad(wear_root, Vector2(0.42, 0.42),
+			Vector3(1.28, PLINTH_TOP + 0.058, 0.42),
+			_wear_material(ProcTextures.stain(86, Color(0.08, 0.06, 0.05))))
+	damp.rotation.x = -PI * 0.5
+
+
+func _wear_card(parent: Node3D, size: Vector2, at: Vector3,
+		texture: ImageTexture) -> void:
+	var card: MeshInstance3D = Prims.quad(parent, size, at,
+			_wear_material(texture))
+	card.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## Lit like the surface it sits on — a weep in shadow stays in shadow — but
+## never casting one of its own, and never fighting the panel for depth.
+func _wear_material(texture: ImageTexture) -> StandardMaterial3D:
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_texture = texture
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.roughness = 0.92
+	material.metallic = 0.0
+	material.disable_receive_shadows = false
+	return material
 
 
 ## Rivets and bolt heads along every seam, drawn as one [MultiMesh] so the whole
