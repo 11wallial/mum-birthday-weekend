@@ -54,8 +54,19 @@ static func reel_weights(reel: Array[ReelEntry]) -> PackedInt32Array:
 
 ## Draws one symbol. Returns null only when every weight on the reel is zero.
 static func draw_symbol(reel: Array[ReelEntry], rng: RngStream) -> SymbolDef:
-	var index: int = rng.weighted_index(reel_weights(reel))
-	if index < 0:
+	return draw_weighted(reel, reel_weights(reel), rng)
+
+
+## The same draw against a weight table the caller already has.
+##
+## A spin now takes three payline draws and six band draws, and rebuilding the
+## weight table for each of them was the whole reel walked nine times a spin
+## across millions of batch spins. [method RunState.reel_weights] caches it
+## beside the reel it belongs to.
+static func draw_weighted(reel: Array[ReelEntry], weights: PackedInt32Array,
+		rng: RngStream) -> SymbolDef:
+	var index: int = rng.weighted_index(weights)
+	if index < 0 or index >= reel.size():
 		return null
 	return reel[index].symbol
 

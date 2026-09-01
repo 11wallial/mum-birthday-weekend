@@ -55,6 +55,8 @@ func test_every_offer_shows_what_it_gives_and_what_it_takes() -> void:
 	assert_str(shown).contains("Danger Money")
 	assert_str(shown).contains("+4 spins on the floor")
 	assert_str(shown).contains("-30% on every payout")
+	# The sign lives in the phrase, not in a marker beside it.
+	assert_str(shown).not_contains("+ +4")
 
 
 func test_signing_reports_the_row_without_touching_the_run() -> void:

@@ -32,6 +32,16 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 	var wins_by_depth: PackedInt32Array = PackedInt32Array()
 	runs_by_depth.resize(content.floors.size() + 1)
 	wins_by_depth.resize(content.floors.size() + 1)
+	# And bucketed again by how deep a tier the run actually bought from, which
+	# is not the same thing. Reaching floor six says nothing about being able to
+	# afford floor six's stock: prices track the ante, so the runs that own a
+	# late artifact are the runs that were rich when they got there, and those
+	# runs win more whatever they bought. Without this control every expensive
+	# late item reads as overpowered, and nerfing one only promotes the next.
+	var runs_by_market: PackedInt32Array = PackedInt32Array()
+	var wins_by_market: PackedInt32Array = PackedInt32Array()
+	runs_by_market.resize(content.floors.size() + 1)
+	wins_by_market.resize(content.floors.size() + 1)
 	# Same idea for tags: a synergy needs enough artifacts to exist at all.
 	var stocked_runs: int = 0
 	var stocked_wins: int = 0
@@ -54,6 +64,16 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 		runs_by_depth[depth] += 1
 		if won:
 			wins_by_depth[depth] += 1
+		# A run counts as having been in the market for tier t when it both
+		# cleared t floors and bought something from tier t or deeper.
+		var bought_tier: int = 0
+		for owned: ArtifactDef in state.owned:
+			bought_tier = maxi(bought_tier, owned.min_floor)
+		var market: int = clampi(mini(state.floors_cleared, bought_tier),
+				0, runs_by_market.size() - 1)
+		runs_by_market[market] += 1
+		if won:
+			wins_by_market[market] += 1
 		if state.owned.size() >= content.balance.synergy_threshold:
 			stocked_runs += 1
 			if won:
@@ -96,9 +116,9 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 		},
 		"deaths_by_floor": floor_deaths,
 		"artifact_win_rates": _artifact_rates(
-				artifact_runs, artifact_wins, content, runs_by_depth, wins_by_depth),
+				artifact_runs, artifact_wins, content, runs_by_market, wins_by_market),
 		"synergy_win_rates": _synergy_rates(synergy_runs, synergy_wins, content,
-				runs_by_depth, wins_by_depth, _ratio(stocked_wins, stocked_runs)),
+				runs_by_market, wins_by_market, _ratio(stocked_wins, stocked_runs)),
 		"anomalies": [],
 	}
 
@@ -180,11 +200,13 @@ static func _rates(runs: Dictionary, wins: Dictionary, baseline: float) -> Dicti
 
 
 ## Per-artifact rates, each against the cohort that reached the floor where the
-## artifact first appears in a shop.
+## artifact first appears in a shop and bought from that tier.
 ##
 ## Comparing against the whole batch instead would flag every late artifact as
 ## overpowered: owning one that unlocks on floor 5 already means surviving to
 ## floor 5, so its win rate measures the player who got there, not the artifact.
+## Controlling for depth alone is not enough either — see the market buckets in
+## [method run_batch] for why.
 static func _artifact_rates(runs: Dictionary, wins: Dictionary, content: ContentDB,
 		runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array) -> Dictionary:
 	var out: Dictionary = {}
@@ -201,7 +223,7 @@ static func _artifact_rates(runs: Dictionary, wins: Dictionary, content: Content
 			"wins": won,
 			"win_rate": _ratio(won, seen),
 			"baseline": _depth_baseline(runs_by_depth, wins_by_depth, unlock_depth),
-			"baseline_note": "runs clearing %d+ floors" % unlock_depth,
+			"baseline_note": "runs clearing %d+ floors and buying from that tier" % unlock_depth,
 		}
 	return out
 

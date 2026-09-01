@@ -94,6 +94,7 @@ var band_rng: RngStream
 var gamble_rng: RngStream
 
 var _reel_cache: Array[Probability.ReelEntry] = []
+var _reel_weight_cache: PackedInt32Array = PackedInt32Array()
 var _reel_cache_dirty: bool = true
 
 
@@ -187,8 +188,15 @@ func reel() -> Array[Probability.ReelEntry]:
 			for key: StringName in source:
 				shifts[key] = int(shifts.get(key, 0)) + int(source[key])
 		_reel_cache = Probability.build_reel(content.symbols, shifts)
+		_reel_weight_cache = Probability.reel_weights(_reel_cache)
 		_reel_cache_dirty = false
 	return _reel_cache
+
+
+## The current reel's draw weights, cached beside it.
+func reel_weights() -> PackedInt32Array:
+	reel()
+	return _reel_weight_cache
 
 
 ## Signs [param signed] for the coming floor, or tears the last one up when null.

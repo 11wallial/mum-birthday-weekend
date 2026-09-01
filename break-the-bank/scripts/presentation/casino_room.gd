@@ -55,6 +55,8 @@ var _daily_key: String = ""
 var _current_seed: int = 0
 ## True once the floor's spins are gone and the ante has not yet been settled.
 var _ante_pending: bool = false
+## Systems granted since the last floor opened, waiting to be announced with it.
+var _granted: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -192,9 +194,9 @@ func _unhandled_input(event: InputEvent) -> void:
 ##
 ## Only a spin worth having moves the camera. Shaking on every payout above zero
 ## made the machine twitch constantly and told the player nothing.
-func _on_result_judged(result: SlotView3D.Result, payout: int) -> void:
+func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) -> void:
 	if _hud != null and _hud.has_method("mark_result"):
-		_hud.call("mark_result", result, payout)
+		_hud.call("mark_result", result, payout, settled)
 	# Only now does the machine offer its decision. The simulation knew what the
 	# board owed before a single reel had stopped; offering it then would ask the
 	# player to nudge symbols they had not been shown.
@@ -328,6 +330,10 @@ func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 	engine.begin_floor(state)
 	if _deck != null:
 		_deck.bind(state)
+	# Back to the machine: a jump made to look at a wider machine is no use
+	# from the framing that surveys the room.
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
 	_refresh_diegetic()
 
 
@@ -417,6 +423,11 @@ func _advance() -> void:
 	_after_input()
 
 
+func _shelve_deck(shelved: bool) -> void:
+	if _deck != null:
+		_deck.shelve(shelved)
+
+
 ## Redraws the deck, the lamps and the prompt after a hand-made move.
 func _after_input() -> void:
 	if _deck != null:
@@ -436,9 +447,18 @@ func _prompt_ante() -> void:
 	var ante: int = engine.ante_for(state)
 	var short: int = ante - state.economy.cash
 	var verdict: String = "you are %d short" % short if short > 0 else "you can cover it"
-	_set_prompt("ANTE DUE  %d     CASH %d     %s\n%s" % [
-		ante, state.economy.cash, verdict,
-		TouchBar.hint("SPACE to settle", "TAP to settle")])
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("ANTE DUE  %d     CASH %d     %s" % [ante, state.economy.cash, verdict])
+	# The one thing that can still be done about a shortfall, said at the one
+	# moment it matters. A reserve the player has forgotten about is a reserve
+	# that loses them the run.
+	if short > 0 and state.economy.vault > 0:
+		var reaching: int = int(floor(float(state.economy.vault)
+				* (1.0 - state.config.vault_break_percent / 100.0)))
+		lines.append("The vault holds %d — breaking it now returns %d." % [
+			state.economy.vault, reaching])
+	lines.append(TouchBar.hint("SPACE to settle", "TAP to settle"))
+	_set_prompt("\n".join(lines))
 	if _camera != null:
 		_camera.set_view(CameraController.View.MACHINE)
 
@@ -461,6 +481,7 @@ func _on_leave_requested() -> void:
 		_recorder.record_leave_shop(state)
 	if _shop != null:
 		_shop.close()
+	_shelve_deck(false)
 	# Back to the machine. Opening the draft pulls the camera out to survey the
 	# room; leaving it has to put the camera back, or the whole rest of the run
 	# is played from the far framing the draft borrowed.
@@ -484,6 +505,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.FLOOR_STARTED:
 			FloorMood.apply(StringName(payload.get("environment", &"")),
 					_room_parts, _environment, self)
+			_announce_floor(payload)
 		EffectBus.Event.SPIN_STARTED:
 			if _deck != null:
 				_deck.set_busy(true)
@@ -491,18 +513,23 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			# A callout left over from the floor that just ended would sit on
 			# top of the panel the player is being asked to read.
 			_clear_prompt()
+			_shelve_deck(true)
 			if _shop != null:
 				_shop.open(state)
 			if _camera != null:
 				_camera.set_view(CameraController.View.ROOM)
 		EffectBus.Event.CONTRACTS_OFFERED:
 			_clear_prompt()
+			_shelve_deck(true)
 			if _contracts != null:
 				_contracts.open(state)
 			if _camera != null:
 				_camera.set_view(CameraController.View.ROOM)
 		EffectBus.Event.SYSTEM_GRANTED:
-			_announce_system(payload)
+			# Held rather than shown: SYSTEM_GRANTED arrives a moment before the
+			# floor it belongs to, and two callouts in two frames means the
+			# first one is never read.
+			_granted.append(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
 		_:
@@ -546,7 +573,9 @@ func _finish_run(reason: String) -> void:
 		lines.append("UNLOCKED: %s" % ", ".join(names))
 	lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
 			"New run / Setup — the buttons top right"))
-	_set_prompt("\n".join(lines))
+	# The one message that gets the middle of the screen. There is nothing left
+	# on the machine worth looking past it at.
+	_set_prompt("\n".join(lines), true)
 	_end_recording(StringName(reason))
 
 
@@ -558,9 +587,9 @@ func _end_recording(reason: StringName) -> void:
 	_recorder = null
 
 
-func _set_prompt(text: String) -> void:
+func _set_prompt(text: String, centred: bool = false) -> void:
 	if _hud != null and _hud.has_method("set_prompt"):
-		_hud.call("set_prompt", text)
+		_hud.call("set_prompt", text, centred)
 
 
 func _clear_prompt() -> void:
@@ -666,6 +695,7 @@ func _on_sign_requested(index: int) -> void:
 			if index >= 0 and index < state.contract_offers.size() else &""
 	if engine.sign_contract(state, index) and _contracts != null:
 		_record(&"sign", {"contract": String(signed), "passed": passed})
+		_shelve_deck(false)
 		_contracts.close()
 		if _camera != null:
 			_camera.set_view(CameraController.View.MACHINE)
@@ -706,7 +736,11 @@ func _prompt_decision() -> void:
 			# Said once, on the floor that grants it. The buttons carry the
 			# count, the cost and what each nudge would bring down, so repeating
 			# it across the machine's face every time is a banner, not a hint.
-			if state.floor_index <= 1 and state.spins_taken <= 3:
+			# All the way through the floor that teaches it. The basement is the
+			# tutorial and the trail is its lesson, and a player tapping through
+			# on rhythm would otherwise decline every nudge they were owed
+			# without ever finding out what the word meant.
+			if state.floor_index <= 1:
 				var board: SpinBoard = state.board
 				_set_prompt("NUDGE — %d left.  Each paid nudge costs a spin."
 						% board.nudges)
@@ -718,9 +752,23 @@ func _prompt_decision() -> void:
 			_clear_prompt()
 
 
-## Puts a newly granted system on screen, once, as the floor opens.
-func _announce_system(payload: Dictionary) -> void:
-	_set_prompt("%s\n%s\n%s" % [
-		String(payload.get("title", "")),
-		String(payload.get("brief", "")),
-		TouchBar.hint("SPACE to begin", "TAP to begin")])
+## The one callout a floor gets: what it just handed over, and what it wants.
+##
+## The last floor also gets told what is still owed. A run that clears the House
+## and then loses to a debt nobody mentioned since floor two has been beaten by
+## a number, not by the game — and about a fifth of runs end exactly there.
+func _announce_floor(payload: Dictionary) -> void:
+	var lines: PackedStringArray = PackedStringArray()
+	for granted: Dictionary in _granted:
+		lines.append(String(granted.get("title", "")))
+		lines.append(String(granted.get("brief", "")))
+	_granted.clear()
+	if state != null and state.content.floor_at(state.floor_index + 1) == null \
+			and state.economy.debt > 0:
+		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [
+			int(payload.get("ante", 0)), state.economy.debt])
+		lines.append("Clear the ante and the debt, or the House keeps you.")
+	if lines.is_empty():
+		return
+	lines.append(TouchBar.hint("SPACE to begin", "TAP to begin"))
+	_set_prompt("\n".join(lines))

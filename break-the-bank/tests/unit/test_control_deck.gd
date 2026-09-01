@@ -55,7 +55,7 @@ func _reels() -> String:
 
 
 func _status() -> String:
-	return _labels(^"Root/Column/Status")
+	return _labels(^"Root/Status")
 
 
 func test_a_fresh_machine_offers_a_spin_and_a_lock_per_reel() -> void:

@@ -6,8 +6,8 @@
 script = ExtResource("1_artifactdef")
 id = &"margin_call"
 display_name = "Margin Call"
-description = "The deeper you are, the harder they let you play. +0.9x for every 100 owed."
-cost = 36
+description = "The deeper you are, the harder they let you play. +0.55x for every 100 owed."
+cost = 44
 trigger = 2
 effect = 13
 magnitude = 0.55

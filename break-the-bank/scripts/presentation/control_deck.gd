@@ -34,6 +34,8 @@ const LAUNDER: StringName = &"launder"
 const REEL_HEIGHT: float = 74.0
 const ACTION_HEIGHT: float = 58.0
 const EXTRA_HEIGHT: float = 44.0
+## Margin either side of the deck, matching the scene's own offsets.
+const DECK_MARGIN: float = 20.0
 
 var _reels: HBoxContainer
 var _actions: HBoxContainer
@@ -44,10 +46,15 @@ var _scale: float = 1.0
 ## Set while the reels are still turning: the machine must not offer a decision
 ## about a board the player has not been shown.
 var _held_back: bool = false
+## Set while a panel owns the screen.
+var _shelved: bool = false
 
 
 func _ready() -> void:
-	_status = get_node_or_null(^"Root/Column/Status") as HBoxContainer
+	# The chips are readouts, not controls: they live with the gauges at the top
+	# rather than above the buttons, where they sat on the reels the player was
+	# trying to read.
+	_status = get_node_or_null(^"Root/Status") as HBoxContainer
 	_reels = get_node_or_null(^"Root/Column/Reels") as HBoxContainer
 	_actions = get_node_or_null(^"Root/Column/Actions") as HBoxContainer
 	_extras = get_node_or_null(^"Root/Column/Extras") as HBoxContainer
@@ -68,20 +75,37 @@ func set_busy(busy: bool) -> void:
 	refresh()
 
 
+## Clears the deck entirely while a panel has the screen.
+##
+## The draft and the back office are decisions of their own, and a row of
+## machine controls still live underneath one is both a distraction and a way to
+## spend the money the panel is asking about.
+func shelve(shelved: bool) -> void:
+	if _shelved == shelved:
+		return
+	_shelved = shelved
+	refresh()
+
+
 func _fit() -> void:
 	var window: Window = get_window()
 	if window == null or window.size.x <= 0:
 		return
 	_scale = clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	# The chips sit under the HUD's own rows, which scale with the type.
+	if _status != null:
+		_status.offset_left = 22.0 * _scale
+		_status.offset_top = 132.0 * _scale
+		_status.offset_bottom = 172.0 * _scale
 	refresh()
 
 
-## Rebuilds both rows from the run as it stands.
+## Rebuilds every row from the run as it stands.
 ##
 ## Rebuilt rather than updated. The set of legal moves changes shape — three
-## reel buttons become three nudge buttons, a stake dial appears three floors
-## in — and reconciling that in place is how a button ends up wired to the move
-## it used to mean.
+## reel buttons become three nudge buttons, and become five of them two floors
+## later — and reconciling that in place is how a button ends up wired to the
+## move it used to mean.
 func refresh() -> void:
 	if _reels == null or _actions == null or _status == null or _extras == null:
 		return
@@ -89,7 +113,7 @@ func refresh() -> void:
 	_clear(_reels)
 	_clear(_extras)
 	_clear(_actions)
-	if _state == null or _state.is_over():
+	if _state == null or _state.is_over() or _shelved:
 		return
 	_build_status()
 	if _state.phase == RunState.Phase.SPINNING:
@@ -137,14 +161,14 @@ func _build_reels() -> void:
 					_state, board.preview_nudge(i)) * maxi(1, _state.stake) - board.payout
 			_reel_button(NUDGE, i, "NUDGE", incoming,
 					("+%d" % gain) if gain > 0 else "no better",
-					board.can_nudge(i), gain > 0)
+					board.can_nudge(i), gain > 0, board.reel_count())
 		else:
 			var locked: bool = board.is_held(i)
 			var barred: bool = (not locked
 					and board.held_count() >= board.reel_count() - 1)
 			_reel_button(HOLD, i, "HELD" if locked else "HOLD", standing,
 					"%d cr" % _state.config.spin_cost if not locked else "locked",
-					not barred, locked)
+					not barred, locked, board.reel_count())
 
 
 func _build_actions() -> void:
@@ -168,15 +192,30 @@ func _build_actions() -> void:
 			pass
 	if _held_back:
 		return
+	if _state.spins_remaining <= 0:
+		# The floor is out of spins and the ante is what happens next. Leaving a
+		# SPIN button up that cannot spin is a control that lies about itself.
+		_action(SPIN, "SETTLE THE ANTE", "the floor is out of spins", true, true)
+		# One control survives the end of the floor: the vault is the only thing
+		# left that can still find the money, and hiding it here would make the
+		# collateral a trap rather than a bet.
+		if _state.has_system(Systems.VAULT) and _state.economy.vault > 0:
+			_extra(WITHDRAW, "BREAK THE VAULT", "%d cr  −%d%%" % [
+					_state.economy.vault,
+					int(_state.config.vault_break_percent)], true)
+		return
 	_action(SPIN, "SPIN", "%d cr" % _state.spin_price(),
 			_state.economy.can_afford(_state.spin_price()), true)
 	if _state.has_system(Systems.STAKE):
 		_extra(STAKE_DOWN, "STAKE −", "", _state.stake > 1)
 		_extra(STAKE_UP, "STAKE +", "", _state.stake < _state.config.max_stake)
 	if _state.has_system(Systems.VAULT):
-		_extra(DEPOSIT, "BANK", "lock the float", _state.economy.cash > 0)
-		_extra(WITHDRAW, "BREAK", "−%d%%" % int(_state.config.vault_break_percent),
-				_state.economy.vault > 0)
+		# The amount, not "lock the float". A button that banks a number the
+		# player cannot see before pressing it is a button they press once.
+		var float_to_bank: int = _bankable()
+		_extra(DEPOSIT, "BANK", "%d cr" % float_to_bank, float_to_bank > 0)
+		_extra(WITHDRAW, "BREAK", "%d cr  −%d%%" % [_state.economy.vault,
+				int(_state.config.vault_break_percent)], _state.economy.vault > 0)
 	if _state.has_system(Systems.EXPANSION):
 		_works_action(BUY_ROW, "+ ROW", _state.extra_rows, _state.config.max_extra_rows)
 		_works_action(BUY_REEL, "+ REEL", _state.extra_reels, _state.config.max_extra_reels)
@@ -190,6 +229,24 @@ func _works_action(action: StringName, label: String, owned: int, ceiling: int) 
 		return
 	var price: int = _price_for(action)
 	_extra(action, label, "%d cr" % price, _state.economy.can_afford(price))
+
+
+## What the BANK button would put away: everything the collateral can still
+## use, never the last of the purse.
+##
+## Mirrors [method CasinoRoom._float_to_bank]. The deck reads the run and only
+## the run, so it works the figure out rather than being told it — and the two
+## have to agree, or the button quotes one number and banks another.
+func _bankable() -> int:
+	var floor_def: FloorDef = _state.current_floor()
+	if floor_def == null:
+		return 0
+	var useful: int = int(round(float(floor_def.ante)
+			* _state.config.vault_collateral_antes * _state.config.vault_collateral_cap))
+	var keep: int = maxi(_state.spin_price() * 3,
+			int(round(float(floor_def.ante) * 0.1)))
+	return maxi(0, mini(_state.economy.cash - keep,
+			maxi(0, useful - _state.economy.vault)))
 
 
 ## Mirrors [method SimEngine.works_price] without holding an engine: the deck
@@ -216,10 +273,12 @@ func _chip(caption: String, value: String, tint: Color) -> void:
 
 
 func _reel_button(action: StringName, index: int, label: String,
-		symbol: SymbolDef, note: String, enabled: bool, lit: bool) -> void:
+		symbol: SymbolDef, note: String, enabled: bool, lit: bool,
+		of_reels: int) -> void:
 	var button: Button = _new_button(enabled)
 	button.custom_minimum_size = Vector2(
-			maxf(112.0 * _scale, _width_of(note, 11.0) + 46.0 * _scale),
+			minf(maxf(112.0 * _scale, _width_of(note, 11.0) + 46.0 * _scale),
+					_share_of_row(of_reels, 10.0)),
 			REEL_HEIGHT * _scale)
 	button.pressed.connect(func() -> void: action_requested.emit(action, index))
 
@@ -285,6 +344,20 @@ func _action(action: StringName, label: String, note: String,
 	_actions.add_child(button)
 
 
+## The widest one of [param count] buttons can be and still fit the row.
+##
+## The type is scaled up on a phone so a caption stays a constant physical size,
+## which is right for reading and wrong for a row of five: unclamped, five reel
+## buttons at phone scale are wider than the screen they are drawn on.
+func _share_of_row(count: int, separation: float) -> float:
+	var width: float = RunHUD.DESIGN_WIDTH
+	var viewport: Viewport = get_viewport()
+	if viewport != null and viewport.get_visible_rect().size.x > 0.0:
+		width = viewport.get_visible_rect().size.x
+	var usable: float = width - DECK_MARGIN * 2.0 - separation * float(maxi(count - 1, 0))
+	return maxf(usable / float(maxi(count, 1)), 60.0)
+
+
 ## How wide [param text] draws at [param size], in the deck's own scale.
 func _width_of(text: String, size: float) -> float:
 	if text.is_empty():
@@ -304,7 +377,8 @@ func _extra(action: StringName, label: String, note: String, enabled: bool) -> v
 	button.text = caption
 	button.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
 	button.custom_minimum_size = Vector2(
-			_width_of(caption, 12.0) + 26.0 * _scale, EXTRA_HEIGHT * _scale)
+			minf(_width_of(caption, 12.0) + 26.0 * _scale, _share_of_row(6, 8.0)),
+			EXTRA_HEIGHT * _scale)
 	button.pressed.connect(func() -> void: action_requested.emit(action, 0))
 	_extras.add_child(button)
 

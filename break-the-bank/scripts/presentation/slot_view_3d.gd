@@ -9,9 +9,12 @@ extends Node3D
 ## The simulation resolves a spin instantly: SPIN_STARTED and PAYOUT_CALCULATED
 ## arrive in the same frame. The pacing of a spin is therefore entirely the
 ## view's business, which is why these live here and not in BalanceConfig.
-const SPIN_DURATION: float = 0.45
-const REEL_STAGGER: float = 0.14
-const SETTLE_DURATION: float = 0.2
+## Tightened once the spin became a decision. A run is eighty-odd spins and
+## every one of them now ends in a choice, so a second of drum before the player
+## can act is a minute of waiting per run.
+const SPIN_DURATION: float = 0.34
+const REEL_STAGGER: float = 0.1
+const SETTLE_DURATION: float = 0.16
 
 @export var module_anchor_path: NodePath = ^"ModuleAnchor"
 @export var payout_particles_path: NodePath = ^"PayoutParticles"
@@ -81,9 +84,14 @@ const JACKPOT_SHARE: float = 3.0
 ## more than one spin ahead of what the player is looking at.
 var _busy: bool = false
 
-## How the finished spin was judged. The HUD listens so its readout agrees with
-## the machine rather than restating the number in its own words.
-signal result_judged(result: Result, payout: int)
+## How the spin was judged. The HUD listens so its readout agrees with the
+## machine rather than restating the number in its own words.
+##
+## Emitted twice on a spin the machine owes a decision on: once when the drums
+## stop, with [param settled] false and the board as it stands, and again when
+## the credits actually move. A verdict on an unsettled board would call a line
+## dead while the player was still holding a nudge worth forty credits.
+signal result_judged(result: Result, payout: int, settled: bool)
 ## Artifacts acquired this run. Drives how hard the reels are backlit.
 var _upgrades: int = 0
 ## What one spin needs to be worth on this floor. Set from FLOOR_STARTED.
@@ -148,6 +156,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_fit_works(int(payload.get("reels", 3)), int(payload.get("rows", 1)))
 		EffectBus.Event.PAYOUT_CALCULATED:
 			_banked = int(payload.get("payout", 0))
+			# The spin is over however it ended — nudges spent, declined, or
+			# never offered — so the chevrons come down here rather than only
+			# when the last one happens to be used.
+			_offer_nudges(0)
 			# Landed already: the decision was made after the drums stopped, so
 			# the celebration is owed now rather than at the end of an animation
 			# that has already finished.
@@ -290,7 +302,7 @@ func _finish_spin(payout: int, multiplier: float) -> void:
 	# The board is standing but not banked: the machine owes a decision. Say how
 	# the line reads so the controls can open, and hold the coins and the bells
 	# back until the player has actually taken the money.
-	result_judged.emit(_judge(payout), payout)
+	result_judged.emit(_judge(payout), payout, false)
 
 
 ## Snaps the arm down and lets it drift back up. The throw is deliberately
@@ -552,7 +564,7 @@ func _celebrate(payout: int, multiplier: float) -> void:
 				_audio.play_at(&"coin_drop_single")
 			_:
 				pass
-	result_judged.emit(result, payout)
+	result_judged.emit(result, payout, true)
 
 
 ## Fits hardware without buying it. For visual QA only: a real run reaches a

@@ -251,6 +251,10 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 		symbol.outline_size = 14
 		symbol.outline_modulate = Color(0.1, 0.08, 0.07, 1.0)
 		symbol.modulate = Color(0.16, 0.14, 0.12)
+		# Hidden until something lands on it. A drum nothing has been drawn for
+		# is blank, not a question mark — which is what a machine that has just
+		# grown two new reels shows until the next spin fills them.
+		symbol.visible = false
 		# Just clear of the drum surface, so it reads as printed on the strip.
 		symbol.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.004)
 		reel.add_child(symbol)

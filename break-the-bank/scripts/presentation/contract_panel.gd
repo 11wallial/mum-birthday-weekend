@@ -127,8 +127,7 @@ func _build_row(index: int) -> Control:
 	terms.add_theme_constant_override(&"separation", int(roundf(22.0 * _scale)))
 	for entry: Dictionary in contract.clauses():
 		var gives: bool = bool(entry["gives"])
-		terms.add_child(_cell("%s %s" % ["+" if gives else "−",
-				ContractDef.phrase(entry)], 14.0,
+		terms.add_child(_cell(ContractDef.phrase(entry), 14.0,
 				UiSkin.AMBER if gives else UiSkin.DENIED))
 	grid.add_child(terms)
 

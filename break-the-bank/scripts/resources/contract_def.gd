@@ -68,11 +68,15 @@ func clauses() -> Array[Dictionary]:
 
 
 ## One line per half, for the paper the player signs.
+##
+## The sign lives in the phrase, not in a marker beside it: a "+" in front of
+## "+4 spins on the floor" reads as a stutter, and a "−" in front of "-30% on
+## every payout" reads as a double negative. Which half is which is carried by
+## colour where there is colour, and by the order where there is not.
 func terms() -> PackedStringArray:
 	var lines: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in clauses():
-		lines.append("%s  %s" % ["+" if bool(entry["gives"]) else "−",
-				phrase(entry)])
+		lines.append(phrase(entry))
 	return lines
 
 
@@ -98,6 +102,8 @@ static func phrase(entry: Dictionary) -> String:
 			return "%+d credits on every %s" % [int(amount), symbol]
 		Clause.CURSE_PAYS:
 			return "skulls pay %d each" % int(amount)
+		Clause.NONE:
+			return ""
 		Clause.DEBT_INTEREST:
 			return "%+d%% debt interest this floor" % int(round(amount))
 		Clause.NUDGES:

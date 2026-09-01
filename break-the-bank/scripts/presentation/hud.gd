@@ -83,7 +83,7 @@ func _fit_type() -> void:
 	var scale_up: float = _scale
 	for entry: Array in [
 		[_cash, 27.0], [_ante, 27.0], [_spins, 27.0],
-		[_line, 17.0], [_log, 13.0], [_hint, 14.0], [_prompt, 21.0],
+		[_line, 17.0], [_log, 13.0], [_hint, 14.0], [_prompt, 18.0],
 	]:
 		var label: Label = entry[0] as Label
 		if label != null:
@@ -121,12 +121,16 @@ func _place_rows(scale_up: float) -> void:
 		hint.offset_top = -30.0 * scale_up
 		hint.offset_bottom = -10.0 * scale_up
 		hint.offset_left = -560.0 * scale_up
-	# The callout rides above the deck, so it has to move with the deck's own
-	# scaling rather than stay pinned to a design-resolution offset.
+	# A marquee under the gauges rather than a banner across the machine. It
+	# used to sit dead centre, which is exactly where the reels are, so every
+	# callout hid the thing it was talking about.
+	# Top right, opposite the gauges and clear of the payline readout under
+	# them. Centred it sat on the reels; under the gauges it sat on the verdict.
 	var prompt: Control = _prompt_panel
-	if prompt != null:
-		prompt.offset_top = -318.0 * scale_up
-		prompt.offset_bottom = -238.0 * scale_up
+	if prompt != null and prompt.anchor_top == 0.0:
+		prompt.offset_left = -700.0 * scale_up
+		prompt.offset_top = 18.0 * scale_up
+		prompt.offset_bottom = 96.0 * scale_up
 	var gauges: Control = get_node_or_null(^"Gauges") as Control
 	if gauges != null:
 		gauges.offset_left = 22.0 * scale_up
@@ -192,11 +196,43 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 					child.queue_free()
 		EffectBus.Event.SYMBOL_LANDED:
 			_landed.append(payload)
-		EffectBus.Event.PAYOUT_CALCULATED:
+		EffectBus.Event.SPIN_RESOLVED:
 			# Held, not shown. This event arrives in the same frame as the spin
 			# request, so displaying it here printed the pattern and the payout
 			# before a single reel had stopped — the readout spoiled every spin
 			# the machine was still in the middle of showing.
+			#
+			# The board as it stands is what the reels are landing on, and it is
+			# all there is until the player has answered whatever the machine is
+			# asking: a board owing nudges is never banked, so waiting for the
+			# payout left the readout describing nothing at all.
+			_result = payload
+		EffectBus.Event.REEL_NUDGED:
+			# A nudge repaints one reel and rescores the line, so the icon row
+			# and the number both have to follow it.
+			var moved: int = int(payload.get("reel", -1))
+			var column: Dictionary = payload.get("column", {}) as Dictionary
+			if moved >= 0 and moved < _landed.size() and not column.is_empty():
+				_landed[moved] = column
+			_result["payout"] = payload.get("payout", 0)
+			_result["pattern"] = payload.get("pattern", "")
+			_spins_left = int(payload.get("spins_remaining", _spins_left))
+			_set_text(_spins, str(_spins_left))
+			_show_line(_result)
+		EffectBus.Event.SYSTEM_GRANTED:
+			_push("Unlocked %s" % String(payload.get("title", "")))
+		EffectBus.Event.CONTRACT_SIGNED:
+			_push("Signed %s" % String(payload.get("name", "")))
+		EffectBus.Event.HEAT_CHANGED:
+			# The pit boss raises the ante in the middle of a floor, so the
+			# gauge has to follow it rather than keep quoting the price the
+			# floor opened at.
+			_set_text(_ante, str(int(payload.get("ante", 0))))
+			if bool(payload.get("changed", false)):
+				var measure: String = String(payload.get("name", ""))
+				if not measure.is_empty():
+					_push("The House: %s" % measure)
+		EffectBus.Event.PAYOUT_CALCULATED:
 			_result = payload
 		EffectBus.Event.ARTIFACT_ACQUIRED:
 			_push("Acquired %s" % String(payload.get("artifact", "")))
@@ -245,19 +281,23 @@ func _show_line(payload: Dictionary) -> void:
 ## The readout used to print the pattern and the number and leave the player to
 ## work out whether that was good. It is judged against what the floor needs per
 ## spin, so the same verdict means the same thing on floor 1 and floor 7.
-func mark_result(result: SlotView3D.Result, _payout: int) -> void:
+func mark_result(result: SlotView3D.Result, _payout: int, settled: bool = true) -> void:
 	if _line == null:
 		return
 	_show_line(_result)
-	var verdict: String = ["DEAD", "THIN", "PAID", "JACKPOT"][int(result)]
-	var tint: Color = [
+	# A board the machine still owes a decision on has not been judged yet. It
+	# used to be called dead while the player was looking at a nudge worth forty
+	# credits, which is the readout arguing with the buttons underneath it.
+	var verdict: String = ("STANDING" if not settled
+			else ["DEAD", "THIN", "PAID", "JACKPOT"][int(result)])
+	var tint: Color = (UiSkin.INK_MUTED if not settled else [
 		Color(0.63, 0.42, 0.40), Color(0.76, 0.71, 0.60),
 		Color(1.0, 0.82, 0.44), Color(1.0, 0.62, 0.24),
-	][int(result)]
+	][int(result)])
 	_line.text = "%s     %s" % [verdict, _line.text]
 	_line.add_theme_color_override(&"font_color", tint)
 	_line.modulate = Color(1, 1, 1, 1)
-	if result >= SlotView3D.Result.GOOD:
+	if settled and result >= SlotView3D.Result.GOOD:
 		# A win is worth a beat of movement; a dead spin is worth stillness.
 		var pulse: Tween = create_tween()
 		_line.pivot_offset = Vector2.ZERO
@@ -266,14 +306,28 @@ func mark_result(result: SlotView3D.Result, _payout: int) -> void:
 				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## Centre-screen callout for the moments that need a decision or an epitaph.
-## An empty string hides it.
-func set_prompt(text: String) -> void:
+## Callout for the moments that need a decision or an epitaph. An empty string
+## hides it.
+##
+## Normally a marquee under the gauges: it used to sit dead centre, which is
+## exactly where the reels are, so every callout hid the thing it was talking
+## about. [param centred] puts it back in the middle for the one message where
+## the machine no longer matters — the end of the run.
+func set_prompt(text: String, centred: bool = false) -> void:
 	if _prompt == null:
 		return
 	_prompt.text = text
-	if _prompt_panel != null:
-		_prompt_panel.visible = not text.is_empty()
+	if _prompt_panel == null:
+		return
+	_prompt_panel.visible = not text.is_empty()
+	_prompt_panel.anchor_left = 0.5 if centred else 1.0
+	_prompt_panel.anchor_right = 0.5 if centred else 1.0
+	_prompt_panel.anchor_top = 0.5 if centred else 0.0
+	_prompt_panel.anchor_bottom = 0.5 if centred else 0.0
+	_prompt_panel.offset_left = (-380.0 if centred else -700.0) * _scale
+	_prompt_panel.offset_right = (380.0 if centred else -22.0) * _scale
+	_prompt_panel.offset_top = (-70.0 if centred else 18.0) * _scale
+	_prompt_panel.offset_bottom = (70.0 if centred else 96.0) * _scale
 
 
 func _push(text: String) -> void:

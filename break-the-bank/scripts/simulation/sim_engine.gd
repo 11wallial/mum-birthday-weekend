@@ -259,16 +259,17 @@ func _draw_board(state: RunState) -> void:
 	var board: SpinBoard = state.board
 	board.resize(state.machine_reels())
 	var reel: Array[Probability.ReelEntry] = state.reel()
+	var weights: PackedInt32Array = state.reel_weights()
 	for i: int in board.reel_count():
 		if board.is_held(i):
 			continue
-		var middle: SymbolDef = Probability.draw_symbol(reel, state.reel_rng)
+		var middle: SymbolDef = Probability.draw_weighted(reel, weights, state.reel_rng)
 		if middle == null:
 			break
 		board.set_column(i,
-				Probability.draw_symbol(reel, state.band_rng),
+				Probability.draw_weighted(reel, weights, state.band_rng),
 				middle,
-				Probability.draw_symbol(reel, state.band_rng))
+				Probability.draw_weighted(reel, weights, state.band_rng))
 	# Holds are spent by the spin they bought. Leaving them set would let one
 	# lucky pair be held for the rest of the floor for free.
 	board.clear_holds()
@@ -438,7 +439,8 @@ func nudge(state: RunState, reel: int) -> bool:
 		return false
 	var before: int = board.payout
 	var free: bool = board.next_nudge_is_free()
-	board.nudge(reel, Probability.draw_symbol(state.reel(), state.band_rng))
+	board.nudge(reel, Probability.draw_weighted(
+			state.reel(), state.reel_weights(), state.band_rng))
 	if not free:
 		state.spins_remaining = maxi(0, state.spins_remaining - 1)
 	_resolve_board(state, false)
