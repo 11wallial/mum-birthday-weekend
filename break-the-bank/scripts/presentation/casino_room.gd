@@ -418,10 +418,15 @@ func _advance() -> void:
 	elif state.phase == RunState.Phase.SPINNING and state.spins_remaining <= 0:
 		_prompt_ante()
 		return
-	if _recorder != null and state.phase == RunState.Phase.SPINNING:
+	var spinning: bool = (state.phase == RunState.Phase.SPINNING
+			and state.spins_remaining > 0
+			and state.economy.can_afford(state.spin_price()))
+	# Only an actual spin goes in the log. Settling the ante happens in the
+	# spinning phase too, and recording it as a spin put a phantom pull in the
+	# record at the end of every floor.
+	if _recorder != null and spinning:
 		_recorder.record_spin(state)
-	if state.phase == RunState.Phase.SPINNING and state.spins_remaining > 0 \
-			and state.economy.can_afford(state.spin_price()):
+	if spinning:
 		engine.spin(state)
 	else:
 		engine.step(state)
