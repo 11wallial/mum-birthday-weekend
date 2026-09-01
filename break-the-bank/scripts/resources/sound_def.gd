@@ -40,6 +40,13 @@ enum Fallback {
 	BELL,
 	## A scatter of short metallic pings at irregular times: coins arriving.
 	COINS,
+	## Machinery turning: pseudo-periodic rumble with a tick every stroke.
+	RATCHET,
+	## A sustained vent of steam: noise through a filter that opens, holds,
+	## and closes, distinct from PNEUMATIC's single stroke.
+	STEAM,
+	## An electric arc: gated buzz with snap transients, for the charge cable.
+	ZAP,
 }
 
 @export var id: StringName = &""

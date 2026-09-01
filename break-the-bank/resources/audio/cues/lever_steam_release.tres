@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"lever_steam_release"
+file_name = "mechanical/lever_steam_release.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(620, 880)
+frequency_notes = "Pneumatic vent after the lever lands: broadband hiss opening fast, easing shut, low 9 Hz sputter underneath. The machine exhaling."
+pitch_jitter = Vector2(0.94, 1.06)
+volume_jitter_db = Vector2(-1.5, 1.5)
+base_volume_db = -8.0
+positional = true
+loops = false
+max_voices = 1
+priority = 6
+duck_music_db = 0.0
+fallback = 11
+fallback_hz = 800.0

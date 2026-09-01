@@ -19,16 +19,24 @@ func begin(def: SoundDef) -> void:
 	playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	stream = ProceduralCues.make_generator(def)
 	bus = String(def.bus)
-	volume_db = def.base_volume_db
+	# Faded up from silence rather than started at level: a generator that
+	# begins mid-waveform begins on a pop, and every bed used to.
+	volume_db = def.base_volume_db - 30.0
 	play()
+	var rise: Tween = create_tween()
+	rise.tween_property(self, "volume_db", def.base_volume_db, 0.3)
 	_playback = get_stream_playback() as AudioStreamGeneratorPlayback
 	_phase = 0.0
 	set_process(_playback != null)
 
 
 func end() -> void:
-	set_process(false)
-	stop()
+	# The mirror of begin: ease out, then stop.
+	var fall: Tween = create_tween()
+	fall.tween_property(self, "volume_db", volume_db - 30.0, 0.25)
+	fall.tween_callback(func() -> void:
+		set_process(false)
+		stop())
 	_playback = null
 
 

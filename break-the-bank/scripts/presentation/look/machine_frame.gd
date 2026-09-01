@@ -64,6 +64,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var readout: Label = screen.get_node(^"Terminal/Readout") as Label
 	var odds: Node3D = _odds_display()
 	var lever: Node3D = _lever()
+	var arc: Dictionary = _coil()
 	var spool: Node3D = _spool()
 	var crown: Array[Node3D] = _crown()
 	var ladder: Array[Node3D] = _ladder()
@@ -84,6 +85,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 		"readout": readout,
 		"odds": odds,
 		"lever": lever,
+		"arc": arc,
 		"spool": spool,
 	}
 
@@ -703,23 +705,90 @@ func _nixie_halo() -> StandardMaterial3D:
 	return _nixie_halo_material
 
 
+## The coil that powers the machine, and the cable the charge rides in on.
+## This is the volatile half of the north star made visible: throw the lever
+## and a blue arc leaves the discharge ball, runs the sagging cable, and lands
+## on the drivetrain rail — engine, charge, gears, drums, in that order.
+## Returns the arc's material and light for [SlotView3D] to fire.
+func _coil() -> Dictionary:
+	var top: float = CHASSIS_Y + CHASSIS.y
+	var coil: Node3D = _group(&"Coil")
+	# Top right, in clear air: a coil hidden behind the monitor is a coil
+	# nobody knows the machine has.
+	coil.position = Vector3(0.88, top, -0.16)
+	# A mast, because everything at chassis-top height is already spoken for:
+	# the ball has to discharge in open air above the nixies, where the whole
+	# room can see what kind of machine this is.
+	Prims.cylinder(coil, 0.11, 0.08, Vector3(0.0, 0.04, 0.0), Vector3.ZERO,
+			Materials.rusted(34), 14)
+	Prims.cylinder(coil, 0.035, 0.3, Vector3(0.0, 0.22, 0.0), Vector3.ZERO,
+			Materials.machined(Materials.STEEL, 76), 10)
+	# The winding stack: alternating brass and dark bands, narrowing upward.
+	for i: int in 6:
+		Prims.cylinder(coil, 0.088 - float(i) * 0.007, 0.055,
+				Vector3(0.0, 0.4 + float(i) * 0.055, 0.0), Vector3.ZERO,
+				Materials.brass(74) if i % 2 == 0
+				else Materials.rubber(Color(0.14, 0.08, 0.06), 75), 14)
+	Prims.cylinder(coil, 0.018, 0.09, Vector3(0.0, 0.76, 0.0), Vector3.ZERO,
+			Materials.machined(Materials.STEEL, 76), 10)
+	Prims.sphere(coil, 0.07, Vector3(0.0, 0.85, 0.0), Materials.chrome())
+	# The cable: a rubber run sagging from the ball to a terminal on the
+	# drivetrain rail, with the arc ribbon riding just proud of it.
+	var path: Array = [
+		Vector3(0.88, top + 0.85, -0.16),
+		Vector3(0.7, top + 0.5, 0.06),
+		Vector3(0.48, top + 0.2, 0.15),
+		Vector3(0.28, top + 0.08, 0.17),
+	]
+	for i: int in path.size() - 1:
+		_segment(_root, path[i], path[i + 1], 0.016,
+				Materials.rubber(Color(0.1, 0.09, 0.085), 77))
+	_box(_root, Vector3(0.07, 0.06, 0.06), Vector3(0.27, top + 0.06, 0.18),
+			Materials.brass(78))
+	var arc_material: ShaderMaterial = ShaderMaterial.new()
+	arc_material.shader = load("res://assets/shaders/arc.gdshader") as Shader
+	var lifted: Array = []
+	for point: Vector3 in path:
+		lifted.append(point + Vector3(0.0, 0.012, 0.0))
+	var arc: MeshInstance3D = _ribbon(_root, lifted, 0.05, arc_material, -1.0)
+	arc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# What the arc gives the room while it rides.
+	var flash: OmniLight3D = OmniLight3D.new()
+	flash.name = "ArcLight"
+	flash.light_color = Color(0.45, 0.68, 1.0)
+	# A resting ember: the corner the coil stands in is outside every other
+	# light's throw, and a coil the room cannot see is a coil the machine
+	# does not have. The blue kiss also says "charged" between spins.
+	flash.light_energy = 0.22
+	flash.omni_range = 1.3
+	flash.omni_attenuation = 1.5
+	flash.shadow_enabled = false
+	flash.position = Vector3(0.64, top + 0.4, 0.06)
+	_root.add_child(flash)
+	return {"material": arc_material, "light": flash}
+
+
 ## The arm on the right flank. Returned so the view can throw it on a spin.
 func _lever() -> Node3D:
 	var mount: Node3D = _group(&"Lever")
 	mount.position = Vector3(CHASSIS.x + 0.12, CHASSIS_Y + 0.1, 0.05)
 	# The pivot housing stays put; only the arm below it swings.
-	_box(mount, Vector3(0.26, 0.3, 0.3), Vector3(0.0, -0.06, 0.0),
+	# Sized to be hauled, not clicked: this is the machine's one big verb and
+	# the hand it is pulled with should read from across the room.
+	_box(mount, Vector3(0.3, 0.34, 0.34), Vector3(0.0, -0.06, 0.0),
 			Materials.machined(Materials.STEEL, 63))
-	_cylinder(mount, 0.09, 0.34, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5),
+	_cylinder(mount, 0.1, 0.38, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5),
 			Materials.brass(39))
 	var arm: Node3D = Node3D.new()
 	arm.name = "Arm"
 	mount.add_child(arm)
 	# Resting back and up, the way a lever waits to be pulled toward you.
 	arm.rotation = Vector3(-0.5, 0.0, 0.0)
-	_segment(arm, Vector3(0.16, 0.0, 0.0), Vector3(0.16, 0.62, 0.0), 0.028,
+	_segment(arm, Vector3(0.17, 0.0, 0.0), Vector3(0.17, 0.8, 0.0), 0.034,
 			Materials.machined(Color(0.52, 0.51, 0.5), 64))
-	_cylinder(arm, 0.06, 0.09, Vector3(0.16, 0.66, 0.0), Vector3.ZERO,
+	_cylinder(arm, 0.042, 0.03, Vector3(0.17, 0.72, 0.0), Vector3.ZERO,
+			Materials.brass(39))
+	_cylinder(arm, 0.075, 0.13, Vector3(0.17, 0.84, 0.0), Vector3.ZERO,
 			Materials.timber())
 	return arm
 
@@ -777,7 +846,10 @@ func _spool() -> Node3D:
 ## run of separate panels reads as separate sheets — which is exactly the
 ## complaint that retired the old version.
 func _ribbon(parent: Node3D, points: Array, width: float,
-		material: Material) -> void:
+		material: Material, v_metres: float = 0.45) -> MeshInstance3D:
+	var total: float = 0.0
+	for i: int in points.size() - 1:
+		total += ((points[i + 1] as Vector3) - (points[i] as Vector3)).length()
 	var surface: SurfaceTool = SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var half: Vector3 = Vector3(0.0, 0.0, width * 0.5)
@@ -790,8 +862,9 @@ func _ribbon(parent: Node3D, points: Array, width: float,
 		var behind: Vector3 = points[maxi(i - 1, 0)]
 		var tangent: Vector3 = (ahead - behind).normalized()
 		var normal: Vector3 = tangent.cross(Vector3(0.0, 0.0, 1.0)).normalized()
-		# 0.45m of tape per repeat of the printed rows.
-		var v: float = length / 0.45
+		# V in metres per repeat for print, or normalised 0..1 when asked —
+		# the arc shader reads the whole run as one unit.
+		var v: float = length / total if v_metres <= 0.0 else length / v_metres
 		surface.set_normal(normal)
 		surface.set_uv(Vector2(0.0, v))
 		surface.add_vertex(here - half)
@@ -810,6 +883,7 @@ func _ribbon(parent: Node3D, points: Array, width: float,
 	instance.mesh = surface.commit()
 	instance.material_override = material
 	parent.add_child(instance)
+	return instance
 
 
 ## Wear with a location and a cause: rust weeping down from fasteners, and

@@ -34,6 +34,9 @@ var _gauge_stake: Node3D
 var _gauge_count: Node3D
 ## The pressure gauge on the gearbox flank: the run's HEAT, made physical.
 var _heat_needle: Node3D
+## The charge cable's arc and the light it throws while it rides.
+var _arc_material: ShaderMaterial
+var _arc_light: OmniLight3D
 var _odds: Node3D
 var _readout: Label
 var _particles: CPUParticles3D
@@ -118,6 +121,9 @@ func _ready() -> void:
 	var gearbox: Node3D = parts.get("gearbox", null) as Node3D
 	if gearbox != null:
 		_heat_needle = gearbox.get_node_or_null(^"Dial/HeatNeedle") as Node3D
+	var arc: Dictionary = parts.get("arc", {})
+	_arc_material = arc.get("material", null) as ShaderMaterial
+	_arc_light = arc.get("light", null) as OmniLight3D
 	_readout = parts.get("readout", null) as Label
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
 	_particles = get_node_or_null(payout_particles_path) as CPUParticles3D
@@ -199,6 +205,7 @@ func is_busy() -> bool:
 func _play_spin(payout: int, multiplier: float) -> void:
 	_busy = true
 	_throw_lever()
+	_charge_arc()
 	_turn_drives()
 	if _audio != null:
 		_audio.play_at(&"handle_pull")
@@ -330,10 +337,43 @@ func _throw_lever() -> void:
 	if _lever == null:
 		return
 	var tween: Tween = create_tween()
-	tween.tween_property(_lever, "rotation:x", 0.85, 0.12) \
+	tween.tween_property(_lever, "rotation:x", 0.9, 0.14) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(_lever, "rotation:x", -0.5, 0.55) \
+	# The machine exhales at the bottom of the stroke, and the arm springs
+	# home slower than it fell: a lever that falls slowly reads as weightless,
+	# and one that snaps back instantly reads as plastic.
+	tween.tween_callback(func() -> void:
+		if _audio != null:
+			_audio.play_at(&"lever_steam_release"))
+	tween.tween_interval(0.1)
+	tween.tween_callback(func() -> void:
+		if _audio != null:
+			_audio.play_at(&"handle_return"))
+	tween.tween_property(_lever, "rotation:x", -0.5, 0.6) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Fires the charge down the cable from the coil to the drivetrain: the blue
+## arc is the power the lever just asked for, arriving. Timed to land as the
+## drums come up to speed.
+func _charge_arc() -> void:
+	if _arc_material == null:
+		return
+	if _audio != null:
+		_audio.play_at(&"arc_charge")
+	_arc_material.set_shader_parameter(&"charge", 0.0)
+	var tween: Tween = create_tween()
+	tween.tween_method(func(head: float) -> void:
+		_arc_material.set_shader_parameter(&"charge", head),
+		0.0, 1.0, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func() -> void:
+		_arc_material.set_shader_parameter(&"charge", -1.0))
+	if _arc_light != null:
+		var flare: Tween = create_tween()
+		flare.tween_property(_arc_light, "light_energy", 2.4, 0.1) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		flare.tween_property(_arc_light, "light_energy", 0.22, 0.45) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 
 
 ## Turns every fitted module's moving parts for the length of a spin. A machine
