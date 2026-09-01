@@ -102,7 +102,16 @@ static func apply(mood_id: StringName, parts: Dictionary, environment: Environme
 			mood["cold"], float(mood["cold_energy"]))
 	var sign_label: Label3D = parts.get("sign", null) as Label3D
 	if sign_label != null:
-		tween.tween_property(sign_label, "modulate", mood["sign"], TRANSITION)
+		# Overdriven for bloom; the glow shells keep their own faded alpha.
+		tween.tween_property(sign_label, "modulate",
+				(mood["sign"] as Color) * 2.2, TRANSITION)
+		for child: Node in sign_label.get_children():
+			var shell: Label3D = child as Label3D
+			if shell != null:
+				var tint: Color = mood["sign"] as Color
+				tween.tween_property(shell, "modulate",
+						Color(tint.r, tint.g, tint.b, shell.modulate.a),
+						TRANSITION)
 	var spill: Light3D = parts.get("sign_spill", null) as Light3D
 	if spill != null:
 		tween.tween_property(spill, "light_color", mood["sign"], TRANSITION)

@@ -169,17 +169,39 @@ func _floor_sign() -> Label3D:
 	label.text = "FLOOR 1: THE BASEMENT"
 	label.font_size = 80
 	label.pixel_size = 0.0026
-	label.modulate = Materials.SIGN
+	# Overdriven: past the environment's 1.1 glow threshold, so the letters
+	# bloom like lit tubes rather than reading as painted text.
+	label.modulate = Materials.SIGN * 2.2
 	label.outline_size = 0
 	label.shaded = false
 	label.position = Vector3(0.0, 0.0, 0.06)
 	housing.add_child(label)
+	# A cloud of faded copies nudged one tube-width in each direction: the
+	# halo a neon tube has in life, and the whole of the halo on the renderer
+	# with no bloom, which the web build is. Nudged rather than scaled — a
+	# scaled copy of crisp text doubles its ends and reads as a misprint.
+	# Children of the text so the floor writer and FloorMood reach them
+	# through it.
+	for offset: Vector2 in [Vector2(0.014, 0.0), Vector2(-0.014, 0.0),
+			Vector2(0.0, 0.014), Vector2(0.0, -0.014)]:
+		var shell: Label3D = Label3D.new()
+		shell.name = "Glow"
+		shell.text = label.text
+		shell.font_size = 80
+		shell.pixel_size = 0.0026
+		shell.modulate = Color(Materials.SIGN.r, Materials.SIGN.g,
+				Materials.SIGN.b, 0.13)
+		shell.outline_size = 0
+		shell.shaded = false
+		shell.position = Vector3(offset.x, offset.y, -0.005)
+		shell.render_priority = -1
+		label.add_child(shell)
 	# The sign lights the wall it is mounted on, which is what separates a lit
 	# sign from a bright sticker.
 	var spill: OmniLight3D = OmniLight3D.new()
 	spill.name = "Spill"
 	spill.light_color = Materials.SIGN
-	spill.light_energy = 0.55
+	spill.light_energy = 0.85
 	spill.omni_range = 2.4
 	spill.omni_attenuation = 2.2
 	spill.shadow_enabled = false
@@ -307,14 +329,17 @@ func _dust() -> void:
 	motes.initial_velocity_min = 0.005
 	motes.initial_velocity_max = 0.03
 	var mesh: QuadMesh = QuadMesh.new()
-	mesh.size = Vector2(0.008, 0.008)
+	mesh.size = Vector2(0.016, 0.016)
 	motes.mesh = mesh
 	var material: StandardMaterial3D = Materials.glowing(Color(1.0, 0.9, 0.72), 1.0)
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(1.0, 0.9, 0.72, 0.32)
+	# The soft falloff sprite: a hard-edged additive quad reads as a dead
+	# pixel, and forty of them read as a dirty sensor.
+	material.albedo_texture = SymbolArt.halo()
+	material.albedo_color = Color(1.0, 0.9, 0.72, 0.2)
 	motes.mesh.material = material
 	_root.add_child(motes)
 

@@ -569,6 +569,11 @@ func _refresh_diegetic() -> void:
 	var floor_name: String = floor_def.display_name if floor_def != null else ""
 	if _floor_sign != null:
 		_floor_sign.text = "FLOOR %d: %s" % [state.floor_index, floor_name.to_upper()]
+		# The glow shells are the same text, softened; a sign whose halo spells
+		# the previous floor has broken the trick.
+		for child: Node in _floor_sign.get_children():
+			if child is Label3D:
+				(child as Label3D).text = _floor_sign.text
 	if _slot_view != null:
 		_slot_view.set_readout(state.economy.debt, floor_name)
 
