@@ -252,15 +252,17 @@ func _monitor() -> MeshInstance3D:
 	var readout: Label3D = Label3D.new()
 	readout.name = "Readout"
 	readout.text = "DEBT\n0"
-	readout.font_size = 64
-	readout.pixel_size = 0.0021
+	readout.font_size = 56
+	readout.pixel_size = 0.0016
 	readout.modulate = Materials.PHOSPHOR * 1.6
 	readout.outline_size = 0
 	readout.shaded = false
 	readout.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	readout.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	readout.position = Vector3(-0.24, 0.19, 0.02)
+	readout.position = Vector3(-0.25, 0.18, 0.02)
+	readout.width = 320.0
+	readout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	screen.add_child(readout)
 	return screen
 
@@ -273,7 +275,7 @@ func _odds_display() -> Label3D:
 	_box(housing, Vector3(0.86, 0.26, 0.16), Vector3.ZERO,
 			Materials.painted(Materials.PAINT, 17))
 	_box(housing, Vector3(0.78, 0.19, 0.02), Vector3(0.0, 0.0, 0.085),
-			Materials.glowing(Color(0.04, 0.035, 0.03), 0.3))
+			Materials.readout_face())
 	# The mounting stalk down to the chassis top.
 	_segment(housing, Vector3(0.0, -0.13, 0.0), Vector3(0.0, -0.34, -0.1), 0.03,
 			Materials.machined(Materials.STEEL, 62))

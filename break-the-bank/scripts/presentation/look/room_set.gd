@@ -15,7 +15,7 @@ extends RefCounted
 const WIDTH: float = 4.6
 const DEPTH_BACK: float = -3.3
 const DEPTH_FRONT: float = 7.4
-const CEILING: float = 3.5
+const CEILING: float = 2.95
 ## Where the pendant lamp hangs, and what it is aimed at. The key light is built
 ## into the fixture, so the light throwing the shadows and the lamp you can see
 ## hanging there are one object and cannot drift apart.
@@ -23,7 +23,7 @@ const CEILING: float = 3.5
 ## Forward of the machine as well as above it: a lamp directly overhead lights
 ## the top of the chassis and leaves the face — the part with the reels on it —
 ## in its own shadow, which is the single thing that kept the machine unreadable.
-const LAMP: Vector3 = Vector3(1.95, 2.88, 2.05)
+const LAMP: Vector3 = Vector3(1.16, 2.34, 1.9)
 const LAMP_TARGET: Vector3 = Vector3(-0.2, 0.85, 0.2)
 
 var _root: Node3D
@@ -38,8 +38,36 @@ func build(root: Node3D) -> Dictionary:
 	var sign_label: Label3D = _floor_sign()
 	_vault_door()
 	var bulb: MeshInstance3D = _pendant()
+	_wall_wash()
 	_dust()
 	return {"sign": sign_label, "bulb": bulb}
+
+
+## A dim, wide light aimed at the back wall. Everything past the lamp's throw had
+## gone to pure black, so the machine stood in a void instead of a room — and a
+## void reads as a rendering budget rather than as darkness.
+func _wall_wash() -> void:
+	var wash: OmniLight3D = OmniLight3D.new()
+	wash.name = "WallWash"
+	wash.light_color = Color(0.596, 0.51, 0.404)
+	wash.light_energy = 1.5
+	wash.light_specular = 0.15
+	wash.omni_range = 7.5
+	wash.omni_attenuation = 1.1
+	wash.shadow_enabled = false
+	wash.position = Vector3(-0.5, 2.15, DEPTH_BACK + 1.5)
+	_root.add_child(wash)
+
+	var ceiling: OmniLight3D = OmniLight3D.new()
+	ceiling.name = "CeilingWash"
+	ceiling.light_color = Color(0.62, 0.51, 0.376)
+	ceiling.light_energy = 2.6
+	ceiling.light_specular = 0.1
+	ceiling.omni_range = 6.0
+	ceiling.omni_attenuation = 1.4
+	ceiling.shadow_enabled = false
+	ceiling.position = Vector3(0.7, CEILING - 0.55, 1.5)
+	_root.add_child(ceiling)
 
 
 ## Aims a node at a point without anyone writing a basis by hand.
@@ -99,13 +127,24 @@ func _conduit() -> void:
 	# A square duct crossing the ceiling, catching the top of the lamp's throw.
 	_box(conduit, Vector3(0.42, 0.3, DEPTH_FRONT - DEPTH_BACK),
 			Vector3(-2.1, CEILING - 0.22, (DEPTH_FRONT + DEPTH_BACK) * 0.5), duct)
+	# Joists across it. On a phone held upright the ceiling is the top third of
+	# the frame, and an unbroken slab there reads as nothing rendered at all.
+	for i: int in 9:
+		var z: float = lerpf(DEPTH_BACK + 0.6, DEPTH_FRONT - 0.6, float(i) / 8.0)
+		_box(conduit, Vector3(WIDTH * 2.0, 0.22, 0.16),
+				Vector3(0.0, CEILING - 0.11, z),
+				Materials.painted(Color(0.106, 0.098, 0.086), 22))
+	# A second pipe run following the joists, off-centre so the ceiling is not
+	# symmetrical about the machine.
+	_segment(conduit, Vector3(1.1, CEILING - 0.28, DEPTH_BACK + 0.5),
+			Vector3(1.1, CEILING - 0.28, DEPTH_FRONT - 1.0), 0.05, pipe)
 
 
 ## The floor name, in orange, on the back wall. Reading where you are off the
 ## wall rather than off a text overlay is the whole point of the exercise.
 func _floor_sign() -> Label3D:
 	var housing: Node3D = _group(&"FloorSign")
-	housing.position = Vector3(2.55, 1.95, DEPTH_BACK + 0.12)
+	housing.position = Vector3(2.15, 1.98, DEPTH_BACK + 0.12)
 	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
 	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
@@ -125,7 +164,7 @@ func _floor_sign() -> Label3D:
 	var spill: OmniLight3D = OmniLight3D.new()
 	spill.name = "Spill"
 	spill.light_color = Materials.SIGN
-	spill.light_energy = 0.9
+	spill.light_energy = 0.55
 	spill.omni_range = 2.4
 	spill.omni_attenuation = 2.2
 	spill.shadow_enabled = false
@@ -138,7 +177,7 @@ func _floor_sign() -> Label3D:
 ## so the room has somewhere the next floor could be.
 func _vault_door() -> void:
 	var door: Node3D = _group(&"VaultDoor")
-	door.position = Vector3(2.55, 0.0, DEPTH_BACK + 0.1)
+	door.position = Vector3(2.15, 0.0, DEPTH_BACK + 0.1)
 	_box(door, Vector3(1.5, 2.3, 0.12), Vector3(0.0, 1.15, -0.02),
 			Materials.machined(Color(0.196, 0.192, 0.184), 72))
 	# The frame, proud of the wall, and a heavy handle wheel.
@@ -164,9 +203,9 @@ func _pendant() -> MeshInstance3D:
 			0.012, Materials.rubber(Color(0.09, 0.085, 0.08), 98))
 	# A conical shade, dark outside and bright inside where the bulb hits it.
 	var shade: CylinderMesh = CylinderMesh.new()
-	shade.top_radius = 0.07
-	shade.bottom_radius = 0.32
-	shade.height = 0.26
+	shade.top_radius = 0.09
+	shade.bottom_radius = 0.42
+	shade.height = 0.34
 	shade.radial_segments = 20
 	var outer: MeshInstance3D = MeshInstance3D.new()
 	outer.mesh = shade
@@ -174,7 +213,7 @@ func _pendant() -> MeshInstance3D:
 	pendant.add_child(outer)
 	var inner: MeshInstance3D = MeshInstance3D.new()
 	inner.mesh = shade
-	var lining: StandardMaterial3D = Materials.glowing(Color(0.55, 0.42, 0.26), 0.8)
+	var lining: StandardMaterial3D = Materials.glowing(Color(0.88, 0.7, 0.44), 2.6)
 	lining.cull_mode = BaseMaterial3D.CULL_FRONT
 	inner.material_override = lining
 	inner.scale = Vector3(0.94, 0.94, 0.94)
@@ -182,8 +221,8 @@ func _pendant() -> MeshInstance3D:
 	var bulb: MeshInstance3D = MeshInstance3D.new()
 	bulb.name = "Bulb"
 	var glass: SphereMesh = SphereMesh.new()
-	glass.radius = 0.055
-	glass.height = 0.11
+	glass.radius = 0.07
+	glass.height = 0.14
 	bulb.mesh = glass
 	bulb.material_override = Materials.glowing(Materials.LAMP, 9.0)
 	bulb.position = Vector3(0.0, -0.06, 0.0)
@@ -195,7 +234,7 @@ func _pendant() -> MeshInstance3D:
 	var key: SpotLight3D = SpotLight3D.new()
 	key.name = "Key"
 	key.light_color = Materials.LAMP
-	key.light_energy = 6.5
+	key.light_energy = 8.0
 	key.light_indirect_energy = 1.5
 	key.light_volumetric_fog_energy = 1.1
 	key.light_specular = 1.0
@@ -205,8 +244,8 @@ func _pendant() -> MeshInstance3D:
 	key.shadow_blur = 1.5
 	key.spot_range = 11.0
 	key.spot_attenuation = 1.3
-	key.spot_angle = 46.0
-	key.spot_angle_attenuation = 0.9
+	key.spot_angle = 38.0
+	key.spot_angle_attenuation = 1.5
 	_root.add_child(key)
 	_aim(key, LAMP + Vector3(0.0, -0.08, 0.0), LAMP_TARGET)
 	return bulb

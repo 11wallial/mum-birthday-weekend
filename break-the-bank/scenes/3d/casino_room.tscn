@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_bar.tscn" id="10_touch"]
+[ext_resource type="PackedScene" path="res://scenes/ui/film_overlay.tscn" id="11_film"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -58,10 +59,18 @@ script = ExtResource("7_dressing")
 script = ExtResource("6_audio")
 positional_anchor_path = NodePath("../SlotMachine3D")
 
+; Grain and vignette go between the world and the UI, so the room is graded and
+; the text on top of it is not.
+[node name="FilmOverlay" parent="." instance=ExtResource("11_film")]
+
 [node name="HUD" parent="." instance=ExtResource("5_hud")]
+layer = 2
 
 [node name="ShopPanel" parent="." instance=ExtResource("8_shop")]
+layer = 3
 
 [node name="RunSetup" parent="." instance=ExtResource("9_setup")]
+layer = 4
 
 [node name="TouchBar" parent="." instance=ExtResource("10_touch")]
+layer = 5

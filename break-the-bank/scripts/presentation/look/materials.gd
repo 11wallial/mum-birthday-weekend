@@ -19,7 +19,7 @@ const OXIDE: Color = Color(0.353, 0.180, 0.094)
 const STEEL: Color = Color(0.404, 0.400, 0.392)
 const BRASS: Color = Color(0.663, 0.494, 0.208)
 const ENAMEL: Color = Color(0.808, 0.769, 0.686)
-const CONCRETE: Color = Color(0.169, 0.161, 0.149)
+const CONCRETE: Color = Color(0.118, 0.114, 0.106)
 const RUBBER: Color = Color(0.267, 0.078, 0.063)
 const TIMBER: Color = Color(0.286, 0.212, 0.145)
 const PAPER: Color = Color(0.792, 0.769, 0.714)
@@ -38,8 +38,8 @@ static func painted(tint: Color = PAINT, seed_value: int = 11) -> StandardMateri
 	return _build("paint:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.018, 1.7, 0.62)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.55, 0.95)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.03, 1.15, 0.78)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.7, 0.86)
 		material.normal_enabled = true
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.8)
 		material.normal_scale = 0.16
@@ -55,8 +55,8 @@ static func rusted(seed_value: int = 23) -> StandardMaterial3D:
 	return _build("rust:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = OXIDE
-		material.albedo_texture = ProcTextures.streaks(seed_value, 0.38)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.7, 1.0)
+		material.albedo_texture = ProcTextures.streaks(seed_value, 0.58)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.76, 0.96)
 		material.normal_enabled = true
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.4, 0.09)
 		material.normal_scale = 0.3
@@ -111,8 +111,8 @@ static func concrete(seed_value: int = 83) -> StandardMaterial3D:
 	return _build("concrete:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = CONCRETE
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.014, 2.0, 0.58)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.82, 1.0)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.02, 1.2, 0.7)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.86, 0.98)
 		material.normal_enabled = true
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.1, 0.14)
 		material.normal_scale = 0.22
@@ -165,13 +165,23 @@ static func glowing(tint: Color, energy: float = 2.0) -> StandardMaterial3D:
 static func phosphor_glass() -> StandardMaterial3D:
 	return _build("phosphor", func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
-		material.albedo_color = Color(0.024, 0.055, 0.031)
+		material.albedo_color = Color(0.008, 0.016, 0.011)
 		material.emission_enabled = true
-		material.emission = Color(0.055, 0.161, 0.086)
-		material.emission_energy_multiplier = 0.5
+		material.emission = Color(0.031, 0.098, 0.051)
+		material.emission_energy_multiplier = 0.28
 		material.emission_texture = ProcTextures.scanlines()
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.roughness = 0.18
 		material.metallic = 0.0
+		return material)
+
+
+## An unlit dark face for a readout to sit on — the odds strip, a dial window.
+static func readout_face() -> StandardMaterial3D:
+	return _build("readout_face", func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = Color(0.027, 0.024, 0.02)
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		return material)
 
 

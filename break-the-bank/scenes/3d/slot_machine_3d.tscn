@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 ; The machine's geometry is not authored here. MachineFrame builds it in code at
 ; _ready, because its character comes from a density of rivets, hoses and trims
@@ -7,8 +7,24 @@
 
 [ext_resource type="Script" path="res://scripts/presentation/slot_view_3d.gd" id="1_slotview"]
 
-[sub_resource type="BoxMesh" id="Mesh_coin"]
-size = Vector3(0.16, 0.16, 0.02)
+; Coins, not slabs: a small disc with its own emissive gold, so a payout reads
+; as money in the air rather than as untextured debris.
+[sub_resource type="StandardMaterial3D" id="Mat_coin"]
+albedo_color = Color(0.98, 0.741, 0.302, 1)
+metallic = 1.0
+roughness = 0.28
+emission_enabled = true
+emission = Color(1, 0.678, 0.216, 1)
+emission_energy_multiplier = 1.8
+vertex_color_use_as_albedo = true
+
+[sub_resource type="CylinderMesh" id="Mesh_coin"]
+material = SubResource("Mat_coin")
+top_radius = 0.026
+bottom_radius = 0.026
+height = 0.006
+radial_segments = 10
+rings = 0
 
 [sub_resource type="Gradient" id="Grad_coin"]
 offsets = PackedFloat32Array(0, 0.6, 1)
@@ -35,8 +51,8 @@ initial_velocity_min = 1.8
 initial_velocity_max = 3.4
 angular_velocity_min = -420.0
 angular_velocity_max = 420.0
-scale_amount_min = 0.5
-scale_amount_max = 1.0
+scale_amount_min = 0.7
+scale_amount_max = 1.3
 color_ramp = SubResource("Grad_coin")
 
 ; The machine's own pilot lamp, behind the bezel. It flares on a payout, and the

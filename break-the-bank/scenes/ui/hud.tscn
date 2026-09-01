@@ -1,73 +1,179 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
+
+; Three gauges top-left, a thin log bottom-left, and a prompt in the middle.
+; Everything the world can carry has left this overlay: debt is on the machine's
+; monitor and the floor's name is on the wall, so the HUD is down to the numbers
+; a player checks between spins.
 
 [ext_resource type="Script" path="res://scripts/presentation/hud.gd" id="1_hud"]
 
-[sub_resource type="StyleBoxFlat" id="Style_panel"]
-bg_color = Color(0.04, 0.03, 0.06, 0.72)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
+[sub_resource type="StyleBoxFlat" id="Style_gauge"]
+bg_color = Color(0.043, 0.039, 0.031, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.42, 0.21, 0.45)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxFlat" id="Style_prompt"]
+bg_color = Color(0.035, 0.031, 0.027, 0.86)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.45, 0.2, 0.55)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 26.0
+content_margin_top = 16.0
+content_margin_right = 26.0
+content_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxEmpty" id="Style_none"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Gauges" type="HBoxContainer" parent="."]
+anchors_preset = 0
+offset_left = 22.0
+offset_top = 18.0
+offset_right = 500.0
+offset_bottom = 86.0
+theme_override_constants/separation = 8
+
+[node name="Cash" type="PanelContainer" parent="Gauges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_gauge")
+
+[node name="Rows" type="VBoxContainer" parent="Gauges/Cash"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Caption" type="Label" parent="Gauges/Cash/Rows"]
+layout_mode = 2
+modulate = Color(0.78, 0.7, 0.58, 0.72)
+theme_override_font_sizes/font_size = 12
+text = "CASH"
+groups = ["hud_caption"]
+
+[node name="Value" type="Label" parent="Gauges/Cash/Rows"]
+layout_mode = 2
+modulate = Color(1, 0.855, 0.62, 1)
+theme_override_font_sizes/font_size = 27
+text = "0"
+
+[node name="Ante" type="PanelContainer" parent="Gauges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_gauge")
+
+[node name="Rows" type="VBoxContainer" parent="Gauges/Ante"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Caption" type="Label" parent="Gauges/Ante/Rows"]
+layout_mode = 2
+modulate = Color(0.78, 0.7, 0.58, 0.72)
+theme_override_font_sizes/font_size = 12
+text = "ANTE"
+groups = ["hud_caption"]
+
+[node name="Value" type="Label" parent="Gauges/Ante/Rows"]
+layout_mode = 2
+modulate = Color(0.905, 0.87, 0.8, 1)
+theme_override_font_sizes/font_size = 27
+text = "0"
+
+[node name="Spins" type="PanelContainer" parent="Gauges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_gauge")
+
+[node name="Rows" type="VBoxContainer" parent="Gauges/Spins"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Caption" type="Label" parent="Gauges/Spins/Rows"]
+layout_mode = 2
+modulate = Color(0.78, 0.7, 0.58, 0.72)
+theme_override_font_sizes/font_size = 12
+text = "SPINS"
+groups = ["hud_caption"]
+
+[node name="Value" type="Label" parent="Gauges/Spins/Rows"]
+layout_mode = 2
+modulate = Color(0.905, 0.87, 0.8, 1)
+theme_override_font_sizes/font_size = 27
+text = "0"
+
+[node name="Line" type="Label" parent="."]
+anchors_preset = 0
+offset_left = 22.0
+offset_top = 92.0
+offset_right = 620.0
+offset_bottom = 116.0
+modulate = Color(0.92, 0.79, 0.52, 0.92)
+theme_override_font_sizes/font_size = 17
+text = ""
+
+[node name="Log" type="Label" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -220.0
+offset_left = 22.0
+offset_top = -96.0
 offset_right = 520.0
-offset_bottom = -24.0
+offset_bottom = -34.0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("Style_panel")
-
-[node name="Rows" type="VBoxContainer" parent="Panel"]
-layout_mode = 2
-
-[node name="Floor" type="Label" parent="Panel/Rows"]
-layout_mode = 2
-text = "FLOOR 1"
-
-[node name="Cash" type="Label" parent="Panel/Rows"]
-layout_mode = 2
-text = "CASH  0"
-
-[node name="Debt" type="Label" parent="Panel/Rows"]
-layout_mode = 2
-text = "DEBT  0"
-
-[node name="Line" type="Label" parent="Panel/Rows"]
-layout_mode = 2
-text = "—"
-
-[node name="Log" type="Label" parent="Panel/Rows"]
-layout_mode = 2
+modulate = Color(0.82, 0.78, 0.7, 0.42)
+theme_override_font_sizes/font_size = 13
+vertical_alignment = 2
 text = ""
 
-[node name="Prompt" type="Label" parent="."]
+[node name="Hint" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -30.0
+offset_right = 320.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+modulate = Color(0.85, 0.8, 0.72, 0.5)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+text = "SPACE spin / advance     TAB camera     F5 new run"
+
+[node name="Prompt" type="PanelContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -360.0
-offset_top = -230.0
-offset_right = 360.0
-offset_bottom = -140.0
+offset_left = -340.0
+offset_top = -196.0
+offset_right = 340.0
+offset_bottom = -96.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_prompt")
+
+[node name="Text" type="Label" parent="Prompt"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_none")
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 22
 text = ""
-
-[node name="Hint" type="Label" parent="Panel/Rows"]
-layout_mode = 2
-modulate = Color(1, 1, 1, 0.55)
-text = "SPACE spin / advance     TAB camera     F5 new run"

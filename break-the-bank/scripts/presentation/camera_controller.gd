@@ -28,12 +28,28 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 ## a basis written by hand is a basis silently mis-signed — that mistake has
 ## already aimed this camera at the ceiling once. A look-at target cannot be
 ## wrong in that way, and it is also the thing a person actually wants to adjust.
-@export var machine_eye: Vector3 = Vector3(0.85, 1.38, 3.55)
-@export var machine_target: Vector3 = Vector3(-0.18, 1.0, 0.05)
-@export var machine_fov: float = 52.0
+@export var machine_eye: Vector3 = Vector3(0.72, 1.44, 3.62)
+@export var machine_target: Vector3 = Vector3(-0.12, 1.16, 0.05)
+@export var machine_fov: float = 55.0
 @export var room_eye: Vector3 = Vector3(2.8, 2.55, 6.6)
 @export var room_target: Vector3 = Vector3(-0.15, 1.1, -0.2)
 @export var room_fov: float = 55.0
+## How far the camera rises and how much further up it looks on a tall screen.
+## With a fixed horizontal field, every pixel of extra height is extra vertical
+## field, and on a phone held upright all of it lands on empty ceiling and blown
+## floor. Tilting up spends it on the lamp and the sign instead.
+@export var portrait_eye_rise: float = 0.16
+@export var portrait_target_rise: float = 0.34
+## How far the field narrows on a tall screen, in degrees.
+##
+## With a fixed horizontal field, the vertical field is the horizontal one times
+## the aspect — so a 9:16 phone sees nearly twice the height a 16:9 screen does,
+## and all of it is ceiling and floor. Narrowing the field pulls that back and
+## fills the frame with the machine, at the cost of cropping the plinth's ends.
+## That crop is the right trade: the reference framing is a crop too.
+@export var portrait_fov_narrowing: float = 23.0
+## How far the camera backs off on a tall screen, to buy some of that crop back.
+@export var portrait_dolly_out: float = 0.4
 ## Peak positional offset of a payout shake, in metres.
 @export var shake_strength: float = 0.06
 
@@ -45,6 +61,8 @@ var _rest: Transform3D = Transform3D.IDENTITY
 ## Drift is what stops a static shot reading as a screenshot: the camera never
 ## quite settles, so the room feels observed rather than diagrammed.
 var _drift: float = 0.0
+## 0 on a 16:9 screen or wider, 1 on a tall phone, and interpolated between.
+var _portrait: float = 0.0
 
 
 func _ready() -> void:
@@ -65,6 +83,11 @@ func _fit_to_screen() -> void:
 	var aspect: float = size.x / size.y
 	_camera.keep_aspect = (Camera3D.KEEP_HEIGHT if aspect >= DESIGN_ASPECT
 			else Camera3D.KEEP_WIDTH)
+	# 9:16 is the tall end of the scale — a phone held upright. Anything taller
+	# than that is treated the same rather than tilting further.
+	_portrait = clampf(inverse_lerp(DESIGN_ASPECT, 9.0 / 16.0, aspect), 0.0, 1.0)
+	if is_inside_tree():
+		set_view(current_view, true)
 
 
 func _process(delta: float) -> void:
@@ -89,6 +112,10 @@ func set_view(view: View, immediate: bool = false) -> void:
 	var eye: Vector3 = machine_eye if view == View.MACHINE else room_eye
 	var target: Vector3 = machine_target if view == View.MACHINE else room_target
 	var fov: float = machine_fov if view == View.MACHINE else room_fov
+	eye += Vector3.UP * portrait_eye_rise * _portrait
+	target += Vector3.UP * portrait_target_rise * _portrait
+	eye += (eye - target).normalized() * portrait_dolly_out * _portrait
+	fov -= portrait_fov_narrowing * _portrait
 	_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target, Vector3.UP)
 	if immediate:
 		_camera.global_transform = _rest

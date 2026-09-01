@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3]
+
+; The final grade pass, above the world and below the UI: the HUD and the panels
+; sit on higher layers so their text stays crisp and unvignetted.
+
+[ext_resource type="Shader" path="res://assets/shaders/film.gdshader" id="1_film"]
+
+[sub_resource type="ShaderMaterial" id="Mat_film"]
+shader = ExtResource("1_film")
+shader_parameter/grain_amount = 0.035
+shader_parameter/vignette_start = 0.52
+shader_parameter/vignette_strength = 0.55
+shader_parameter/shadow_tint = Color(0.055, 0.043, 0.031, 1)
+
+[sub_resource type="PlaceholderTexture2D" id="Tex_none"]
+
+[node name="FilmOverlay" type="CanvasLayer"]
+layer = 1
+
+[node name="Rect" type="ColorRect" parent="."]
+material = SubResource("Mat_film")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+metadata/_placeholder = SubResource("Tex_none")
