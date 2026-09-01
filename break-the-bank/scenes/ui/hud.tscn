@@ -115,14 +115,24 @@ modulate = Color(0.905, 0.87, 0.8, 1)
 theme_override_font_sizes/font_size = 27
 text = "0"
 
-[node name="Line" type="Label" parent="."]
+[node name="LineRow" type="HBoxContainer" parent="."]
 anchors_preset = 0
 offset_left = 22.0
-offset_top = 92.0
-offset_right = 620.0
-offset_bottom = 116.0
+offset_top = 90.0
+offset_right = 680.0
+offset_bottom = 126.0
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="Icons" type="HBoxContainer" parent="LineRow"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Line" type="Label" parent="LineRow"]
+layout_mode = 2
 modulate = Color(0.92, 0.79, 0.52, 0.92)
 theme_override_font_sizes/font_size = 17
+vertical_alignment = 1
 text = ""
 
 [node name="Log" type="Label" parent="."]

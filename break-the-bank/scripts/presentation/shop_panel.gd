@@ -145,6 +145,12 @@ func _build_row(index: int) -> Control:
 	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
 	head.add_child(_cell("%d." % (index + 1), 17.0,
 			UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
+	# An artifact that only affects one symbol shows that symbol. "+4 draw
+	# weight on Lucky Seven" is a sentence; the seven itself is the thing the
+	# player is about to go looking for on the reels.
+	var badge: TextureRect = _symbol_badge(artifact.symbol_filter, affordable)
+	if badge != null:
+		head.add_child(badge)
 	var name_cell: Label = _cell(artifact.display_name, 17.0,
 			UiSkin.INK if affordable else UiSkin.DENIED)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -165,6 +171,28 @@ func _build_row(index: int) -> Control:
 	# container, so nothing else will size it around them.
 	button.custom_minimum_size = Vector2(0.0, 58.0 * _scale)
 	return button
+
+
+## The icon for the symbol an artifact singles out, or null if it applies to
+## every symbol — which most do, and a badge on all of them would say nothing.
+func _symbol_badge(symbol_id: StringName, affordable: bool) -> TextureRect:
+	if symbol_id == &"":
+		return null
+	var symbol: SymbolDef = ContentDB.shared().symbol_by_id(symbol_id)
+	if symbol == null:
+		return null
+	var art: ImageTexture = SymbolArt.texture_for(symbol.id, symbol.color)
+	if art == null:
+		return null
+	var badge: TextureRect = TextureRect.new()
+	badge.texture = art
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.custom_minimum_size = Vector2(24.0, 24.0) * _scale
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge.modulate = Color(1, 1, 1, 1) if affordable else Color(1, 1, 1, 0.5)
+	badge.tooltip_text = symbol.display_name
+	return badge
 
 
 func _cell(text: String, size: float, tint: Color) -> Label:

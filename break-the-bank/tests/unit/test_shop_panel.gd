@@ -75,6 +75,40 @@ func test_each_row_names_its_artifact_and_price() -> void:
 			assert_str(shown).contains(_state.shop_offers[i].description)
 
 
+## Only the offers that single out a symbol carry its icon.
+##
+## Asserted rather than looked at: four of the shipped artifacts name a symbol,
+## so a draft that happens to roll one is rare enough that a screenshot proves
+## nothing either way.
+func test_a_row_badges_the_symbol_its_artifact_singles_out() -> void:
+	# The fixtures apply to every symbol, so one is pointed at a real one.
+	_state.shop_offers[0].symbol_filter = &"seven"
+	_panel.open(_state)
+	var rows: Array[Node] = _rows()
+	assert_int(_badges(rows[0]).size()).is_equal(1)
+	for i: int in range(1, rows.size()):
+		assert_int(_badges(rows[i]).size()).is_equal(0)
+
+
+## An artifact naming a symbol with no drawing must not leave a blank badge
+## behind — the icon is dropped and the row reads normally.
+func test_a_symbol_with_no_drawing_gets_no_badge() -> void:
+	_state.shop_offers[0].symbol_filter = &"not_a_real_symbol"
+	_panel.open(_state)
+	assert_int(_badges(_rows()[0]).size()).is_equal(0)
+
+
+func _badges(row: Node) -> Array[Node]:
+	var found: Array[Node] = []
+	var pending: Array[Node] = [row]
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		if node is TextureRect and (node as TextureRect).texture != null:
+			found.append(node)
+		pending.append_array(node.get_children())
+	return found
+
+
 func test_unaffordable_rows_are_shown_but_disabled() -> void:
 	_panel.open(_state)
 	var rows: Array[Node] = _rows()
