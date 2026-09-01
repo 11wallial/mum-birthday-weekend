@@ -13,7 +13,7 @@ behaves exactly like one that has.
 | Windows | `dist/windows/BreakTheBank.exe` | One file — the PCK is embedded |
 | Linux | `dist/linux/BreakTheBank.x86_64` | One file — the PCK is embedded |
 | macOS | `dist/macos/BreakTheBank.zip` | A `.app` bundle, universal, unsigned |
-| Android | `dist/android/BreakTheBank.apk` | arm64 + x86_64, signed with the release keystore |
+| Android | `dist/android/BreakTheBank.apk` | arm64 only, signed with the release keystore |
 | Web | `dist/web/` | `index.html` plus wasm, PCK and a service worker |
 
 `dist/` is ignored by git. Builds are published as CI artifacts instead, so the
@@ -79,6 +79,9 @@ silently failing with a warning per voice. Every voice now asks for
   switches the camera between a fixed vertical and a fixed horizontal field.
   Without it a portrait phone crops the machine off both edges — the framing was
   authored at 16:9 and a narrower screen keeps the vertical field by default.
+- **Architecture** is arm64 only. The x86_64 slice serves emulators rather than
+  phones and doubles the APK; add it back in `export_presets.cfg` if an emulator
+  run is ever needed.
 - **Reachability** was the real work. Leaving the draft, opening setup, toggling
   the camera and starting a new run were all keyboard-only; a phone would have
   been stuck in the shop with no way out. The draft and the setup panel now carry
