@@ -30,7 +30,73 @@ const SIGN: Color = Color(1.0, 0.376, 0.078)
 const JACKPOT: Color = Color(0.847, 0.153, 0.129)
 const LAMP: Color = Color(1.0, 0.831, 0.616)
 
+## Scanned surfaces, by folder under [code]assets/textures/[/code]. Each supplies
+## an albedo, an OpenGL-convention normal, and an ARM map packing ambient
+## occlusion, roughness and metallic into one image's three channels.
+##
+## These replaced the noise that used to stand in for them. Sampled noise gets
+## you variation; it does not get you the specific way paint chips at an edge or
+## rust creeps along a weld, because those are not random — they are the record
+## of something having happened to the surface. That is what a scan carries and
+## what no amount of retuning a frequency will produce.
+##
+## The palette above still leads. Every scan is partly desaturated on the way in
+## and every material tints it, so five unrelated photographs read as one set.
+const SCANS: String = "res://assets/textures/%s/%s.jpg"
+
 static var _cache: Dictionary = {}
+static var _scan_cache: Dictionary = {}
+
+
+## Loads one map of one scanned set, or null when it is missing.
+##
+## Missing is not fatal on purpose: the procedural fallbacks below still work, so
+## a checkout without the texture pack renders a plainer machine rather than a
+## broken one.
+static func scan(set_name: String, map_name: String) -> Texture2D:
+	var key: String = "%s/%s" % [set_name, map_name]
+	if _scan_cache.has(key):
+		return _scan_cache[key] as Texture2D
+	var path: String = SCANS % [set_name, map_name]
+	var texture: Texture2D = null
+	if ResourceLoader.exists(path):
+		texture = load(path) as Texture2D
+	else:
+		push_warning("Materials: no scan at %s; falling back to noise" % path)
+	_scan_cache[key] = texture
+	return texture
+
+
+## Dresses [param material] in a scanned set: albedo, normal, and the ARM map
+## wired to the three channels it packs.
+##
+## Returns false when the set is missing, so a caller can fall back.
+static func _dress(material: StandardMaterial3D, set_name: String,
+		normal_depth: float, tiles_per_metre: float) -> bool:
+	var albedo: Texture2D = scan(set_name, "albedo")
+	if albedo == null:
+		return false
+	material.albedo_texture = albedo
+	var normal: Texture2D = scan(set_name, "normal")
+	if normal != null:
+		material.normal_enabled = true
+		material.normal_texture = normal
+		material.normal_scale = normal_depth
+	var arm: Texture2D = scan(set_name, "arm")
+	if arm != null:
+		# One image, three channels: AO in red, roughness in green, metallic in
+		# blue. Godot reads a channel per map, so the packing costs a third of
+		# the bytes three greyscale images would.
+		material.ao_enabled = true
+		material.ao_texture = arm
+		material.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+		material.ao_light_affect = 0.35
+		material.roughness_texture = arm
+		material.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+		material.metallic_texture = arm
+		material.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+	_triplanar(material, tiles_per_metre)
+	return true
 
 
 ## Chipped industrial paint over steel: the machine's chassis and the room.
@@ -38,6 +104,11 @@ static func painted(tint: Color = PAINT, seed_value: int = 11) -> StandardMateri
 	return _build("paint:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
+		if _dress(material, "painted_metal", 1.0, 0.9):
+			material.metallic_texture = null
+			material.metallic = 0.18
+			material.metallic_specular = 0.42
+			return material
 		material.albedo_texture = ProcTextures.grime(seed_value, 0.012, 1.05, 0.82)
 		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.72, 0.84, 0.012)
 		material.normal_enabled = true
@@ -55,6 +126,11 @@ static func rusted(seed_value: int = 23) -> StandardMaterial3D:
 	return _build("rust:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = OXIDE
+		if _dress(material, "rusted_metal", 1.3, 1.1):
+			# Rust is oxide, not metal, whatever the plate underneath it is.
+			material.metallic_texture = null
+			material.metallic = 0.08
+			return material
 		material.albedo_texture = ProcTextures.streaks(seed_value, 0.58)
 		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.76, 0.96)
 		material.normal_enabled = true
@@ -70,6 +146,13 @@ static func brass(seed_value: int = 37) -> StandardMaterial3D:
 	return _build("brass:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = BRASS
+		if _dress(material, "plate_metal", 0.42, 7.5):
+			# Brass is a full metal whatever the scan's own metallic channel
+			# says: the plate it was scanned from is steel, and only the wear
+			# pattern is being borrowed.
+			material.metallic_texture = null
+			material.metallic = 1.0
+			return material
 		material.albedo_texture = ProcTextures.grime(seed_value, 0.024, 1.2, 0.62)
 		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.2, 0.56, 0.022)
 		material.normal_enabled = true
@@ -86,6 +169,10 @@ static func machined(tint: Color = STEEL, seed_value: int = 53) -> StandardMater
 	return _build("steel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
+		if _dress(material, "plate_metal", 0.5, 8.5):
+			material.metallic_texture = null
+			material.metallic = 1.0
+			return material
 		material.albedo_texture = ProcTextures.grime(seed_value, 0.022, 1.0, 0.82)
 		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.26, 0.46, 0.02)
 		material.metallic = 1.0
@@ -111,6 +198,10 @@ static func concrete(seed_value: int = 83) -> StandardMaterial3D:
 	return _build("concrete:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = CONCRETE
+		if _dress(material, "concrete", 0.9, 0.55):
+			material.metallic_texture = null
+			material.metallic = 0.0
+			return material
 		material.albedo_texture = ProcTextures.grime(seed_value, 0.02, 1.2, 0.7)
 		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.86, 0.98)
 		material.normal_enabled = true

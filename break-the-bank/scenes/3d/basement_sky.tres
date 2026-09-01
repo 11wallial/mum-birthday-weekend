@@ -1,0 +1,20 @@
+[gd_resource type="Sky" load_steps=3 format=3]
+
+; Not a sky. The room has no windows, and this is never drawn as a background —
+; it exists so that metal has something real to reflect. A polished surface lit
+; by a flat ambient colour returns that flat colour, which is why the brass read
+; as plastic however its roughness was tuned. An interior panorama gives it the
+; dark ceiling, the bright lamp and the pale floor to pick up instead.
+;
+; Ambient light deliberately does NOT come from here: FloorMood owns that, and
+; it changes per floor. This supplies reflections only.
+
+[ext_resource type="Texture2D" path="res://assets/hdri/basement_garage.hdr" id="1_hdri"]
+
+[sub_resource type="PanoramaSkyMaterial" id="Sky_panorama"]
+panorama = ExtResource("1_hdri")
+energy_multiplier = 0.55
+
+[resource]
+sky_material = SubResource("Sky_panorama")
+radiance_size = 2
