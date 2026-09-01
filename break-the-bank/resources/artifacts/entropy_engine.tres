@@ -16,4 +16,4 @@ symbol_filter = &""
 pattern_filter = -1
 tags = Array[StringName]([&"mechanical", &"chaos"])
 min_floor = 3
-module_scene_path = "res://assets/3d/modules/entropy_engine.tscn"
+module_scene_path = ""

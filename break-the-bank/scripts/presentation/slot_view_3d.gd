@@ -19,6 +19,10 @@ const SETTLE_DURATION: float = 0.2
 
 var _reels: Array[Node3D] = []
 var _module_anchor: Node3D
+## Places on the frame where bought hardware bolts on, in fill order.
+var _mounts: Array[Node3D] = []
+## Every "Drive" node across the fitted modules, turned while the reels spin.
+var _drives: Array[Node3D] = []
 var _lever: Node3D
 var _odds: Label3D
 var _readout: Label3D
@@ -56,6 +60,7 @@ func _ready() -> void:
 	var parts: Dictionary = MachineFrame.new().build(self)
 	_reels.assign(parts.get("reels", []))
 	_lever = parts.get("lever", null) as Node3D
+	_mounts.assign(parts.get("mounts", []))
 	_odds = parts.get("odds", null) as Label3D
 	_readout = parts.get("readout", null) as Label3D
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
@@ -90,6 +95,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_attach_module(StringName(payload.get("artifact", &"")))
 		EffectBus.Event.RUN_STARTED:
 			_upgrades = 0
+			_clear_modules()
 		_:
 			pass
 
@@ -104,6 +110,7 @@ func is_busy() -> bool:
 func _play_spin(payout: int, multiplier: float) -> void:
 	_busy = true
 	_throw_lever()
+	_turn_drives()
 	var last: int = _reels.size() - 1
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
@@ -194,6 +201,25 @@ func _throw_lever() -> void:
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
+## Turns every fitted module's moving parts for the length of a spin. A machine
+## whose bought hardware sits dead while the reels turn reads as decoration
+## bolted to a machine, rather than as part of one.
+func _turn_drives() -> void:
+	for i: int in _drives.size():
+		var drive: Node3D = _drives[i]
+		if not is_instance_valid(drive):
+			continue
+		# Alternating direction, and never quite the same speed: meshing gears
+		# turn against each other, and a rack of identical spinners reads as a
+		# single texture scrolling.
+		var turns: float = TAU * (1.5 + float(i % 3) * 0.4)
+		var direction: float = -1.0 if i % 2 == 1 else 1.0
+		var tween: Tween = create_tween()
+		tween.tween_property(drive, "rotation:z",
+				drive.rotation.z + turns * direction, SPIN_DURATION + 0.35) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
 ## Writes the spin's multiplier onto the readout above the reels. The value is
 ## already on the HUD; putting it on the machine is what makes the machine the
 ## thing being read rather than a backdrop to a text overlay.
@@ -223,22 +249,78 @@ func _celebrate(payout: int, multiplier: float) -> void:
 		tween.tween_property(_light, "light_energy", 1.0, 0.5)
 
 
-## Bolts the artifact's physical module onto the machine frame, if it has one.
+## Fits hardware without buying it. For visual QA only: a real run reaches a
+## well-stocked machine rarely and slowly, which is exactly the state that most
+## needs looking at.
+func debug_fit(artifact_id: StringName) -> void:
+	_upgrades += 1
+	_attach_module(artifact_id)
+
+
+## Bolts the artifact's hardware onto the next free place on the frame.
+##
+## Every artifact gets hardware, built by [ModuleFactory] from its effect and
+## its tag. An artifact may still name a [member ArtifactDef.module_scene_path]
+## to override that with an authored scene, which is how a one-off centrepiece
+## would be done — but nothing has to, and the default is never "nothing", which
+## is what left twenty-four of twenty-six purchases invisible.
 func _attach_module(artifact_id: StringName) -> void:
-	if _module_anchor == null:
-		return
 	var artifact: ArtifactDef = ContentDB.shared().artifact_by_id(artifact_id)
-	if artifact == null or artifact.module_scene_path.is_empty():
+	if artifact == null:
 		return
-	if not ResourceLoader.exists(artifact.module_scene_path):
-		push_warning("SlotView3D: missing module scene %s" % artifact.module_scene_path)
-		return
-	var packed: PackedScene = load(artifact.module_scene_path) as PackedScene
-	if packed == null:
-		return
-	var module: Node3D = packed.instantiate() as Node3D
+	var module: Node3D = _module_for(artifact)
 	if module == null:
 		return
-	# Modules stack outward along +X so the frame visibly grows over a run.
-	module.position = Vector3(0.28 * float(_module_anchor.get_child_count()), 0.0, 0.0)
-	_module_anchor.add_child(module)
+	var mount: Node3D = _next_mount()
+	if mount == null:
+		# Out of places to put it. The frame is full at a dozen, which is well
+		# past what a run buys; dropping the model is better than stacking two
+		# in the same hole.
+		module.queue_free()
+		return
+	mount.add_child(module)
+	_collect_drives(module)
+	# Arrives oversized and settles, so a purchase is seen being fitted rather
+	# than simply existing on the next frame.
+	module.scale = Vector3.ONE * 1.7
+	var tween: Tween = create_tween()
+	tween.tween_property(module, "scale", Vector3.ONE, 0.42) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Strips the frame back to bare metal for a new run.
+func _clear_modules() -> void:
+	_drives.clear()
+	for mount: Node3D in _mounts:
+		for child: Node in mount.get_children():
+			# Removed as well as freed: queue_free defers, and a new run that
+			# starts in the same frame would find every mount still occupied.
+			mount.remove_child(child)
+			child.queue_free()
+
+
+func _module_for(artifact: ArtifactDef) -> Node3D:
+	if not artifact.module_scene_path.is_empty() \
+			and ResourceLoader.exists(artifact.module_scene_path):
+		var packed: PackedScene = load(artifact.module_scene_path) as PackedScene
+		if packed != null:
+			return packed.instantiate() as Node3D
+	return ModuleFactory.build(artifact)
+
+
+func _next_mount() -> Node3D:
+	for mount: Node3D in _mounts:
+		if mount.get_child_count() == 0:
+			return mount
+	return null
+
+
+## Finds the turning parts of a fitted module, by the name its builder gives
+## them. A module with no moving parts simply contributes none.
+func _collect_drives(module: Node3D) -> void:
+	var pending: Array[Node] = [module]
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		if node is Node3D and String(node.name).begins_with("Drive"):
+			_drives.append(node as Node3D)
+		pending.append_array(node.get_children())

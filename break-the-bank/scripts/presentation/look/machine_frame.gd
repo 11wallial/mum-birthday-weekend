@@ -24,6 +24,9 @@ const REEL_RADIUS: float = 0.2
 const REEL_SPACING: float = 0.37
 ## Distance from the machine's centre plane to the front face of a reel drum.
 const REEL_Z: float = 0.3
+## Modules are authored around a 0.26m bracket; at that size they read as
+## trinkets pinned to the frame rather than as hardware fitted to it.
+const MOUNT_SCALE: float = 1.25
 
 var _root: Node3D
 
@@ -45,7 +48,9 @@ func build(root: Node3D) -> Dictionary:
 	var lever: Node3D = _lever()
 	var spool: Node3D = _spool()
 	_rivets()
+	var mounts: Array[Node3D] = _mounts()
 	return {
+		"mounts": mounts,
 		"reels": reels,
 		"gearbox": gearbox,
 		"screen": screen,
@@ -424,6 +429,55 @@ func _rivets() -> void:
 	instance.name = "Rivets"
 	instance.multimesh = multi
 	_root.add_child(instance)
+
+
+## Where bought hardware bolts on, in the order it is used.
+##
+## Ordered by how visible each spot is rather than by where it is convenient to
+## build: the front face fills first, then the crown, then the flanks, then the
+## plinth. A player's first purchase should be the one they cannot miss, and by
+## the time the awkward corners are in use the machine is already crowded.
+##
+## Fixed points rather than a row growing along one axis. Modules used to stack
+## outward from a single anchor, which made a long run look like a shelf; spread
+## around the chassis they read as a machine that has been added to.
+func _mounts() -> Array[Node3D]:
+	var group: Node3D = _group(&"Mounts")
+	# Ordered by what the machine framing actually shows, which is not the same as
+	# where there is room. The crown looked like the obvious place until it was
+	# rendered: the camera sits slightly above the reels and looks down, so the
+	# crown is foreshortened and half of it hides behind the odds housing and the
+	# monitor. The front pocket and the plinth face are dead centre of frame, so
+	# they fill first and the crown becomes overflow.
+	#
+	# Every position below is also chosen to miss something already there: the
+	# odds housing spans x -0.27..0.59 on the crown, the gearbox takes the left
+	# flank forward of z 0.1, and the lever mount takes the right flank at y 1.0.
+	var places: Array[Array] = [
+		[Vector3(0.805, CHASSIS_Y + 0.1, CHASSIS.z + 0.05), Vector3.ZERO],
+		[Vector3(-0.68, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
+		[Vector3(0.68, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
+		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y + 0.34, -0.16), Vector3(0.0, PI * 0.5, 0.0)],
+		[Vector3(-CHASSIS.x - 0.07, CHASSIS_Y + 0.28, -0.22), Vector3(0.0, -PI * 0.5, 0.0)],
+		[Vector3(0.0, PLINTH_TOP + 0.11, 0.52), Vector3(-1.0, 0.0, 0.0)],
+		[Vector3(-0.78, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
+		[Vector3(0.66, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
+		[Vector3(0.92, CHASSIS_Y + CHASSIS.y + 0.16, 0.06), Vector3(-0.7, 0.0, 0.0)],
+		[Vector3(CHASSIS.x + 0.07, CHASSIS_Y - 0.3, -0.16), Vector3(0.0, PI * 0.5, 0.0)],
+		[Vector3(-CHASSIS.x - 0.07, CHASSIS_Y - 0.26, -0.22), Vector3(0.0, -PI * 0.5, 0.0)],
+		# The far pocket last: the monitor arm and the gearbox both crowd it.
+		[Vector3(-0.805, CHASSIS_Y + 0.1, CHASSIS.z + 0.05), Vector3.ZERO],
+	]
+	var mounts: Array[Node3D] = []
+	for i: int in places.size():
+		var mount: Node3D = Node3D.new()
+		mount.name = "Mount%d" % i
+		group.add_child(mount)
+		mount.position = places[i][0]
+		mount.rotation = places[i][1]
+		mount.scale = Vector3.ONE * MOUNT_SCALE
+		mounts.append(mount)
+	return mounts
 
 
 # --- primitives -------------------------------------------------------------

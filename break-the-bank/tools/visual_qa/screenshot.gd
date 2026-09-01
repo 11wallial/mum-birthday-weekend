@@ -97,9 +97,15 @@ func _apply(action: String) -> void:
 			if _root_node.has_method("debug_advance"):
 				_root_node.call("debug_advance")
 		"spin":
-			# A draft blocks the run until it is answered, so drive through it.
+			# A draft blocks the run until it is answered, so answer it — by
+			# buying. A machine that has bought nothing is the one state a real
+			# run spends the least time in, and it is what every earlier
+			# screenshot was showing.
 			if _root_node.has_method("debug_shop_open") and _root_node.call("debug_shop_open"):
-				_root_node.call("debug_leave_shop")
+				if _root_node.has_method("debug_buy_what_it_can"):
+					_root_node.call("debug_buy_what_it_can")
+				else:
+					_root_node.call("debug_leave_shop")
 			elif _root_node.has_method("debug_advance"):
 				_root_node.call("debug_advance")
 		"room":

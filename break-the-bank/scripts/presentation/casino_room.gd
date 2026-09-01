@@ -161,9 +161,50 @@ func debug_shop_open() -> bool:
 	return _shop != null and _shop.is_open()
 
 
+## Buys everything in the draft the run can afford, cheapest first, then
+## leaves. Visual QA needs a machine that has actually been built up: driving
+## through the draft without buying meant every screenshot showed a bare frame,
+## which is the one state a real run spends the least time in.
+func debug_buy_what_it_can() -> void:
+	if _shop == null or not _shop.is_open() or state == null:
+		return
+	# Held back, because the next ante is due before the next payout. Spending
+	# the float bought a well-stocked machine and then lost the run on floor one,
+	# which made every screenshot a game-over screen.
+	var floor_def: FloorDef = state.current_floor()
+	var reserve: int = floor_def.ante if floor_def != null else 0
+	var guard: int = 0
+	while guard < 8:
+		guard += 1
+		var best: int = -1
+		var best_price: int = 0
+		for i: int in state.shop_offers.size():
+			if not state.can_buy(i):
+				continue
+			if state.economy.cash - state.shop_prices[i] < reserve:
+				continue
+			if best < 0 or state.shop_prices[i] < best_price:
+				best = i
+				best_price = state.shop_prices[i]
+		if best < 0:
+			break
+		_on_buy_requested(best)
+	_on_leave_requested()
+
+
 ## Leaves the draft without buying. For tools and tests.
 func debug_leave_shop() -> void:
 	_on_leave_requested()
+
+
+## Fits the named artifacts' hardware to the machine without buying any of it.
+## Visual QA only — the run's state is untouched, so this shows the frame, not
+## a game.
+func debug_fit_modules(ids: PackedStringArray) -> void:
+	if _slot_view == null:
+		return
+	for id: String in ids:
+		_slot_view.debug_fit(StringName(id))
 
 
 ## Opens the run-setup panel. For tools and tests.
@@ -237,6 +278,11 @@ func _on_leave_requested() -> void:
 		_recorder.record_leave_shop(state)
 	if _shop != null:
 		_shop.close()
+	# Back to the machine. Opening the draft pulls the camera out to survey the
+	# room; leaving it has to put the camera back, or the whole rest of the run
+	# is played from the far framing the draft borrowed.
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
 	engine.leave_shop(state)
 
 
