@@ -4,16 +4,16 @@
 
 [resource]
 script = ExtResource("1_artifactdef")
-id = &"entropy_engine"
-display_name = "Entropy Engine"
-description = "It hums, and the odds bend. +1.0x on every line."
-cost = 16
+id = &"tally_sheet"
+display_name = "Tally Sheet"
+description = "Two of anything is worth writing down. Pair lines gain +2.0x."
+cost = 13
 trigger = 2
-effect = 1
-magnitude = 0.7
+effect = 3
+magnitude = 2.0
 cap = 0.0
 symbol_filter = &""
-pattern_filter = -1
-tags = Array[StringName]([&"mechanical", &"chaos"])
+pattern_filter = 1
+tags = Array[StringName]([&"contract"])
 min_floor = 3
 module_scene_path = ""

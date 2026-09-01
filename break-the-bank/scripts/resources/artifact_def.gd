@@ -45,6 +45,15 @@ enum Effect {
 	MULT_PER_ARTIFACT,
 	## Wipes [member magnitude] percent of outstanding debt when a floor clears.
 	DEBT_PAYDOWN,
+	## Adds [member magnitude] to the multiplier per 100 credits of outstanding
+	## debt, capped by [member cap]. Debt was only ever a threat; this makes it
+	## something a build can be made of, and makes paying it down a real cost
+	## rather than an obvious good.
+	DEBT_LEVERAGE,
+	## [member magnitude] percent chance a spin is not consumed. The pool had no
+	## way to buy tempo — only payout — so every artifact competed on the same
+	## axis.
+	SPIN_REFUND,
 }
 
 @export var id: StringName = &""

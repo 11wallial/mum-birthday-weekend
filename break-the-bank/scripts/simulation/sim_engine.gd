@@ -88,7 +88,13 @@ func begin_floor(state: RunState) -> void:
 ## Takes a single spin. Assumes the player can afford it.
 func spin(state: RunState) -> ArtifactEngine.SpinContext:
 	state.economy.debit(state.config.spin_cost, &"spin_cost")
-	state.spins_remaining -= 1
+	if ArtifactEngine.refunds_spin(state):
+		_bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
+			"artifact": &"spin_refund", "effect": "SPIN_REFUND",
+			"spins_remaining": state.spins_remaining,
+		})
+	else:
+		state.spins_remaining -= 1
 	state.spins_taken += 1
 	if _bus.is_live():
 		_bus.emit_event(EffectBus.Event.SPIN_STARTED, {

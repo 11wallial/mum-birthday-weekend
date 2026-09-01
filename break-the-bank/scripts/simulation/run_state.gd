@@ -44,6 +44,8 @@ var shop_prices: Array[int] = []
 
 var reel_rng: RngStream
 var shop_rng: RngStream
+## Draws for anything that changes the run's pacing rather than its contents.
+var tempo_rng: RngStream
 
 var _reel_cache: Array[Probability.ReelEntry] = []
 var _reel_cache_dirty: bool = true
@@ -61,6 +63,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	economy.debt = maxi(0, economy.debt + options.bonus_debt)
 	reel_rng = RngStream.new(p_seed, &"reels")
 	shop_rng = RngStream.new(p_seed, &"shop")
+	tempo_rng = RngStream.new(p_seed, &"tempo")
 
 
 ## True when [param index] names an offer the player can currently afford.

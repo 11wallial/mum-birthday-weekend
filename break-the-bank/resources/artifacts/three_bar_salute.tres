@@ -4,16 +4,16 @@
 
 [resource]
 script = ExtResource("1_artifactdef")
-id = &"entropy_engine"
-display_name = "Entropy Engine"
-description = "It hums, and the odds bend. +1.0x on every line."
-cost = 16
+id = &"three_bar_salute"
+display_name = "Three Bar Salute"
+description = "An old payout schedule, still honoured. Every Bar pays 5 more."
+cost = 7
 trigger = 2
-effect = 1
-magnitude = 0.7
+effect = 2
+magnitude = 5.0
 cap = 0.0
-symbol_filter = &""
+symbol_filter = &"bar"
 pattern_filter = -1
-tags = Array[StringName]([&"mechanical", &"chaos"])
-min_floor = 3
+tags = Array[StringName]([&"greed"])
+min_floor = 1
 module_scene_path = ""

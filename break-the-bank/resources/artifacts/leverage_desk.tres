@@ -4,16 +4,16 @@
 
 [resource]
 script = ExtResource("1_artifactdef")
-id = &"entropy_engine"
-display_name = "Entropy Engine"
-description = "It hums, and the odds bend. +1.0x on every line."
-cost = 16
+id = &"leverage_desk"
+display_name = "Leverage Desk"
+description = "They will lend against the machine itself. +0.5x for every 100 you owe."
+cost = 27
 trigger = 2
-effect = 1
-magnitude = 0.7
-cap = 0.0
+effect = 13
+magnitude = 0.32
+cap = 2.8
 symbol_filter = &""
 pattern_filter = -1
-tags = Array[StringName]([&"mechanical", &"chaos"])
-min_floor = 3
+tags = Array[StringName]([&"bank", &"greed"])
+min_floor = 5
 module_scene_path = ""

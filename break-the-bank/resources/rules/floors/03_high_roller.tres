@@ -10,6 +10,6 @@ description = "The stakes climb and so does the ceiling."
 ante = 235
 spins = 10
 debt_interest_percent = 80.0
-shop_slots = 3
+shop_slots = 4
 payout_scale = 1.15
 environment_id = &"high_roller"

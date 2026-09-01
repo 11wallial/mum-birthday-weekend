@@ -27,6 +27,61 @@ func test_a_bare_line_pays_symbols_times_the_pattern_multiplier() -> void:
 	assert_int(ctx.total()).is_equal(21)
 
 
+func test_debt_leverage_scales_the_multiplier_with_what_is_owed() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(
+			&"marker", ArtifactDef.Effect.DEBT_LEVERAGE, 0.5)
+	_state.acquire(artifact)
+	# Nothing owed, nothing gained: the effect has to be worth zero at zero debt
+	# or it is just a multiplier with extra steps.
+	_state.economy.debt = 0
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(1.5, 0.001)
+	# 400 owed is four hundreds, so four times the magnitude.
+	_state.economy.debt = 400
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(3.5, 0.001)
+
+
+func test_debt_leverage_is_capped_so_defaulting_is_never_the_strategy() -> void:
+	var artifact: ArtifactDef = TestFixtures.artifact(
+			&"margin", ArtifactDef.Effect.DEBT_LEVERAGE, 0.5)
+	artifact.cap = 2.0
+	_state.acquire(artifact)
+	_state.economy.debt = 100000
+	# Debt compounds without bound; the bonus must not.
+	assert_float(_score(_pair_line).multiplier).is_equal_approx(3.5, 0.001)
+
+
+func test_a_spin_refund_draws_from_the_tempo_stream_not_the_reels() -> void:
+	# The named streams exist so a new die roll in one system cannot shift
+	# another. A refund artifact must therefore leave the reel stream untouched.
+	_state.acquire(TestFixtures.artifact(
+			&"loose", ArtifactDef.Effect.SPIN_REFUND, 50.0))
+	var reel_draws_before: int = _state.reel_rng.draws
+	for i: int in 20:
+		ArtifactEngine.refunds_spin(_state)
+	assert_int(_state.reel_rng.draws).is_equal(reel_draws_before)
+	assert_int(_state.tempo_rng.draws).is_equal(20)
+
+
+func test_no_refund_artifact_means_no_draw_at_all() -> void:
+	# Not merely "returns false": drawing anyway would consume the stream and
+	# desync a replay of a run that owns no refund artifact.
+	assert_bool(ArtifactEngine.refunds_spin(_state)).is_false()
+	assert_int(_state.tempo_rng.draws).is_equal(0)
+
+
+func test_a_certain_refund_never_consumes_a_spin() -> void:
+	_state.acquire(TestFixtures.artifact(
+			&"free", ArtifactDef.Effect.SPIN_REFUND, 100.0))
+	# Capped at 45%, so "always" is not reachable — but every draw below the cap
+	# must refund, and none above it may.
+	var refunds: int = 0
+	for i: int in 400:
+		if ArtifactEngine.refunds_spin(_state):
+			refunds += 1
+	assert_int(refunds).is_greater(120)
+	assert_int(refunds).is_less(280)
+
+
 func test_a_curse_costs_credits_and_the_pattern_bonus() -> void:
 	var line: Array[SymbolDef] = [_cherry, _seven, _skull]
 	var ctx: ArtifactEngine.SpinContext = _score(line)

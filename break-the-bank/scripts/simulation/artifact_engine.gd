@@ -67,6 +67,14 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef], pattern: Prob
 				ctx.multiplier += artifact.magnitude * float(state.owned.size())
 			ArtifactDef.Effect.RETRIGGER:
 				ctx.retriggers += artifact.magnitude
+			ArtifactDef.Effect.DEBT_LEVERAGE:
+				# Per hundred owed. Capped, because debt compounds and an
+				# uncapped multiplier on it would make defaulting the strategy.
+				var leveraged: float = artifact.magnitude \
+						* (float(state.economy.debt) / 100.0)
+				if artifact.cap > 0.0:
+					leveraged = minf(leveraged, artifact.cap)
+				ctx.multiplier += leveraged
 			_:
 				pass
 
@@ -92,6 +100,23 @@ static func spin_bonus(state: RunState) -> int:
 		if artifact.effect == ArtifactDef.Effect.EXTRA_SPINS:
 			total += int(artifact.magnitude)
 	return total
+
+
+## True when a spin should not be counted against the floor's allowance.
+##
+## Drawn from the run's own named stream rather than the reel stream, so adding
+## a refund artifact cannot shift which symbols land — the whole reason the
+## streams are named.
+static func refunds_spin(state: RunState) -> bool:
+	var chance: float = 0.0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == ArtifactDef.Effect.SPIN_REFUND:
+			chance += artifact.magnitude
+	if chance <= 0.0:
+		return false
+	# Capped well short of free: a floor you cannot run out of spins on is a
+	# floor with no clock, and the clock is the game.
+	return state.tempo_rng.next_float() * 100.0 < minf(chance, 45.0)
 
 
 ## Percentage knocked off the floor's ante, clamped to a survivable 90%.
