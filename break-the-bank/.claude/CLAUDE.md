@@ -75,12 +75,39 @@ never turn a correctness test red. `tests/simulation/` asserts on the shipped
 content, but only on guardrails — "the game is neither unwinnable nor free",
 not "the win rate is 40%".
 
+## The floors
+
+Each floor grants one system (`Systems`, claimed by `FloorDef.grants`) and the
+system stays for the rest of the run. `docs/FLOORS.md` is the design; the rules
+worth knowing before touching the simulation:
+
+- Gate on `RunState.has_system()`, never on a floor index.
+- A spin does not end when the reels stop. `SimEngine.spin` leaves the run at a
+  decision (`RunState.Decision`); `collect` is what moves the credits. The view
+  animates on `SPIN_RESOLVED` and celebrates on `PAYOUT_CALCULATED`.
+- Every verb is a public `SimEngine` method the automated policy also calls, so
+  a hand-played run and a batch exercise one code path. `clear_policies()` hands
+  them all back for a human.
+- The machine can be wider than the last line drawn on it — a reel bought
+  mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
+  that; do not index a line assuming every reel is standing.
+- Contract and count weight shifts are folded in by `RunState.reel()` rather
+  than written into `weight_shifts`, so tearing a contract up restores the reel
+  without remembering what it changed. Call `mark_reel_dirty()` if you change
+  something outside the weight table.
+
 ## Input and the draft
 
 Input actions are `bb_*` in `project.godot`; add bindings there, never with
 `InputMap` calls at runtime. The draft buys through `SimEngine.buy_offer`, which
 is the same call the headless shop policy makes — keep it that way, or the
 batch stops measuring the game a person plays.
+
+`ControlDeck` is the whole of the machine's controls, rebuilt from the run every
+time the run changes: a control appears on the floor that grants it, and a move
+the simulation would refuse is either absent or visibly barred. It emits intent
+and never touches `RunState`. Add a verb there and in `CasinoRoom._on_deck_action`
+together, or the key and the button drift apart.
 
 `CasinoRoom._advance()` refuses to step while the reels are turning or a draft
 is open. Put guards like that in `_advance()` rather than in `_unhandled_input`,

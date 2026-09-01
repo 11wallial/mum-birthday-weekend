@@ -120,6 +120,13 @@ func _place_rows(scale_up: float) -> void:
 	if hint != null:
 		hint.offset_top = -30.0 * scale_up
 		hint.offset_bottom = -10.0 * scale_up
+		hint.offset_left = -560.0 * scale_up
+	# The callout rides above the deck, so it has to move with the deck's own
+	# scaling rather than stay pinned to a design-resolution offset.
+	var prompt: Control = _prompt_panel
+	if prompt != null:
+		prompt.offset_top = -318.0 * scale_up
+		prompt.offset_bottom = -238.0 * scale_up
 	var gauges: Control = get_node_or_null(^"Gauges") as Control
 	if gauges != null:
 		gauges.offset_left = 22.0 * scale_up

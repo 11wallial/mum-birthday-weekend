@@ -20,6 +20,8 @@ extends Node3D
 @export var setup_path: NodePath = ^"RunSetup"
 @export var touch_bar_path: NodePath = ^"TouchBar"
 @export var room_set_path: NodePath = ^"RoomSet"
+@export var deck_path: NodePath = ^"ControlDeck"
+@export var contract_path: NodePath = ^"ContractPanel"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -34,6 +36,8 @@ var _dressing: RoomDressing
 var _shop: ShopPanel
 var _setup: RunSetupPanel
 var _touch: TouchBar
+var _deck: ControlDeck
+var _contracts: ContractPanel
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
@@ -62,6 +66,8 @@ func _ready() -> void:
 	_shop = get_node_or_null(shop_path) as ShopPanel
 	_setup = get_node_or_null(setup_path) as RunSetupPanel
 	_touch = get_node_or_null(touch_bar_path) as TouchBar
+	_deck = get_node_or_null(deck_path) as ControlDeck
+	_contracts = get_node_or_null(contract_path) as ContractPanel
 	var room_root: Node3D = get_node_or_null(room_set_path) as Node3D
 	if room_root != null:
 		_room_parts = RoomSet.new().build(room_root)
@@ -87,6 +93,11 @@ func _ready() -> void:
 	if _shop != null:
 		_shop.buy_requested.connect(_on_buy_requested)
 		_shop.leave_requested.connect(_on_leave_requested)
+		_shop.market_requested.connect(_on_market_requested)
+	if _deck != null:
+		_deck.action_requested.connect(_on_deck_action)
+	if _contracts != null:
+		_contracts.sign_requested.connect(_on_sign_requested)
 	# The bar reaches the same entry points as the keys it stands in for, so a
 	# tap and a keypress cannot drift apart.
 	if _touch != null:
@@ -102,9 +113,9 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	_current_seed = actual_seed
 	_daily_key = daily_key
 	engine = SimEngine.new()
-	# A human is the shop policy here, so the automatic one is cleared and the
-	# shop stays open until the player leaves it.
-	engine.shop_policy = Callable()
+	# A human is every policy here. An engine still holding its automated ones
+	# would answer the nudge trail and the ladder before the reels had stopped.
+	engine.clear_policies()
 	var bus: EffectBus = engine.get_bus()
 	bus.event_emitted.connect(_on_event)
 	if _slot_view != null:
@@ -117,12 +128,16 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 		_dressing.bind(bus)
 	if _shop != null:
 		_shop.close()
+	if _contracts != null:
+		_contracts.close()
 	_ante_pending = false
 	if record_playtest:
 		_recorder = PlaytestRecorder.new()
 		add_child(_recorder)
 		_recorder.begin(actual_seed)
 	state = engine.start_run(actual_seed, _catalogue.options_for(_profile, ContentDB.shared()))
+	if _deck != null:
+		_deck.bind(state)
 	print("Break the Bank — seed %d (%s)%s" % [
 		actual_seed, SeedBook.to_code(actual_seed),
 		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
@@ -142,9 +157,33 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"bb_camera") and _camera != null:
 		_camera.toggle_view()
 		return
-	# The shop panel consumes its own input while open.
+	# The draft and the back office consume their own input while open.
 	if _shop != null and _shop.is_open():
 		return
+	if _contracts != null and _contracts.is_open():
+		return
+	if state != null and state.phase == RunState.Phase.SPINNING \
+			and not (_slot_view != null and _slot_view.is_busy()):
+		# The number keys reach the reels: hold them between spins, nudge them
+		# while the trail is open. One key per reel, and which of the two it
+		# means is whatever the machine is currently offering — the deck shows
+		# the same thing, so the two can never say different things.
+		for reel: int in mini(state.reel_count(), ShopPanel.MAX_SLOTS):
+			if not event.is_action_pressed(StringName("bb_slot_%d" % (reel + 1))):
+				continue
+			if state.decision == RunState.Decision.NUDGE:
+				engine.nudge(state, reel)
+			elif state.decision == RunState.Decision.NONE:
+				engine.toggle_hold(state, reel)
+			_after_input()
+			return
+		# Doubling is the deliberate press. Space is always the safe one, so a
+		# player tapping through cannot gamble a win away by rhythm.
+		if state.decision == RunState.Decision.GAMBLE \
+				and event.is_action_pressed(&"bb_confirm"):
+			engine.gamble(state)
+			_after_input()
+			return
 	if event.is_action_pressed(&"bb_advance") or event.is_action_pressed(&"bb_confirm"):
 		_advance()
 
@@ -156,6 +195,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_result_judged(result: SlotView3D.Result, payout: int) -> void:
 	if _hud != null and _hud.has_method("mark_result"):
 		_hud.call("mark_result", result, payout)
+	# Only now does the machine offer its decision. The simulation knew what the
+	# board owed before a single reel had stopped; offering it then would ask the
+	# player to nudge symbols they had not been shown.
+	if _deck != null:
+		_deck.set_busy(false)
+		_deck.refresh()
+	_prompt_decision()
 	if _camera == null:
 		return
 	match result:
@@ -184,6 +230,10 @@ func _on_touch_new_run() -> void:
 
 ## Steps the run from a tool or a test, bypassing input. Visual QA uses this.
 func debug_advance() -> void:
+	# A tool driving the run has no hands to sign with, so the office is closed
+	# for it and the first contract taken.
+	if state != null and state.phase == RunState.Phase.SIGNING and _contracts != null:
+		_contracts.close()
 	_advance()
 
 
@@ -256,6 +306,59 @@ func debug_open_setup() -> void:
 		_setup.open(_profile, _catalogue, _current_seed)
 
 
+## Drops the run onto [param floor_index] with everything that floor would have
+## handed over, and enough cash to work with.
+##
+## Visual QA only. Six of the seven systems only appear on floors a real run
+## takes several minutes to reach, and a storyboard that could only ever show
+## floor one was showing the game with six of its mechanics switched off.
+func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
+	if state == null or engine == null:
+		return
+	if _shop != null:
+		_shop.close()
+	if _contracts != null:
+		_contracts.close()
+	if _setup != null:
+		_setup.close()
+	state.floor_index = clampi(floor_index, 1, 7)
+	state.floors_cleared = state.floor_index - 1
+	state.economy.cash = cash
+	state.phase = RunState.Phase.SPINNING
+	engine.begin_floor(state)
+	if _deck != null:
+		_deck.bind(state)
+	_refresh_diegetic()
+
+
+## Fits works and banks a reserve without paying for either. Visual QA only.
+func debug_fit_works(reels: int, rows: int, vault: int) -> void:
+	if state == null:
+		return
+	state.extra_reels = clampi(reels, 0, state.config.max_extra_reels)
+	state.extra_rows = clampi(rows, 0, state.config.max_extra_rows)
+	state.economy.vault = maxi(vault, 0)
+	state.board.resize(state.machine_reels())
+	engine.get_bus().emit_event(EffectBus.Event.WORKS_FITTED, {
+		"kind": "reel", "paid": 0,
+		"reels": state.machine_reels(), "rows": state.scoring_rows(),
+	})
+	if _deck != null:
+		_deck.refresh()
+
+
+## Puts the back office on the table without clearing a floor. Visual QA only.
+func debug_open_contracts() -> void:
+	if state == null or engine == null:
+		return
+	state.grant_system(Systems.CONTRACTS)
+	engine._offer_contracts(state)
+	if not state.contract_offers.is_empty():
+		state.phase = RunState.Phase.SIGNING
+		if _contracts != null:
+			_contracts.open(state)
+
+
 ## Forces a camera framing by [enum CameraController.View] index.
 func debug_set_view(view: int) -> void:
 	if _camera != null:
@@ -269,9 +372,31 @@ func _advance() -> void:
 	# test calling debug_advance() must not be able to step past an open draft.
 	if _shop != null and _shop.is_open():
 		return
+	# The back office is a choice, never a default. Stepping the engine here
+	# would reach the policy fallback and sign the first contract on the table
+	# on the player's behalf.
+	if state.phase == RunState.Phase.SIGNING:
+		if _contracts != null and _contracts.is_open():
+			return
+		# No panel — a tool driving the run headless. Signing the first offer is
+		# the obvious next thing, which is what debug_advance means.
+		engine.sign_contract(state, 0)
+		return
 	# Never let the run outrun the reels: a second press mid-spin would show a
 	# payout for symbols the player has not been shown yet.
 	if _slot_view != null and _slot_view.is_busy():
+		return
+	# A board mid-decision is answered through the deck, or through the safe
+	# default: taking the nudges you have not spent, or collecting a win rather
+	# than doubling it. Stepping the engine here would hand the decision to a
+	# policy that has deliberately been cleared.
+	if state.decision == RunState.Decision.NUDGE:
+		engine.decline_nudges(state)
+		_after_input()
+		return
+	if state.decision == RunState.Decision.GAMBLE:
+		engine.collect(state)
+		_after_input()
 		return
 	if _ante_pending:
 		# The confirmation beat is presentation-only. The simulation settles the
@@ -284,16 +409,31 @@ func _advance() -> void:
 		return
 	if _recorder != null and state.phase == RunState.Phase.SPINNING:
 		_recorder.record_spin(state)
-	engine.step(state)
+	if state.phase == RunState.Phase.SPINNING and state.spins_remaining > 0 \
+			and state.economy.can_afford(state.spin_price()):
+		engine.spin(state)
+	else:
+		engine.step(state)
+	_after_input()
+
+
+## Redraws the deck, the lamps and the prompt after a hand-made move.
+func _after_input() -> void:
+	if _deck != null:
+		_deck.refresh()
+	# The machine carries the same state the deck does. A hold that only lit a
+	# button at the bottom of the screen would leave the player translating
+	# between a panel and the drum it is talking about.
+	if _slot_view != null and state != null:
+		_slot_view.set_holds(state.board.held)
+	_prompt_decision()
 
 
 func _prompt_ante() -> void:
 	_ante_pending = true
-	var floor_def: FloorDef = state.current_floor()
-	if floor_def == null:
+	if state.current_floor() == null:
 		return
-	var ante: int = int(round(float(floor_def.ante)
-			* (1.0 - ArtifactEngine.ante_discount_percent(state) / 100.0)))
+	var ante: int = engine.ante_for(state)
 	var short: int = ante - state.economy.cash
 	var verdict: String = "you are %d short" % short if short > 0 else "you can cover it"
 	_set_prompt("ANTE DUE  %d     CASH %d     %s\n%s" % [
@@ -344,11 +484,25 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.FLOOR_STARTED:
 			FloorMood.apply(StringName(payload.get("environment", &"")),
 					_room_parts, _environment, self)
+		EffectBus.Event.SPIN_STARTED:
+			if _deck != null:
+				_deck.set_busy(true)
 		EffectBus.Event.SHOP_OPENED:
+			# A callout left over from the floor that just ended would sit on
+			# top of the panel the player is being asked to read.
+			_clear_prompt()
 			if _shop != null:
 				_shop.open(state)
 			if _camera != null:
 				_camera.set_view(CameraController.View.ROOM)
+		EffectBus.Event.CONTRACTS_OFFERED:
+			_clear_prompt()
+			if _contracts != null:
+				_contracts.open(state)
+			if _camera != null:
+				_camera.set_view(CameraController.View.ROOM)
+		EffectBus.Event.SYSTEM_GRANTED:
+			_announce_system(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
 		_:
@@ -356,6 +510,8 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	# The sign and the machine's own monitor track the run on every event, so
 	# they can never disagree with the HUD about where the player is.
 	_refresh_diegetic()
+	if _deck != null:
+		_deck.refresh()
 
 
 ## Writes the run's state onto the two surfaces in the world that carry it: the
@@ -409,3 +565,162 @@ func _set_prompt(text: String) -> void:
 
 func _clear_prompt() -> void:
 	_set_prompt("")
+
+
+## Turns a press on the deck into the matching simulation call.
+##
+## Every branch here is one public [SimEngine] method — the same one the
+## automated policy calls — so a hand-played run and a batch exercise one code
+## path rather than two implementations that drift apart.
+func _on_deck_action(action: StringName, index: int) -> void:
+	if state == null or state.is_over():
+		return
+	if _slot_view != null and _slot_view.is_busy():
+		return
+	match action:
+		ControlDeck.SPIN:
+			_advance()
+		ControlDeck.HOLD:
+			_record(action, {"reel": index,
+					"held": engine.toggle_hold(state, index)})
+		ControlDeck.NUDGE:
+			var standing: int = state.board.payout
+			var free: bool = state.board.next_nudge_is_free()
+			if engine.nudge(state, index):
+				_record(action, {"reel": index, "free": free,
+						"gained": state.board.payout - standing})
+		ControlDeck.TAKE:
+			_record(action, {"declined": state.board.nudges})
+			engine.decline_nudges(state)
+		ControlDeck.GAMBLE:
+			var rung: int = state.board.gamble_rung
+			var staked: int = state.board.payout
+			engine.gamble(state)
+			_record(action, {"rung": rung, "staked": staked,
+					"won": state.board.payout > staked})
+		ControlDeck.COLLECT:
+			_record(action, {"payout": state.board.payout,
+					"rung": state.board.gamble_rung})
+			engine.collect(state)
+		ControlDeck.STAKE_UP:
+			if engine.set_stake(state, state.stake + 1):
+				_record(action, {"stake": state.stake})
+		ControlDeck.STAKE_DOWN:
+			if engine.set_stake(state, state.stake - 1):
+				_record(action, {"stake": state.stake})
+		ControlDeck.DEPOSIT:
+			var banked: int = engine.deposit(state, _float_to_bank())
+			if banked > 0:
+				_record(action, {"amount": banked, "vault": state.economy.vault})
+		ControlDeck.WITHDRAW:
+			var taken: int = engine.withdraw(state, state.economy.vault)
+			if taken > 0:
+				_record(action, {"amount": taken})
+		ControlDeck.BUY_ROW:
+			var row_price: int = engine.works_price(state, false)
+			if engine.buy_row(state):
+				_record(action, {"paid": row_price, "rows": state.scoring_rows()})
+		ControlDeck.BUY_REEL:
+			var reel_price: int = engine.works_price(state, true)
+			if engine.buy_reel(state):
+				_record(action, {"paid": reel_price, "reels": state.machine_reels()})
+		ControlDeck.LAUNDER:
+			var price: int = HeatEngine.launder_price(state)
+			if engine.launder(state):
+				_record(action, {"paid": price, "heat": state.heat})
+		_:
+			pass
+	if _deck != null:
+		_deck.refresh()
+	_prompt_decision()
+
+
+## How much the BANK button puts away.
+##
+## Everything the collateral can still use, and never the last of the purse:
+## a button that banked the float down to nothing would end runs by itself, and
+## the vault is meant to be a bet, not a trap.
+func _float_to_bank() -> int:
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null:
+		return 0
+	var useful: int = int(round(float(floor_def.ante)
+			* state.config.vault_collateral_antes * state.config.vault_collateral_cap))
+	var keep: int = maxi(state.spin_price() * 3, int(round(float(floor_def.ante) * 0.1)))
+	return mini(state.economy.cash - keep, maxi(0, useful - state.economy.vault))
+
+
+func _record(kind: StringName, detail: Dictionary) -> void:
+	if _recorder != null and state != null:
+		_recorder.record_move(state, kind, detail)
+
+
+func _on_sign_requested(index: int) -> void:
+	if state == null or state.phase != RunState.Phase.SIGNING:
+		return
+	var passed: Array[String] = []
+	for i: int in state.contract_offers.size():
+		if i != index:
+			passed.append(String(state.contract_offers[i].id))
+	var signed: StringName = state.contract_offers[index].id \
+			if index >= 0 and index < state.contract_offers.size() else &""
+	if engine.sign_contract(state, index) and _contracts != null:
+		_record(&"sign", {"contract": String(signed), "passed": passed})
+		_contracts.close()
+		if _camera != null:
+			_camera.set_view(CameraController.View.MACHINE)
+
+
+func _on_market_requested(action: StringName, index: int) -> void:
+	if state == null or state.phase != RunState.Phase.SHOPPING:
+		return
+	match action:
+		ShopPanel.REROLL:
+			var price: int = state.reroll_price()
+			if engine.reroll_shop(state):
+				_record(action, {"paid": price})
+		ShopPanel.SLATE:
+			var wanted: String = String(state.shop_offers[index].id) \
+					if index >= 0 and index < state.shop_offers.size() else ""
+			if engine.buy_on_slate(state, index):
+				_record(action, {"artifact": wanted, "debt": state.economy.debt})
+		ShopPanel.SELL:
+			var refund: int = engine.sell(state, index)
+			if refund > 0:
+				_record(action, {"refund": refund})
+		_:
+			pass
+	if _shop != null:
+		_shop.refresh()
+
+
+## Says what the machine is waiting for, in the middle of the screen, whenever
+## that is not simply "pull the handle".
+func _prompt_decision() -> void:
+	if state == null or _ante_pending:
+		return
+	if _slot_view != null and _slot_view.is_busy():
+		return
+	match state.decision:
+		RunState.Decision.NUDGE:
+			# Said once, on the floor that grants it. The buttons carry the
+			# count, the cost and what each nudge would bring down, so repeating
+			# it across the machine's face every time is a banner, not a hint.
+			if state.floor_index <= 1 and state.spins_taken <= 3:
+				var board: SpinBoard = state.board
+				_set_prompt("NUDGE — %d left.  Each paid nudge costs a spin."
+						% board.nudges)
+			else:
+				_clear_prompt()
+		RunState.Decision.GAMBLE:
+			_set_prompt("")
+		_:
+			_clear_prompt()
+
+
+## Puts a newly granted system on screen, once, as the floor opens.
+func _announce_system(payload: Dictionary) -> void:
+	_set_prompt("%s\n%s\n%s" % [
+		String(payload.get("title", "")),
+		String(payload.get("brief", "")),
+		TouchBar.hint("SPACE to begin", "TAP to begin")])

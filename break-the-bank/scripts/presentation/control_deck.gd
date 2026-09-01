@@ -27,12 +27,17 @@ const BUY_ROW: StringName = &"buy_row"
 const BUY_REEL: StringName = &"buy_reel"
 const LAUNDER: StringName = &"launder"
 
-## Reel buttons sit above the action row so the two never compete for a thumb.
+## Reel buttons sit above the action row so the two never compete for a thumb,
+## and the standing controls — the stake, the vault, the works — sit in a row of
+## their own above both. By floor seven there are eight of them, and a single
+## row would either overflow a phone or squeeze the one button that matters.
 const REEL_HEIGHT: float = 74.0
 const ACTION_HEIGHT: float = 58.0
+const EXTRA_HEIGHT: float = 44.0
 
 var _reels: HBoxContainer
 var _actions: HBoxContainer
+var _extras: HBoxContainer
 var _status: HBoxContainer
 var _state: RunState
 var _scale: float = 1.0
@@ -45,6 +50,7 @@ func _ready() -> void:
 	_status = get_node_or_null(^"Root/Column/Status") as HBoxContainer
 	_reels = get_node_or_null(^"Root/Column/Reels") as HBoxContainer
 	_actions = get_node_or_null(^"Root/Column/Actions") as HBoxContainer
+	_extras = get_node_or_null(^"Root/Column/Extras") as HBoxContainer
 	_fit()
 	get_viewport().size_changed.connect(_fit)
 
@@ -77,10 +83,11 @@ func _fit() -> void:
 ## in — and reconciling that in place is how a button ends up wired to the move
 ## it used to mean.
 func refresh() -> void:
-	if _reels == null or _actions == null or _status == null:
+	if _reels == null or _actions == null or _status == null or _extras == null:
 		return
 	_clear(_status)
 	_clear(_reels)
+	_clear(_extras)
 	_clear(_actions)
 	if _state == null or _state.is_over():
 		return
@@ -164,27 +171,25 @@ func _build_actions() -> void:
 	_action(SPIN, "SPIN", "%d cr" % _state.spin_price(),
 			_state.economy.can_afford(_state.spin_price()), true)
 	if _state.has_system(Systems.STAKE):
-		_action(STAKE_DOWN, "STAKE −", "", _state.stake > 1, false)
-		_action(STAKE_UP, "STAKE +", "", _state.stake < _state.config.max_stake, false)
+		_extra(STAKE_DOWN, "STAKE −", "", _state.stake > 1)
+		_extra(STAKE_UP, "STAKE +", "", _state.stake < _state.config.max_stake)
 	if _state.has_system(Systems.VAULT):
-		_action(DEPOSIT, "BANK", "lock the float",
-				_state.economy.cash > 0, false)
-		_action(WITHDRAW, "BREAK", "-%d%%" % int(_state.config.vault_break_percent),
-				_state.economy.vault > 0, false)
+		_extra(DEPOSIT, "BANK", "lock the float", _state.economy.cash > 0)
+		_extra(WITHDRAW, "BREAK", "−%d%%" % int(_state.config.vault_break_percent),
+				_state.economy.vault > 0)
 	if _state.has_system(Systems.EXPANSION):
 		_works_action(BUY_ROW, "+ ROW", _state.extra_rows, _state.config.max_extra_rows)
 		_works_action(BUY_REEL, "+ REEL", _state.extra_reels, _state.config.max_extra_reels)
 	if _state.has_system(Systems.HEAT) and _state.heat > 0.0:
 		var price: int = HeatEngine.launder_price(_state)
-		_action(LAUNDER, "A WORD", "%d cr" % price,
-				_state.economy.can_afford(price), false)
+		_extra(LAUNDER, "A WORD", "%d cr" % price, _state.economy.can_afford(price))
 
 
 func _works_action(action: StringName, label: String, owned: int, ceiling: int) -> void:
 	if owned >= ceiling:
 		return
 	var price: int = _price_for(action)
-	_action(action, label, "%d cr" % price, _state.economy.can_afford(price), false)
+	_extra(action, label, "%d cr" % price, _state.economy.can_afford(price))
 
 
 ## Mirrors [method SimEngine.works_price] without holding an engine: the deck
@@ -213,7 +218,9 @@ func _chip(caption: String, value: String, tint: Color) -> void:
 func _reel_button(action: StringName, index: int, label: String,
 		symbol: SymbolDef, note: String, enabled: bool, lit: bool) -> void:
 	var button: Button = _new_button(enabled)
-	button.custom_minimum_size = Vector2(112.0, REEL_HEIGHT) * _scale
+	button.custom_minimum_size = Vector2(
+			maxf(112.0 * _scale, _width_of(note, 11.0) + 46.0 * _scale),
+			REEL_HEIGHT * _scale)
 	button.pressed.connect(func() -> void: action_requested.emit(action, index))
 
 	var column: VBoxContainer = VBoxContainer.new()
@@ -250,7 +257,12 @@ func _reel_button(action: StringName, index: int, label: String,
 func _action(action: StringName, label: String, note: String,
 		enabled: bool, primary: bool) -> void:
 	var button: Button = _new_button(enabled)
-	button.custom_minimum_size = Vector2(0.0, ACTION_HEIGHT) * _scale
+	# A Button is not a container, so nothing sizes it around the labels laid
+	# out inside it. Without measuring them the whole row collapsed to zero
+	# width and every control printed on top of its neighbour.
+	button.custom_minimum_size = Vector2(
+			maxf(_width_of(label, 15.0), _width_of(note, 11.0)) + 34.0 * _scale,
+			ACTION_HEIGHT * _scale)
 	if primary:
 		button.add_theme_stylebox_override(&"normal", UiSkin.button(&"pressed"))
 	button.pressed.connect(func() -> void: action_requested.emit(action, 0))
@@ -271,6 +283,30 @@ func _action(action: StringName, label: String, note: String,
 		column.add_child(caption)
 	button.add_child(column)
 	_actions.add_child(button)
+
+
+## How wide [param text] draws at [param size], in the deck's own scale.
+func _width_of(text: String, size: float) -> float:
+	if text.is_empty():
+		return 0.0
+	var font: Font = ThemeDB.fallback_font
+	if font == null:
+		return float(text.length()) * size * 0.62 * _scale
+	return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0,
+			int(roundf(size * _scale))).x
+
+
+## A standing control: the stake, the vault, the works, a quiet word. Smaller
+## than the spin, and always in the same row, so the eye learns where they live.
+func _extra(action: StringName, label: String, note: String, enabled: bool) -> void:
+	var button: Button = _new_button(enabled)
+	var caption: String = label if note.is_empty() else "%s   %s" % [label, note]
+	button.text = caption
+	button.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
+	button.custom_minimum_size = Vector2(
+			_width_of(caption, 12.0) + 26.0 * _scale, EXTRA_HEIGHT * _scale)
+	button.pressed.connect(func() -> void: action_requested.emit(action, 0))
+	_extras.add_child(button)
 
 
 func _new_button(enabled: bool) -> Button:

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"gamble_won"
+file_name = "logic/gamble_won.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(360, 560)
+frequency_notes = "One rung up: a bright doubled chime, higher than the last."
+pitch_jitter = Vector2(1.0, 1.06)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -1.0
+positional = false
+loops = false
+max_voices = 2
+priority = 9
+duck_music_db = 3.0
+fallback = 8
+fallback_hz = 660.0

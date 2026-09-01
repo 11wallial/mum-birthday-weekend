@@ -54,6 +54,24 @@ func record_purchase(state: RunState, artifact: ArtifactDef, price: int) -> void
 	})
 
 
+## One of the new verbs, with enough context to read the decision back.
+##
+## A spin log was the whole record when a spin was the whole game. Now a floor
+## can be lost to a nudge nobody should have paid for, a rung climbed once too
+## often, or a contract signed without reading the second half — and none of
+## that shows up in a list of spins.
+func record_move(state: RunState, kind: StringName, detail: Dictionary = {}) -> void:
+	var entry: Dictionary = {
+		"kind": String(kind),
+		"floor": state.floor_index,
+		"spins_remaining": state.spins_remaining,
+		"cash": state.economy.cash,
+		"dwell_ms": _take_dwell(),
+	}
+	entry.merge(detail)
+	_choices.append(entry)
+
+
 ## What was left on the table matters as much as what was taken.
 func record_leave_shop(state: RunState) -> void:
 	var passed: Array[String] = []

@@ -24,6 +24,11 @@ var _mounts: Array[Node3D] = []
 ## Every "Drive" node across the fitted modules, turned while the reels spin.
 var _drives: Array[Node3D] = []
 var _lever: Node3D
+## The four lamps of the gamble ladder, bottom rung first.
+var _ladder: Array[Node3D] = []
+## The two dials on the crown: the wager, and the House's attention.
+var _gauge_stake: Node3D
+var _gauge_count: Node3D
 var _odds: Label3D
 var _readout: Label3D
 var _particles: CPUParticles3D
@@ -31,6 +36,12 @@ var _light: OmniLight3D
 var _audio: AudioDirector
 var _bus: EffectBus
 var _pending: Array[Dictionary] = []
+## The payout actually banked for the spin in progress, or -1 while the machine
+## still owes the player a decision about it.
+var _banked: int = -1
+## Reels the player has locked, and how many nudges the board is owed. Held so
+## the lamps can be redrawn without asking the simulation anything.
+var _held: Array[bool] = []
 ## How much a symbol has to be worth before it lights up at all, and the value
 ## at which its backlight is at full strength. Below the floor a symbol is just
 ## printed on the strip; a machine where everything glows says nothing about
@@ -89,6 +100,10 @@ func _ready() -> void:
 	# The machine's own gearing turns on a spin alongside any bought hardware:
 	# a train of cogs sitting dead above turning reels is scenery, not works.
 	_drives.assign(parts.get("crown", []))
+	_ladder.assign(parts.get("ladder", []))
+	var gauges: Array = parts.get("gauges", [])
+	_gauge_stake = (gauges[0] as Node3D) if gauges.size() > 0 else null
+	_gauge_count = (gauges[1] as Node3D) if gauges.size() > 1 else null
 	_odds = parts.get("odds", null) as Label3D
 	_readout = parts.get("readout", null) as Label3D
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
@@ -113,11 +128,31 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
 		EffectBus.Event.SPIN_STARTED:
 			_pending.clear()
+			_banked = -1
 			_busy = true
+			_clear_lamps()
 		EffectBus.Event.SYMBOL_LANDED:
 			_pending.append(payload)
-		EffectBus.Event.PAYOUT_CALCULATED:
+		EffectBus.Event.SPIN_RESOLVED:
+			# The reels turn on this, not on the payout. A board that owes the
+			# player nudges is never banked, so waiting for the credits to move
+			# would leave the drums standing still for the whole decision.
 			_play_spin(int(payload.get("payout", 0)), float(payload.get("multiplier", 1.0)))
+		EffectBus.Event.NUDGES_AWARDED:
+			_offer_nudges(int(payload.get("nudges", 0)))
+		EffectBus.Event.REEL_NUDGED:
+			_drop_reel(int(payload.get("reel", 0)),
+					payload.get("column", {}) as Dictionary,
+					int(payload.get("nudges", 0)))
+		EffectBus.Event.WORKS_FITTED:
+			_fit_works(int(payload.get("reels", 3)), int(payload.get("rows", 1)))
+		EffectBus.Event.PAYOUT_CALCULATED:
+			_banked = int(payload.get("payout", 0))
+			# Landed already: the decision was made after the drums stopped, so
+			# the celebration is owed now rather than at the end of an animation
+			# that has already finished.
+			if not _busy:
+				_celebrate(_banked, float(payload.get("multiplier", 1.0)))
 		EffectBus.Event.FLOOR_STARTED:
 			var spins: int = maxi(1, int(payload.get("spins", 1)))
 			_par = maxf(1.0, float(payload.get("ante", 0)) / float(spins))
@@ -249,7 +284,13 @@ func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
 func _finish_spin(payout: int, multiplier: float) -> void:
 	_busy = false
 	_set_odds(multiplier)
-	_celebrate(payout, multiplier)
+	if _banked >= 0:
+		_celebrate(_banked, multiplier)
+		return
+	# The board is standing but not banked: the machine owes a decision. Say how
+	# the line reads so the controls can open, and hold the coins and the bells
+	# back until the player has actually taken the money.
+	result_judged.emit(_judge(payout), payout)
 
 
 ## Snaps the arm down and lets it drift back up. The throw is deliberately
@@ -294,6 +335,165 @@ func _set_odds(multiplier: float) -> void:
 	var flash: Tween = create_tween()
 	flash.tween_property(_odds, "modulate", Color(1.0, 0.95, 0.7), 0.08)
 	flash.tween_property(_odds, "modulate", Color(0.72, 0.68, 0.58), 0.45)
+
+
+## Lights the ladder up to [param rung], and leaves the one above it waiting.
+func _light_ladder(rung: int) -> void:
+	for i: int in _ladder.size():
+		var lit: bool = i < rung
+		var pending: bool = i == rung
+		_lamp_energy(_ladder[i], 3.2 if lit else (0.9 if pending else 0.0))
+
+
+## Flares the rung just won, or drops the whole ladder at once.
+func _resolve_ladder(won: bool, rung: int) -> void:
+	if not won:
+		for lamp: Node3D in _ladder:
+			_lamp_energy(lamp, 0.0)
+		return
+	_light_ladder(rung)
+	if rung <= 0 or rung > _ladder.size():
+		return
+	var lamp: MeshInstance3D = _ladder[rung - 1] as MeshInstance3D
+	var flare: Tween = create_tween()
+	flare.tween_method(func(energy: float) -> void: _lamp_energy(lamp, energy),
+			9.0, 3.2, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+## Turns a dial to [param value] in 0..1, and tints it as it climbs.
+func _set_gauge(pivot: Node3D, value: float, hot: Color) -> void:
+	if pivot == null:
+		return
+	var turned: float = MachineFrame.GAUGE_SWEEP * (1.0 - 2.0 * clampf(value, 0.0, 1.0))
+	var sweep: Tween = create_tween()
+	sweep.tween_property(pivot, "rotation:z", turned, 0.4) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var needle: MeshInstance3D = pivot.get_child(0) as MeshInstance3D
+	if needle == null:
+		return
+	var material: StandardMaterial3D = needle.material_override as StandardMaterial3D
+	if material != null:
+		material.emission = Materials.SIGN.lerp(hot, clampf(value, 0.0, 1.0))
+
+
+func _lamp_energy(lamp: Node3D, energy: float) -> void:
+	var mesh: MeshInstance3D = lamp as MeshInstance3D
+	if mesh == null:
+		return
+	var material: StandardMaterial3D = mesh.material_override as StandardMaterial3D
+	if material == null:
+		return
+	material.emission_enabled = energy > 0.0
+	material.emission_energy_multiplier = energy
+
+
+## Lights the hold lamp under every locked reel.
+func set_holds(held: Array) -> void:
+	_held = []
+	for value: Variant in held:
+		_held.append(bool(value))
+	for i: int in _reels.size():
+		_set_lamp(_reels[i], ^"HoldLamp", Color(1.0, 0.66, 0.22),
+				2.4 if i < _held.size() and _held[i] else 0.0)
+
+
+## Raises the chevron over every reel the trail can still move.
+func _offer_nudges(nudges: int) -> void:
+	for i: int in _reels.size():
+		var arrow: MeshInstance3D = _reels[i].get_node_or_null(^"NudgeArrow") as MeshInstance3D
+		if arrow == null:
+			continue
+		arrow.visible = nudges > 0
+		if not arrow.visible:
+			continue
+		# A slow bob rather than a flash: the arrow has to read as an invitation
+		# the player can take their time over, because taking it costs a spin.
+		var bob: Tween = create_tween().set_loops(0)
+		bob.tween_property(arrow, "position:y", 0.56, 0.5) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		bob.tween_property(arrow, "position:y", 0.5, 0.5) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Rolls one drum down a stop, then repaints it with what now stands on it.
+func _drop_reel(index: int, column: Dictionary, nudges_left: int) -> void:
+	if index < 0 or index >= _reels.size():
+		return
+	var reel: Node3D = _reels[index]
+	if _audio != null:
+		_audio.play_at(&"reel_nudge")
+	var roll: Tween = create_tween()
+	roll.tween_property(reel, "rotation:x",
+			reel.rotation.x + MachineFrame.BAND_ANGLE, 0.22) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	roll.tween_callback(func() -> void:
+		reel.rotation.x = 0.0
+		if not column.is_empty():
+			_show_symbol(reel, column))
+	if nudges_left <= 0:
+		roll.tween_callback(_offer_nudges.bind(0))
+
+
+## Widens the window when the works are fitted, and dims the rows that still do
+## not pay so the ones the player has bought are the ones that read as live.
+func _fit_works(reels: int, rows: int) -> void:
+	if reels != _reels.size():
+		_reels.assign(MachineFrame.new().rebuild_window(self, reels))
+		# The drums were rebuilt, so whatever was standing on them is gone; the
+		# next spin repaints them.
+		for landed: Dictionary in _pending:
+			var index: int = int(landed.get("reel", -1))
+			if index >= 0 and index < _reels.size():
+				_show_symbol(_reels[index], landed)
+	if _audio != null:
+		_audio.play(&"works_fitted")
+	_light_rows(rows)
+
+
+## Marks which of the three rows are paying, on the drums and on the window.
+func _light_rows(rows: int) -> void:
+	for reel: Node3D in _reels:
+		for i: int in 3:
+			var row: Sprite3D = reel.get_node_or_null(
+					NodePath(["Above", "Payline", "Below"][i])) as Sprite3D
+			if row == null:
+				continue
+			row.modulate = (Color(1, 1, 1, 1) if _row_pays(i, rows)
+					else Color(0.62, 0.6, 0.58))
+	for i: int in 3:
+		var marks: Node3D = get_node_or_null(
+				NodePath("Bezel/Paylines/Row%d" % i)) as Node3D
+		if marks == null:
+			continue
+		for mark: Node in marks.get_children():
+			_lamp_energy(mark as Node3D,
+					MachineFrame.PAYLINE_ENERGY if _row_pays(i, rows) else 0.0)
+
+
+## Rows are bought from the middle outward: the payline, then the band above it,
+## then the band below.
+static func _row_pays(row: int, rows: int) -> bool:
+	return row == 1 or (row == 0 and rows >= 2) or (row == 2 and rows >= 3)
+
+
+func _clear_lamps() -> void:
+	for reel: Node3D in _reels:
+		_set_lamp(reel, ^"HoldLamp", Color(1.0, 0.66, 0.22), 0.0)
+		var arrow: Node3D = reel.get_node_or_null(^"NudgeArrow") as Node3D
+		if arrow != null:
+			arrow.visible = false
+
+
+func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void:
+	var lamp: MeshInstance3D = reel.get_node_or_null(path) as MeshInstance3D
+	if lamp == null:
+		return
+	var material: StandardMaterial3D = lamp.material_override as StandardMaterial3D
+	if material == null:
+		return
+	material.emission_enabled = energy > 0.0
+	material.emission = tint
+	material.emission_energy_multiplier = energy
 
 
 ## Puts the run's debt on the machine's own monitor, in phosphor green.

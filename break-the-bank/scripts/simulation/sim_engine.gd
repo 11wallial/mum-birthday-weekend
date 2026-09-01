@@ -84,6 +84,23 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	works_policy = Callable(SimEngine, "default_works_policy")
 
 
+## Hands every decision back to whoever is calling.
+##
+## A human is the policy when a person is playing, and an engine still holding
+## its automated ones would answer the nudge trail and the ladder before the
+## reels had stopped turning.
+func clear_policies() -> void:
+	shop_policy = Callable()
+	nudge_policy = Callable()
+	gamble_policy = Callable()
+	stake_policy = Callable()
+	hold_policy = Callable()
+	contract_policy = Callable()
+	vault_policy = Callable()
+	works_policy = Callable()
+	launder_policy = Callable()
+
+
 func get_bus() -> EffectBus:
 	return _bus
 
@@ -514,6 +531,9 @@ func _observe_heat(state: RunState, payout: int) -> void:
 		"name": HeatEngine.measure_name(after),
 		"changed": after != before,
 		"launder_price": HeatEngine.launder_price(state),
+		# The pit boss puts the ante up mid-floor, so the number every readout
+		# is showing has to travel with the event that changed it.
+		"ante": ante_for(state),
 	})
 
 
@@ -712,6 +732,18 @@ func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> voi
 	state.phase = phase
 	state.end_reason = reason
 	_bus.emit_event(EffectBus.Event.RUN_ENDED, state.snapshot())
+
+
+## What the floor in front of the player actually costs, with every contract
+## clause and everything the House has added since the floor opened.
+##
+## Public because the interface has to name the same number the simulation will
+## charge. It used to work it out again from the floor's authored ante and a
+## discount, which meant a contract or a pit boss left the prompt quoting a
+## price nobody was going to be charged.
+func ante_for(state: RunState) -> int:
+	var floor_def: FloorDef = state.current_floor()
+	return _ante_for(state, floor_def) if floor_def != null else 0
 
 
 func _ante_for(state: RunState, floor_def: FloorDef) -> int:

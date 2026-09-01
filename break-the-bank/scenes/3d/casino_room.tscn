@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_bar.tscn" id="10_touch"]
 [ext_resource type="PackedScene" path="res://scenes/ui/film_overlay.tscn" id="11_film"]
+[ext_resource type="PackedScene" path="res://scenes/ui/control_deck.tscn" id="12_deck"]
+[ext_resource type="PackedScene" path="res://scenes/ui/contract_panel.tscn" id="13_contracts"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -74,3 +76,7 @@ layer = 4
 
 [node name="TouchBar" parent="." instance=ExtResource("10_touch")]
 layer = 5
+
+[node name="ControlDeck" parent="." instance=ExtResource("12_deck")]
+
+[node name="ContractPanel" parent="." instance=ExtResource("13_contracts")]

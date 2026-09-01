@@ -8,6 +8,12 @@ extends CanvasLayer
 
 signal buy_requested(index: int)
 signal leave_requested()
+## Emitted for the market's own moves, once the floor that opens it is past.
+signal market_requested(action: StringName, index: int)
+
+const REROLL: StringName = &"reroll"
+const SLATE: StringName = &"slate"
+const SELL: StringName = &"sell"
 
 ## Number keys past this many offers are ignored; the shop never rolls more.
 const MAX_SLOTS: int = 5
@@ -16,11 +22,15 @@ const MAX_SLOTS: int = 5
 @export var title_path: NodePath = ^"Panel/Rows/Title"
 @export var footer_path: NodePath = ^"Panel/Rows/Footer"
 @export var leave_button_path: NodePath = ^"Panel/Rows/Leave"
+## The market's own row. A run can own twenty artifacts by floor six and every
+## one of them is sellable, so the row scrolls rather than overflowing the panel.
+@export var market_path: NodePath = ^"Panel/Rows/MarketScroll/Market"
 
 var _rows: VBoxContainer
 var _title: Label
 var _footer: Label
 var _leave: Button
+var _market: HBoxContainer
 var _state: RunState
 var _open: bool = false
 ## Type scale, matched to the window the same way the HUD's is.
@@ -35,6 +45,7 @@ func _ready() -> void:
 	# The button is always present rather than touch-only: a visible exit is
 	# clearer than a documented one on every device.
 	_leave = get_node_or_null(leave_button_path) as Button
+	_market = get_node_or_null(market_path) as HBoxContainer
 	if _leave != null:
 		_leave.pressed.connect(_on_leave_pressed)
 		UiSkin.dress_button(_leave)
@@ -96,11 +107,57 @@ func _redraw() -> void:
 		_title.add_theme_color_override(&"font_color", UiSkin.AMBER)
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
+	_draw_market()
 	if _footer != null:
 		var offers: int = maxi(_state.shop_offers.size(), 1)
 		_footer.text = TouchBar.hint(
 				"1-%d or click to buy     SPACE / Q to leave" % offers,
 				"Tap an offer to buy")
+
+
+## The market's own row: a reroll, and everything the player already owns,
+## priced to sell. Absent entirely before the floor that opens the market, so
+## the draft on floor one is still just a draft.
+func _draw_market() -> void:
+	if _market == null:
+		return
+	for child: Node in _market.get_children():
+		_market.remove_child(child)
+		child.queue_free()
+	var open_for_business: bool = _state.has_system(Systems.MARKET)
+	var scroller: Control = _market.get_parent() as Control
+	if scroller != null:
+		scroller.visible = open_for_business
+	if not open_for_business:
+		return
+	var reroll_price: int = _state.reroll_price()
+	_market.add_child(_chip("REROLL  %d cr" % reroll_price,
+			_state.economy.can_afford(reroll_price), UiSkin.AMBER,
+			func() -> void: market_requested.emit(REROLL, 0)))
+	for i: int in _state.owned.size():
+		var artifact: ArtifactDef = _state.owned[i]
+		var floor_def: FloorDef = _state.current_floor()
+		var worth: int = _state.economy.price_of(artifact, _state.config,
+				_state.floors_cleared, floor_def.ante if floor_def != null else 0)
+		var refund: int = maxi(1, int(floor(float(worth)
+				* _state.config.sellback_percent / 100.0)))
+		var index: int = i
+		_market.add_child(_chip("SELL %s  +%d" % [artifact.display_name, refund],
+				true, UiSkin.INK_MUTED,
+				func() -> void: market_requested.emit(SELL, index)))
+
+
+func _chip(text: String, enabled: bool, tint: Color, pressed: Callable) -> Button:
+	var button: Button = Button.new()
+	UiSkin.dress_button(button)
+	button.text = text
+	button.disabled = not enabled
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override(&"font_size", int(roundf(13.0 * _scale)))
+	button.add_theme_color_override(&"font_color", tint if enabled else UiSkin.DENIED)
+	button.custom_minimum_size = Vector2(0.0, 40.0 * _scale)
+	button.pressed.connect(pressed)
+	return button
 
 
 ## One offer, laid out rather than padded into a single string.
@@ -170,7 +227,23 @@ func _build_row(index: int) -> Control:
 	# The button has to be told how tall its own contents are: a Button is not a
 	# container, so nothing else will size it around them.
 	button.custom_minimum_size = Vector2(0.0, 58.0 * _scale)
-	return button
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if not _state.has_system(Systems.MARKET):
+		return button
+
+	# The slate sits beside the price, not inside the buy button: putting a
+	# second control inside the first is how a tap to buy ends up signing for
+	# something instead.
+	var pair: HBoxContainer = HBoxContainer.new()
+	pair.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+	pair.add_child(button)
+	var owed: int = maxi(1, int(ceil(float(price)
+			* (1.0 + _state.config.slate_markup_percent / 100.0))))
+	var slate: Button = _chip("SLATE\n%d owed" % owed, true, UiSkin.DENIED,
+			func() -> void: market_requested.emit(SLATE, index))
+	slate.custom_minimum_size = Vector2(112.0, 58.0) * _scale
+	pair.add_child(slate)
+	return pair
 
 
 ## The icon for the symbol an artifact singles out, or null if it applies to

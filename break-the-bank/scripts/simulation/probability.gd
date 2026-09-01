@@ -93,12 +93,17 @@ static func spin_band(reel: Array[ReelEntry], rng: RngStream) -> Array[SymbolDef
 
 
 ## Classifies a line. Wilds join whichever group they can make largest.
+##
+## A reel with nothing standing on it — a drum bolted on mid-floor, before the
+## next spin has drawn for it — counts for nothing rather than crashing the
+## scorer. The machine can genuinely be wider than the last line drawn on it.
 static func detect_pattern(line: Array[SymbolDef]) -> Pattern:
-	if line.size() < 2:
+	var standing: Array[SymbolDef] = drawn(line)
+	if standing.size() < 2:
 		return Pattern.NONE
 	var wilds: int = 0
 	var counts: Dictionary = {}
-	for symbol: SymbolDef in line:
+	for symbol: SymbolDef in standing:
 		if symbol.is_wild:
 			wilds += 1
 			continue
@@ -109,23 +114,32 @@ static func detect_pattern(line: Array[SymbolDef]) -> Pattern:
 	for key: StringName in counts:
 		best = maxi(best, int(counts[key]))
 	best += wilds
-	if wilds == line.size():
-		best = line.size()
+	if wilds == standing.size():
+		best = standing.size()
 
-	if best >= line.size():
+	if best >= standing.size():
 		return Pattern.JACKPOT
 	if best >= 3:
 		return Pattern.TRIPLE
 	if best == 2:
 		return Pattern.PAIR
-	if counts.size() == line.size() and not has_curse(line):
+	if counts.size() == standing.size() and not has_curse(standing):
 		return Pattern.CLEAN_SWEEP
 	return Pattern.NONE
 
 
+## The symbols actually standing on a line, with any empty reel dropped.
+static func drawn(line: Array[SymbolDef]) -> Array[SymbolDef]:
+	var standing: Array[SymbolDef] = []
+	for symbol: SymbolDef in line:
+		if symbol != null:
+			standing.append(symbol)
+	return standing
+
+
 static func has_curse(line: Array[SymbolDef]) -> bool:
 	for symbol: SymbolDef in line:
-		if symbol.is_curse:
+		if symbol != null and symbol.is_curse:
 			return true
 	return false
 

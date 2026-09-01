@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"works_fitted"
+file_name = "mechanical/works_fitted.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(500, 900)
+frequency_notes = "Spanner on a bolt, a housing dropping onto its seat, and a motor picking up the new load."
+pitch_jitter = Vector2(0.98, 1.03)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -1.0
+positional = true
+loops = false
+max_voices = 1
+priority = 9
+duck_music_db = 2.0
+fallback = 7
+fallback_hz = 150.0

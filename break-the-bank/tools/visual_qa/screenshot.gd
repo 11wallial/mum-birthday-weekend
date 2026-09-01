@@ -57,6 +57,18 @@ func _initialize() -> void:
 		_shots.append({"name": "04b_to_draft_%d" % i, "action": "until_draft"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
 	_shots.append({"name": "06_run_setup", "action": "setup"})
+	# Six of the seven systems live on floors a real run takes minutes to reach.
+	# A storyboard that stopped at floor one was checking the game with most of
+	# its mechanics switched off, so the rest are jumped to directly.
+	_shots.append({"name": "07_stake_floor", "action": "floor:3"})
+	_shots.append({"name": "07b_stake_spin", "action": "spin"})
+	_shots.append({"name": "08_vault_floor", "action": "floor:4"})
+	_shots.append({"name": "09_back_office", "action": "contracts"})
+	_shots.append({"name": "10_engine_room", "action": "floor:6"})
+	_shots.append({"name": "10b_works_fitted", "action": "works"})
+	_shots.append({"name": "10c_wide_machine_spin", "action": "spin"})
+	_shots.append({"name": "11_the_house", "action": "floor:7"})
+	_shots.append({"name": "11b_counted", "action": "spin"})
 
 
 func _process(delta: float) -> bool:
@@ -88,6 +100,10 @@ func _process(delta: float) -> bool:
 func _apply(action: String) -> void:
 	if _root_node == null:
 		return
+	if action.begins_with("floor:"):
+		if _root_node.has_method("debug_jump_to_floor"):
+			_root_node.call("debug_jump_to_floor", int(action.split(":")[1]), 4000)
+		return
 	match action:
 		"until_draft":
 			# Advance only while the draft is closed; once it opens, hold.
@@ -117,6 +133,12 @@ func _apply(action: String) -> void:
 		"setup":
 			if _root_node.has_method("debug_open_setup"):
 				_root_node.call("debug_open_setup")
+		"contracts":
+			if _root_node.has_method("debug_open_contracts"):
+				_root_node.call("debug_open_contracts")
+		"works":
+			if _root_node.has_method("debug_fit_works"):
+				_root_node.call("debug_fit_works", 2, 2, 3000)
 		_:
 			pass
 

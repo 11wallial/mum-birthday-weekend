@@ -32,6 +32,13 @@ const REEL_Z: float = 0.3
 ## Modules are authored around a 0.26m bracket; at that size they read as
 ## trinkets pinned to the frame rather than as hardware fitted to it.
 const MOUNT_SCALE: float = 1.25
+## Rungs on the gamble ladder, matching the length of the odds table.
+const LADDER_RUNGS: int = 4
+## Angle a dial's needle rests at when its value is zero, and the sweep it turns
+## through at full scale. Anticlockwise, the way a pressure gauge reads.
+const GAUGE_SWEEP: float = 2.1
+## Brightness of the mark beside a row that pays.
+const PAYLINE_ENERGY: float = 2.6
 
 var _root: Node3D
 
@@ -39,12 +46,12 @@ var _root: Node3D
 ## Constructs the machine under [param root] and returns the nodes the view
 ## drives, keyed [code]reels[/code], [code]lever[/code], [code]screen[/code],
 ## [code]odds[/code] and [code]spool[/code].
-func build(root: Node3D) -> Dictionary:
+func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	_root = root
 	_plinth()
 	_chassis()
-	var reels: Array[Node3D] = _reel_bank()
-	_bezel()
+	var reels: Array[Node3D] = _reel_bank(reel_count)
+	_bezel(reel_count)
 	var gearbox: Node3D = _gearbox()
 	_hoses()
 	var screen: MeshInstance3D = _monitor()
@@ -53,11 +60,17 @@ func build(root: Node3D) -> Dictionary:
 	var lever: Node3D = _lever()
 	var spool: Node3D = _spool()
 	var crown: Array[Node3D] = _crown()
+	var ladder: Array[Node3D] = _ladder()
 	_rivets()
 	var mounts: Array[Node3D] = _mounts()
 	return {
 		"mounts": mounts,
 		"crown": crown,
+		"ladder": ladder,
+		"gauges": [
+			_root.get_node_or_null(^"Crown/Gauge_stake"),
+			_root.get_node_or_null(^"Crown/Gauge_count"),
+		],
 		"reels": reels,
 		"gearbox": gearbox,
 		"screen": screen,
@@ -126,7 +139,33 @@ func _chassis() -> void:
 
 ## Three drums on a shared axle, in the node shape [SlotView3D] expects: each
 ## reel is a [Node3D] carrying a "Face" mesh and a "Symbol" label.
-func _reel_bank() -> Array[Node3D]:
+## Rebuilds just the window — the drums and the chrome around them — at a new
+## reel count, leaving everything bolted to the frame where it is.
+##
+## The machine grows on floor six, and rebuilding the whole thing to widen it
+## would throw away every module the run has bought. The window is the only part
+## that has to change, so it is the only part that is thrown away.
+func rebuild_window(root: Node3D, reel_count: int) -> Array[Node3D]:
+	_root = root
+	for group_name: StringName in [&"Reels", &"Bezel"]:
+		var old: Node = root.get_node_or_null(NodePath(group_name))
+		if old != null:
+			# Removed as well as freed: queue_free defers, and the new bank is
+			# added in this same frame under the same name.
+			root.remove_child(old)
+			old.queue_free()
+	var reels: Array[Node3D] = _reel_bank(reel_count)
+	_bezel(reel_count)
+	return reels
+
+
+## Half the width the drums occupy at [param reel_count], for the chrome and the
+## housings that have to reach round them.
+static func bank_half_width(reel_count: int) -> float:
+	return float(maxi(reel_count, 1) - 1) * REEL_SPACING * 0.5
+
+
+func _reel_bank(reel_count: int) -> Array[Node3D]:
 	var bank: Node3D = _group(&"Reels")
 	bank.position = Vector3(0.0, CHASSIS_Y + 0.05, REEL_Z)
 	var drum: CylinderMesh = CylinderMesh.new()
@@ -135,10 +174,11 @@ func _reel_bank() -> Array[Node3D]:
 	drum.height = 0.38
 	drum.radial_segments = 40
 	var reels: Array[Node3D] = []
-	for i: int in 3:
+	var centre: float = float(maxi(reel_count, 1) - 1) * 0.5
+	for i: int in maxi(reel_count, 1):
 		var reel: Node3D = Node3D.new()
 		reel.name = "Reel%d" % i
-		reel.position = Vector3((float(i) - 1.0) * REEL_SPACING, 0.0, 0.0)
+		reel.position = Vector3((float(i) - centre) * REEL_SPACING, 0.0, 0.0)
 		bank.add_child(reel)
 
 		var face: MeshInstance3D = MeshInstance3D.new()
@@ -214,20 +254,73 @@ func _reel_bank() -> Array[Node3D]:
 		# Just clear of the drum surface, so it reads as printed on the strip.
 		symbol.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.004)
 		reel.add_child(symbol)
+		_reel_lamps(reel)
 		reels.append(reel)
 	return reels
 
 
+## The two lamps a fruit machine puts by every drum: HOLD under it, and the
+## nudge chevron over it.
+##
+## On the machine rather than only on the overlay, because these are the two
+## moves the player makes without looking away from the reels — and a control
+## whose state lives only in a panel at the bottom of the screen is a control
+## the player has to keep translating back to the drum it belongs to.
+func _reel_lamps(reel: Node3D) -> void:
+	var lamp: MeshInstance3D = MeshInstance3D.new()
+	lamp.name = "HoldLamp"
+	var glass: CylinderMesh = CylinderMesh.new()
+	glass.top_radius = 0.05
+	glass.bottom_radius = 0.055
+	glass.height = 0.03
+	glass.radial_segments = 18
+	lamp.mesh = glass
+	lamp.transform.basis = Basis(Vector3(1.0, 0.0, 0.0), PI * 0.5)
+	lamp.position = Vector3(0.0, -0.47, REEL_RADIUS - 0.02)
+	lamp.material_override = Materials.lamp_glass(Color(0.55, 0.36, 0.12), 0.0)
+	reel.add_child(lamp)
+
+	var chevron: MeshInstance3D = MeshInstance3D.new()
+	chevron.name = "NudgeArrow"
+	var head: CylinderMesh = CylinderMesh.new()
+	head.top_radius = 0.0
+	head.bottom_radius = 0.07
+	head.height = 0.1
+	head.radial_segments = 4
+	chevron.mesh = head
+	# Point it down at the drum: the nudge brings the band above onto the line,
+	# so the arrow says which way the symbol is about to travel.
+	chevron.transform.basis = Basis(Vector3(0.0, 0.0, 1.0), PI)
+	chevron.position = Vector3(0.0, 0.5, REEL_RADIUS - 0.04)
+	chevron.material_override = Materials.lamp_glass(Color(1.0, 0.72, 0.28), 0.0)
+	chevron.visible = false
+	reel.add_child(chevron)
+
+
 ## The chrome window the drums are read through, plus the payline across it.
-func _bezel() -> void:
+func _bezel(reel_count: int = 3) -> void:
 	var bezel: Node3D = _group(&"Bezel")
 	var y: float = CHASSIS_Y + 0.05
 	var z: float = CHASSIS.z + 0.02
 	var steel: StandardMaterial3D = Materials.chrome()
-	_box(bezel, Vector3(1.5, 0.08, 0.09), Vector3(0.0, y + 0.37, z), steel)
-	_box(bezel, Vector3(1.5, 0.08, 0.09), Vector3(0.0, y - 0.37, z), steel)
+	# The chrome reaches round however many drums there are. A machine that grew
+	# a fourth reel behind a three-reel window would read as a bug, and the
+	# overhang is the point: the works are meant to look bolted on.
+	var half: float = bank_half_width(reel_count) + 0.32
+	_box(bezel, Vector3(half * 2.0, 0.08, 0.09), Vector3(0.0, y + 0.37, z), steel)
+	_box(bezel, Vector3(half * 2.0, 0.08, 0.09), Vector3(0.0, y - 0.37, z), steel)
 	for sx: float in [-1.0, 1.0]:
-		_box(bezel, Vector3(0.08, 0.82, 0.09), Vector3(sx * 0.71, y, z), steel)
+		_box(bezel, Vector3(0.08, 0.82, 0.09), Vector3(sx * (half - 0.04), y, z), steel)
+	_payline_marks(bezel, half, y, z)
+	# Anything past the chassis gets its own housing, so an added drum is
+	# standing in a box someone welded on rather than hanging in the air.
+	if half <= CHASSIS.x + 0.02:
+		return
+	var housing: Material = Materials.painted(Materials.PAINT, 31)
+	for sx: float in [-1.0, 1.0]:
+		var width: float = half - CHASSIS.x + 0.06
+		_box(bezel, Vector3(width, 0.9, CHASSIS.z * 1.6),
+				Vector3(sx * (CHASSIS.x + width * 0.5 - 0.03), y, REEL_Z * 0.5), housing)
 	# Divider bars between the three windows.
 	for sx: float in [-1.0, 1.0]:
 		_box(bezel, Vector3(0.035, 0.72, 0.07),
@@ -520,15 +613,25 @@ func _crown() -> Array[Node3D]:
 		spoke.rotation.y = angle
 	drives.append(valve)
 
+	# Two dials, and both of them mean something. A gauge with a needle parked at
+	# a decorative angle is set dressing; these read the wager and the House's
+	# attention, so the player can take both off the machine without looking at
+	# an overlay at all.
 	for i: int in 2:
 		var gx: float = -0.9 + float(i) * 0.22
 		Prims.cylinder(crown, 0.062, 0.04, Vector3(gx, top + 0.2, 0.22),
 				Vector3(PI * 0.5, 0.0, 0.0), brass, 16)
 		Prims.cylinder(crown, 0.05, 0.012, Vector3(gx, top + 0.2, 0.245),
 				Vector3(PI * 0.5, 0.0, 0.0), Materials.readout_face(), 16)
-		var needle: MeshInstance3D = Prims.box(crown, Vector3(0.008, 0.045, 0.004),
-				Vector3(gx, top + 0.215, 0.252), Materials.glowing(Materials.SIGN, 1.2))
-		needle.rotation.z = 0.6 - float(i) * 1.1
+		var pivot: Node3D = Node3D.new()
+		pivot.name = ["Gauge_stake", "Gauge_count"][i]
+		crown.add_child(pivot)
+		pivot.position = Vector3(gx, top + 0.2, 0.252)
+		# The needle is offset from its own pivot so the pivot can be turned
+		# straight from a value, rather than every caller doing the arithmetic.
+		Prims.box(pivot, Vector3(0.008, 0.045, 0.004),
+				Vector3(0.0, 0.022, 0.0), Materials.glowing(Materials.SIGN, 1.2))
+		pivot.rotation.z = GAUGE_SWEEP
 
 	# Cable, sagging between the pipe and the back of the chassis. Straight cable
 	# reads as conduit; the sag is what makes it look run rather than designed.
@@ -543,6 +646,65 @@ func _crown() -> Array[Node3D]:
 			_segment(crown, _quadratic(from, bend, to, t0),
 					_quadratic(from, bend, to, t1), 0.019, rubber)
 	return drives
+
+
+## A lit bar either side of every row, so which rows are paying is something the
+## player reads off the machine rather than works out.
+##
+## Three rows stand in the window and only the middle one pays until the works
+## are bought. Without a mark, the first thing a new player does is try to work
+## out which of three lines the number came from — and the moment a bought row
+## starts paying, they have to work it out again.
+func _payline_marks(bezel: Node3D, half: float, y: float, z: float) -> void:
+	var rows: Node3D = Node3D.new()
+	rows.name = "Paylines"
+	bezel.add_child(rows)
+	for slot: int in 3:
+		var row: Node3D = Node3D.new()
+		row.name = "Row%d" % slot
+		rows.add_child(row)
+		# Matched to where the band sits on the drum, so the mark lines up with
+		# the symbols it is pointing at.
+		var height: float = -sin(float(slot - 1) * BAND_ANGLE) * (REEL_RADIUS + 0.006)
+		for sx: float in [-1.0, 1.0]:
+			var mark: MeshInstance3D = Prims.box(row, Vector3(0.09, 0.022, 0.02),
+					Vector3(sx * (half - 0.09), y + height, z + 0.03),
+					Materials.lamp_glass(Color(1.0, 0.72, 0.3),
+							PAYLINE_ENERGY if slot == 1 else 0.0))
+			mark.rotation.z = sx * 0.0
+
+
+## The gamble ladder: four lamps up the machine's right flank.
+##
+## The rungs are the whole drama of the mechanic — a player watching a light
+## climb and deciding whether to reach for the next one is doing something a
+## number on an overlay cannot make them feel. Dead until the floor that grants
+## the ladder, and dark again the moment a rung is lost.
+func _ladder() -> Array[Node3D]:
+	var ladder: Node3D = _group(&"Ladder")
+	var rungs: Array[Node3D] = []
+	var backing: Material = Materials.painted(Materials.PAINT, 47)
+	_box(ladder, Vector3(0.16, 0.86, 0.06),
+			Vector3(CHASSIS.x + 0.05, CHASSIS_Y + 0.12, CHASSIS.z - 0.06), backing)
+	for i: int in LADDER_RUNGS:
+		var lamp: MeshInstance3D = MeshInstance3D.new()
+		lamp.name = "Rung%d" % i
+		var glass: CylinderMesh = CylinderMesh.new()
+		glass.top_radius = 0.045
+		glass.bottom_radius = 0.05
+		glass.height = 0.026
+		glass.radial_segments = 16
+		lamp.mesh = glass
+		lamp.transform.basis = Basis(Vector3(1.0, 0.0, 0.0), PI * 0.5)
+		lamp.position = Vector3(CHASSIS.x + 0.05,
+				CHASSIS_Y - 0.18 + float(i) * 0.2, CHASSIS.z - 0.02)
+		# Warmer the higher it goes, so a full ladder reads as heat rather than
+		# as four of the same lamp.
+		lamp.material_override = Materials.lamp_glass(
+				Color(1.0, 0.72 - float(i) * 0.13, 0.3 - float(i) * 0.08), 0.0)
+		ladder.add_child(lamp)
+		rungs.append(lamp)
+	return rungs
 
 
 ## Where bought hardware bolts on, in the order it is used.

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"vault_break"
+file_name = "mechanical/vault_break.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(420, 700)
+frequency_notes = "The same door, opened the wrong way: a strained bolt, a squeal, and a clatter."
+pitch_jitter = Vector2(0.97, 1.01)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -2.0
+positional = true
+loops = false
+max_voices = 1
+priority = 7
+duck_music_db = 1.0
+fallback = 3
+fallback_hz = 180.0

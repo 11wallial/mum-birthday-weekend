@@ -43,7 +43,7 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	var ward: float = maxf(_curse_ward(state), ContractEngine.curse_pays(state))
 	var warded: bool = ward > 0.0
 	var cursed: bool = Probability.has_curse(line) and not warded
-	for symbol: SymbolDef in line:
+	for symbol: SymbolDef in Probability.drawn(line):
 		if not symbol.is_curse:
 			ctx.base_payout += maxi(0,
 					symbol.base_value + ContractEngine.symbol_value(state, symbol.id))

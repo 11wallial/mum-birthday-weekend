@@ -309,6 +309,23 @@ static func phosphor_glass() -> StandardMaterial3D:
 		return material)
 
 
+## A pressed-glass lamp cover, lit or dead.
+##
+## Used for the hold lamps and the nudge chevrons: a control whose state lives
+## only in a panel at the bottom of the screen is one the player has to keep
+## translating back to the drum it belongs to, so the machine carries it too.
+## Deliberately not cached — every lamp needs its own emission to switch.
+static func lamp_glass(tint: Color, energy: float) -> StandardMaterial3D:
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = Color(tint.r * 0.35, tint.g * 0.35, tint.b * 0.35, 1.0)
+	material.roughness = 0.32
+	material.metallic = 0.0
+	material.emission_enabled = energy > 0.0
+	material.emission = tint
+	material.emission_energy_multiplier = energy
+	return material
+
+
 ## An unlit dark face for a readout to sit on — the odds strip, a dial window.
 ## Polished chrome, for the one part of the machine that is kept clean: the
 ## window frame the reels are read through. Every other metal here carries a

@@ -283,6 +283,36 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			play(&"ui_purchase_confirm")
 		EffectBus.Event.SHOP_OPENED:
 			play(&"ui_panel_open")
+		EffectBus.Event.SHOP_REROLLED:
+			play(&"ui_chip_stack")
+		EffectBus.Event.ARTIFACT_SOLD:
+			play(&"ui_chip_place")
+		EffectBus.Event.SLATE_SIGNED:
+			play(&"contract_signed")
+		EffectBus.Event.CONTRACTS_OFFERED:
+			play(&"ui_panel_open")
+		EffectBus.Event.CONTRACT_SIGNED:
+			play(&"contract_signed")
+		EffectBus.Event.SYSTEM_GRANTED:
+			play(&"system_granted")
+		EffectBus.Event.NUDGES_AWARDED:
+			play(&"nudge_offered")
+		EffectBus.Event.GAMBLE_OFFERED:
+			play(&"gamble_offered")
+		EffectBus.Event.GAMBLE_RESOLVED:
+			play(&"gamble_won" if bool(payload.get("won", false)) else &"gamble_lost")
+		EffectBus.Event.VAULT_CHANGED:
+			# The dividend is not a decision, so it does not get the door.
+			var moved: int = int(payload.get("delta", 0))
+			if moved > 0:
+				play_at(&"vault_deposit")
+			elif moved < 0:
+				play_at(&"vault_break")
+		EffectBus.Event.HEAT_CHANGED:
+			if not bool(payload.get("changed", false)):
+				return
+			play(&"heat_measure" if int(payload.get("measure", 0)) > 0
+					else &"heat_rising")
 		EffectBus.Event.ANTE_SETTLED:
 			if bool(payload.get("paid", false)):
 				play(&"ante_settled")
