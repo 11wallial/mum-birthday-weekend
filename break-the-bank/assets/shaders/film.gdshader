@@ -29,6 +29,14 @@ float hash(vec2 p) {
 void fragment() {
 	vec3 colour = texture(screen_texture, SCREEN_UV).rgb;
 
+	// The photograph's curve: a gentle S that crushes the toe into the room's
+	// warmth and firms the mids, with a hair of warm cast over everything.
+	// The renderer's tonemap has already rolled the highlights off; this is
+	// the print stock, not the exposure.
+	colour = max(colour * 1.06 - 0.008, vec3(0.0));
+	colour = mix(colour, colour * colour * (3.0 - 2.0 * colour), 0.28);
+	colour *= vec3(1.03, 1.0, 0.95);
+
 	// Vignette on the distance from centre, corrected for aspect so a phone in
 	// portrait does not get an oval. Squared falloff: gentle across the middle
 	// of frame, decisive in the corners.

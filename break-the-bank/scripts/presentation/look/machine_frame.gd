@@ -271,7 +271,10 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 	var lamp: OmniLight3D = OmniLight3D.new()
 	lamp.name = "WindowLamp"
 	lamp.light_color = Materials.LAMP
-	lamp.light_energy = 1.05
+	# Compatibility clamps highlights where Forward+ rolls them off, so the
+	# same lamp that reads warm on desktop burns the strip white on the web
+	# build. One number, scaled per renderer, keeps the two in the same key.
+	lamp.light_energy = 1.05 			if RenderingServer.get_current_rendering_method() != "gl_compatibility" 			else 0.7
 	lamp.omni_range = 1.15
 	lamp.omni_attenuation = 1.4
 	lamp.shadow_enabled = false
