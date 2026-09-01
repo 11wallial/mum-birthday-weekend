@@ -75,10 +75,14 @@ func build(root: Node3D) -> Dictionary:
 func _plinth() -> void:
 	var plinth: Node3D = _group(&"Plinth")
 	_box(plinth, Vector3(2.3, PLINTH_TOP, 1.15),
-			Vector3(0.0, PLINTH_TOP * 0.5, 0.0), Materials.concrete())
+			Vector3(0.0, PLINTH_TOP * 0.5, 0.0),
+			Materials.weathered("concrete", Materials.CONCRETE, 0.55, 0.9,
+					0.45, 0.3, Materials.concrete()))
 	# A chamfered cap, slightly proud, so the top edge catches the key light.
 	_box(plinth, Vector3(2.42, 0.07, 1.27),
-			Vector3(0.0, PLINTH_TOP + 0.02, 0.0), Materials.concrete(84))
+			Vector3(0.0, PLINTH_TOP + 0.02, 0.0),
+			Materials.weathered("concrete", Materials.CONCRETE, 0.6, 0.9,
+					0.5, 0.22, Materials.concrete(84)))
 	# Rusted steel straps clamping the chassis down at each corner.
 	for sx: float in [-1.0, 1.0]:
 		for sz: float in [-1.0, 1.0]:
@@ -92,7 +96,8 @@ func _plinth() -> void:
 func _chassis() -> void:
 	var chassis: Node3D = _group(&"Chassis")
 	_box(chassis, CHASSIS * 2.0, Vector3(0.0, CHASSIS_Y, 0.0),
-			Materials.painted(Materials.PAINT, 11))
+			Materials.weathered("painted_metal", Materials.PAINT, 0.9, 1.0,
+					0.38, 0.3, Materials.painted(Materials.PAINT, 11)))
 	# Angle iron down all four vertical corners, and along the top edges.
 	var post: Vector3 = Vector3(0.1, CHASSIS.y * 2.06, 0.1)
 	for sx: float in [-1.0, 1.0]:

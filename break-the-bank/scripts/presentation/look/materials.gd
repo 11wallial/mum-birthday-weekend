@@ -44,8 +44,11 @@ const LAMP: Color = Color(1.0, 0.831, 0.616)
 ## and every material tints it, so five unrelated photographs read as one set.
 const SCANS: String = "res://assets/textures/%s/%s.jpg"
 
+const WEATHERED_SHADER: String = "res://assets/shaders/weathered.gdshader"
+
 static var _cache: Dictionary = {}
 static var _scan_cache: Dictionary = {}
+static var _weathered_shader: Shader = null
 
 
 ## Loads one map of one scanned set, or null when it is missing.
@@ -65,6 +68,45 @@ static func scan(set_name: String, map_name: String) -> Texture2D:
 		push_warning("Materials: no scan at %s; falling back to noise" % path)
 	_scan_cache[key] = texture
 	return texture
+
+
+## A scanned surface that weathers according to which way it faces: dust settling
+## on what points up, grime running down what points out.
+##
+## Used for the large surfaces — chassis, plinth, floor, walls — where a face's
+## orientation varies and the effect has something to work with. Small parts stay
+## on [StandardMaterial3D]: a bolt head is one facing, so per-face weathering
+## costs a shader and buys nothing.
+##
+## Falls back to [param fallback] when the scan or the shader is missing, so the
+## machine still builds without the texture pack.
+static func weathered(set_name: String, tint: Color, tiles_per_metre: float,
+		normal_depth: float, dust: float, grime: float,
+		fallback: StandardMaterial3D) -> Material:
+	var key: String = "weathered:%s:%s:%f:%f:%f" % [
+		set_name, tint.to_html(false), tiles_per_metre, dust, grime]
+	if _cache.has(key):
+		return _cache[key] as Material
+	var albedo: Texture2D = scan(set_name, "albedo")
+	if albedo == null or not ResourceLoader.exists(WEATHERED_SHADER):
+		return fallback
+	if _weathered_shader == null:
+		_weathered_shader = load(WEATHERED_SHADER) as Shader
+	if _weathered_shader == null:
+		return fallback
+	var material: ShaderMaterial = ShaderMaterial.new()
+	material.shader = _weathered_shader
+	material.set_shader_parameter(&"albedo_map", albedo)
+	material.set_shader_parameter(&"normal_map", scan(set_name, "normal"))
+	material.set_shader_parameter(&"arm_map", scan(set_name, "arm"))
+	material.set_shader_parameter(&"tint", tint)
+	material.set_shader_parameter(&"tiles_per_metre", tiles_per_metre)
+	material.set_shader_parameter(&"normal_depth", normal_depth)
+	material.set_shader_parameter(&"dust_amount", dust)
+	material.set_shader_parameter(&"grime_amount", grime)
+	material.set_shader_parameter(&"dust_colour", Color(0.325, 0.310, 0.271))
+	_cache[key] = material
+	return material
 
 
 ## Dresses [param material] in a scanned set: albedo, normal, and the ARM map

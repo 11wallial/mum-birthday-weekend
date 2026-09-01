@@ -91,8 +91,11 @@ func _aim(node: Node3D, from: Vector3, at: Vector3) -> void:
 ## the key light has nothing to spill onto and the top of frame goes flat black.
 func _shell() -> void:
 	var shell: Node3D = _group(&"Shell")
-	var floor_material: StandardMaterial3D = Materials.concrete(85)
-	var wall_material: StandardMaterial3D = Materials.painted(Color(0.137, 0.129, 0.118), 19)
+	var floor_material: Material = Materials.weathered("concrete",
+			Materials.CONCRETE, 0.5, 0.9, 0.5, 0.25, Materials.concrete(85))
+	var wall_material: Material = Materials.weathered("plaster",
+			Color(0.137, 0.129, 0.118), 0.45, 0.8, 0.25, 0.7,
+			Materials.painted(Color(0.137, 0.129, 0.118), 19))
 	var depth: float = DEPTH_FRONT - DEPTH_BACK
 	var mid_z: float = (DEPTH_FRONT + DEPTH_BACK) * 0.5
 
