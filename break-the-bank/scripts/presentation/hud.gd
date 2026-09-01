@@ -41,6 +41,8 @@ var _bus: EffectBus
 var _spins_left: int = 0
 ## The symbols of the spin in progress, in reel order, as they land.
 var _landed: Array[Dictionary] = []
+## The finished spin, held back until the reels have shown it.
+var _result: Dictionary = {}
 ## Type scale, matched to the window rather than the design viewport.
 var _scale: float = 1.0
 
@@ -173,10 +175,22 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_spins_left = maxi(0, _spins_left - 1)
 			_set_text(_spins, str(_spins_left))
 			_landed.clear()
+			_result.clear()
+			# Cleared as the handle goes down, so the previous spin's verdict is
+			# not still sitting there while these reels turn.
+			_set_text(_line, "")
+			if _icons != null:
+				for child: Node in _icons.get_children():
+					_icons.remove_child(child)
+					child.queue_free()
 		EffectBus.Event.SYMBOL_LANDED:
 			_landed.append(payload)
 		EffectBus.Event.PAYOUT_CALCULATED:
-			_show_line(payload)
+			# Held, not shown. This event arrives in the same frame as the spin
+			# request, so displaying it here printed the pattern and the payout
+			# before a single reel had stopped — the readout spoiled every spin
+			# the machine was still in the middle of showing.
+			_result = payload
 		EffectBus.Event.ARTIFACT_ACQUIRED:
 			_push("Acquired %s" % String(payload.get("artifact", "")))
 		EffectBus.Event.RUN_ENDED:
@@ -185,7 +199,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			pass
 
 
-## Draws the spin's result: the symbols that landed, then what they paid.
+## Draws the spin's result once the reels have landed and the view has judged it.
+##
+## Everything the player learns about a spin arrives at the same moment: the
+## symbols stop, the coins fall, the sound plays and the readout fills in.
 ##
 ## Showing the symbols rather than naming the pattern is what lets a player
 ## check the machine against the readout without translating between them —
@@ -214,6 +231,32 @@ func _show_line(payload: Dictionary) -> void:
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.tooltip_text = String(landed.get("symbol", ""))
 		_icons.add_child(icon)
+
+
+## Says how the spin went, in words and colour, once the reels have landed.
+##
+## The readout used to print the pattern and the number and leave the player to
+## work out whether that was good. It is judged against what the floor needs per
+## spin, so the same verdict means the same thing on floor 1 and floor 7.
+func mark_result(result: SlotView3D.Result, _payout: int) -> void:
+	if _line == null:
+		return
+	_show_line(_result)
+	var verdict: String = ["DEAD", "THIN", "PAID", "JACKPOT"][int(result)]
+	var tint: Color = [
+		Color(0.63, 0.42, 0.40), Color(0.76, 0.71, 0.60),
+		Color(1.0, 0.82, 0.44), Color(1.0, 0.62, 0.24),
+	][int(result)]
+	_line.text = "%s     %s" % [verdict, _line.text]
+	_line.add_theme_color_override(&"font_color", tint)
+	_line.modulate = Color(1, 1, 1, 1)
+	if result >= SlotView3D.Result.GOOD:
+		# A win is worth a beat of movement; a dead spin is worth stillness.
+		var pulse: Tween = create_tween()
+		_line.pivot_offset = Vector2.ZERO
+		pulse.tween_property(_line, "scale", Vector2(1.12, 1.12), 0.08)
+		pulse.tween_property(_line, "scale", Vector2.ONE, 0.32) \
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Centre-screen callout for the moments that need a decision or an epitaph.

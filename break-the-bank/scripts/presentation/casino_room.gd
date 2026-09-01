@@ -82,6 +82,8 @@ func _ready() -> void:
 		_setup.start_requested.connect(_on_start_requested)
 	if _slot_view != null and _audio != null:
 		_slot_view.set_audio(_audio)
+	if _slot_view != null:
+		_slot_view.result_judged.connect(_on_result_judged)
 	if _shop != null:
 		_shop.buy_requested.connect(_on_buy_requested)
 		_shop.leave_requested.connect(_on_leave_requested)
@@ -145,6 +147,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"bb_advance") or event.is_action_pressed(&"bb_confirm"):
 		_advance()
+
+
+## Kicks the camera by how the spin went, once the reels have actually landed.
+##
+## Only a spin worth having moves the camera. Shaking on every payout above zero
+## made the machine twitch constantly and told the player nothing.
+func _on_result_judged(result: SlotView3D.Result, payout: int) -> void:
+	if _hud != null and _hud.has_method("mark_result"):
+		_hud.call("mark_result", result, payout)
+	if _camera == null:
+		return
+	match result:
+		SlotView3D.Result.JACKPOT:
+			_camera.shake(1.0)
+		SlotView3D.Result.GOOD:
+			_camera.shake(0.45)
+		_:
+			pass
 
 
 func _on_touch_camera() -> void:
@@ -318,10 +338,9 @@ func _on_start_requested(run_seed: int, daily_key: String) -> void:
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
-		EffectBus.Event.PAYOUT_CALCULATED:
-			if _camera != null:
-				# Shake scales with how far above a routine spin this landed.
-				_camera.shake(clampf(float(payload.get("payout", 0)) / 60.0, 0.0, 1.0))
+		# PAYOUT_CALCULATED is not shaken on: it arrives in the same frame as the
+		# spin request, so the camera kicked before the reels had turned. The
+		# view emits result_judged when they actually land.
 		EffectBus.Event.FLOOR_STARTED:
 			FloorMood.apply(StringName(payload.get("environment", &"")),
 					_room_parts, _environment, self)

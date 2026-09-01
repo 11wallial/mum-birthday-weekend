@@ -46,12 +46,37 @@ const GLOW_PER_UPGRADE: float = 0.16
 const GLOW_GAIN: float = 2.3
 const GLOW_MAX: float = 3.4
 
+## How a spin's payout is judged, as a share of what one spin has to be worth
+## to clear the floor: the ante divided by the spins allowed. Judging against a
+## fixed number made a 60-credit win read as huge on floor 7 and as nothing on
+## floor 1; judged against par, "good" means the same thing all the way down.
+enum Result {
+	## Paid less than a quarter of par. The reels ate the spin.
+	DEAD,
+	## Paid something, but you are still behind where you need to be.
+	THIN,
+	## Paid its own way and then some.
+	GOOD,
+	## Three times par or better.
+	JACKPOT,
+}
+
+const THIN_SHARE: float = 0.25
+const GOOD_SHARE: float = 1.0
+const JACKPOT_SHARE: float = 3.0
+
 ## True from the first frame of a spin until the last reel has settled. The room
 ## refuses to advance the run while this holds, so the simulation can never get
 ## more than one spin ahead of what the player is looking at.
 var _busy: bool = false
+
+## How the finished spin was judged. The HUD listens so its readout agrees with
+## the machine rather than restating the number in its own words.
+signal result_judged(result: Result, payout: int)
 ## Artifacts acquired this run. Drives how hard the reels are backlit.
 var _upgrades: int = 0
+## What one spin needs to be worth on this floor. Set from FLOOR_STARTED.
+var _par: float = 1.0
 
 
 func _ready() -> void:
@@ -90,6 +115,9 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_pending.append(payload)
 		EffectBus.Event.PAYOUT_CALCULATED:
 			_play_spin(int(payload.get("payout", 0)), float(payload.get("multiplier", 1.0)))
+		EffectBus.Event.FLOOR_STARTED:
+			var spins: int = maxi(1, int(payload.get("spins", 1)))
+			_par = maxf(1.0, float(payload.get("ante", 0)) / float(spins))
 		EffectBus.Event.ARTIFACT_ACQUIRED:
 			_upgrades += 1
 			_attach_module(StringName(payload.get("artifact", &"")))
@@ -111,6 +139,10 @@ func _play_spin(payout: int, multiplier: float) -> void:
 	_busy = true
 	_throw_lever()
 	_turn_drives()
+	if _audio != null:
+		_audio.play_at(&"handle_pull")
+		_audio.play_at(&"reel_start")
+		_audio.start_loop(&"reel_spin_loop")
 	var last: int = _reels.size() - 1
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
@@ -131,8 +163,20 @@ func _settle_reel(index: int) -> void:
 		_show_symbol(_reels[index], _pending[index])
 	# Land on a whole turn so the drum never settles crooked after many spins.
 	_reels[index].rotation.x = fmod(_reels[index].rotation.x, TAU)
-	if _audio != null:
-		_audio.play("reel_stop", randf_range(0.94, 1.06))
+	if _audio == null:
+		return
+	# The last reel gets the heavier stop. Three identical clicks is a machine
+	# ticking over; a lighter, lighter, then a solid one is a machine landing.
+	var is_last: bool = index >= _reels.size() - 1
+	if is_last:
+		_audio.stop_loop(&"reel_spin_loop")
+		_audio.play_at(&"reel_stop_final")
+	else:
+		const TICKS: Array = [&"reel_stop_tick_a", &"reel_stop_tick_b", &"reel_stop_tick_c"]
+		_audio.play_at(TICKS[index % TICKS.size()])
+	if index < _pending.size() \
+			and StringName(_pending[index].get("symbol", &"")) == &"skull":
+		_audio.play_at(&"curse_land")
 
 
 ## Puts one landed symbol on one reel, preferring drawn art and falling back to
@@ -239,14 +283,57 @@ func set_readout(debt: int, floor_name: String) -> void:
 		_readout.text = "%s\nDEBT %d" % [floor_name.to_upper(), debt]
 
 
+## How this spin went, relative to what the floor needs per spin.
+func _judge(payout: int) -> Result:
+	var share: float = float(payout) / _par
+	if share >= JACKPOT_SHARE:
+		return Result.JACKPOT
+	if share >= GOOD_SHARE:
+		return Result.GOOD
+	if share >= THIN_SHARE:
+		return Result.THIN
+	return Result.DEAD
+
+
+## Everything that tells the player how the spin went, keyed to one judgement so
+## the coins, the light, the shake and the sound can never disagree.
+##
+## Coins used to fall on any payout above zero, which is nearly every spin, and
+## the flare scaled off the multiplier rather than the result. So a spin that
+## lost you the floor looked and sounded like a spin that won it.
 func _celebrate(payout: int, multiplier: float) -> void:
-	if _particles != null and payout > 0:
-		_particles.amount = clampi(payout * 2, 8, 240)
-		_particles.restart()
+	var result: Result = _judge(payout)
+	if _particles != null:
+		match result:
+			Result.JACKPOT:
+				_particles.amount = 220
+				_particles.restart()
+			Result.GOOD:
+				_particles.amount = 60
+				_particles.restart()
+			_:
+				# A thin or dead spin throws nothing. Silence and stillness are
+				# the feedback: you needed par and you did not get it.
+				pass
 	if _light != null:
+		var flare: float = [0.35, 0.9, 2.6, 6.0][int(result)]
 		var tween: Tween = create_tween()
-		tween.tween_property(_light, "light_energy", clampf(1.0 + multiplier, 1.0, 8.0), 0.1)
-		tween.tween_property(_light, "light_energy", 1.0, 0.5)
+		tween.tween_property(_light, "light_energy", flare, 0.08)
+		tween.tween_property(_light, "light_energy", 1.0, 0.55)
+	if _audio != null:
+		match result:
+			Result.JACKPOT:
+				_audio.play(&"jackpot_bells")
+				_audio.play_at(&"coin_cascade_large")
+			Result.GOOD:
+				_audio.play(&"payout_chime_big")
+				_audio.play_at(&"coin_cascade_small")
+			Result.THIN:
+				_audio.play(&"payout_chime_small")
+				_audio.play_at(&"coin_drop_single")
+			_:
+				pass
+	result_judged.emit(result, payout)
 
 
 ## Fits hardware without buying it. For visual QA only: a real run reaches a

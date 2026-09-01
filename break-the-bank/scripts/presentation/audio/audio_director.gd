@@ -270,26 +270,12 @@ func _claim_positional(def: SoundDef) -> AudioStreamPlayer3D:
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
-		EffectBus.Event.SPIN_STARTED:
-			play_at(&"handle_pull")
-			play_at(&"reel_start")
-		EffectBus.Event.SYMBOL_LANDED:
-			var reel: int = int(payload.get("reel", 0))
-			# Cycle the three variants so consecutive stops never repeat.
-			const TICKS: Array = [&"reel_stop_tick_a", &"reel_stop_tick_b", &"reel_stop_tick_c"]
-			play_at(TICKS[reel % TICKS.size()])
-			if String(payload.get("symbol", "")) == "skull":
-				play_at(&"curse_land")
-		EffectBus.Event.PAYOUT_CALCULATED:
-			var payout: int = int(payload.get("payout", 0))
-			if payout <= 0:
-				return
-			if payout >= BIG_PAYOUT:
-				play(&"payout_chime_big")
-				play_at(&"coin_cascade_small")
-			else:
-				play(&"payout_chime_small")
-				play_at(&"coin_drop_single")
+		# SPIN_STARTED, SYMBOL_LANDED and PAYOUT_CALCULATED are deliberately not
+		# handled here. The simulation resolves an entire spin inside one frame,
+		# so reacting to those events fired the handle pull, all three reel stops
+		# and the payout chime simultaneously — at the instant of the tap, before
+		# a single reel had turned. Everything about a spin then happened in
+		# silence. [SlotView3D] owns the spin's clock and therefore its audio.
 		EffectBus.Event.ARTIFACT_TRIGGERED:
 			play(_tier_cue(StringName(payload.get("artifact", &""))))
 		EffectBus.Event.ARTIFACT_ACQUIRED:
