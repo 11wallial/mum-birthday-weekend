@@ -96,7 +96,7 @@ func _chassis() -> void:
 	# on a flat panel. This is most of what sells the depth of the front face.
 	_box(chassis, Vector3(1.28, 0.62, 0.3),
 			Vector3(0.0, CHASSIS_Y + 0.04, CHASSIS.z - 0.28),
-			Materials.painted(Color(0.09, 0.085, 0.075), 13))
+			Materials.cavity())
 	# Ventilation louvres on the lower front, an inspection hatch on the left.
 	for i: int in 5:
 		_box(chassis, Vector3(0.72, 0.022, 0.03),
@@ -153,7 +153,7 @@ func _bezel() -> void:
 	var bezel: Node3D = _group(&"Bezel")
 	var y: float = CHASSIS_Y + 0.05
 	var z: float = CHASSIS.z + 0.02
-	var steel: StandardMaterial3D = Materials.machined(Color(0.62, 0.61, 0.6), 58)
+	var steel: StandardMaterial3D = Materials.chrome()
 	_box(bezel, Vector3(1.34, 0.07, 0.09), Vector3(0.0, y + 0.29, z), steel)
 	_box(bezel, Vector3(1.34, 0.07, 0.09), Vector3(0.0, y - 0.29, z), steel)
 	for sx: float in [-1.0, 1.0]:

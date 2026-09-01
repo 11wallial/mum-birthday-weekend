@@ -38,10 +38,10 @@ static func painted(tint: Color = PAINT, seed_value: int = 11) -> StandardMateri
 	return _build("paint:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.035, 1.05, 0.84)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.72, 0.84)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.012, 1.05, 0.82)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.72, 0.84, 0.012)
 		material.normal_enabled = true
-		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.8)
+		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.8, 0.02)
 		material.normal_scale = 0.1
 		material.metallic = 0.25
 		material.metallic_specular = 0.4
@@ -70,8 +70,8 @@ static func brass(seed_value: int = 37) -> StandardMaterial3D:
 	return _build("brass:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = BRASS
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.05, 1.2, 0.55)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.18, 0.62)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.024, 1.2, 0.62)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.2, 0.56, 0.022)
 		material.normal_enabled = true
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.5, 0.12)
 		material.normal_scale = 0.12
@@ -86,8 +86,8 @@ static func machined(tint: Color = STEEL, seed_value: int = 53) -> StandardMater
 	return _build("steel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.06, 1.0, 0.8)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.26, 0.46)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.022, 1.0, 0.82)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.26, 0.46, 0.02)
 		material.metallic = 1.0
 		_triplanar(material, 3.2)
 		return material)
@@ -99,7 +99,7 @@ static func enamel(tint: Color = ENAMEL, seed_value: int = 67) -> StandardMateri
 	return _build("enamel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.09, 1.0, 0.72)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.05, 1.0, 0.82)
 		material.roughness = 0.38
 		material.metallic = 0.0
 		_triplanar(material, 1.4)
@@ -177,6 +177,34 @@ static func phosphor_glass() -> StandardMaterial3D:
 
 
 ## An unlit dark face for a readout to sit on — the odds strip, a dial window.
+## Polished chrome, for the one part of the machine that is kept clean: the
+## window frame the reels are read through. Every other metal here carries a
+## roughness map, and on a full metal that breaks the highlight into a cast,
+## hammered surface — right for the chassis, wrong for a bezel someone wipes.
+static func chrome() -> StandardMaterial3D:
+	return _build("chrome", func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = Color(0.616, 0.608, 0.596)
+		material.albedo_texture = ProcTextures.grime(91, 0.02, 1.0, 0.9)
+		material.metallic = 1.0
+		material.roughness = 0.24
+		_triplanar(material, 2.0)
+		return material)
+
+
+## A plain, matte, near-black interior — the inside of the reel housing. Wear
+## maps belong on surfaces the world has touched; the inside of a sealed box is
+## not one of them, and putting grain there just adds noise where the eye is
+## trying to read three symbols.
+static func cavity() -> StandardMaterial3D:
+	return _build("cavity", func() -> StandardMaterial3D:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.albedo_color = Color(0.055, 0.051, 0.043)
+		material.roughness = 0.92
+		material.metallic = 0.0
+		return material)
+
+
 static func readout_face() -> StandardMaterial3D:
 	return _build("readout_face", func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
