@@ -104,5 +104,10 @@ bb_slot_5={
 renderer/rendering_method="forward_plus"
 renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true
+; 4x rather than the default 2x. The set is almost entirely surfaces seen at a
+; grazing angle, which is the case anisotropic filtering exists for; 4x is the
+; step where the chassis top and the floor stop shimmering, and it is cheap
+; enough that mobile GPUs have supported it for a decade.
+textures/default_filters/anisotropic_filtering_level=2
 environment/defaults/default_environment="res://scenes/3d/default_env.tres"
 anti_aliasing/quality/msaa_3d=2

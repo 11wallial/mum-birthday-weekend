@@ -350,29 +350,29 @@ func _spool() -> Node3D:
 func _rivets() -> void:
 	var positions: Array[Vector3] = []
 	# Along the top and bottom edges of the front face.
-	for i: int in 15:
-		var x: float = lerpf(-CHASSIS.x + 0.07, CHASSIS.x - 0.07, float(i) / 14.0)
-		positions.append(Vector3(x, CHASSIS_Y + CHASSIS.y - 0.05, CHASSIS.z + 0.01))
-		positions.append(Vector3(x, CHASSIS_Y - CHASSIS.y + 0.05, CHASSIS.z + 0.01))
+	for i: int in 8:
+		var x: float = lerpf(-CHASSIS.x + 0.1, CHASSIS.x - 0.1, float(i) / 7.0)
+		positions.append(Vector3(x, CHASSIS_Y + CHASSIS.y - 0.06, CHASSIS.z + 0.015))
+		positions.append(Vector3(x, CHASSIS_Y - CHASSIS.y + 0.06, CHASSIS.z + 0.015))
 	# Down the corner posts, both flanks.
-	for i: int in 7:
-		var y: float = lerpf(CHASSIS_Y - CHASSIS.y + 0.08, CHASSIS_Y + CHASSIS.y - 0.08,
-				float(i) / 6.0)
+	for i: int in 4:
+		var y: float = lerpf(CHASSIS_Y - CHASSIS.y + 0.1, CHASSIS_Y + CHASSIS.y - 0.1,
+				float(i) / 3.0)
 		for sx: float in [-1.0, 1.0]:
-			positions.append(Vector3(sx * (CHASSIS.x + 0.01), y, CHASSIS.z - 0.02))
-			positions.append(Vector3(sx * (CHASSIS.x + 0.01), y, -CHASSIS.z + 0.02))
-	# Around the bezel.
-	for i: int in 10:
-		var t: float = float(i) / 9.0
-		positions.append(Vector3(lerpf(-0.62, 0.62, t), CHASSIS_Y + 0.37, CHASSIS.z + 0.06))
-		positions.append(Vector3(lerpf(-0.62, 0.62, t), CHASSIS_Y - 0.27, CHASSIS.z + 0.06))
+			positions.append(Vector3(sx * (CHASSIS.x + 0.015), y, CHASSIS.z - 0.03))
+			positions.append(Vector3(sx * (CHASSIS.x + 0.015), y, -CHASSIS.z + 0.03))
+	# Four at the bezel's corners, where a window frame is actually bolted on.
+	for sx: float in [-1.0, 1.0]:
+		for sy: float in [-1.0, 1.0]:
+			positions.append(Vector3(sx * 0.6, CHASSIS_Y + 0.05 + sy * 0.29,
+					CHASSIS.z + 0.07))
 
 	var head: SphereMesh = SphereMesh.new()
-	head.radius = 0.019
-	head.height = 0.026
-	head.radial_segments = 8
-	head.rings = 4
-	head.material = Materials.machined(Color(0.42, 0.4, 0.38), 66)
+	head.radius = 0.031
+	head.height = 0.042
+	head.radial_segments = 10
+	head.rings = 5
+	head.material = Materials.machined(Color(0.353, 0.337, 0.318), 66)
 
 	var multi: MultiMesh = MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D

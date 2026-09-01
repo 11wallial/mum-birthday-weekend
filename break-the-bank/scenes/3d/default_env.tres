@@ -11,10 +11,10 @@
 
 [resource]
 background_mode = 1
-background_color = Color(0.02, 0.018, 0.016, 1)
+background_color = Color(0.016, 0.019, 0.027, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.192, 0.169, 0.145, 1)
-ambient_light_energy = 0.17
+ambient_light_color = Color(0.125, 0.145, 0.196, 1)
+ambient_light_energy = 0.3
 tonemap_mode = 4
 tonemap_exposure = 1.05
 tonemap_white = 4.0
@@ -32,7 +32,7 @@ glow_blend_mode = 1
 glow_hdr_threshold = 1.1
 fog_enabled = true
 fog_mode = 0
-fog_light_color = Color(0.176, 0.153, 0.129, 1)
+fog_light_color = Color(0.129, 0.145, 0.184, 1)
 fog_light_energy = 0.8
 fog_sun_scatter = 0.1
 fog_density = 0.008
@@ -49,4 +49,4 @@ volumetric_fog_length = 24.0
 adjustment_enabled = true
 adjustment_brightness = 1.0
 adjustment_contrast = 1.22
-adjustment_saturation = 0.82
+adjustment_saturation = 0.9

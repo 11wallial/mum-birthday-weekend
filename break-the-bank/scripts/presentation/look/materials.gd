@@ -38,14 +38,14 @@ static func painted(tint: Color = PAINT, seed_value: int = 11) -> StandardMateri
 	return _build("paint:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.03, 1.15, 0.78)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.7, 0.86)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.035, 1.05, 0.84)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.72, 0.84)
 		material.normal_enabled = true
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.8)
-		material.normal_scale = 0.16
+		material.normal_scale = 0.1
 		material.metallic = 0.25
 		material.metallic_specular = 0.4
-		_triplanar(material, 1.0)
+		_triplanar(material, 3.6)
 		return material)
 
 
@@ -61,7 +61,7 @@ static func rusted(seed_value: int = 23) -> StandardMaterial3D:
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.4, 0.09)
 		material.normal_scale = 0.3
 		material.metallic = 0.15
-		_triplanar(material, 1.0)
+		_triplanar(material, 2.4)
 		return material)
 
 
@@ -76,7 +76,7 @@ static func brass(seed_value: int = 37) -> StandardMaterial3D:
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 0.5, 0.12)
 		material.normal_scale = 0.12
 		material.metallic = 1.0
-		_triplanar(material, 1.1)
+		_triplanar(material, 2.6)
 		return material)
 
 
@@ -86,10 +86,10 @@ static func machined(tint: Color = STEEL, seed_value: int = 53) -> StandardMater
 	return _build("steel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.albedo_texture = ProcTextures.grime(seed_value, 0.06, 1.0, 0.62)
-		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.22, 0.55)
+		material.albedo_texture = ProcTextures.grime(seed_value, 0.06, 1.0, 0.8)
+		material.roughness_texture = ProcTextures.roughness(seed_value + 1, 0.26, 0.46)
 		material.metallic = 1.0
-		_triplanar(material, 0.9)
+		_triplanar(material, 3.2)
 		return material)
 
 
@@ -117,7 +117,7 @@ static func concrete(seed_value: int = 83) -> StandardMaterial3D:
 		material.normal_texture = ProcTextures.bumps(seed_value + 2, 1.1, 0.14)
 		material.normal_scale = 0.22
 		material.metallic = 0.0
-		_triplanar(material, 1.1)
+		_triplanar(material, 2.6)
 		return material)
 
 
@@ -189,6 +189,11 @@ static func _triplanar(material: StandardMaterial3D, scale: float) -> void:
 	material.uv1_triplanar = true
 	material.uv1_world_triplanar = true
 	material.uv1_scale = Vector3(scale, scale, scale)
+	# Anisotropic, not merely mipmapped. Almost every surface here is seen at a
+	# grazing angle — the chassis top, the bezel's frame, the floor running away
+	# from camera — and that is exactly the case a plain mip chain blurs along
+	# one axis and shimmers along the other.
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
 
 static func _build(key: String, factory: Callable) -> StandardMaterial3D:

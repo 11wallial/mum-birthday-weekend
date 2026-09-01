@@ -10,7 +10,7 @@ shader = ExtResource("1_film")
 shader_parameter/grain_amount = 0.035
 shader_parameter/vignette_start = 0.52
 shader_parameter/vignette_strength = 0.55
-shader_parameter/shadow_tint = Color(0.055, 0.043, 0.031, 1)
+shader_parameter/shadow_tint = Color(0.027, 0.035, 0.055, 1)
 
 [sub_resource type="PlaceholderTexture2D" id="Tex_none"]
 

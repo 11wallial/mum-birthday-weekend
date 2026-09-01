@@ -34,7 +34,7 @@ static func grime(seed_value: int, frequency: float = 0.02,
 			var n: float = noise.get_noise_2d(float(x), float(y)) * 0.5 + 0.5
 			var v: float = lerpf(floor_value, 1.0, pow(n, contrast))
 			image.set_pixel(x, y, Color(v, v, v))
-	var texture: ImageTexture = ImageTexture.create_from_image(image)
+	var texture: ImageTexture = _finish(image)
 	_cache[key] = texture
 	return texture
 
@@ -55,7 +55,7 @@ static func roughness(seed_value: int, low: float, high: float,
 			var n: float = noise.get_noise_2d(float(x), float(y)) * 0.5 + 0.5
 			var v: float = lerpf(low, high, n)
 			image.set_pixel(x, y, Color(v, v, v))
-	var texture: ImageTexture = ImageTexture.create_from_image(image)
+	var texture: ImageTexture = _finish(image)
 	_cache[key] = texture
 	return texture
 
@@ -82,7 +82,7 @@ static func bumps(seed_value: int, strength: float = 1.0,
 					(left - right) * strength, (up - down) * strength, 1.0).normalized()
 			image.set_pixel(x, y, Color(
 					normal.x * 0.5 + 0.5, normal.y * 0.5 + 0.5, normal.z * 0.5 + 0.5))
-	var texture: ImageTexture = ImageTexture.create_from_image(image)
+	var texture: ImageTexture = _finish(image)
 	_cache[key] = texture
 	return texture
 
@@ -102,7 +102,7 @@ static func streaks(seed_value: int, floor_value: float = 0.45) -> ImageTexture:
 			var n: float = noise.get_noise_2d(float(x), float(y) * 0.125) * 0.5 + 0.5
 			var v: float = lerpf(floor_value, 1.0, smoothstep(0.35, 0.85, n))
 			image.set_pixel(x, y, Color(v, v, v))
-	var texture: ImageTexture = ImageTexture.create_from_image(image)
+	var texture: ImageTexture = _finish(image)
 	_cache[key] = texture
 	return texture
 
@@ -121,9 +121,22 @@ static func scanlines(line_height: int = 3) -> ImageTexture:
 		var v: float = 0.62 if phase == 0 else (0.86 if phase == 1 else 1.0)
 		for x: int in SIZE:
 			image.set_pixel(x, y, Color(v, v, v))
-	var texture: ImageTexture = ImageTexture.create_from_image(image)
+	var texture: ImageTexture = _finish(image)
 	_cache[key] = texture
 	return texture
+
+
+## Turns a sampled [Image] into a texture the renderer can minify safely.
+##
+## [method ImageTexture.create_from_image] does not build a mip chain, and
+## without one every one of these maps aliases the moment it is drawn smaller
+## than its own texels — which for a 256px map on a bezel a few centimetres wide
+## is always. That aliasing is what made worn steel read as salt and pepper and
+## painted panels read as leopard print, and no amount of retuning the noise
+## fixed it, because the noise was never the problem.
+static func _finish(image: Image) -> ImageTexture:
+	image.generate_mipmaps()
+	return ImageTexture.create_from_image(image)
 
 
 static func _noise(seed_value: int, frequency: float, type: int) -> FastNoiseLite:
