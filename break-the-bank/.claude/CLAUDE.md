@@ -4,6 +4,21 @@ A systems-heavy slot machine roguelike. Godot 4.4, Forward+, statically typed
 GDScript. The game is a headless simulation with a 3D face bolted on; keeping
 those two apart is the single most important rule in this repo.
 
+## The aesthetic north star
+
+**Retro-techno-steampunk.** Every visual decision is judged against it:
+
+- Every part looks like it does something. A gear is on a shaft that goes
+  somewhere; a dial is plumbed into a value; a cable carries power you can
+  see arrive. Decoration that cannot explain itself gets cut or given a job.
+- The machine is volatile. Steam pneumatics, arc-light, a lever you haul —
+  operating it should feel slightly dangerous, Tesla-coil energy rather than
+  casino chrome.
+- The palette is rich, not drab: oxidised iron, brass and copper, verdigris,
+  oxblood, aged ivory, phosphor green and arc blue as the electric accents.
+- Information is hardware (the strip, the CRT, the Nixies) and controls are
+  physical (the lever, lit buttons on the machine) before they are overlays.
+
 ## The one architectural rule
 
 `scripts/simulation/` must never reference a node, a scene, the scene tree, the

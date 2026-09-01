@@ -396,7 +396,9 @@ func _bezel(reel_count: int = 3) -> void:
 	var bezel: Node3D = _group(&"Bezel")
 	var y: float = CHASSIS_Y + 0.05
 	var z: float = CHASSIS.z + 0.02
-	var steel: StandardMaterial3D = Materials.chrome()
+	# Brass, not chrome. Chrome is the one finish in the set with no age on
+	# it, and it read as a modern appliance bolted to a Victorian press.
+	var steel: StandardMaterial3D = Materials.brass(53)
 	# The chrome reaches round however many drums there are. A machine that grew
 	# a fourth reel behind a three-reel window would read as a bug, and the
 	# overhang is the point: the works are meant to look bolted on.
@@ -447,18 +449,47 @@ func _gearbox() -> Node3D:
 		_cylinder(gearbox, 0.34 - float(i) * 0.018, 0.035,
 				Vector3(0.0, 0.0, -0.1 - float(i) * 0.07),
 				Vector3(PI * 0.5, 0.0, 0.0), brass)
-	# The dial itself: a knurled ring, a face, and an index mark.
+	# The dial is a pressure gauge, and it is plumbed in: this face reads the
+	# run's HEAT — the House's temperature — off the same event every panel
+	# gets. A dial that means nothing is decoration, and decoration that
+	# cannot explain itself gets cut or given a job.
 	_cylinder(gearbox, 0.27, 0.07, Vector3(0.0, 0.0, 0.26),
 			Vector3(PI * 0.5, 0.0, 0.0), Materials.machined(Color(0.5, 0.49, 0.47), 59))
 	var dial: Node3D = Node3D.new()
 	dial.name = "Dial"
 	gearbox.add_child(dial)
+	# Aged ivory face, the one pale disc on the machine's flank.
 	_cylinder(dial, 0.21, 0.045, Vector3(0.0, 0.0, 0.31),
-			Vector3(PI * 0.5, 0.0, 0.0), Materials.enamel(Color(0.15, 0.14, 0.13), 68))
+			Vector3(PI * 0.5, 0.0, 0.0), Materials.enamel(Color(0.62, 0.585, 0.52), 68))
 	for i: int in 12:
 		var angle: float = TAU * float(i) / 12.0
 		_box(dial, Vector3(0.012, 0.012, 0.05),
-				Vector3(cos(angle) * 0.16, sin(angle) * 0.16, 0.325), brass)
+				Vector3(cos(angle) * 0.16, sin(angle) * 0.16, 0.325),
+				Materials.machined(Color(0.2, 0.19, 0.18), 59))
+	# The red zone, where GAUGE_SWEEP's hot end parks the needle.
+	for i: int in 4:
+		var angle: float = -GAUGE_SWEEP + float(i) * 0.11 + PI * 0.5
+		var mark: MeshInstance3D = _box(dial, Vector3(0.016, 0.035, 0.046),
+				Vector3(cos(angle) * 0.155, sin(angle) * 0.155, 0.327),
+				Materials.glowing(Materials.JACKPOT, 0.9))
+		mark.rotation.z = angle - PI * 0.5
+	var heat_label: Label3D = Label3D.new()
+	heat_label.text = "HEAT"
+	heat_label.font_size = 40
+	heat_label.pixel_size = 0.0011
+	heat_label.modulate = Color(0.2, 0.19, 0.18)
+	heat_label.shaded = false
+	heat_label.position = Vector3(0.0, -0.1, 0.335)
+	dial.add_child(heat_label)
+	var heat_needle: Node3D = Node3D.new()
+	heat_needle.name = "HeatNeedle"
+	dial.add_child(heat_needle)
+	heat_needle.position = Vector3(0.0, 0.0, 0.34)
+	Prims.box(heat_needle, Vector3(0.014, 0.15, 0.006),
+			Vector3(0.0, 0.075, 0.0), Materials.glowing(Materials.JACKPOT, 1.2))
+	_cylinder(heat_needle, 0.024, 0.02, Vector3.ZERO,
+			Vector3(PI * 0.5, 0.0, 0.0), brass)
+	heat_needle.rotation.z = GAUGE_SWEEP
 	# A mounting collar tying the gearbox back into the chassis.
 	_box(gearbox, Vector3(0.34, 0.34, 0.12), Vector3(0.0, 0.0, -0.34),
 			Materials.rusted(24))
@@ -508,6 +539,21 @@ func _monitor() -> MeshInstance3D:
 			Materials.painted(Materials.PAINT_LIGHT, 15))
 	_box(monitor, Vector3(0.5, 0.42, 0.28), Vector3(0.0, 0.0, -0.02),
 			Materials.painted(Materials.PAINT, 16))
+	# The step between shell and glass, screwed at its corners, with a brass
+	# maker's plate under the tube: the difference between a monitor and a
+	# picture frame is that a monitor is assembled.
+	_box(monitor, Vector3(0.6, 0.48, 0.04), Vector3(0.0, 0.0, 0.205),
+			Materials.machined(Color(0.22, 0.21, 0.2), 69))
+	for sx: float in [-1.0, 1.0]:
+		for sy: float in [-1.0, 1.0]:
+			var screw: MeshInstance3D = _cylinder(monitor, 0.013, 0.02,
+					Vector3(sx * 0.28, sy * 0.22, 0.235), Vector3.ZERO,
+					Materials.brass(70))
+			screw.rotation.x = PI * 0.5
+	_box(monitor, Vector3(0.2, 0.045, 0.012), Vector3(0.0, -0.312, 0.24),
+			Materials.brass(71))
+	Prims.sphere(_root, 0.06, Vector3(-0.88, CHASSIS_Y + 0.86, 0.1),
+			Materials.machined(Color(0.42, 0.41, 0.4), 60))
 	# Cooling slots across the top of the shell, and two knobs under the glass:
 	# an appliance has controls and gets hot, and a box with neither is a prop.
 	for i: int in 4:
@@ -694,33 +740,76 @@ func _spool() -> Node3D:
 	# of those reads as piano keys instead of paper.
 	# Printed, not blank: a receipt spool that has paid out nothing but paper
 	# is scenery, and the print is rows of faded figures at exactly the scale
-	# a passing glance expects. It runs all the way to the floor and pools
-	# there, because paper that stops in mid-air breaks the one job it has.
+	# a passing glance expects.
 	var printed: StandardMaterial3D = StandardMaterial3D.new()
 	printed.albedo_texture = ProcTextures.receipt(70)
 	printed.roughness = 0.85
 	printed.metallic = 0.0
-	var run: Array[Vector3] = [
-		Vector3(1.3, PLINTH_TOP + 0.14, 0.5),
-		Vector3(1.31, PLINTH_TOP + 0.11, 0.62),
-		Vector3(1.33, PLINTH_TOP - 0.1, 0.68),
-		Vector3(1.34, 0.12, 0.73),
-		Vector3(1.33, 0.012, 0.78),
-	]
-	for i: int in run.size() - 1:
-		var from: Vector3 = run[i]
-		var to: Vector3 = run[i + 1]
-		var delta: Vector3 = to - from
-		var panel: MeshInstance3D = _box(_root,
-				Vector3(0.19, 0.004, delta.length() * 1.35),
-				(from + to) * 0.5, printed)
-		panel.rotation = Vector3(-atan2(delta.y, delta.z), 0.0, sin(float(i) * 1.7) * 0.06)
+	printed.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# The mouth the tape comes out of, bolted to the chassis flank: the tape
+	# used to hang in the air beside the machine, a run of separate panels
+	# that read as sheets falling — paper with no printer is litter. One
+	# continuous ribbon now runs out of the slot, drapes over the spool, and
+	# pools on the floor.
+	_box(_root, Vector3(0.1, 0.09, 0.3), Vector3(CHASSIS.x + 0.03, 1.14, 0.34),
+			Materials.machined(Color(0.24, 0.23, 0.22), 73))
+	_box(_root, Vector3(0.04, 0.024, 0.24),
+			Vector3(CHASSIS.x + 0.09, 1.14, 0.34), Materials.cavity())
+	_ribbon(_root, [
+		Vector3(CHASSIS.x + 0.09, 1.13, 0.36),
+		Vector3(1.18, 1.06, 0.36),
+		Vector3(1.3, 0.92, 0.36),
+		Vector3(1.42, 0.74, 0.38),
+		Vector3(1.49, 0.4, 0.44),
+		Vector3(1.47, 0.09, 0.52),
+		Vector3(1.36, 0.014, 0.66),
+	], 0.19, printed)
 	# The pooled loops where the run lands.
-	for loop_config: Array in [[0.1, 0.006, Vector3(1.3, 0.006, 0.82)],
-			[0.075, 0.006, Vector3(1.38, 0.014, 0.79)]]:
+	for loop_config: Array in [[0.1, 0.006, Vector3(1.3, 0.006, 0.74)],
+			[0.075, 0.006, Vector3(1.4, 0.014, 0.7)]]:
 		_cylinder(_root, float(loop_config[0]), float(loop_config[1]),
 				loop_config[2] as Vector3, Vector3.ZERO, printed)
 	return spool
+
+
+## A continuous strip of paper along [param points], width held along Z the
+## way a tape whose printer slot runs along Z keeps it. One mesh, because a
+## run of separate panels reads as separate sheets — which is exactly the
+## complaint that retired the old version.
+func _ribbon(parent: Node3D, points: Array, width: float,
+		material: Material) -> void:
+	var surface: SurfaceTool = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var half: Vector3 = Vector3(0.0, 0.0, width * 0.5)
+	var length: float = 0.0
+	for i: int in points.size():
+		var here: Vector3 = points[i]
+		if i > 0:
+			length += (here - (points[i - 1] as Vector3)).length()
+		var ahead: Vector3 = points[mini(i + 1, points.size() - 1)]
+		var behind: Vector3 = points[maxi(i - 1, 0)]
+		var tangent: Vector3 = (ahead - behind).normalized()
+		var normal: Vector3 = tangent.cross(Vector3(0.0, 0.0, 1.0)).normalized()
+		# 0.45m of tape per repeat of the printed rows.
+		var v: float = length / 0.45
+		surface.set_normal(normal)
+		surface.set_uv(Vector2(0.0, v))
+		surface.add_vertex(here - half)
+		surface.set_normal(normal)
+		surface.set_uv(Vector2(1.0, v))
+		surface.add_vertex(here + half)
+	for i: int in points.size() - 1:
+		var a: int = i * 2
+		surface.add_index(a)
+		surface.add_index(a + 1)
+		surface.add_index(a + 2)
+		surface.add_index(a + 2)
+		surface.add_index(a + 1)
+		surface.add_index(a + 3)
+	var instance: MeshInstance3D = MeshInstance3D.new()
+	instance.mesh = surface.commit()
+	instance.material_override = material
+	parent.add_child(instance)
 
 
 ## Wear with a location and a cause: rust weeping down from fasteners, and
@@ -860,7 +949,25 @@ func _crown() -> Array[Node3D]:
 		# A hub and a spindle, so the gear is mounted rather than floating.
 		Prims.cylinder(gear, radius * 0.24, 0.09, Vector3.ZERO,
 				Vector3(PI * 0.5, 0.0, 0.0), steel, 12)
+		# And a bracket landing the spindle on the rail below: a train whose
+		# wheels touch nothing is jewellery, not a drive.
+		_box(crown, Vector3(0.05, sizes[i] * 0.58 + 0.05, 0.045),
+				Vector3(xs[i], top + (sizes[i] * 0.58) * 0.5, 0.13), steel)
 		drives.append(gear)
+
+	# What the train is FOR, made visible: a rail it is mounted to, a rod
+	# rising from the gearbox to drive the big wheel, and the small wheel's
+	# spindle dropping through a collar into the chassis — engine to gears to
+	# drums, readable at a glance.
+	_box(crown, Vector3(1.34, 0.05, 0.05), Vector3(-0.24, top + 0.025, 0.13),
+			steel)
+	_segment(_root, Vector3(-1.1, CHASSIS_Y + 0.26, 0.32),
+			Vector3(xs[0], top + sizes[0] * 0.58, 0.2), 0.034, steel)
+	Prims.sphere(_root, 0.055, Vector3(-1.1, CHASSIS_Y + 0.26, 0.32), steel)
+	_segment(crown, Vector3(xs[3], top + sizes[3] * 0.58, 0.2),
+			Vector3(xs[3], top - 0.14, 0.2), 0.028, steel)
+	_box(crown, Vector3(0.11, 0.05, 0.11), Vector3(xs[3], top + 0.01, 0.2),
+			Materials.rusted(33))
 
 	# The pressure line: a pipe across the full width with a valve wheel and a
 	# pair of gauges hung off it.

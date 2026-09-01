@@ -32,6 +32,8 @@ var _ladder: Array[Node3D] = []
 ## The two dials on the crown: the wager, and the House's attention.
 var _gauge_stake: Node3D
 var _gauge_count: Node3D
+## The pressure gauge on the gearbox flank: the run's HEAT, made physical.
+var _heat_needle: Node3D
 var _odds: Node3D
 var _readout: Label
 var _particles: CPUParticles3D
@@ -113,6 +115,9 @@ func _ready() -> void:
 	_gauge_stake = (gauges[0] as Node3D) if gauges.size() > 0 else null
 	_gauge_count = (gauges[1] as Node3D) if gauges.size() > 1 else null
 	_odds = parts.get("odds", null) as Node3D
+	var gearbox: Node3D = parts.get("gearbox", null) as Node3D
+	if gearbox != null:
+		_heat_needle = gearbox.get_node_or_null(^"Dial/HeatNeedle") as Node3D
 	_readout = parts.get("readout", null) as Label
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
 	_particles = get_node_or_null(payout_particles_path) as CPUParticles3D
@@ -171,6 +176,12 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.ARTIFACT_ACQUIRED:
 			_upgrades += 1
 			_attach_module(StringName(payload.get("artifact", &"")))
+		EffectBus.Event.HEAT_CHANGED:
+			# Boss territory is 100; the red zone starts where the sim's
+			# thresholds say it should.
+			_set_gauge(_heat_needle,
+					clampf(float(payload.get("heat", 0.0)) / 100.0, 0.0, 1.0),
+					Color(1.0, 0.3, 0.2))
 		EffectBus.Event.RUN_STARTED:
 			_upgrades = 0
 			_clear_modules()
