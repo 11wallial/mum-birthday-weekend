@@ -1,0 +1,179 @@
+// One printed cell of a reel strip, baked once at boot by ReelPrint.
+//
+// The symbol shapes live in SymbolArt as small instruction lists — translate,
+// rotate, scale, then one of five distance primitives — and this shader is the
+// second of the two interpreters of that data (SymbolArt._distance is the
+// first). Neither is the original: the instruction list is, which is what stops
+// the CPU fallback and the GPU bake drifting apart.
+//
+// Everything around the symbol — the aged paper, the double keyline, the drop
+// shadow, the ink wear — is composed here per pixel, because "printed on a
+// strip" is a property of the whole cell, not of the glyph. The old approach
+// drew the glyph alone and floated it over blank enamel, and that is exactly
+// why the drums read as toilet rolls.
+shader_type canvas_item;
+render_mode unshaded;
+
+// 12 floats per op, 3 vec4 rows, up to 12 ops. See SymbolArt.ops_for.
+const int MAX_OPS = 12;
+uniform int op_count = 0;
+uniform vec4 ops[36];
+
+// The symbol's own ink, already darkened to printing strength by the caller.
+uniform vec4 ink = vec4(0.5, 0.1, 0.1, 1.0);
+// The strip it is printed on, and the ink the press uses for rules and outlines.
+uniform vec4 paper = vec4(0.792, 0.769, 0.714, 1.0);
+uniform vec4 line_ink = vec4(0.09, 0.075, 0.063, 1.0);
+
+// Pixel size of the cell this instance is baking, so the composition can work
+// in physical cell space rather than in rect UV.
+uniform vec2 cell_px = vec2(416.0, 256.0);
+// The symbol spans -1..1 across this fraction of the cell's short side.
+uniform float symbol_scale = 0.82;
+// Outline half-width, matching SymbolArt.STROKE.
+uniform float stroke = 0.12;
+// 0..1: how far gone the print is. Wear belongs to the strip, not the glyph.
+uniform float wear = 0.22;
+// Decorrelates the paper and wear noise between cells.
+uniform float seed = 0.0;
+
+
+// Cheap value noise: enough for paper grain and ink erosion, and it bakes once.
+float hash2(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7)) + seed * 17.31) * 43758.5453);
+}
+
+float vnoise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(hash2(i), hash2(i + vec2(1, 0)), u.x),
+			mix(hash2(i + vec2(0, 1)), hash2(i + vec2(1, 1)), u.x), u.y);
+}
+
+vec2 rot2(vec2 p, float a) {
+	float c = cos(a);
+	float s = sin(a);
+	return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+}
+
+float sd_circle(vec2 p, float r) {
+	return length(p) - r;
+}
+
+float sd_box(vec2 p, vec2 half_size, float r) {
+	vec2 q = abs(p) - (half_size - vec2(r));
+	return length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - r;
+}
+
+float sd_rhombus(vec2 p, vec2 half_size) {
+	vec2 q = abs(p);
+	float gradient = length(vec2(1.0 / half_size.x, 1.0 / half_size.y));
+	return (q.x / half_size.x + q.y / half_size.y - 1.0) / gradient;
+}
+
+// The interpreter. Additive ops are folded with min, subtractive ops carve the
+// result afterwards — the two-accumulator fold every SymbolArt shape relies on.
+float symbol_distance(vec2 p) {
+	float added = 1.0e6;
+	float carved = -1.0e6;
+	for (int i = 0; i < MAX_OPS; i++) {
+		if (i >= op_count) {
+			break;
+		}
+		vec4 o0 = ops[i * 3];
+		vec4 o1 = ops[i * 3 + 1];
+		vec4 o2 = ops[i * 3 + 2];
+		vec2 q = rot2(p, o0.z) - o1.xy;
+		int kind = int(o0.x);
+		if (kind == 3) {
+			// Shear: x narrows as y descends. The bell's flare.
+			q.x /= 1.0 + max(q.y + o2.w, 0.0) * o0.w;
+		} else if (kind == 4) {
+			// Taper: x narrows toward the tip. The star's spokes.
+			q.x /= max(1.0 + q.y * o0.w, o2.w);
+		}
+		q *= o1.zw;
+		float d;
+		if (kind == 0) {
+			d = sd_circle(q, o2.x);
+		} else if (kind == 2) {
+			d = sd_rhombus(q, o2.xy);
+		} else {
+			d = sd_box(q, o2.xy, o2.z);
+		}
+		if (o0.y > 0.5) {
+			carved = max(carved, -d);
+		} else {
+			added = min(added, d);
+		}
+	}
+	return max(added, carved);
+}
+
+float coverage(float d, float pixel) {
+	return clamp(0.5 - d / pixel, 0.0, 1.0);
+}
+
+void fragment() {
+	// Physical cell space, and the -1..1 symbol space inside it.
+	vec2 px = UV * cell_px;
+	float short_side = min(cell_px.x, cell_px.y);
+	float half_span = short_side * 0.5 * symbol_scale;
+	vec2 p = (px - cell_px * 0.5) / half_span;
+	float pixel = 1.0 / half_span;
+
+	// --- the paper -------------------------------------------------------
+	// Grain at two scales, plus faint streaks running the way the strip was
+	// rolled (around the drum: cell-local y). Paper is never one value.
+	float grain = vnoise(px * 0.11) * 0.6 + vnoise(px * 0.43) * 0.4;
+	float streak = vnoise(vec2(px.x * 0.017, px.y * 0.36));
+	vec3 col = paper.rgb * (0.78 + 0.13 * grain) * (0.95 + 0.06 * streak);
+	// Foxing: sparse warm age spots, stronger toward the cell edges.
+	float fox = smoothstep(0.72, 0.95, vnoise(px * 0.05 + 31.7));
+	col = mix(col, col * vec3(0.82, 0.7, 0.52), fox * 0.5);
+
+	// --- the plate -------------------------------------------------------
+	// A double rule frames every cell: one heavy line, one hairline inside it,
+	// which is how value plates on old machines are printed. Distances in px.
+	vec2 edge = min(px, cell_px - px);
+	float border = min(edge.x, edge.y);
+	float rule_a = 1.0 - smoothstep(0.0, 1.5, abs(border - 8.0) - 3.2);
+	float rule_b = 1.0 - smoothstep(0.0, 1.2, abs(border - 16.0) - 1.1);
+	col = mix(col, line_ink.rgb, rule_a * 0.92 + rule_b * 0.62);
+	// The seam between cells: the strip darkens into the joint and a hard gap
+	// runs along it, so ten cells read as segments of a drum, not wallpaper.
+	float seam_shade = 1.0 - smoothstep(0.0, 9.0, edge.y);
+	col *= 1.0 - seam_shade * 0.38;
+	col *= 1.0 - (1.0 - smoothstep(0.0, 1.6, edge.y)) * 0.55;
+
+	// --- the print -------------------------------------------------------
+	if (op_count > 0) {
+		float d = symbol_distance(p);
+		// Drop shadow first, offset down-right and soft, only outside the ink.
+		float d_shadow = symbol_distance(p - vec2(0.085, 0.105));
+		float shadow = coverage(d_shadow, pixel * 5.0);
+		// Erosion: high-frequency noise eats the coverage near the shape edge,
+		// so the ink loses its skin where the strip has been handled.
+		float erode = smoothstep(0.25, 0.75, vnoise(px * 0.9 + 7.0));
+		float loss = wear * erode * smoothstep(-0.22, 0.02, d);
+		float fill = coverage(d, pixel) * (1.0 - loss);
+		float outer = coverage(d - stroke, pixel) * (1.0 - loss * 0.7);
+		col = mix(col, line_ink.rgb, shadow * (1.0 - outer) * 0.3);
+		// Outline, then fill, then the same up-left emboss the CPU path uses:
+		// the distance field's own slope, sampled once, lighting the rim.
+		col = mix(col, line_ink.rgb, outer);
+		float slope = symbol_distance(p - vec2(0.055, 0.055)) - d;
+		float rim = clamp(1.0 + d / 0.62, 0.0, 1.0);
+		float lift = clamp(slope / 0.055, -1.0, 1.0) * rim;
+		vec3 ink_lit = ink.rgb;
+		if (lift > 0.0) {
+			ink_lit = mix(ink_lit, vec3(1.0, 0.98, 0.94), lift * 0.48);
+		} else {
+			ink_lit = mix(ink_lit, line_ink.rgb, -lift * 0.5);
+		}
+		col = mix(col, ink_lit, fill);
+	}
+
+	COLOR = vec4(col, 1.0);
+}

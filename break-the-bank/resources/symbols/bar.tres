@@ -12,4 +12,4 @@ family = &"bar"
 is_wild = false
 is_curse = false
 glyph = "BAR"
-color = Color(0.30, 0.32, 0.38, 1)
+color = Color(0.32, 0.35, 0.43, 1)

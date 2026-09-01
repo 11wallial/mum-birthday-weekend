@@ -229,68 +229,76 @@ func _settle_reel(index: int) -> void:
 		_audio.play_at(&"curse_land")
 
 
-## Puts one landed symbol on one reel, preferring drawn art and falling back to
-## the glyph token. Exactly one of the two nodes is ever visible.
+## Puts one landed symbol on one reel, preferring the printed strip cell and
+## falling back to the glyph token. Exactly one of the two is ever visible.
 func _show_symbol(reel: Node3D, landed: Dictionary) -> void:
-	var payline: ImageTexture = _face(reel, ^"Payline",
-			StringName(landed.get("symbol", &"")), landed.get("color", Color.WHITE))
+	var printed: bool = _face(reel, ^"Payline",
+			StringName(landed.get("symbol", &"")))
 	# The band above and below scores nothing. It is there so the player can see
 	# what nearly landed, which is most of what makes a spin worth watching.
-	_face(reel, ^"Above", StringName(landed.get("above", &"")),
-			landed.get("above_color", Color.WHITE))
-	_face(reel, ^"Below", StringName(landed.get("below", &"")),
-			landed.get("below_color", Color.WHITE))
-	# The glyph text remains the fallback for a symbol with no drawing, on the
-	# payline only: an unreadable near miss is worse than none.
+	_face(reel, ^"Above", StringName(landed.get("above", &"")))
+	_face(reel, ^"Below", StringName(landed.get("below", &"")))
+	# The glyph text remains the fallback for a symbol with no strip cell, on
+	# the payline only: an unreadable near miss is worse than none.
 	var label: Label3D = reel.get_node_or_null(^"Symbol") as Label3D
 	if label != null:
 		label.text = String(landed.get("glyph", "?"))
 		label.modulate = landed.get("color", Color.WHITE)
-		label.visible = payline == null
+		label.visible = not printed
 	_set_glow(reel, landed.get("color", Color.WHITE), float(landed.get("value", 0)))
 
 
-## Puts one symbol on one row of one reel. Returns the art, or null when the
-## symbol has no drawing.
-func _face(reel: Node3D, row: NodePath, symbol_id: StringName,
-		tint: Color) -> ImageTexture:
-	var sprite: Sprite3D = reel.get_node_or_null(row) as Sprite3D
-	if sprite == null:
-		return null
-	var texture: ImageTexture = SymbolArt.texture_for(symbol_id, tint)
-	sprite.texture = texture
-	sprite.visible = texture != null
-	return texture
+## Turns one window plate to the strip cell printed with [param symbol_id].
+## Returns false when the symbol has no cell — the strip is not baked yet, or
+## the symbol is new content with no art — so the caller can fall back.
+func _face(reel: Node3D, row: NodePath, symbol_id: StringName) -> bool:
+	var plate: MeshInstance3D = reel.get_node_or_null(row) as MeshInstance3D
+	if plate == null:
+		return false
+	var material: StandardMaterial3D = \
+			plate.material_override as StandardMaterial3D
+	var cell: int = ReelPrint.cell_of(symbol_id)
+	if material == null or material.albedo_texture == null or cell < 0:
+		plate.visible = false
+		return false
+	material.uv1_offset.y = float(cell) / float(ReelPrint.CELLS)
+	plate.visible = true
+	return true
 
 
-## Lights the strip behind a symbol in proportion to what it is worth, scaled by
-## how many upgrades the run is carrying.
+## Backlights the payline cell in proportion to what it is worth, scaled by how
+## many upgrades the run is carrying. The plate itself is made emissive — a
+## lamp behind printed paper lights the whole cell through the print, which is
+## exactly how a fruit machine's win lamps read.
 func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
-	var glow: MeshInstance3D = reel.get_node_or_null(^"Glow") as MeshInstance3D
-	if glow == null:
+	var plate: MeshInstance3D = \
+			reel.get_node_or_null(^"Payline") as MeshInstance3D
+	if plate == null:
 		return
-	var material: StandardMaterial3D = glow.material_override as StandardMaterial3D
+	var material: StandardMaterial3D = \
+			plate.material_override as StandardMaterial3D
 	if material == null:
 		return
 	var importance: float = clampf(
 			inverse_lerp(GLOW_FLOOR, GLOW_CEILING, value), 0.0, 1.0)
 	if importance <= 0.0:
-		glow.visible = false
+		material.emission_enabled = false
 		return
 	# Scaled past 1 deliberately: the environment blooms above 1.1, so a top
-	# symbol on a stacked machine does not merely tint the strip, it flares.
+	# symbol on a stacked machine does not merely tint the cell, it flares.
 	var energy: float = minf(
 			importance * GLOW_GAIN * (1.0 + float(_upgrades) * GLOW_PER_UPGRADE),
 			GLOW_MAX)
-	glow.visible = true
-	# Additive, so the alpha carries the falloff and the colour carries the
-	# strength; pushing the colour past 1 is what makes a jackpot bloom.
-	material.albedo_color = Color(tint.r * energy, tint.g * energy, tint.b * energy, 1.0)
+	material.emission_enabled = true
+	# The lamp is behind the paper: enough to light the cell through the print,
+	# not enough to bleach the ink out of it.
+	material.emission = tint * 0.8
+	material.emission_energy_multiplier = energy
 	# A short flare as it lands, settling back to its resting brightness.
-	glow.scale = Vector3.ONE * 1.35
+	material.emission_energy_multiplier = energy * 1.35
 	var tween: Tween = create_tween()
-	tween.tween_property(glow, "scale", Vector3.ONE, 0.32) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(material, "emission_energy_multiplier", energy * 0.7,
+			0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _finish_spin(payout: int, multiplier: float) -> void:

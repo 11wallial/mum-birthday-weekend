@@ -1,18 +1,16 @@
-## Draws the reel symbols, rather than spelling them.
+## The reel symbols, as data: each is a short instruction list of distance
+## primitives, and the drawing happens in whichever interpreter is asked.
 ##
-## The reels used to show the [member SymbolDef.glyph] token as text: "BB",
-## "LE", "CH". Those exist because an id like [code]double_bar[/code] is metres
-## wide at a readable size on a 0.3m drum — but a two-letter abbreviation means
-## nothing to someone looking at a slot machine, and the reels are the one thing
-## a player looks at on every single spin.
+## There are two interpreters and neither is the original. [method ops_for]
+## feeds the GPU bake in [code]reel_plate.gdshader[/code], which prints the
+## whole strip at boot; [method texture_for] rasterises the same instructions on
+## the CPU, which is the fallback for a symbol that lands before the bake or in
+## a context with no viewport. One instruction list serving both is what stops
+## the print on the drum and the sprite behind it drifting apart.
 ##
-## So each symbol is drawn instead. Shapes are composed from signed distance
-## functions and sampled once per pixel, which gives clean edges for a fraction
-## of the cost of supersampling a boolean test — the whole set is nine 96px
-## sprites and is built once, lazily, on a symbol's first landing.
-##
-## A symbol with no drawing here is not an error: [SlotView3D] falls back to the
-## glyph text, so new content lands legibly without needing art first.
+## A symbol with no instructions here is not an error: [SlotView3D] falls back
+## to the glyph text and [ReelPrint] bakes a plain plate with the glyph printed
+## on it, so new content lands legibly without needing art first.
 class_name SymbolArt
 extends RefCounted
 
@@ -25,7 +23,40 @@ const STROKE: float = 0.085
 ## How far past the shapes the sprite is sampled, leaving room for the outline.
 const MARGIN: float = 1.16
 
+# One instruction is twelve floats:
+#   [0] primitive  [1] carve flag  [2] rotation  [3] warp amount
+#   [4] pos.x  [5] pos.y  [6] scale.x  [7] scale.y
+#   [8..10] primitive params  [11] warp base
+# The sample point is rotated, translated, warped, then scaled — in that order,
+# on both interpreters. reel_plate.gdshader decodes the same layout.
+const FLOATS_PER_OP: int = 12
+const MAX_OPS: int = 12
+const OP_CIRCLE: float = 0.0
+const OP_BOX: float = 1.0
+const OP_RHOMBUS: float = 2.0
+## A box whose x narrows as y descends: the bell's flare.
+const OP_SHEAR_BOX: float = 3.0
+## A box whose x narrows toward the tip: the star's spokes.
+const OP_TAPER_BOX: float = 4.0
+
 static var _cache: Dictionary = {}
+static var _ops_cache: Dictionary = {}
+
+
+## Printing strength for a symbol's tint: ink, not a light source. A symbol at
+## full saturation clips to white under the machine's own lamp.
+static func plate_ink(tint: Color) -> Color:
+	return tint.darkened(0.22)
+
+
+## The instruction list for [param symbol_id], or an empty array when the
+## symbol has no drawing.
+static func ops_for(symbol_id: StringName) -> PackedFloat32Array:
+	if _ops_cache.has(symbol_id):
+		return _ops_cache[symbol_id] as PackedFloat32Array
+	var ops: PackedFloat32Array = _build_ops(symbol_id)
+	_ops_cache[symbol_id] = ops
+	return ops
 
 
 ## The sprite for [param symbol_id], or null if this symbol has no drawing.
@@ -34,12 +65,10 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 	var key: String = "%s:%s" % [symbol_id, tint.to_html(false)]
 	if _cache.has(key):
 		return _cache[key] as ImageTexture
-	if not _has_drawing(symbol_id):
+	var ops: PackedFloat32Array = ops_for(symbol_id)
+	if ops.is_empty():
 		return null
-	# Printed ink, not a light source. A symbol at full saturation clips to white
-	# under the machine's own lamp; pulling it down is what lets it behave like
-	# something printed on the reel strip.
-	var ink: Color = tint.darkened(0.22)
+	var ink: Color = plate_ink(tint)
 	var image: Image = Image.create_empty(SIZE, SIZE, false, Image.FORMAT_RGBA8)
 	# One pixel, in the -1..1 space the shapes are described in. Edges are faded
 	# across exactly this much, which is what antialiases them.
@@ -47,13 +76,11 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 	for y: int in SIZE:
 		for x: int in SIZE:
 			# Sampled slightly outside the shapes' own -1..1 range, which insets
-			# them in the sprite. Without the margin a shape that reaches the
-			# edge has its outline clipped off, and the symbol loses the dark
-			# edge that separates it from the cream reel strip.
+			# them in the sprite so the outline is never clipped off.
 			var p: Vector2 = Vector2(
 					((float(x) + 0.5) / float(SIZE) * 2.0 - 1.0) * MARGIN,
 					((float(y) + 0.5) / float(SIZE) * 2.0 - 1.0) * MARGIN)
-			var d: float = _distance(symbol_id, p)
+			var d: float = _distance(ops, p)
 			# Two coverages from one distance: the fill, and the fill dilated by
 			# the stroke width. The difference between them is the outline.
 			var fill: float = _coverage(d, pixel)
@@ -62,7 +89,7 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 				continue
 			var colour: Color = ink.lerp(INK, 1.0 - fill)
 			if fill > 0.0:
-				colour = _emboss(symbol_id, p, d, colour)
+				colour = _emboss(ops, p, d, colour)
 			image.set_pixel(x, y, Color(colour.r, colour.g, colour.b, outer))
 	image.generate_mipmaps()
 	var texture: ImageTexture = ImageTexture.create_from_image(image)
@@ -71,22 +98,14 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 
 
 ## Lights the fill from the upper left, so a symbol reads as struck enamel
-## rather than as a flat sticker.
-##
-## The trick is that a signed distance field already knows which way its own
-## edge faces: sampling it a little up-and-left and differencing gives the slope
-## of the shape's boundary, which is exactly the shading term a bevel needs — no
-## normals, no second pass.
-static func _emboss(symbol_id: StringName, p: Vector2, d: float,
+## rather than as a flat sticker. A signed distance field already knows which
+## way its own edge faces: sampling it a little up-and-left and differencing
+## gives the slope of the boundary, which is exactly the shading a bevel needs.
+static func _emboss(ops: PackedFloat32Array, p: Vector2, d: float,
 		colour: Color) -> Color:
 	const REACH: float = 0.055
-	# Up and to the left, and y runs downward in image space, so both components
-	# are negative. Sampling the other way lights the bottom-right rim instead,
-	# which reads as a symbol lit from below.
-	var slope: float = _distance(symbol_id, p - Vector2(REACH, REACH)) - d
-	# Fades out toward the middle of a shape, so only the rim is bevelled. The
-	# band has to be wide enough to see: at a quarter of this the bevel sat
-	# entirely underneath the outline and did nothing at all.
+	var slope: float = _distance(ops, p - Vector2(REACH, REACH)) - d
+	# Fades out toward the middle of a shape, so only the rim is bevelled.
 	var rim: float = clampf(1.0 + d / 0.62, 0.0, 1.0)
 	var lift: float = clampf(slope / REACH, -1.0, 1.0) * rim
 	if lift > 0.0:
@@ -95,7 +114,6 @@ static func _emboss(symbol_id: StringName, p: Vector2, d: float,
 
 
 ## A soft radial falloff, white, for tinting into a backlight behind a symbol.
-## One texture serves every symbol: the colour comes from the material.
 static func halo() -> ImageTexture:
 	if _cache.has("halo"):
 		return _cache["halo"] as ImageTexture
@@ -106,7 +124,7 @@ static func halo() -> ImageTexture:
 					(float(x) + 0.5) / float(SIZE) * 2.0 - 1.0,
 					(float(y) + 0.5) / float(SIZE) * 2.0 - 1.0)
 			# Squared falloff, then squared again: a linear ramp reads as a disc
-			# with a hard edge, and what this wants is a glow with no edge at all.
+			# with a hard edge, and this wants a glow with no edge at all.
 			var falloff: float = clampf(1.0 - p.length(), 0.0, 1.0)
 			var alpha: float = falloff * falloff * falloff
 			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
@@ -116,137 +134,130 @@ static func halo() -> ImageTexture:
 	return texture
 
 
-static func _has_drawing(symbol_id: StringName) -> bool:
-	return symbol_id in [&"seven", &"cherry", &"bar", &"double_bar", &"bell",
-			&"lemon", &"diamond", &"wild", &"skull"]
+# --- the interpreter -------------------------------------------------------
 
-
-## Signed distance to the symbol: negative inside, positive outside.
-static func _distance(symbol_id: StringName, p: Vector2) -> float:
-	match symbol_id:
-		&"seven":
-			return _seven(p)
-		&"cherry":
-			return _cherry(p)
-		&"bar":
-			return _bars(p, 1)
-		&"double_bar":
-			return _bars(p, 2)
-		&"bell":
-			return _bell(p)
-		&"lemon":
-			return _lemon(p)
-		&"diamond":
-			return _diamond(p)
-		&"wild":
-			return _star(p)
-		&"skull":
-			return _skull(p)
-		_:
-			return 1.0
+## Signed distance to the symbol: negative inside, positive outside. Additive
+## instructions fold with min; carving ones cut the result afterwards. Both
+## interpreters use this two-accumulator fold, and every shape's carves follow
+## its adds, so the fold order never changes a result.
+static func _distance(ops: PackedFloat32Array, p: Vector2) -> float:
+	var added: float = 1.0e6
+	var carved: float = -1.0e6
+	var count: int = ops.size() / FLOATS_PER_OP
+	for i: int in count:
+		var base: int = i * FLOATS_PER_OP
+		var kind: float = ops[base]
+		var q: Vector2 = _rotate(p, ops[base + 2]) \
+				- Vector2(ops[base + 4], ops[base + 5])
+		if kind == OP_SHEAR_BOX:
+			q.x /= 1.0 + maxf(q.y + ops[base + 11], 0.0) * ops[base + 3]
+		elif kind == OP_TAPER_BOX:
+			q.x /= maxf(1.0 + q.y * ops[base + 3], ops[base + 11])
+		q *= Vector2(ops[base + 6], ops[base + 7])
+		var d: float
+		if kind == OP_CIRCLE:
+			d = _circle(q, ops[base + 8])
+		elif kind == OP_RHOMBUS:
+			d = _rhombus(q, Vector2(ops[base + 8], ops[base + 9]))
+		else:
+			d = _box(q, Vector2(ops[base + 8], ops[base + 9]), ops[base + 10])
+		if ops[base + 1] > 0.5:
+			carved = maxf(carved, -d)
+		else:
+			added = minf(added, d)
+	return maxf(added, carved)
 
 
 # --- the symbols -----------------------------------------------------------
 
-## A seven: a top bar and a stroke leaning down-left off its right end.
-##
-## The lean has to be real. An almost-vertical stroke plus a crossbar reads as a
-## capital F, which is what the first attempt drew.
-static func _seven(p: Vector2) -> float:
-	var top: float = _box(p - Vector2(0.0, -0.66), Vector2(0.54, 0.16), 0.04)
-	# The stroke runs from under the bar's right end down to the left. Negating
-	# the angle is deliberate: _rotate turns the sampling point, so the shape
-	# ends up rotated the other way.
-	var stroke: float = _box(_rotate(p - Vector2(0.1, 0.14), -0.34),
-			Vector2(0.155, 0.7), 0.04)
-	return min(top, stroke)
+static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
+	var ops: PackedFloat32Array = PackedFloat32Array()
+	match symbol_id:
+		&"seven":
+			# A top bar and a stroke leaning down-left off its right end. The
+			# lean has to be real: an almost-vertical stroke plus a crossbar
+			# reads as a capital F.
+			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, -0.66),
+					[0.54, 0.16, 0.04])
+			_add(ops, OP_BOX, false, -0.34, _rotate(Vector2(0.1, 0.14), -0.34),
+					[0.155, 0.7, 0.04])
+		&"cherry":
+			# Two fruit on stems, with a leaf.
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(-0.38, 0.42), [0.34])
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.36, 0.5), [0.28])
+			_add(ops, OP_BOX, false, -0.42,
+					_rotate(Vector2(-0.24, -0.12), -0.42), [0.055, 0.42, 0.05])
+			_add(ops, OP_BOX, false, 0.34,
+					_rotate(Vector2(0.2, -0.06), 0.34), [0.05, 0.4, 0.05])
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.26, -0.62), [0.3],
+					Vector2(1.0, 2.6))
+		&"bar":
+			_add(ops, OP_BOX, false, 0.0, Vector2.ZERO, [0.72, 0.24, 0.07])
+		&"double_bar":
+			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, -0.32),
+					[0.72, 0.22, 0.07])
+			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.34),
+					[0.72, 0.22, 0.07])
+		&"bell":
+			# Domed body flaring to a foot, with a clapper below. The flare is
+			# the shear warp; its base is the original 0.1 plus this op's 0.06
+			# translation, because the warp now runs after the translate.
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.14), [0.46])
+			_add(ops, OP_SHEAR_BOX, false, 0.0, Vector2(0.0, 0.06),
+					[0.42, 0.42, 0.06], Vector2.ONE, 0.85, 0.16)
+			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.5), [0.78, 0.11, 0.05])
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, 0.72), [0.14])
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.66), [0.11])
+		&"lemon":
+			# A tilted ellipse with a nub at each end. The nubs sit on the
+			# ellipse's own axis, which is what makes it a lemon, not a circle.
+			_add(ops, OP_CIRCLE, false, 0.36, Vector2.ZERO, [0.66],
+					Vector2(1.0, 1.55))
+			_add(ops, OP_RHOMBUS, false, 0.36, Vector2(0.7, 0.0), [0.24, 0.13])
+			_add(ops, OP_RHOMBUS, false, 0.36, Vector2(-0.7, 0.0), [0.24, 0.13])
+		&"diamond":
+			# A rhombus with a facet notched out of the top: cut stone.
+			_add(ops, OP_RHOMBUS, false, 0.0, Vector2.ZERO, [0.62, 0.86])
+			_add(ops, OP_BOX, true, 0.0, Vector2(0.0, -0.42),
+					[0.26, 0.035, 0.02])
+		&"wild":
+			# Five tapered spokes around a small hub. The taper must narrow
+			# outward, or five blunt spokes merge with the hub into an asterisk.
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2.ZERO, [0.22])
+			for i: int in 5:
+				_add(ops, OP_TAPER_BOX, false, TAU * float(i) / 5.0,
+						Vector2(0.0, -0.5), [0.3, 0.5, 0.02], Vector2.ONE,
+						0.95, 0.12)
+		&"skull":
+			# Cranium, jaw, then sockets, nose and teeth carved out.
+			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.18), [0.62],
+					Vector2(1.0, 1.12))
+			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.5), [0.34, 0.26, 0.12])
+			_add(ops, OP_CIRCLE, true, 0.0, Vector2(-0.24, -0.16), [0.2],
+					Vector2(1.0, 1.25))
+			_add(ops, OP_CIRCLE, true, 0.0, Vector2(0.24, -0.16), [0.2],
+					Vector2(1.0, 1.25))
+			_add(ops, OP_RHOMBUS, true, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
+			_add(ops, OP_BOX, true, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
+		_:
+			pass
+	return ops
 
 
-## Two fruit on stems, with a leaf.
-static func _cherry(p: Vector2) -> float:
-	var left: float = _circle(p - Vector2(-0.38, 0.42), 0.34)
-	var right: float = _circle(p - Vector2(0.36, 0.5), 0.28)
-	# Stems: thin boxes leaning in toward a joint above the fruit.
-	var stem_left: float = _box(_rotate(p - Vector2(-0.24, -0.12), -0.42),
-			Vector2(0.055, 0.42), 0.05)
-	var stem_right: float = _box(_rotate(p - Vector2(0.2, -0.06), 0.34),
-			Vector2(0.05, 0.4), 0.05)
-	var leaf: float = _circle((p - Vector2(0.26, -0.62)) * Vector2(1.0, 2.6), 0.3)
-	return min(min(min(left, right), min(stem_left, stem_right)), leaf)
-
-
-## One or two horizontal bands, the way a bar symbol has always been drawn.
-static func _bars(p: Vector2, count: int) -> float:
-	if count <= 1:
-		return _box(p, Vector2(0.72, 0.24), 0.07)
-	var upper: float = _box(p - Vector2(0.0, -0.32), Vector2(0.72, 0.22), 0.07)
-	var lower: float = _box(p - Vector2(0.0, 0.34), Vector2(0.72, 0.22), 0.07)
-	return min(upper, lower)
-
-
-## A bell: domed body flaring to a foot, with a clapper below.
-static func _bell(p: Vector2) -> float:
-	var dome: float = _circle(p - Vector2(0.0, -0.14), 0.46)
-	# The flare, as a box widening downward — approximated by shearing x with y.
-	var flare: Vector2 = Vector2(p.x / (1.0 + maxf(p.y + 0.1, 0.0) * 0.85), p.y)
-	var body: float = _box(flare - Vector2(0.0, 0.06), Vector2(0.42, 0.42), 0.06)
-	var foot: float = _box(p - Vector2(0.0, 0.5), Vector2(0.78, 0.11), 0.05)
-	var clapper: float = _circle(p - Vector2(0.0, 0.72), 0.14)
-	var crown: float = _circle(p - Vector2(0.0, -0.66), 0.11)
-	return min(min(min(dome, body), min(foot, clapper)), crown)
-
-
-## A tilted ellipse with a nub at each end.
-##
-## Scaling the sample point compresses the shape on that axis, so multiplying y
-## by 1.5 gives a body two-thirds as tall as it is wide. The nubs are small
-## rhombi placed on the ellipse's own axis, which is what makes it a lemon
-## rather than a circle.
-static func _lemon(p: Vector2) -> float:
-	var q: Vector2 = _rotate(p, 0.36)
-	var body: float = _circle(q * Vector2(1.0, 1.55), 0.66)
-	var tip_a: float = _rhombus(q - Vector2(0.7, 0.0), Vector2(0.24, 0.13))
-	var tip_b: float = _rhombus(q + Vector2(0.7, 0.0), Vector2(0.24, 0.13))
-	return min(body, min(tip_a, tip_b))
-
-
-## A rhombus with a facet notched out of the top, so it reads as cut stone.
-static func _diamond(p: Vector2) -> float:
-	var stone: float = _rhombus(p, Vector2(0.62, 0.86))
-	var facet: float = _box(p - Vector2(0.0, -0.42), Vector2(0.26, 0.035), 0.02)
-	# Subtract the facet from the stone: max(a, -b).
-	return maxf(stone, -facet)
-
-
-## A five-pointed star: five tapered spokes around a small hub.
-##
-## The taper must narrow *outward*. Dividing x by a factor that grows toward the
-## tip widens it instead, and five spokes that do not come to a point merge with
-## the hub into an asterisk — which is what the first attempt drew.
-static func _star(p: Vector2) -> float:
-	var d: float = _circle(p, 0.22)
-	for i: int in 5:
-		var angle: float = TAU * float(i) / 5.0
-		# Each spoke spans y from -1 (the tip) to 0 (the hub) after this shift.
-		var spoke: Vector2 = _rotate(p, angle) - Vector2(0.0, -0.5)
-		# Dividing x by a factor below 1 makes the inside test stricter, so the
-		# spoke is narrow where that factor is small — at the tip.
-		var taper: float = maxf(1.0 + spoke.y * 0.95, 0.12)
-		d = min(d, _box(Vector2(spoke.x / taper, spoke.y), Vector2(0.3, 0.5), 0.02))
-	return d
-
-
-## Cranium, jaw, two sockets and a nose.
-static func _skull(p: Vector2) -> float:
-	var cranium: float = _circle((p - Vector2(0.0, -0.18)) * Vector2(1.0, 1.12), 0.62)
-	var jaw: float = _box(p - Vector2(0.0, 0.5), Vector2(0.34, 0.26), 0.12)
-	var head: float = min(cranium, jaw)
-	var eye_left: float = _circle((p - Vector2(-0.24, -0.16)) * Vector2(1.0, 1.25), 0.2)
-	var eye_right: float = _circle((p - Vector2(0.24, -0.16)) * Vector2(1.0, 1.25), 0.2)
-	var nose: float = _rhombus(p - Vector2(0.0, 0.16), Vector2(0.09, 0.14))
-	var teeth: float = _box(p - Vector2(0.0, 0.5), Vector2(0.4, 0.03), 0.01)
-	# Sockets and teeth are cut out of the head.
-	return maxf(maxf(head, -min(eye_left, eye_right)), -min(nose, teeth))
+static func _add(ops: PackedFloat32Array, kind: float, carve: bool, rot: float,
+		pos: Vector2, params: Array, scale: Vector2 = Vector2.ONE,
+		warp_amount: float = 0.0, warp_base: float = 0.0) -> void:
+	ops.append(kind)
+	ops.append(1.0 if carve else 0.0)
+	ops.append(rot)
+	ops.append(warp_amount)
+	ops.append(pos.x)
+	ops.append(pos.y)
+	ops.append(scale.x)
+	ops.append(scale.y)
+	for i: int in 3:
+		ops.append(float(params[i]) if i < params.size() else 0.0)
+	ops.append(warp_base)
 
 
 # --- distance primitives ---------------------------------------------------

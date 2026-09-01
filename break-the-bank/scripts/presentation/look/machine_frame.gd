@@ -24,9 +24,14 @@ const PLINTH_TOP: float = 0.42
 ## outer two curving away out of sight.
 const REEL_RADIUS: float = 0.38
 const REEL_SPACING: float = 0.43
-## How far round the drum the symbols above and below the payline sit, in
-## radians. At this radius that puts them roughly 0.22m either side of centre.
-const BAND_ANGLE: float = 0.62
+## One printed cell of the reel strip, in radians. The drum divides into
+## [code]ReelPrint.CELLS[/code] of them, and the band above and below the
+## payline sits exactly one cell either side — the band sprites, the strip
+## print and a nudge's quarter-turn all share this one number, which is what
+## keeps a dynamic plate registered with the printing behind it.
+const BAND_ANGLE: float = TAU / float(ReelPrint.CELLS)
+## Width of a drum along its axle.
+const DRUM_WIDTH: float = 0.38
 ## Distance from the machine's centre plane to the front face of a reel drum.
 const REEL_Z: float = 0.3
 ## Modules are authored around a 0.26m bracket; at that size they read as
@@ -168,14 +173,18 @@ static func bank_half_width(reel_count: int) -> float:
 func _reel_bank(reel_count: int) -> Array[Node3D]:
 	var bank: Node3D = _group(&"Reels")
 	bank.position = Vector3(0.0, CHASSIS_Y + 0.05, REEL_Z)
-	var drum: CylinderMesh = CylinderMesh.new()
-	drum.top_radius = REEL_RADIUS
-	drum.bottom_radius = REEL_RADIUS
-	drum.height = 0.38
-	drum.radial_segments = 40
+	var count: int = maxi(reel_count, 1)
+	var centre: float = float(count - 1) * 0.5
+	# One tube and one arc, shared by every drum: the tube wears the whole
+	# printed strip, the arc is a single cell of the same surface, lifted just
+	# clear so a landed plate overprints the cell behind it.
+	var drum_mesh: ArrayMesh = _drum_tube(REEL_RADIUS, DRUM_WIDTH, 48)
+	var plate_mesh: ArrayMesh = _plate_arc(REEL_RADIUS + 0.004, DRUM_WIDTH)
 	var reels: Array[Node3D] = []
-	var centre: float = float(maxi(reel_count, 1) - 1) * 0.5
-	for i: int in maxi(reel_count, 1):
+	# Every material that shows the strip, drums and plates alike, collected so
+	# the bake can dress them all in one pass when it lands a frame from now.
+	var strip_materials: Array[StandardMaterial3D] = []
+	for i: int in count:
 		var reel: Node3D = Node3D.new()
 		reel.name = "Reel%d" % i
 		reel.position = Vector3((float(i) - centre) * REEL_SPACING, 0.0, 0.0)
@@ -183,66 +192,54 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 
 		var face: MeshInstance3D = MeshInstance3D.new()
 		face.name = "Face"
-		face.mesh = drum
-		# The drum's own axis is Y; rotating it onto X makes it roll toward the
-		# player when the reel node turns about X, which is how the view spins it.
-		face.transform.basis = Basis(Vector3(0.0, 0.0, 1.0), PI * 0.5)
-		face.material_override = Materials.enamel(Materials.ENAMEL, 67 + i)
+		face.mesh = drum_mesh
+		var face_material: StandardMaterial3D = _strip_material()
+		# Each drum starts its strip a few cells round from its neighbour.
+		# One texture serves every drum, and this is what stops three of them
+		# reading as three copies of the same photograph.
+		face_material.uv1_offset.y = fmod(float(i) * 3.0,
+				float(ReelPrint.CELLS)) / float(ReelPrint.CELLS)
+		face.material_override = face_material
+		strip_materials.append(face_material)
 		reel.add_child(face)
 
-		# Three symbols per reel, printed round the drum: what landed, and what
-		# nearly did either side of it. A window showing one symbol per reel
-		# throws away most of what a slot machine is for — the near miss is the
-		# drama, and you cannot have one you were never shown.
-		#
-		# The band symbols ride the drum's surface at BAND_ANGLE, turned to face
-		# out, so they are genuinely printed on it rather than floating flat.
+		# Metal end rims and a hub either side: a drum is a wheel, and a strip
+		# of paper with no hardware holding it is a label, not a reel.
+		for sx: float in [-1.0, 1.0]:
+			Prims.cylinder(reel, REEL_RADIUS + 0.009, 0.016,
+					Vector3(sx * (DRUM_WIDTH * 0.5 + 0.008), 0.0, 0.0),
+					Vector3(0.0, 0.0, PI * 0.5),
+					Materials.machined(Materials.STEEL, 61), 32)
+			Prims.cylinder(reel, 0.07, 0.03,
+					Vector3(sx * (DRUM_WIDTH * 0.5 + 0.03), 0.0, 0.0),
+					Vector3(0.0, 0.0, PI * 0.5),
+					Materials.brass(62), 20)
+
+		# Three cells of window per reel: what landed, and what nearly did
+		# either side of it. The near miss is the drama, and you cannot have
+		# one you were never shown. Each plate is the strip's own printing,
+		# addressed one cell at a time by uv offset — the payline at full
+		# strength, the band dimmed to context.
 		for slot: int in 3:
 			var offset: float = float(slot - 1) * BAND_ANGLE
-			var printed: Sprite3D = Sprite3D.new()
-			printed.name = ["Above", "Payline", "Below"][slot]
-			printed.pixel_size = 0.0021
-			printed.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-			printed.shaded = false
-			printed.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-			printed.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			printed.visible = false
-			# The band is dimmer than the payline: it is context, not the result.
-			printed.modulate = (Color(1, 1, 1, 1) if slot == 1
-					else Color(0.62, 0.6, 0.58))
-			printed.position = Vector3(0.0,
-					sin(-offset) * (REEL_RADIUS + 0.006),
-					cos(offset) * (REEL_RADIUS + 0.006))
-			printed.rotation.x = offset
-			reel.add_child(printed)
+			var plate: MeshInstance3D = MeshInstance3D.new()
+			plate.name = ["Above", "Payline", "Below"][slot]
+			plate.mesh = plate_mesh
+			var plate_material: StandardMaterial3D = _strip_material()
+			plate_material.uv1_scale = Vector3(
+					1.0, 1.0 / float(ReelPrint.CELLS), 1.0)
+			plate_material.albedo_color = (Color.WHITE if slot == 1
+					else Color(0.8, 0.78, 0.75))
+			plate.material_override = plate_material
+			strip_materials.append(plate_material)
+			plate.rotation.x = offset
+			plate.visible = false
+			reel.add_child(plate)
 
-		# The backlight behind a symbol. A quad rather than a Sprite3D because
-		# it has to blend additively, and setting a material_override on a
-		# Sprite3D throws away the sprite's own texture handling.
-		var glow: MeshInstance3D = MeshInstance3D.new()
-		glow.name = "Glow"
-		var halo_quad: QuadMesh = QuadMesh.new()
-		halo_quad.size = Vector2(0.66, 0.66)
-		glow.mesh = halo_quad
-		var halo: StandardMaterial3D = StandardMaterial3D.new()
-		halo.albedo_texture = SymbolArt.halo()
-		halo.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		halo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		halo.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		halo.cull_mode = BaseMaterial3D.CULL_DISABLED
-		# Never write depth: the glow sits between the drum and the symbol, and
-		# an additive quad that writes depth punches a hole in whatever follows.
-		halo.no_depth_test = false
-		halo.disable_receive_shadows = true
-		glow.material_override = halo
-		glow.visible = false
-		glow.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.003)
-		reel.add_child(glow)
-
-		# Two ways to show a symbol, and only ever one of them visible: a drawn
-		# sprite where SymbolArt has art, and the glyph token as text where it
-		# does not. New content therefore lands legible without needing art
-		# first, which is the whole reason the text path survives.
+		# Two ways to show a symbol, and only ever one of them visible: the
+		# strip cell where the symbol has printed art, and the glyph token as
+		# text where it does not. New content therefore lands legible without
+		# needing art first, which is the whole reason the text path survives.
 		var symbol: Label3D = Label3D.new()
 		symbol.name = "Symbol"
 		symbol.text = "?"
@@ -255,12 +252,100 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 		# is blank, not a question mark — which is what a machine that has just
 		# grown two new reels shows until the next spin fills them.
 		symbol.visible = false
-		# Just clear of the drum surface, so it reads as printed on the strip.
-		symbol.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.004)
+		# Just clear of the plates, so the fallback is never inside the print.
+		symbol.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.009)
 		reel.add_child(symbol)
 		_reel_lamps(reel)
 		reels.append(reel)
+	# The axle the drums turn on, visible in the gaps between them.
+	Prims.cylinder(bank, 0.045,
+			float(count - 1) * REEL_SPACING + DRUM_WIDTH + 0.2,
+			Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5),
+			Materials.machined(Materials.STEEL, 63), 14)
+	# The lamp inside the window. The key light hangs above the machine, so the
+	# band below the payline curves down into its own shadow — which the old
+	# unshaded sprites never showed, and physical plates do. Real machines put
+	# a bulb in the window for exactly this reason.
+	var lamp: OmniLight3D = OmniLight3D.new()
+	lamp.name = "WindowLamp"
+	lamp.light_color = Materials.LAMP
+	lamp.light_energy = 1.05
+	lamp.omni_range = 1.15
+	lamp.omni_attenuation = 1.4
+	lamp.shadow_enabled = false
+	lamp.position = Vector3(0.0, 0.02, REEL_RADIUS + 0.3)
+	bank.add_child(lamp)
+	# Dress every drum and plate in the printed strip. The bake takes a frame
+	# on its first run, so the drums boot wearing plain paper and are dressed
+	# the moment the strip exists; on a window rebuild the cached strip dresses
+	# them synchronously.
+	ReelPrint.bake(_root, func() -> void:
+		var strip: ImageTexture = ReelPrint.strip()
+		for material: StandardMaterial3D in strip_materials:
+			material.albedo_texture = strip)
 	return reels
+
+
+## An open cylinder about the X axis wearing the full reel strip: U runs along
+## the axle, V runs around the circumference, one strip cell per BAND_ANGLE of
+## arc, with cell 0 centred on the payline at rest. Built by hand because a
+## [CylinderMesh] cannot put the strip's V around its side, and the whole point
+## of the drum is that the print and the geometry agree about where cells are.
+func _drum_tube(radius: float, width: float, segments: int) -> ArrayMesh:
+	return _arc_tube(radius, width, -0.5 * BAND_ANGLE, TAU - 0.5 * BAND_ANGLE,
+			segments, 1.0 / float(ReelPrint.CELLS))
+
+
+## One cell of the same surface, centred on the front, V spanning 0..1 so a
+## material's uv offset can address any cell of the strip.
+func _plate_arc(radius: float, width: float) -> ArrayMesh:
+	return _arc_tube(radius, width, -0.4975 * BAND_ANGLE, 0.4975 * BAND_ANGLE,
+			8, 1.0 / BAND_ANGLE)
+
+
+## The shared builder. Parameter t runs round the drum — t = 0 is the payline,
+## the front of the machine — and V is t scaled by [param v_per_radian], offset
+## so the arc's own start sits at V = 0 for a plate and cell 0 centres the
+## front for a drum.
+func _arc_tube(radius: float, width: float, t0: float, t1: float,
+		segments: int, v_per_radian: float) -> ArrayMesh:
+	var surface: SurfaceTool = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for s: int in segments + 1:
+		var t: float = lerpf(t0, t1, float(s) / float(segments))
+		var v: float = (t - t0) * v_per_radian
+		# A point at parameter t, on a drum that rolls toward the player as its
+		# rotation about X grows: below the payline is positive t.
+		var y: float = -sin(t) * radius
+		var z: float = cos(t) * radius
+		surface.set_normal(Vector3(0.0, -sin(t), cos(t)))
+		surface.set_uv(Vector2(0.0, v))
+		surface.add_vertex(Vector3(-width * 0.5, y, z))
+		surface.set_normal(Vector3(0.0, -sin(t), cos(t)))
+		surface.set_uv(Vector2(1.0, v))
+		surface.add_vertex(Vector3(width * 0.5, y, z))
+	for s: int in segments:
+		var a: int = s * 2
+		surface.add_index(a)
+		surface.add_index(a + 1)
+		surface.add_index(a + 2)
+		surface.add_index(a + 2)
+		surface.add_index(a + 1)
+		surface.add_index(a + 3)
+	return surface.commit()
+
+
+## The material every strip surface wears: plain paper until the bake lands,
+## anisotropic because a drum is all grazing angles, and a touch of gloss so
+## the print catches the key light the way coated paper does.
+func _strip_material() -> StandardMaterial3D:
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = Color.WHITE
+	material.roughness = 0.62
+	material.metallic = 0.0
+	material.texture_filter = \
+			BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return material
 
 
 ## The two lamps a fruit machine puts by every drum: HOLD under it, and the
