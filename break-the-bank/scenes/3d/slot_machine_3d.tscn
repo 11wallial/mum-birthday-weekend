@@ -61,7 +61,7 @@ color_ramp = SubResource("Grad_coin")
 [node name="MachineLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.12, 0.62)
 light_color = Color(1, 0.741, 0.435, 1)
-light_energy = 2.4
+light_energy = 1.0
 light_specular = 0.8
 omni_range = 3.4
 omni_attenuation = 1.5

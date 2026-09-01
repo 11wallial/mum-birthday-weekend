@@ -27,10 +27,27 @@ var _light: OmniLight3D
 var _audio: AudioDirector
 var _bus: EffectBus
 var _pending: Array[Dictionary] = []
+## How much a symbol has to be worth before it lights up at all, and the value
+## at which its backlight is at full strength. Below the floor a symbol is just
+## printed on the strip; a machine where everything glows says nothing about
+## what landed.
+const GLOW_FLOOR: float = 4.0
+const GLOW_CEILING: float = 14.0
+## Extra backlight per artifact the run has bought, as a fraction. A stacked
+## machine is visibly hotter than a fresh one — the glow is the run's progress
+## made physical, which is the same job the cash stacks and floor markers do.
+const GLOW_PER_UPGRADE: float = 0.16
+## Brightness of a top-value symbol on a fresh machine. Above the environment's
+## 1.1 bloom threshold, so the best symbols flare rather than just tint.
+const GLOW_GAIN: float = 2.3
+const GLOW_MAX: float = 3.4
+
 ## True from the first frame of a spin until the last reel has settled. The room
 ## refuses to advance the run while this holds, so the simulation can never get
 ## more than one spin ahead of what the player is looking at.
 var _busy: bool = false
+## Artifacts acquired this run. Drives how hard the reels are backlit.
+var _upgrades: int = 0
 
 
 func _ready() -> void:
@@ -69,7 +86,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.PAYOUT_CALCULATED:
 			_play_spin(int(payload.get("payout", 0)), float(payload.get("multiplier", 1.0)))
 		EffectBus.Event.ARTIFACT_ACQUIRED:
+			_upgrades += 1
 			_attach_module(StringName(payload.get("artifact", &"")))
+		EffectBus.Event.RUN_STARTED:
+			_upgrades = 0
 		_:
 			pass
 
@@ -101,15 +121,59 @@ func _play_spin(payout: int, multiplier: float) -> void:
 ## Reveals the landed symbol as its reel comes to rest.
 func _settle_reel(index: int) -> void:
 	if index < _pending.size():
-		var label: Label3D = _reels[index].get_node_or_null("Symbol") as Label3D
-		if label != null:
-			label.text = String(_pending[index].get("glyph", "?"))
-			var tint: Color = _pending[index].get("color", Color.WHITE)
-			label.modulate = tint
+		_show_symbol(_reels[index], _pending[index])
 	# Land on a whole turn so the drum never settles crooked after many spins.
 	_reels[index].rotation.x = fmod(_reels[index].rotation.x, TAU)
 	if _audio != null:
 		_audio.play("reel_stop", randf_range(0.94, 1.06))
+
+
+## Puts one landed symbol on one reel, preferring drawn art and falling back to
+## the glyph token. Exactly one of the two nodes is ever visible.
+func _show_symbol(reel: Node3D, landed: Dictionary) -> void:
+	var art: Sprite3D = reel.get_node_or_null(^"Art") as Sprite3D
+	var label: Label3D = reel.get_node_or_null(^"Symbol") as Label3D
+	var tint: Color = landed.get("color", Color.WHITE)
+	var texture: ImageTexture = SymbolArt.texture_for(
+			StringName(landed.get("symbol", &"")), tint)
+	if art != null:
+		art.texture = texture
+		art.visible = texture != null
+	if label != null:
+		label.text = String(landed.get("glyph", "?"))
+		label.modulate = tint
+		label.visible = texture == null
+	_set_glow(reel, tint, float(landed.get("value", 0)))
+
+
+## Lights the strip behind a symbol in proportion to what it is worth, scaled by
+## how many upgrades the run is carrying.
+func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
+	var glow: MeshInstance3D = reel.get_node_or_null(^"Glow") as MeshInstance3D
+	if glow == null:
+		return
+	var material: StandardMaterial3D = glow.material_override as StandardMaterial3D
+	if material == null:
+		return
+	var importance: float = clampf(
+			inverse_lerp(GLOW_FLOOR, GLOW_CEILING, value), 0.0, 1.0)
+	if importance <= 0.0:
+		glow.visible = false
+		return
+	# Scaled past 1 deliberately: the environment blooms above 1.1, so a top
+	# symbol on a stacked machine does not merely tint the strip, it flares.
+	var energy: float = minf(
+			importance * GLOW_GAIN * (1.0 + float(_upgrades) * GLOW_PER_UPGRADE),
+			GLOW_MAX)
+	glow.visible = true
+	# Additive, so the alpha carries the falloff and the colour carries the
+	# strength; pushing the colour past 1 is what makes a jackpot bloom.
+	material.albedo_color = Color(tint.r * energy, tint.g * energy, tint.b * energy, 1.0)
+	# A short flare as it lands, settling back to its resting brightness.
+	glow.scale = Vector3.ONE * 1.35
+	var tween: Tween = create_tween()
+	tween.tween_property(glow, "scale", Vector3.ONE, 0.32) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _finish_spin(payout: int, multiplier: float) -> void:

@@ -133,6 +133,46 @@ func _reel_bank() -> Array[Node3D]:
 		face.material_override = Materials.enamel(Materials.ENAMEL, 67 + i)
 		reel.add_child(face)
 
+		# The backlight behind a symbol. A quad rather than a Sprite3D because
+		# it has to blend additively, and setting a material_override on a
+		# Sprite3D throws away the sprite's own texture handling.
+		var glow: MeshInstance3D = MeshInstance3D.new()
+		glow.name = "Glow"
+		var halo_quad: QuadMesh = QuadMesh.new()
+		halo_quad.size = Vector2(0.66, 0.66)
+		glow.mesh = halo_quad
+		var halo: StandardMaterial3D = StandardMaterial3D.new()
+		halo.albedo_texture = SymbolArt.halo()
+		halo.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		halo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		halo.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		halo.cull_mode = BaseMaterial3D.CULL_DISABLED
+		# Never write depth: the glow sits between the drum and the symbol, and
+		# an additive quad that writes depth punches a hole in whatever follows.
+		halo.no_depth_test = false
+		halo.disable_receive_shadows = true
+		glow.material_override = halo
+		glow.visible = false
+		glow.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.003)
+		reel.add_child(glow)
+
+		# Two ways to show a symbol, and only ever one of them visible: a drawn
+		# sprite where SymbolArt has art, and the glyph token as text where it
+		# does not. New content therefore lands legible without needing art
+		# first, which is the whole reason the text path survives.
+		var art: Sprite3D = Sprite3D.new()
+		art.name = "Art"
+		art.pixel_size = 0.0028
+		art.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		art.shaded = false
+		# Discard rather than blend: the sprite sits a few millimetres off a
+		# curved drum, and alpha blending there sorts against the drum badly.
+		art.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+		art.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		art.visible = false
+		art.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.005)
+		reel.add_child(art)
+
 		var symbol: Label3D = Label3D.new()
 		symbol.name = "Symbol"
 		symbol.text = "?"
