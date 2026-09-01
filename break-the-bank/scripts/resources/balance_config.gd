@@ -24,8 +24,17 @@ extends Resource
 @export var synergy_bonus: float = 0.5
 ## Owned artifacts sharing a tag needed before the synergy bonus applies.
 @export var synergy_threshold: int = 3
-## Shop price inflation per cleared floor, as a percent of base cost.
+## Shop price inflation per cleared floor, as a percent of base cost. Applies to
+## an artifact's authored price, which is the floor its price never drops below.
 @export var shop_inflation_percent: float = 15.0
+## Credits of ante that one credit of an artifact's authored cost is worth once
+## the ante has outgrown it.
+##
+## An artifact cost forty credits on the first floor and forty-six on the last,
+## against an ante that had grown four hundred times over — so from about floor
+## three the draft was free, and a floor's worth of decisions collapsed into
+## "buy all of it". Priced against the ante, every draft costs something.
+@export var shop_ante_divisor: float = 130.0
 ## Percent of outstanding debt demanded in cash when a floor is cleared. This is
 ## the vig: it is charged before the ante, so debt competes with survival every
 ## floor rather than being a single bill at the end of the run.
@@ -51,6 +60,51 @@ extends Resource
 @export var sellback_percent: float = 45.0
 ## Markup added to anything bought on the slate, on top of it becoming debt.
 @export var slate_markup_percent: float = 40.0
+
+## Dividend the vault pays into the purse every time a floor is cleared, as a
+## percent of the principal. The principal stays locked and comes back at the
+## end of the run, so a deposit is cash now traded for income later — and the
+## rate has to beat the floors remaining, which is what makes it a decision.
+@export var vault_interest_percent: float = 30.0
+## Vault balance, in multiples of the floor's ante, that buys +1.0 on every
+## payout. The vault's real draw is not the dividend: it is collateral. A house
+## lets a player with a reserve play deeper, which is the exact mirror of the
+## leverage a player gets for being in debt — and priced off the ante so it
+## means the same thing on floor four as on floor seven.
+@export var vault_collateral_antes: float = 0.55
+## Ceiling on that multiplier, so a hoard can never become the whole build.
+@export var vault_collateral_cap: float = 3.0
+## Share of a withdrawal kept by the house when the vault is broken into
+## mid-floor rather than opened between floors.
+@export var vault_break_percent: float = 25.0
+
+## Reels and scoring rows the machine can be grown by, beyond what it ships
+## with. Two of each: a five-reel, three-row machine is a monster, and a monster
+## is where the growth should stop rather than a number that keeps going.
+@export var max_extra_reels: int = 2
+@export var max_extra_rows: int = 2
+## Cost of the first extra reel and the first extra row, as a percent of the
+## ante of the floor just cleared. Priced off the ante so the works stay a
+## serious decision on floor six and on floor seven alike.
+@export var reel_cost_percent: float = 24.0
+@export var row_cost_percent: float = 38.0
+
+## Count the House reaches before it starts skimming, before it cools the reels,
+## and before it sends someone over. The count rises with what you win and falls
+## with every spin you do not.
+@export var heat_skim_at: float = 35.0
+@export var heat_cold_at: float = 65.0
+@export var heat_boss_at: float = 100.0
+## Count added per multiple of par won, and taken off per spin regardless.
+@export var heat_per_par: float = 9.0
+@export var heat_decay: float = 3.0
+## Share the skim takes once it starts, and the share of the ante the pit boss
+## adds when it sends someone over.
+@export var heat_skim_percent: float = 15.0
+@export var heat_boss_ante_percent: float = 20.0
+## Credits per point of count charged to launder, and the points it buys off.
+@export var launder_cost: float = 1.4
+@export var launder_relief: float = 40.0
 
 ## Floors cleared before the vig starts. The first floor is the tutorial; a
 ## debt payment on top of the opening ante just ends runs before they begin.

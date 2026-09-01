@@ -69,6 +69,21 @@ func clear_holds() -> void:
 		held[i] = false
 
 
+## The rows that score, innermost first: the payline, then the band above it,
+## then the band below.
+##
+## A row the machine has not been widened to read is still drawn and still
+## shown — it is what nearly landed, and what a nudge can pull down — it simply
+## does not pay. Which is the point of buying the row.
+func scoring_rows(extra_rows: int) -> Array:
+	var rows: Array = [line]
+	if extra_rows >= 1:
+		rows.append(above)
+	if extra_rows >= 2:
+		rows.append(below)
+	return rows
+
+
 ## The whole column standing on [param reel], top to bottom.
 func column(reel: int) -> Array[SymbolDef]:
 	var out: Array[SymbolDef] = []

@@ -24,6 +24,43 @@ var stake_policy: Callable = Callable()
 ## Picks which reels to hold for the coming spin. Signature:
 ## [code]func(state: RunState, board: SpinBoard) -> PackedInt32Array[/code].
 var hold_policy: Callable = Callable()
+## Picks which contract to sign. Signature:
+## [code]func(state: RunState, offers: Array[ContractDef]) -> int[/code].
+var contract_policy: Callable = Callable()
+## Works the vault, banking between floors and breaking it in a pinch.
+## Signature: [code]func(engine: SimEngine, state: RunState) -> void[/code].
+var vault_policy: Callable = Callable()
+## Decides whether to have a word with someone. Signature:
+## [code]func(state: RunState) -> bool[/code].
+var launder_policy: Callable = Callable()
+## Fits reels and rows when the machine can be paid for. Signature:
+## [code]func(engine: SimEngine, state: RunState) -> void[/code].
+var works_policy: Callable = Callable()
+
+## Share of the coming ante the automated policy keeps liquid: enough to spin
+## for the ante with, not enough to cover it. Covering it in cash would mean
+## never banking anything, which is how the vault ends up as scenery.
+const VAULT_LIQUIDITY: float = 0.35
+## Spins left on the floor before the policy will pay the fee to break the vault.
+const VAULT_PANIC_SPINS: int = 3
+## Share of the coming ante the automated buyer keeps out of the draft. Small:
+## in this economy cash does not compound and a bought artifact does, so a buyer
+## who hoards loses to one who spends. The slack is there for the vault and the
+## works, not for safety.
+const SHOP_RESERVE: float = 0.05
+
+## Share of the ante in play held back before fitting works. Well under the
+## whole thing: the machine is expected to earn the rest of it, which is the bet
+## the engine room is asking the player to make.
+const WORKS_RESERVE: float = 0.55
+
+## Contracts put on the table before a floor once the back office is open.
+const CONTRACT_SLOTS: int = 3
+
+## Draw weight for an artifact the current floor has only just unlocked, and how
+## much that weight drops for every floor of age after it.
+const FRESH_WEIGHT: int = 10
+const STALE_STEP: int = 2
 
 ## Base value a symbol has to reach before the automated policy will pay to
 ## hold a pair of it. Bells and up; fruit is not worth a lock.
@@ -41,6 +78,10 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	gamble_policy = Callable(SimEngine, "default_gamble_policy")
 	stake_policy = Callable(SimEngine, "default_stake_policy")
 	hold_policy = Callable(SimEngine, "default_hold_policy")
+	contract_policy = Callable(SimEngine, "default_contract_policy")
+	vault_policy = Callable(SimEngine, "default_vault_policy")
+	launder_policy = Callable(SimEngine, "default_launder_policy")
+	works_policy = Callable(SimEngine, "default_works_policy")
 
 
 func get_bus() -> EffectBus:
@@ -80,6 +121,13 @@ func step(state: RunState) -> void:
 	if state.phase == RunState.Phase.SHOPPING:
 		leave_shop(state)
 		return
+	if state.phase == RunState.Phase.SIGNING:
+		var choice: int = 0
+		if contract_policy.is_valid():
+			choice = int(contract_policy.call(state, state.contract_offers))
+		if not sign_contract(state, choice):
+			sign_contract(state, 0)
+		return
 	# A board mid-decision is the next unit of play, not the next spin: an
 	# automated run has to work the nudges and the ladder through the same
 	# public calls a player would, or the lab measures a game nobody plays.
@@ -92,6 +140,12 @@ func step(state: RunState) -> void:
 	if state.spins_remaining <= 0:
 		_close_floor(state)
 		return
+	if launder_policy.is_valid() and bool(launder_policy.call(state)):
+		launder(state)
+	if vault_policy.is_valid():
+		vault_policy.call(self, state)
+	if works_policy.is_valid():
+		works_policy.call(self, state)
 	if stake_policy.is_valid():
 		set_stake(state, int(stake_policy.call(state)))
 	if hold_policy.is_valid() and state.has_system(Systems.HOLD):
@@ -122,8 +176,8 @@ func begin_floor(state: RunState) -> void:
 	state.phase = RunState.Phase.SPINNING
 	state.decision = RunState.Decision.NONE
 	state.board.clear_holds()
-	state.spins_remaining = (floor_def.spins + ArtifactEngine.spin_bonus(state)
-			+ state.options.bonus_spins)
+	state.spins_remaining = maxi(1, floor_def.spins + ArtifactEngine.spin_bonus(state)
+			+ state.options.bonus_spins + ContractEngine.spins_delta(state))
 	# Announced before FLOOR_STARTED so the interface can put the new verb on
 	# screen as the floor opens rather than a beat into it.
 	for granted: StringName in floor_def.grants:
@@ -186,7 +240,7 @@ func spin(state: RunState) -> SpinBoard:
 ## nudging or widening the window can never move what the payline itself drew.
 func _draw_board(state: RunState) -> void:
 	var board: SpinBoard = state.board
-	board.resize(state.config.reel_count)
+	board.resize(state.machine_reels())
 	var reel: Array[Probability.ReelEntry] = state.reel()
 	for i: int in board.reel_count():
 		if board.is_held(i):
@@ -211,18 +265,37 @@ func _draw_board(state: RunState) -> void:
 ## board. Called again, quietly, after every nudge.
 func _resolve_board(state: RunState, announce: bool) -> void:
 	var board: SpinBoard = state.board
-	board.pattern = Probability.detect_pattern(board.line)
-	var ctx: ArtifactEngine.SpinContext = ArtifactEngine.evaluate_spin(
-			state, board.line, board.pattern, announce)
+	var rows: Array = board.scoring_rows(state.extra_rows)
 	var stake: int = maxi(1, state.stake)
-	board.multiplier = ctx.multiplier * float(stake)
-	board.payout = ctx.total() * stake
+	var total: int = 0
+	var base: int = 0
+	var flat: float = 0.0
+	var triggered: Array[StringName] = []
+	# The payline is the row the machine is read by, so its pattern and its
+	# multiplier are the ones reported; the bought rows add to the number
+	# without taking over what the spin is called.
+	board.pattern = Probability.detect_pattern(board.line)
+	board.multiplier = 1.0
+	for i: int in rows.size():
+		var row: Array[SymbolDef] = rows[i]
+		var pattern: Probability.Pattern = (board.pattern if i == 0
+				else Probability.detect_pattern(row))
+		var ctx: ArtifactEngine.SpinContext = ArtifactEngine.evaluate_spin(
+				state, row, pattern, announce and i == 0)
+		total += ctx.total()
+		base += ctx.base_payout
+		flat += ctx.flat_bonus
+		if i == 0:
+			board.multiplier = ctx.multiplier * float(stake)
+			triggered = ctx.triggered
+	board.payout = total * stake
 	board.breakdown = {
-		"base": ctx.base_payout,
-		"flat_bonus": ctx.flat_bonus,
+		"base": base,
+		"flat_bonus": flat,
 		"multiplier": board.multiplier,
-		"triggered": ctx.triggered,
+		"triggered": triggered,
 		"stake": stake,
+		"rows": rows.size(),
 	}
 
 
@@ -310,9 +383,11 @@ static func _award_nudges(state: RunState, board: SpinBoard) -> void:
 	# A bigger wager runs the machine hotter, and hardware can put the trail on
 	# the house. This is what makes a raised stake more than a flat multiple of
 	# a number you were getting anyway.
-	board.free_nudges = ArtifactEngine.nudge_bonus(state)
+	board.free_nudges = ArtifactEngine.nudge_bonus(state) \
+			+ ContractEngine.nudge_delta(state)
 	if state.stake >= 3:
 		board.free_nudges += 1
+	board.free_nudges = maxi(0, board.free_nudges)
 	board.free_nudges = mini(board.free_nudges, board.nudges)
 
 
@@ -414,6 +489,7 @@ func collect(state: RunState) -> void:
 	state.last_payout = board.payout
 	state.decision = RunState.Decision.NONE
 	state.economy.credit(board.payout, &"payout")
+	_observe_heat(state, board.payout)
 	if not _bus.is_live():
 		return
 	var payload: Dictionary = board.breakdown.duplicate()
@@ -422,6 +498,107 @@ func collect(state: RunState) -> void:
 	payload["nudges_used"] = board.nudges_used
 	payload["gamble_rung"] = board.gamble_rung
 	_bus.emit_event(EffectBus.Event.PAYOUT_CALCULATED, payload)
+
+
+## Folds a settled spin into the House's count and announces what it changed.
+func _observe_heat(state: RunState, payout: int) -> void:
+	if not state.has_system(Systems.HEAT):
+		return
+	var before: HeatEngine.Measure = HeatEngine.current(state)
+	var after: HeatEngine.Measure = HeatEngine.observe(state, payout, _par(state))
+	if not _bus.is_live():
+		return
+	_bus.emit_event(EffectBus.Event.HEAT_CHANGED, {
+		"heat": state.heat,
+		"measure": int(after),
+		"name": HeatEngine.measure_name(after),
+		"changed": after != before,
+		"launder_price": HeatEngine.launder_price(state),
+	})
+
+
+## Has a word with someone. Costs cash and buys the count back down.
+##
+## The floor's only lever that is not "win less": a player who has built a
+## machine that cannot help winning big can still pay to keep the room calm.
+func launder(state: RunState) -> bool:
+	if not state.has_system(Systems.HEAT) or state.is_deciding():
+		return false
+	if state.heat <= 0.0:
+		return false
+	var price: int = HeatEngine.launder_price(state)
+	if not state.economy.can_afford(price):
+		return false
+	state.economy.debit(price, &"launder")
+	var before: HeatEngine.Measure = HeatEngine.current(state)
+	state.heat = maxf(0.0, state.heat - state.config.launder_relief)
+	if HeatEngine.current(state) != before:
+		state.mark_reel_dirty()
+	_bus.emit_event(EffectBus.Event.HEAT_CHANGED, {
+		"heat": state.heat,
+		"measure": int(HeatEngine.current(state)),
+		"name": HeatEngine.measure_name(HeatEngine.current(state)),
+		"changed": true,
+		"paid": price,
+		"launder_price": HeatEngine.launder_price(state),
+	})
+	return true
+
+
+## Bolts another reel onto the machine. Permanent, and priced off the ante so
+## the works stay a serious decision however deep the run has got.
+##
+## Fitted between spins as readily as between floors. The engine room is every
+## machine on the floor wired to yours, and stripping one for parts halfway
+## through a floor — with the ante still to find — is the decision that floor is
+## made of. Confined to the draft it would have been a mechanic the player got
+## to use exactly once.
+func buy_reel(state: RunState) -> bool:
+	return _buy_works(state, true)
+
+
+## Widens the window so another row of the band pays.
+func buy_row(state: RunState) -> bool:
+	return _buy_works(state, false)
+
+
+func _buy_works(state: RunState, is_reel: bool) -> bool:
+	if not state.has_system(Systems.EXPANSION) or state.is_deciding():
+		return false
+	if state.phase != RunState.Phase.SHOPPING and state.phase != RunState.Phase.SPINNING:
+		return false
+	var owned: int = state.extra_reels if is_reel else state.extra_rows
+	var ceiling: int = (state.config.max_extra_reels if is_reel
+			else state.config.max_extra_rows)
+	if owned >= ceiling:
+		return false
+	var price: int = works_price(state, is_reel)
+	if not state.economy.can_afford(price):
+		return false
+	state.economy.debit(price, &"works")
+	if is_reel:
+		state.extra_reels += 1
+		state.board.resize(state.machine_reels())
+	else:
+		state.extra_rows += 1
+	_bus.emit_event(EffectBus.Event.WORKS_FITTED, {
+		"kind": "reel" if is_reel else "row",
+		"paid": price,
+		"reels": state.machine_reels(),
+		"rows": state.scoring_rows(),
+	})
+	return true
+
+
+## What the next reel or row costs, as a share of the ante in front of the
+## player right now.
+func works_price(state: RunState, is_reel: bool) -> int:
+	var floor_def: FloorDef = state.current_floor()
+	var ante: float = float(floor_def.ante) if floor_def != null else 100.0
+	var owned: int = state.extra_reels if is_reel else state.extra_rows
+	var percent: float = (state.config.reel_cost_percent if is_reel
+			else state.config.row_cost_percent)
+	return maxi(1, int(round(ante * percent / 100.0 * float(1 + owned))))
 
 
 ## Sets the wager for the next spin, clamped to what the machine allows.
@@ -471,6 +648,13 @@ func _close_floor(state: RunState) -> void:
 		_finish_run(state)
 		return
 	ArtifactEngine.apply_floor_interest(state)
+	# The vault compounds before the bills, so a floor's deposit is working by
+	# the time the vig is charged rather than a floor behind it.
+	var vault_earned: int = state.economy.accrue_vault_interest(
+			state.config.vault_interest_percent
+			+ ArtifactEngine.vault_yield_bonus(state))
+	if vault_earned > 0:
+		_announce_vault(state, 0, vault_earned)
 	# The vig comes first: debt is serviced out of the same cash the ante needs,
 	# which is what makes carrying it a real decision rather than a late bill.
 	var serviced: int = 0
@@ -481,9 +665,15 @@ func _close_floor(state: RunState) -> void:
 	if not state.economy.settle_ante(ante):
 		_end_run(state, RunState.Phase.LOST, &"ante_unpaid")
 		return
-	state.economy.accrue_debt_interest(floor_def.debt_interest_percent)
+	state.economy.accrue_debt_interest(maxf(0.0, floor_def.debt_interest_percent
+			+ ContractEngine.debt_interest_percent(state)))
 	ArtifactEngine.apply_debt_paydown(state)
 	state.floors_cleared += 1
+	state.set_contract(null)
+	# The count is a floor's worth of attention. A new floor is a new room.
+	state.heat = 0.0
+	state.heat_ante_percent = 0.0
+	state.mark_reel_dirty()
 	_bus.emit_event(EffectBus.Event.FLOOR_CLEARED, {
 		"floor": floor_def.index,
 		"cash": state.economy.cash,
@@ -504,6 +694,11 @@ func _advance_floor(state: RunState) -> void:
 
 ## The run is out of floors: the player wins only by clearing the debt.
 func _finish_run(state: RunState) -> void:
+	# The vault opens when the run does. Credits locked away still count towards
+	# clearing the debt; they simply could never have paid an ante on the way.
+	if state.economy.vault > 0:
+		state.economy.withdraw(state.economy.vault)
+		_announce_vault(state, 0, 0)
 	if state.economy.debt > 0:
 		if state.economy.cash < state.economy.debt:
 			_end_run(state, RunState.Phase.LOST, &"debt_unpaid")
@@ -522,6 +717,8 @@ func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> voi
 func _ante_for(state: RunState, floor_def: FloorDef) -> int:
 	var discount: float = ArtifactEngine.ante_discount_percent(state)
 	var ante: float = float(floor_def.ante) * state.options.ante_scale
+	ante *= maxf(0.0, 1.0 + ContractEngine.ante_percent(state) / 100.0)
+	ante *= 1.0 + state.heat_ante_percent / 100.0
 	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
 
 
@@ -546,55 +743,242 @@ func leave_shop(state: RunState) -> void:
 		return
 	state.shop_offers.clear()
 	state.shop_prices.clear()
+	# The back office sits between the draft and the stairs. Nobody goes up to
+	# the next floor without signing for it.
+	if state.has_system(Systems.CONTRACTS) and _content.floor_at(state.floor_index + 1) != null:
+		_offer_contracts(state)
+		if not state.contract_offers.is_empty():
+			state.phase = RunState.Phase.SIGNING
+			return
 	_advance_floor(state)
 
 
+## Puts three of the house's standing offers on the table.
+func _offer_contracts(state: RunState) -> void:
+	var next_index: int = state.floor_index + 1
+	var pool: Array[ContractDef] = []
+	for contract: ContractDef in _content.contracts:
+		if contract.min_floor <= next_index:
+			pool.append(contract)
+	state.contract_offers = []
+	for i: int in mini(CONTRACT_SLOTS, pool.size()):
+		var index: int = state.shop_rng.next_int(0, pool.size() - 1)
+		state.contract_offers.append(pool[index])
+		pool.remove_at(index)
+	if state.contract_offers.is_empty():
+		return
+	var offered: Array[String] = []
+	for contract: ContractDef in state.contract_offers:
+		offered.append(String(contract.id))
+	_bus.emit_event(EffectBus.Event.CONTRACTS_OFFERED, {
+		"floor": next_index, "contracts": offered,
+	})
+
+
+## Signs offer [param index] and opens the floor it was signed for.
+func sign_contract(state: RunState, index: int) -> bool:
+	if state.phase != RunState.Phase.SIGNING:
+		return false
+	if index < 0 or index >= state.contract_offers.size():
+		return false
+	var signed: ContractDef = state.contract_offers[index]
+	state.set_contract(signed)
+	state.contract_offers.clear()
+	_bus.emit_event(EffectBus.Event.CONTRACT_SIGNED, {
+		"contract": signed.id,
+		"name": signed.display_name,
+		"terms": signed.terms(),
+	})
+	_advance_floor(state)
+	return true
+
+
 func _run_shop(state: RunState, floor_def: FloorDef) -> void:
-	var offers: Array[ArtifactDef] = _roll_offers(state, floor_def)
-	state.shop_offers = offers
-	state.shop_prices = []
-	for artifact: ArtifactDef in offers:
-		state.shop_prices.append(
-				state.economy.price_of(artifact, state.config, state.floors_cleared))
-	var offer_ids: Array[String] = []
-	for artifact: ArtifactDef in offers:
-		offer_ids.append(String(artifact.id))
+	state.shop_rerolls = 0
+	_stock_shop(state, floor_def)
 	_bus.emit_event(EffectBus.Event.SHOP_OPENED, {
-		"floor": floor_def.index, "offers": offer_ids, "prices": state.shop_prices.duplicate(),
+		"floor": floor_def.index,
+		"offers": _offer_ids(state),
+		"prices": state.shop_prices.duplicate(),
+		"reroll_price": state.reroll_price(),
+		"market": state.has_system(Systems.MARKET),
 	})
 	# With no policy the shop stays open for a player to work; a batch run hands
 	# it to the policy immediately.
 	if not shop_policy.is_valid():
 		return
+	# Banking comes before buying. The collateral competes with the draft for the
+	# same credits, and a policy that shopped first would only ever bank what
+	# the draft could not find a use for — which in this economy is nothing.
+	if vault_policy.is_valid():
+		vault_policy.call(self, state)
 	while not state.shop_offers.is_empty():
 		var choice: int = int(shop_policy.call(state, state.shop_offers, state.shop_prices))
 		if not buy_offer(state, choice):
 			break
+	if works_policy.is_valid():
+		works_policy.call(self, state)
+
+
+## Fills the draft's slots and prices them.
+func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
+	state.shop_offers = _roll_offers(state, floor_def)
+	state.shop_prices = []
+	for artifact: ArtifactDef in state.shop_offers:
+		state.shop_prices.append(state.economy.price_of(
+				artifact, state.config, state.floors_cleared, floor_def.ante))
+
+
+func _offer_ids(state: RunState) -> Array[String]:
+	var ids: Array[String] = []
+	for artifact: ArtifactDef in state.shop_offers:
+		ids.append(String(artifact.id))
+	return ids
 
 
 ## Picks this floor's shop stock, without repeats, from the shop stream.
+##
+## Weighted towards what this floor has only just made available. A flat draw
+## from everything unlocked so far means that by floor six the stock is mostly
+## floor-one trinkets, and the draft stops being the thing you were looking
+## forward to on the way up the stairs.
 func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
 	var pool: Array[ArtifactDef] = []
+	var weights: PackedInt32Array = PackedInt32Array()
 	for artifact: ArtifactDef in _content.artifacts:
 		if (artifact.min_floor <= floor_def.index and not state.owns(artifact.id)
 				and state.options.allows(artifact)):
 			pool.append(artifact)
+			weights.append(maxi(1, FRESH_WEIGHT
+					- (floor_def.index - artifact.min_floor) * STALE_STEP))
 	var offers: Array[ArtifactDef] = []
 	var slots: int = mini(floor_def.shop_slots, pool.size())
 	for i: int in slots:
-		var index: int = state.shop_rng.next_int(0, pool.size() - 1)
+		var index: int = state.shop_rng.weighted_index(weights)
+		if index < 0:
+			break
 		offers.append(pool[index])
 		pool.remove_at(index)
+		weights.remove_at(index)
 	return offers
 
 
-## Buys the most expensive artifact it can afford, keeping a one-spin reserve.
-## Deliberately naive: the balance lab measures the floor a mediocre player hits,
-## not the ceiling an optimal one reaches.
+## Buys a fresh set of offers. Each reroll in the same draft costs more than the
+## last, so rerolling is a budget you spend rather than a button you hold.
+func reroll_shop(state: RunState) -> bool:
+	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
+		return false
+	var price: int = state.reroll_price()
+	if not state.economy.can_afford(price):
+		return false
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null:
+		return false
+	state.economy.debit(price, &"reroll")
+	state.shop_rerolls += 1
+	_stock_shop(state, floor_def)
+	_bus.emit_event(EffectBus.Event.SHOP_REROLLED, {
+		"paid": price,
+		"next_price": state.reroll_price(),
+		"offers": _offer_ids(state),
+		"prices": state.shop_prices.duplicate(),
+	})
+	return true
+
+
+## Sells owned hardware back at a fraction of what it is worth today.
+##
+## Well under half, and exactly the inverse of acquiring it: a build has to be
+## able to change its mind, but not for free, and a permanent reel change must
+## not be launderable through the market for cash.
+func sell(state: RunState, index: int) -> int:
+	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
+		return 0
+	if index < 0 or index >= state.owned.size():
+		return 0
+	var artifact: ArtifactDef = state.owned[index]
+	var floor_def: FloorDef = state.current_floor()
+	var worth: int = state.economy.price_of(artifact, state.config,
+			state.floors_cleared, floor_def.ante if floor_def != null else 0)
+	var refund: int = maxi(1, int(floor(float(worth)
+			* state.config.sellback_percent / 100.0)))
+	if not state.release(artifact):
+		return 0
+	state.economy.credit(refund, &"sellback")
+	_bus.emit_event(EffectBus.Event.ARTIFACT_SOLD, {
+		"artifact": artifact.id, "refund": refund, "floor": state.floor_index,
+	})
+	return refund
+
+
+## Locks cash away where it earns interest and cannot settle an ante.
+##
+## The whole decision is liquidity. Every credit in the vault is a credit that
+## cannot cover the ante that is about to fall due, and it competes with buying
+## hardware and with paying down a debt compounding faster than the vault pays.
+func deposit(state: RunState, amount: int) -> int:
+	if not state.has_system(Systems.VAULT) or state.is_deciding():
+		return 0
+	var moved: int = state.economy.deposit(amount)
+	if moved > 0:
+		_announce_vault(state, moved, 0)
+	return moved
+
+
+## Takes cash back out. Between floors it comes out whole; mid-floor the house
+## keeps a share, which is the price of having changed your mind in a panic.
+func withdraw(state: RunState, amount: int) -> int:
+	if not state.has_system(Systems.VAULT) or state.is_deciding():
+		return 0
+	var fee: float = (0.0 if state.phase == RunState.Phase.SHOPPING
+			else state.config.vault_break_percent)
+	var reaching: int = state.economy.withdraw(amount, fee)
+	if reaching > 0:
+		_announce_vault(state, -reaching, 0)
+	return reaching
+
+
+func _announce_vault(state: RunState, delta: int, interest: int) -> void:
+	_bus.emit_event(EffectBus.Event.VAULT_CHANGED, {
+		"vault": state.economy.vault,
+		"cash": state.economy.cash,
+		"delta": delta,
+		"interest": interest,
+	})
+
+
+## Takes an offer without paying for it and puts the bill on the debt with a
+## markup: the one way in the game to turn future trouble into present power.
+func buy_on_slate(state: RunState, index: int) -> bool:
+	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
+		return false
+	if index < 0 or index >= state.shop_offers.size():
+		return false
+	var artifact: ArtifactDef = state.shop_offers[index]
+	var owed: int = maxi(1, int(ceil(float(state.shop_prices[index])
+			* (1.0 + state.config.slate_markup_percent / 100.0))))
+	state.economy.debt += owed
+	state.acquire(artifact)
+	state.shop_offers.remove_at(index)
+	state.shop_prices.remove_at(index)
+	_bus.emit_event(EffectBus.Event.SLATE_SIGNED, {
+		"artifact": artifact.id, "owed": owed, "debt": state.economy.debt,
+	})
+	return true
+
+
+## Buys the most expensive artifact it can afford while keeping a share of the
+## coming ante in hand.
+##
+## Not an optimal buyer, but not a spendthrift either. It used to keep back a
+## single credit, which meant it arrived on every floor with nothing and made
+## the vault and the works unreachable in every batch the lab ever ran — so the
+## numbers it reported were for a game with three of its systems switched off.
 static func default_shop_policy(state: RunState, offers: Array[ArtifactDef], prices: Array[int]) -> int:
 	var best: int = -1
 	var best_price: int = -1
-	var reserve: int = state.config.spin_cost
+	var reserve: int = maxi(state.config.spin_cost,
+			int(round(float(_next_ante(state)) * SHOP_RESERVE)))
 	for i: int in offers.size():
 		if prices[i] > state.economy.cash - reserve:
 			continue
@@ -692,3 +1076,113 @@ static func default_hold_policy(state: RunState, board: SpinBoard) -> PackedInt3
 			continue
 		keep = members
 	return keep
+
+
+## Signs whichever contract adds the most spins, and otherwise the first.
+##
+## A crude reader of the terms, on purpose: the lab is measuring whether the
+## contracts are survivable, not whether an optimal signatory can exploit one.
+static func default_contract_policy(_state: RunState, offers: Array[ContractDef]) -> int:
+	var best: int = 0
+	var best_spins: int = -99
+	for i: int in offers.size():
+		var spins: int = 0
+		for entry: Dictionary in offers[i].clauses():
+			if int(entry["clause"]) == int(ContractDef.Clause.SPINS):
+				spins += int(entry["magnitude"])
+		if spins > best_spins:
+			best_spins = spins
+			best = i
+	return best
+
+
+## Banks the ante float between floors, and breaks the vault to save the run.
+##
+## A player who waits for spare cash never uses the vault, because in this
+## economy there is never any: every credit is wanted by the draft. What the
+## vault is actually for is the float — the ante money that would otherwise sit
+## in the purse doing nothing between being won and being paid. Banked, it buys
+## a multiplier on every spin of the floor it is needed for, and the bet is that
+## the machine earns the ante back before the ante falls due.
+static func default_vault_policy(engine: SimEngine, state: RunState) -> void:
+	if not state.has_system(Systems.VAULT):
+		return
+	if state.phase == RunState.Phase.SPINNING:
+		_break_vault_if_short(engine, state)
+		return
+	if state.phase != RunState.Phase.SHOPPING:
+		return
+	# Only while there are floors left to be paid a dividend on. On the last one
+	# a deposit is just cash that cannot be spent.
+	var next_floor: FloorDef = state.content.floor_at(state.floor_index + 1)
+	if next_floor == null:
+		return
+	# Never past the point the collateral caps out, and never below what it
+	# takes to keep spinning towards the ante.
+	var useful: int = int(round(float(next_floor.ante)
+			* state.config.vault_collateral_antes * state.config.vault_collateral_cap))
+	var keep: int = int(round(float(next_floor.ante) * VAULT_LIQUIDITY))
+	engine.deposit(state, mini(state.economy.cash - keep,
+			maxi(0, useful - state.economy.vault)))
+
+
+## Takes the collateral back out, fee and all, when the floor is nearly over and
+## the ante is still short. Losing a quarter of the reserve beats losing the run.
+static func _break_vault_if_short(engine: SimEngine, state: RunState) -> void:
+	if state.economy.vault <= 0 or state.spins_remaining > VAULT_PANIC_SPINS:
+		return
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null:
+		return
+	var short: int = floor_def.ante - state.economy.cash
+	if short <= 0:
+		return
+	# Asking for more than the shortfall, because the break fee is taken out of
+	# what comes back rather than added to what is asked for.
+	engine.withdraw(state, int(ceil(float(short)
+			/ maxf(0.05, 1.0 - state.config.vault_break_percent / 100.0))))
+
+
+## Fits whatever the machine can be paid for without giving up the ante.
+##
+## Rows before reels: a row pays on every spin that follows it, where a reel
+## widens the line and makes the whole thing harder to match.
+static func default_works_policy(engine: SimEngine, state: RunState) -> void:
+	if not state.has_system(Systems.EXPANSION):
+		return
+	# Mid-floor the ante is still to be found, so the whole of it stays covered;
+	# between floors the machine has a floor's worth of spins to earn it back.
+	var floor_def: FloorDef = state.current_floor()
+	var due: int = floor_def.ante if floor_def != null else 0
+	var share: float = (WORKS_RESERVE if state.phase == RunState.Phase.SHOPPING
+			else 1.0)
+	var reserve: int = int(round(float(due) * share))
+	var guard: int = 0
+	while guard < 4:
+		guard += 1
+		if state.economy.cash - engine.works_price(state, false) >= reserve \
+				and engine.buy_row(state):
+			continue
+		if state.economy.cash - engine.works_price(state, true) >= reserve \
+				and engine.buy_reel(state):
+			continue
+		break
+
+
+## Has a word once the House has started taking the good symbols off the reel.
+## Skimming is survivable; a cold deck is what actually ends the run.
+static func default_launder_policy(state: RunState) -> bool:
+	if HeatEngine.current(state) < HeatEngine.Measure.COLD_DECK:
+		return false
+	var price: int = HeatEngine.launder_price(state)
+	var floor_def: FloorDef = state.current_floor()
+	var reserve: int = floor_def.ante if floor_def != null else 0
+	return state.economy.cash - price >= reserve
+
+
+## The ante waiting on the next floor, or this one when there is no next.
+static func _next_ante(state: RunState) -> int:
+	var next_floor: FloorDef = state.content.floor_at(state.floor_index + 1)
+	if next_floor == null:
+		next_floor = state.current_floor()
+	return next_floor.ante if next_floor != null else 0

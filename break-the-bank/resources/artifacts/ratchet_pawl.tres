@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"ratchet_pawl"
+display_name = "Ratchet Pawl"
+description = "The drums will hold anywhere you stop them. Two free nudges an award."
+cost = 38
+trigger = 2
+effect = 15
+magnitude = 2.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"luck"])
+min_floor = 4
+module_scene_path = ""

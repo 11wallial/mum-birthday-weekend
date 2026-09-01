@@ -57,6 +57,11 @@ enum Effect {
 	## Adds [member magnitude] nudges to every award the machine makes. Buys
 	## control over the board rather than a bigger number off it.
 	NUDGE_BONUS,
+	## Adds [member magnitude] percentage points to what the vault pays.
+	VAULT_YIELD,
+	## Cuts the count the House gains by [member magnitude] percent. The only
+	## thing in the game that buys down attention rather than buying up power.
+	HEAT_SHIELD,
 }
 
 @export var id: StringName = &""

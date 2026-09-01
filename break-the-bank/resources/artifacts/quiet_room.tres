@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"quiet_room"
+display_name = "The Quiet Room"
+description = "No cameras, by arrangement. The House notices 35% less of what you win."
+cost = 58
+trigger = 2
+effect = 17
+magnitude = 35.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"contract"])
+min_floor = 6
+module_scene_path = ""

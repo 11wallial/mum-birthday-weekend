@@ -12,6 +12,10 @@ enum Phase {
 	SHOPPING,
 	WON,
 	LOST,
+	## Between the draft and the next floor, with the back office waiting for a
+	## signature. Appended rather than inserted so recorded phase indices from
+	## older runs still mean what they meant.
+	SIGNING,
 }
 
 ## What the machine is waiting on. A spin is not over when the reels stop: the
@@ -52,6 +56,13 @@ var systems: Dictionary = {}
 ## Credits wagered per spin, as a multiple of [member BalanceConfig.spin_cost].
 ## Costs that multiple and pays it back on the multiplier.
 var stake: int = 1
+## Reels and scoring rows bolted on beyond what the machine shipped with.
+var extra_reels: int = 0
+var extra_rows: int = 0
+## The House's count, and the ante it has added by sending someone over. Both
+## reset with the floor: the count is a floor's worth of attention, not a run's.
+var heat: float = 0.0
+var heat_ante_percent: float = 0.0
 ## Payout of the most recent spin, after every modifier.
 var last_payout: int = 0
 var last_line: Array[SymbolDef] = []
@@ -64,6 +75,11 @@ var shop_offers: Array[ArtifactDef] = []
 var shop_prices: Array[int] = []
 ## Rerolls already bought in the draft currently open. Reset when it opens.
 var shop_rerolls: int = 0
+## The contract signed for the floor being played, or null on a floor played
+## under house rules. Torn up when the floor ends.
+var contract: ContractDef = null
+## Contracts on the table while [member phase] is SIGNING.
+var contract_offers: Array[ContractDef] = []
 
 var reel_rng: RngStream
 var shop_rng: RngStream
@@ -125,6 +141,16 @@ func reel_count() -> int:
 	return maxi(1, board.reel_count())
 
 
+## Reels the machine should be turning, hardware included.
+func machine_reels() -> int:
+	return maxi(1, config.reel_count + extra_reels)
+
+
+## Rows that pay: the payline, plus every row the works have been widened to.
+func scoring_rows() -> int:
+	return 1 + clampi(extra_rows, 0, 2)
+
+
 ## Credits one spin costs at the current stake, with the reel locks it carries.
 ##
 ## A held reel is charged for. Holding is otherwise strictly better than not
@@ -149,11 +175,32 @@ func is_over() -> bool:
 
 
 ## The reel for the current run, rebuilt only when the weight shifts change.
+##
+## A contract's weight clause is folded in here rather than written into
+## [member weight_shifts], so tearing the contract up at the end of the floor
+## restores the reel without having to remember what it changed.
 func reel() -> Array[Probability.ReelEntry]:
 	if _reel_cache_dirty:
-		_reel_cache = Probability.build_reel(content.symbols, weight_shifts)
+		var shifts: Dictionary = weight_shifts.duplicate()
+		for source: Dictionary in [ContractEngine.weight_shifts(self),
+				HeatEngine.weight_shifts(self)]:
+			for key: StringName in source:
+				shifts[key] = int(shifts.get(key, 0)) + int(source[key])
+		_reel_cache = Probability.build_reel(content.symbols, shifts)
 		_reel_cache_dirty = false
 	return _reel_cache
+
+
+## Signs [param signed] for the coming floor, or tears the last one up when null.
+func set_contract(signed: ContractDef) -> void:
+	contract = signed
+	_reel_cache_dirty = true
+
+
+## Forces the reel to be rebuilt. Called when something outside the weight
+## table — a contract, or the House cooling the deck — changes what is on it.
+func mark_reel_dirty() -> void:
+	_reel_cache_dirty = true
 
 
 func add_weight_shift(symbol_id: StringName, delta: int) -> void:
@@ -238,6 +285,9 @@ func snapshot() -> Dictionary:
 				func(id: StringName) -> bool: return has_system(id)).map(
 				func(id: StringName) -> String: return String(id)),
 		"reel_draws": reel_rng.draws,
+		"contract": String(contract.id) if contract != null else "",
+		"extra_reels": extra_reels,
+		"extra_rows": extra_rows,
 	}
 	data.merge(economy.snapshot())
 	return data

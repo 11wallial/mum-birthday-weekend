@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"short_odds"
+display_name = "Short Odds"
+description = "Paid on the near things. Never again on the whole thing."
+min_floor = 5
+boon = 4
+boon_magnitude = 1.1
+boon_symbol = &""
+boon_pattern = 1
+toll = 4
+toll_magnitude = -2.4
+toll_symbol = &""
+toll_pattern = 3

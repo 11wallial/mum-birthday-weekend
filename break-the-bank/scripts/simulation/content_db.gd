@@ -8,11 +8,13 @@ extends RefCounted
 const SYMBOL_DIR: String = "res://resources/symbols"
 const ARTIFACT_DIR: String = "res://resources/artifacts"
 const FLOOR_DIR: String = "res://resources/rules/floors"
+const CONTRACT_DIR: String = "res://resources/contracts"
 const BALANCE_PATH: String = "res://resources/rules/balance_config.tres"
 
 var symbols: Array[SymbolDef] = []
 var artifacts: Array[ArtifactDef] = []
 var floors: Array[FloorDef] = []
+var contracts: Array[ContractDef] = []
 var balance: BalanceConfig = BalanceConfig.new()
 
 static var _shared: ContentDB = null
@@ -29,6 +31,7 @@ static func shared() -> ContentDB:
 func load_all() -> void:
 	symbols.assign(_load_dir(SYMBOL_DIR))
 	artifacts.assign(_load_dir(ARTIFACT_DIR))
+	contracts.assign(_load_dir(CONTRACT_DIR))
 	var loaded_floors: Array[FloorDef] = []
 	loaded_floors.assign(_load_dir(FLOOR_DIR))
 	loaded_floors.sort_custom(func(a: FloorDef, b: FloorDef) -> bool: return a.index < b.index)
@@ -37,6 +40,7 @@ func load_all() -> void:
 		balance = load(BALANCE_PATH) as BalanceConfig
 	symbols.sort_custom(func(a: SymbolDef, b: SymbolDef) -> bool: return String(a.id) < String(b.id))
 	artifacts.sort_custom(func(a: ArtifactDef, b: ArtifactDef) -> bool: return String(a.id) < String(b.id))
+	contracts.sort_custom(func(a: ContractDef, b: ContractDef) -> bool: return String(a.id) < String(b.id))
 
 
 func symbol_by_id(id: StringName) -> SymbolDef:
@@ -50,6 +54,13 @@ func artifact_by_id(id: StringName) -> ArtifactDef:
 	for artifact: ArtifactDef in artifacts:
 		if artifact.id == id:
 			return artifact
+	return null
+
+
+func contract_by_id(id: StringName) -> ContractDef:
+	for contract: ContractDef in contracts:
+		if contract.id == id:
+			return contract
 	return null
 
 

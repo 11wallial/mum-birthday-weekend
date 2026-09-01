@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"full_pressure"
+display_name = "Full Pressure"
+description = "Everything on the jackpot. Pairs stop paying entirely."
+min_floor = 7
+boon = 4
+boon_magnitude = 2.5
+boon_symbol = &""
+boon_pattern = 3
+toll = 4
+toll_magnitude = -0.4
+toll_symbol = &""
+toll_pattern = 1

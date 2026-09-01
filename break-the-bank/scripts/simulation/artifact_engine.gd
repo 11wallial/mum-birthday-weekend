@@ -38,12 +38,15 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	ctx.pattern = pattern
 	ctx.multiplier = config.base_multiplier
 
-	var ward: float = _curse_ward(state)
+	# A contract can put the skulls on the payroll for a floor exactly as a ward
+	# can, and the two take the better of themselves rather than stacking.
+	var ward: float = maxf(_curse_ward(state), ContractEngine.curse_pays(state))
 	var warded: bool = ward > 0.0
 	var cursed: bool = Probability.has_curse(line) and not warded
 	for symbol: SymbolDef in line:
 		if not symbol.is_curse:
-			ctx.base_payout += symbol.base_value
+			ctx.base_payout += maxi(0,
+					symbol.base_value + ContractEngine.symbol_value(state, symbol.id))
 		elif warded:
 			ctx.base_payout += int(ward)
 		else:
@@ -53,6 +56,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	# ward has turned the skulls into payroll.
 	if not cursed and pattern < config.pattern_multipliers.size():
 		ctx.multiplier += config.pattern_multipliers[pattern]
+	if not cursed:
+		ctx.multiplier += ContractEngine.pattern_mult(state, pattern)
 
 	_apply(state, ArtifactDef.Trigger.SPIN_STARTED, ctx, announce)
 	_apply(state, ArtifactDef.Trigger.SYMBOL_LANDED, ctx, announce)
@@ -82,9 +87,19 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 			_:
 				pass
 
+	ctx.multiplier += vault_collateral(state)
+
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def != null:
 		ctx.multiplier *= floor_def.payout_scale
+	# The contract's cut comes off the end, after everything the player built.
+	# Signing away a quarter of the payout should cost a quarter of what the
+	# machine actually pays, not a quarter of its bare symbols.
+	ctx.multiplier *= maxf(0.0,
+			1.0 + ContractEngine.payout_percent(state) / 100.0)
+	# And the House takes its share off the end of that, which is the order it
+	# would take it in: after everything, and off the top of what is left.
+	ctx.multiplier *= maxf(0.0, 1.0 - HeatEngine.skim(state))
 	return ctx
 
 
@@ -114,6 +129,40 @@ static func nudge_bonus(state: RunState) -> int:
 		if artifact.effect == ArtifactDef.Effect.NUDGE_BONUS:
 			total += int(artifact.magnitude)
 	return total
+
+
+## Multiplier the run's reserve is worth, priced against the ante in front of it.
+##
+## The mirror of DEBT_LEVERAGE: debt pays you for being in trouble, the vault
+## pays you for being solid, and both are capped so neither becomes the only
+## way to play. What it costs is liquidity — collateral cannot settle an ante,
+## and the ante is the only thing that ever has to be settled.
+static func vault_collateral(state: RunState) -> float:
+	if not state.has_system(Systems.VAULT) or state.economy.vault <= 0:
+		return 0.0
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null or floor_def.ante <= 0:
+		return 0.0
+	var per: float = float(floor_def.ante) * maxf(state.config.vault_collateral_antes, 0.01)
+	return minf(float(state.economy.vault) / per, maxf(state.config.vault_collateral_cap, 0.0))
+
+
+## Percentage points this run's hardware adds to the vault's rate.
+static func vault_yield_bonus(state: RunState) -> float:
+	var total: float = 0.0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == ArtifactDef.Effect.VAULT_YIELD:
+			total += artifact.magnitude
+	return total
+
+
+## Share of the House's attention this run's hardware absorbs, in 0.0..0.9.
+static func heat_shield(state: RunState) -> float:
+	var total: float = 0.0
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == ArtifactDef.Effect.HEAT_SHIELD:
+			total += artifact.magnitude
+	return clampf(total / 100.0, 0.0, 0.9)
 
 
 ## Extra spins granted for the coming floor.
@@ -224,7 +273,8 @@ static func _apply_one(artifact: ArtifactDef, ctx: SpinContext) -> bool:
 			return true
 		_:
 			# EXTRA_SPINS, WEIGHT_SHIFT, INTEREST, ANTE_DISCOUNT, CURSE_WARD,
-			# DEBT_PAYDOWN, NUDGE_BONUS and the scaling effects all resolve
+			# DEBT_PAYDOWN, NUDGE_BONUS, VAULT_YIELD, HEAT_SHIELD and the
+			# scaling effects all resolve
 			# elsewhere: in evaluate_spin after this pass, or in their own
 			# helpers above.
 			return false
