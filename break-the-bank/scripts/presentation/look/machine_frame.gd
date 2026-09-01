@@ -46,6 +46,7 @@ const GAUGE_SWEEP: float = 2.1
 const PAYLINE_ENERGY: float = 2.6
 
 var _root: Node3D
+var _nixie_halo_material: StandardMaterial3D = null
 
 
 ## Constructs the machine under [param root] and returns the nodes the view
@@ -60,8 +61,8 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var gearbox: Node3D = _gearbox()
 	_hoses()
 	var screen: MeshInstance3D = _monitor()
-	var readout: Label3D = screen.get_node(^"Readout") as Label3D
-	var odds: Label3D = _odds_display()
+	var readout: Label = screen.get_node(^"Terminal/Readout") as Label
+	var odds: Node3D = _odds_display()
 	var lever: Node3D = _lever()
 	var spool: Node3D = _spool()
 	var crown: Array[Node3D] = _crown()
@@ -503,55 +504,151 @@ func _monitor() -> MeshInstance3D:
 			Materials.painted(Materials.PAINT_LIGHT, 15))
 	_box(monitor, Vector3(0.5, 0.42, 0.28), Vector3(0.0, 0.0, -0.02),
 			Materials.painted(Materials.PAINT, 16))
-	var screen: MeshInstance3D = _box(monitor, Vector3(0.56, 0.44, 0.02),
-			Vector3(0.0, 0.0, 0.235),
-			Materials.phosphor_glass())
-	screen.name = "Screen"
-	# The readout the room writes onto. Unshaded phosphor green, so it stays
-	# readable with every light in the room switched off.
-	var readout: Label3D = Label3D.new()
+	# Cooling slots across the top of the shell, and two knobs under the glass:
+	# an appliance has controls and gets hot, and a box with neither is a prop.
+	for i: int in 4:
+		_box(monitor, Vector3(0.4, 0.012, 0.05),
+				Vector3(0.0, 0.278, 0.14 - float(i) * 0.06),
+				Materials.machined(Color(0.16, 0.155, 0.15), 66))
+	for i: int in 2:
+		var knob: MeshInstance3D = _cylinder(monitor, 0.024, 0.035,
+				Vector3(0.16 + float(i) * 0.09, -0.315, 0.22), Vector3.ZERO,
+				Materials.brass(67))
+		knob.rotation.x = PI * 0.5
+	# The cable drops out of the shell and sags into the chassis top, because a
+	# monitor that touches nothing is scenery, not equipment.
+	var shoulder: Vector3 = Vector3(-1.0, CHASSIS_Y + 0.86, 0.04)
+	var sag: Vector3 = Vector3(-1.14, CHASSIS_Y + 0.44, -0.04)
+	_segment(_root, shoulder, sag, 0.018, Materials.rubber())
+	_segment(_root, sag, Vector3(-0.94, CHASSIS_Y + 0.58, -0.1), 0.018,
+			Materials.rubber())
+	# The terminal itself: a Label rendered at terminal resolution in its own
+	# viewport. The ledger stays plain text the room writes to; everything CRT
+	# about the picture — dome, scanlines, roll, flicker — is the shader's job.
+	var terminal: SubViewport = SubViewport.new()
+	terminal.name = "Terminal"
+	terminal.size = Vector2i(320, 240)
+	terminal.disable_3d = true
+	terminal.transparent_bg = false
+	terminal.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var ground: ColorRect = ColorRect.new()
+	ground.color = Color(0.012, 0.03, 0.015)
+	ground.set_anchors_preset(Control.PRESET_FULL_RECT)
+	terminal.add_child(ground)
+	var readout: Label = Label.new()
 	readout.name = "Readout"
-	readout.text = "DEBT\n0"
-	readout.font_size = 56
-	readout.pixel_size = 0.0016
-	readout.modulate = Materials.PHOSPHOR * 1.6
-	readout.outline_size = 0
-	readout.shaded = false
-	readout.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-	readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	readout.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	readout.position = Vector3(-0.25, 0.18, 0.02)
-	readout.width = 320.0
+	readout.text = "LEDGER OF ACCOUNT\n--------------------\nDEBT 0"
+	readout.add_theme_font_size_override(&"font_size", 26)
+	readout.add_theme_color_override(&"font_color", Color(0.9, 1.0, 0.92))
+	readout.position = Vector2(12, 10)
+	readout.size = Vector2(300, 224)
 	readout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	screen.add_child(readout)
+	terminal.add_child(readout)
+	# The glass: a subdivided quad the shader domes outward, self-lit from the
+	# viewport's picture.
+	var face: QuadMesh = QuadMesh.new()
+	face.size = Vector2(0.56, 0.44)
+	face.subdivide_width = 24
+	face.subdivide_depth = 18
+	var screen: MeshInstance3D = MeshInstance3D.new()
+	screen.name = "Screen"
+	screen.mesh = face
+	screen.position = Vector3(0.0, 0.0, 0.235)
+	var glass: ShaderMaterial = ShaderMaterial.new()
+	glass.shader = load("res://assets/shaders/crt.gdshader") as Shader
+	glass.set_shader_parameter(&"phosphor", Materials.PHOSPHOR)
+	screen.material_override = glass
+	monitor.add_child(screen)
+	screen.add_child(terminal)
+	# The texture is bound only now: a ViewportTexture taken before its
+	# viewport is in the tree never resolves, and the screen stays black.
+	glass.set_shader_parameter(&"screen_tex", terminal.get_texture())
+	# What the tube gives the room: a soft green spill on the frame below it.
+	var spill: OmniLight3D = OmniLight3D.new()
+	spill.light_color = Materials.PHOSPHOR
+	spill.light_energy = 0.5
+	spill.omni_range = 0.85
+	spill.omni_attenuation = 1.7
+	spill.shadow_enabled = false
+	spill.position = Vector3(0.0, -0.08, 0.42)
+	monitor.add_child(spill)
 	return screen
 
 
-## The odds readout above the chassis: cream digits on a dark strip, in the
-## place a nixie tube bank would sit.
-func _odds_display() -> Label3D:
+## The odds readout above the chassis: a bank of four Nixie tubes on a riveted
+## base — warm digits in glass, which is what this display always wanted to be.
+func _odds_display() -> Node3D:
 	var housing: Node3D = _group(&"Odds")
 	housing.position = Vector3(0.62, CHASSIS_Y + 0.92, 0.2)
-	_box(housing, Vector3(0.7, 0.24, 0.16), Vector3.ZERO,
-			Materials.painted(Materials.PAINT, 17))
-	_box(housing, Vector3(0.62, 0.17, 0.02), Vector3(0.0, 0.0, 0.085),
-			Materials.readout_face())
-	# The mounting stalk down to the chassis top.
-	_segment(housing, Vector3(0.0, -0.13, 0.0), Vector3(0.0, -0.34, -0.1), 0.03,
+	# The base the tubes are socketed into, and its stalk down to the chassis.
+	_box(housing, Vector3(0.74, 0.1, 0.2), Vector3(0.0, -0.14, 0.0),
+			Materials.rusted(64))
+	for sx: float in [-1.0, 1.0]:
+		var stud: MeshInstance3D = _cylinder(housing, 0.014, 0.02,
+				Vector3(sx * 0.33, -0.14, 0.104), Vector3.ZERO,
+				Materials.brass(65))
+		stud.rotation.x = PI * 0.5
+	_segment(housing, Vector3(0.0, -0.19, 0.0), Vector3(0.0, -0.4, -0.1), 0.03,
 			Materials.machined(Materials.STEEL, 62))
-	var label: Label3D = Label3D.new()
-	label.name = "Value"
-	label.text = "0x"
-	label.font_size = 120
-	label.pixel_size = 0.0013
-	label.modulate = Color(0.95, 0.9, 0.78)
-	label.outline_size = 0
-	label.position = Vector3(0.0, 0.0, 0.1)
-	# The readout has to stay legible when the room light is off it.
-	label.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-	label.shaded = false
-	housing.add_child(label)
-	return label
+	# A dark backboard, so a dead tube reads as glass with nothing lit in it.
+	_box(housing, Vector3(0.68, 0.24, 0.02), Vector3(0.0, 0.02, -0.05),
+			Materials.cavity())
+	var glass: StandardMaterial3D = StandardMaterial3D.new()
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.albedo_color = Color(0.85, 0.72, 0.55, 0.09)
+	glass.roughness = 0.06
+	glass.metallic = 0.3
+	for i: int in 4:
+		var x: float = -0.24 + float(i) * 0.16
+		# Collar, envelope, and the digit floating in it. The halo quad is the
+		# glow a Nixie has in life — and the whole of it on a renderer with no
+		# bloom, which the web build is.
+		var collar: MeshInstance3D = _cylinder(housing, 0.052, 0.035,
+				Vector3(x, -0.075, 0.0), Vector3.ZERO, Materials.brass(68))
+		collar.rotation.z = 0.0
+		Prims.cylinder(housing, 0.055, 0.21, Vector3(x, 0.03, 0.0),
+				Vector3.ZERO, glass, 14)
+		var halo: MeshInstance3D = Prims.quad(housing, Vector2(0.17, 0.17),
+				Vector3(x, 0.02, 0.035), _nixie_halo())
+		halo.name = "Halo%d" % i
+		halo.visible = false
+		var digit: Label3D = Label3D.new()
+		digit.name = "Digit%d" % i
+		digit.text = ""
+		digit.font_size = 100
+		digit.pixel_size = 0.0013
+		digit.modulate = Color(1.0, 0.55, 0.14) * 1.5
+		digit.outline_size = 0
+		digit.shaded = false
+		digit.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		digit.position = Vector3(x, 0.02, 0.045)
+		digit.visible = false
+		housing.add_child(digit)
+	# What the bank gives the room: the warm orange wash under a lit Nixie.
+	var wash: OmniLight3D = OmniLight3D.new()
+	wash.name = "Wash"
+	wash.light_color = Color(1.0, 0.5, 0.15)
+	wash.light_energy = 0.45
+	wash.omni_range = 0.6
+	wash.omni_attenuation = 1.6
+	wash.shadow_enabled = false
+	wash.position = Vector3(0.0, 0.0, 0.12)
+	housing.add_child(wash)
+	return housing
+
+
+## The additive orange bloom behind a lit Nixie digit. Shared: one material
+## serves every tube.
+func _nixie_halo() -> StandardMaterial3D:
+	if _nixie_halo_material == null:
+		_nixie_halo_material = StandardMaterial3D.new()
+		_nixie_halo_material.albedo_texture = SymbolArt.halo()
+		_nixie_halo_material.albedo_color = Color(1.0, 0.42, 0.1, 0.75)
+		_nixie_halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_nixie_halo_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_nixie_halo_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_nixie_halo_material.disable_receive_shadows = true
+	return _nixie_halo_material
 
 
 ## The arm on the right flank. Returned so the view can throw it on a spin.

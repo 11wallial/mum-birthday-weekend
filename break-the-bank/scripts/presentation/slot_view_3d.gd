@@ -32,8 +32,8 @@ var _ladder: Array[Node3D] = []
 ## The two dials on the crown: the wager, and the House's attention.
 var _gauge_stake: Node3D
 var _gauge_count: Node3D
-var _odds: Label3D
-var _readout: Label3D
+var _odds: Node3D
+var _readout: Label
 var _particles: CPUParticles3D
 var _light: OmniLight3D
 var _audio: AudioDirector
@@ -112,8 +112,8 @@ func _ready() -> void:
 	var gauges: Array = parts.get("gauges", [])
 	_gauge_stake = (gauges[0] as Node3D) if gauges.size() > 0 else null
 	_gauge_count = (gauges[1] as Node3D) if gauges.size() > 1 else null
-	_odds = parts.get("odds", null) as Label3D
-	_readout = parts.get("readout", null) as Label3D
+	_odds = parts.get("odds", null) as Node3D
+	_readout = parts.get("readout", null) as Label
 	_module_anchor = get_node_or_null(module_anchor_path) as Node3D
 	_particles = get_node_or_null(payout_particles_path) as CPUParticles3D
 	_light = get_node_or_null(machine_light_path) as OmniLight3D
@@ -350,11 +350,30 @@ func _turn_drives() -> void:
 func _set_odds(multiplier: float) -> void:
 	if _odds == null:
 		return
-	_odds.text = "%.0fx" % maxf(multiplier, 1.0) if multiplier < 100.0 \
+	var text: String = "%.0fx" % maxf(multiplier, 1.0) if multiplier < 100.0 \
 			else "%dx" % int(multiplier)
-	var flash: Tween = create_tween()
-	flash.tween_property(_odds, "modulate", Color(1.0, 0.95, 0.7), 0.08)
-	flash.tween_property(_odds, "modulate", Color(0.72, 0.68, 0.58), 0.45)
+	# Right-aligned into the four tubes, the way a counter fills from its low
+	# digit. A tube with nothing to show goes dark rather than showing a zero —
+	# that is the difference between a Nixie bank and a number.
+	var padded: String = text.lpad(4)
+	for i: int in 4:
+		var digit: Label3D = _odds.get_node_or_null("Digit%d" % i) as Label3D
+		if digit == null:
+			continue
+		var glyph: String = padded[i]
+		var lit: bool = glyph != " "
+		digit.text = glyph
+		digit.visible = lit
+		var halo: MeshInstance3D = \
+				_odds.get_node_or_null("Halo%d" % i) as MeshInstance3D
+		if halo != null:
+			halo.visible = lit
+		if lit:
+			# The strike flash of a tube changing state, settling to running heat.
+			var flash: Tween = create_tween()
+			digit.modulate = Color(1.0, 0.72, 0.32) * 2.0
+			flash.tween_property(digit, "modulate",
+					Color(1.0, 0.55, 0.14) * 1.5, 0.4)
 
 
 ## Lights the ladder up to [param rung], and leaves the one above it waiting.
@@ -516,10 +535,12 @@ func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void
 	material.emission_energy_multiplier = energy
 
 
-## Puts the run's debt on the machine's own monitor, in phosphor green.
+## Puts the run's debt on the machine's own monitor, as the ledger a terminal
+## would actually be showing.
 func set_readout(debt: int, floor_name: String) -> void:
 	if _readout != null:
-		_readout.text = "%s\nDEBT %d" % [floor_name.to_upper(), debt]
+		_readout.text = "LEDGER OF ACCOUNT\n--------------------\n%s\nPRINCIPAL  %d\n--------------------\n> _" \
+				% [floor_name.to_upper(), debt]
 
 
 ## How this spin went, relative to what the floor needs per spin.
