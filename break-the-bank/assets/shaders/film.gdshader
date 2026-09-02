@@ -59,6 +59,14 @@ void fragment() {
 	colour = max(colour * 1.06 - 0.008, vec3(0.0));
 	colour = mix(colour, colour * colour * (3.0 - 2.0 * colour), 0.28);
 	colour *= vec3(1.03, 1.0, 0.95);
+	// The grade's split: the shadows lean cool against the warm key. This is
+	// the LUT the art handover asked for, done as a two-tone on luminance —
+	// a hair of blue below the mids, a hair of amber above — and it is what
+	// gives the one-bulb room its depth for almost nothing.
+	float split_luma = dot(colour, vec3(0.2126, 0.7152, 0.0722));
+	vec3 cool = vec3(0.94, 0.98, 1.08);
+	vec3 warm = vec3(1.05, 1.0, 0.93);
+	colour *= mix(cool, warm, smoothstep(0.08, 0.55, split_luma));
 
 	// Vignette on the distance from centre, corrected for aspect so a phone in
 	// portrait does not get an oval. Squared falloff: gentle across the middle
