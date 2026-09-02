@@ -6,6 +6,8 @@
 ##
 ## --stay tells every run to take the House's offer and play on past the last
 ## floor, which measures the endless curve rather than the game that ends.
+## --difficulty=<id> measures one rung of the ladder; --challenge=<id> one
+## challenge, each with the whole content set allowed.
 ##
 ## Writes a JSON report and prints a short summary. The agent balance loop reads
 ## the JSON, edits resources/rules/*.tres, and runs it again.
@@ -22,8 +24,15 @@ func _initialize() -> void:
 	var out_path: String = String(args.get("out", "user://balance_report.json"))
 	var lift: float = float(args.get("lift", 0.25))
 	var options: RunOptions = null
+	if args.has("difficulty") or args.has("challenge"):
+		var catalogue: MetaCatalogue = MetaCatalogue.new()
+		catalogue.load_all()
+		options = (catalogue.options_for_challenge(StringName(String(args["challenge"])))
+				if args.has("challenge")
+				else catalogue.options_for_difficulty(StringName(String(args["difficulty"]))))
 	if args.has("stay"):
-		options = RunOptions.new()
+		if options == null:
+			options = RunOptions.new()
 		options.stay_at_table = true
 
 	var report: Dictionary = CasinoLab.run_batch(runs, base_seed, options)
@@ -70,6 +79,12 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 	print("floors cleared mean %.2f  max %d" % [
 		float(floors.get("mean", 0.0)), int(floors.get("max", 0))])
 	print("deaths by floor %s" % JSON.stringify(report.get("deaths_by_floor", {})))
+	var after: Dictionary = report.get("after_hours", {})
+	if int(after.get("stayed", 0)) > 0:
+		var beyond: Dictionary = after.get("floors", {})
+		print("after hours    %d stayed, %d saw dawn, %.1f floors mean (p95 %d), deaths %s" % [
+			int(after["stayed"]), int(after["dawns"]), float(beyond.get("mean", 0.0)),
+			int(beyond.get("p95", 0)), JSON.stringify(after.get("deaths_by_floor", {}))])
 	var debt: Dictionary = report.get("debt", {})
 	var serviced: Dictionary = debt.get("serviced", {})
 	print("debt           vig paid mean %.0f  p95 %d   defaulted %.1f%% of runs   paydown owned %.1f%%" % [

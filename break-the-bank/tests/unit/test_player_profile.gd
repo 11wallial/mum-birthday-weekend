@@ -93,6 +93,35 @@ func test_recording_a_run_folds_in_its_totals() -> void:
 	assert_int(earned.size()).is_equal(2)
 
 
+func test_a_run_folds_into_the_lifetime_ledger_and_the_ladder() -> void:
+	var state: RunState = TestFixtures.run_state(5)
+	state.spins_taken = 40
+	state.best_payout = 900
+	state.economy.debt_serviced = 77
+	state.owned.append(TestFixtures.artifact(&"lucky_charm", ArtifactDef.Effect.FLAT_BONUS, 1.0))
+	state.options.difficulty_id = &"marked_deck"
+	state.phase = RunState.Phase.WON
+	var profile: PlayerProfile = PlayerProfile.new()
+	profile.record_run(state, [])
+	assert_int(profile.total_spins).is_equal(40)
+	assert_int(profile.biggest_spin).is_equal(900)
+	assert_int(profile.vig_paid).is_equal(77)
+	assert_str(String(profile.favourite_artifact())).is_equal("lucky_charm")
+	assert_int(int(profile.wins_by_difficulty["marked_deck"])).is_equal(1)
+	assert_int(int(profile.stats()["wins_at:marked_deck"])).is_equal(1)
+	# A challenge win is a win, but not a rung climbed.
+	state.options.challenge_id = &"bare_reels"
+	profile.record_run(state, [])
+	assert_int(profile.wins).is_equal(2)
+	assert_int(int(profile.wins_by_difficulty["marked_deck"])).is_equal(1)
+
+	assert_bool(profile.save(TEST_PATH)).is_true()
+	var loaded: PlayerProfile = PlayerProfile.load_or_new(TEST_PATH)
+	assert_int(loaded.biggest_spin).is_equal(900)
+	assert_int(int(loaded.wins_by_difficulty["marked_deck"])).is_equal(1)
+	assert_str(String(loaded.favourite_artifact())).is_equal("lucky_charm")
+
+
 func test_locked_artifacts_are_kept_out_of_the_pool() -> void:
 	var artifacts: Array[ArtifactDef] = [
 		TestFixtures.artifact(&"vault_key", ArtifactDef.Effect.FLAT_BONUS, 1.0),

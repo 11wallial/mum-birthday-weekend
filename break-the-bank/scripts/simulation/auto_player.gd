@@ -297,7 +297,7 @@ static func market(engine: SimEngine, state: RunState) -> void:
 		return
 	# A trinket from floors ago, sold to close the gap.
 	var stale: int = _stalest_owned(state)
-	if stale >= 0 and _sellback(state, state.owned[stale]) >= short:
+	if stale >= 0 and _sellback(engine, state, state.owned[stale]) >= short:
 		if engine.sell(state, stale) > 0 and engine.buy_offer(state, wanted):
 			return
 	# Or the slate, once, when the bill it adds stays small next to the ante.
@@ -343,11 +343,9 @@ static func _stalest_owned(state: RunState) -> int:
 
 
 ## What the market would hand back for [param artifact] today.
-static func _sellback(state: RunState, artifact: ArtifactDef) -> int:
-	var floor_def: FloorDef = state.current_floor()
-	var worth: int = state.economy.price_of(artifact, state.config,
-			state.floors_cleared, floor_def.ante if floor_def != null else 0)
-	return maxi(1, int(floor(float(worth) * state.config.sellback_percent / 100.0)))
+static func _sellback(engine: SimEngine, state: RunState, artifact: ArtifactDef) -> int:
+	return maxi(1, int(floor(float(engine.price_for(state, artifact))
+			* state.config.sellback_percent / 100.0)))
 
 
 ## Has a word once the House has started taking the good symbols off the reel.

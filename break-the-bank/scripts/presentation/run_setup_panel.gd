@@ -8,6 +8,7 @@ extends CanvasLayer
 signal start_requested(run_seed: int, daily_key: String)
 signal starter_changed(starter_id: StringName)
 signal difficulty_changed(difficulty_id: StringName)
+signal challenge_changed(challenge_id: StringName)
 
 @export var seed_field_path: NodePath = ^"Panel/Rows/SeedRow/SeedField"
 @export var status_path: NodePath = ^"Panel/Rows/Status"
@@ -76,6 +77,15 @@ func _ready() -> void:
 	var cycle_difficulty: Button = get_node_or_null(^"Panel/Rows/Buttons/Difficulty") as Button
 	if cycle_difficulty != null:
 		cycle_difficulty.pressed.connect(_on_cycle_difficulty)
+	# Built here rather than authored: the row is dressed as a set below, and a
+	# button the scene did not know about still has to be in it.
+	var buttons: Node = get_node_or_null(^"Panel/Rows/Buttons")
+	if buttons != null:
+		var cycle_challenge: Button = Button.new()
+		cycle_challenge.name = "Challenge"
+		cycle_challenge.text = "Cycle challenge"
+		buttons.add_child(cycle_challenge)
+		cycle_challenge.pressed.connect(_on_cycle_challenge)
 	# Escape and F2 both close this, and a touch device has neither.
 	var close_button: Button = get_node_or_null(^"Panel/Rows/Buttons/Close") as Button
 	if close_button != null:
@@ -111,13 +121,21 @@ func _redraw() -> void:
 	if _profile == null:
 		return
 	if _status != null:
-		_status.text = "RUNS %d     WINS %d     BEST FLOOR %d     EARNED %d     DEBT CLEARED %d" % [
-			_profile.runs_played, _profile.wins, _profile.best_floor,
-			_profile.lifetime_earned, _profile.debt_cleared]
+		var favourite: StringName = _profile.favourite_artifact()
+		_status.text = "\n".join([
+			"RUNS %d     WINS %d     BEST FLOOR %d     EARNED %d     DEBT CLEARED %d" % [
+				_profile.runs_played, _profile.wins, _profile.best_floor,
+				_profile.lifetime_earned, _profile.debt_cleared],
+			"SPINS %d     BIGGEST SPIN %d     VIG PAID TO THE HOUSE %d     AFTER HOURS %d     FAVOURITE %s" % [
+				_profile.total_spins, _profile.biggest_spin, _profile.vig_paid,
+				_profile.deepest_after_hours,
+				String(favourite).capitalize() if favourite != &"" else "—"],
+		])
 	if _ruleset != null:
-		_ruleset.text = "STARTER  %s        DIFFICULTY  %s        TODAY  %s" % [
+		_ruleset.text = "STARTER  %s        DIFFICULTY  %s        CHALLENGE  %s        TODAY  %s" % [
 			_name_of(MetaCatalogue.STARTERS, _profile.selected_starter),
-			_name_of(MetaCatalogue.DIFFICULTIES, _profile.selected_difficulty),
+			_difficulty_name(_profile.selected_difficulty),
+			_challenge_name(_profile.selected_challenge),
 			SeedBook.to_code(SeedBook.today_seed())]
 	if _unlocks != null and _catalogue != null:
 		_unlocks.text = _unlock_text()
@@ -154,6 +172,21 @@ func _name_of(table: Dictionary, id: StringName) -> String:
 	return String(id)
 
 
+## The rung's name and where it sits on the ladder.
+func _difficulty_name(id: StringName) -> String:
+	var rung: DifficultyDef = _catalogue.difficulty_by_id(id) if _catalogue != null else null
+	if rung == null:
+		return String(id).capitalize()
+	return "%s (%d of %d)" % [rung.display_name, rung.tier, _catalogue.difficulties.size()]
+
+
+func _challenge_name(id: StringName) -> String:
+	if id == &"":
+		return "—"
+	var challenge: ChallengeDef = _catalogue.challenge_by_id(id) if _catalogue != null else null
+	return challenge.display_name if challenge != null else String(id).capitalize()
+
+
 func _on_start_pressed() -> void:
 	var text: String = _seed_field.text if _seed_field != null else ""
 	var parsed: int = SeedBook.parse(text)
@@ -171,6 +204,7 @@ func _on_random_pressed() -> void:
 func _on_cycle_starter() -> void:
 	var options: Array[StringName] = _catalogue.available_starters(_profile)
 	_profile.selected_starter = _next(options, _profile.selected_starter)
+	_profile.save()
 	starter_changed.emit(_profile.selected_starter)
 	_redraw()
 
@@ -178,7 +212,19 @@ func _on_cycle_starter() -> void:
 func _on_cycle_difficulty() -> void:
 	var options: Array[StringName] = _catalogue.available_difficulties(_profile)
 	_profile.selected_difficulty = _next(options, _profile.selected_difficulty)
+	_profile.save()
 	difficulty_changed.emit(_profile.selected_difficulty)
+	_redraw()
+
+
+## Cycles through the challenges the profile has opened, with "none" first:
+## the ordinary game is always one press away.
+func _on_cycle_challenge() -> void:
+	var options: Array[StringName] = [&""]
+	options.append_array(_catalogue.available_challenges(_profile))
+	_profile.selected_challenge = _next(options, _profile.selected_challenge)
+	_profile.save()
+	challenge_changed.emit(_profile.selected_challenge)
 	_redraw()
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_no_market"
+display_name = "No Market"
+description = "A challenge run: the draft is what it is: no reroll, no selling back, no slate."
+kind = 3
+target_id = &"no_market"
+condition = 2
+threshold = 3

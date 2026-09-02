@@ -65,6 +65,8 @@ var heat: float = 0.0
 var heat_ante_percent: float = 0.0
 ## Payout of the most recent spin, after every modifier.
 var last_payout: int = 0
+## The single biggest spin of the run. The profile keeps the biggest ever.
+var best_payout: int = 0
 var last_line: Array[SymbolDef] = []
 var last_pattern: Probability.Pattern = Probability.Pattern.NONE
 ## Reason the run ended, e.g. &"ante_unpaid" or &"cleared_all_floors".
@@ -118,7 +120,8 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	options = p_options if p_options != null else RunOptions.new()
 	economy = CoreEconomy.new(config, p_bus)
 	economy.cash += options.bonus_cash
-	economy.debt = maxi(0, economy.debt + options.bonus_debt)
+	economy.debt = maxi(0, int(round(float(economy.debt) * maxf(options.debt_scale, 0.0)))
+			+ options.bonus_debt)
 	reel_rng = RngStream.new(p_seed, &"reels")
 	shop_rng = RngStream.new(p_seed, &"shop")
 	tempo_rng = RngStream.new(p_seed, &"tempo")
@@ -320,6 +323,7 @@ func snapshot() -> Dictionary:
 		"extra_reels": extra_reels,
 		"extra_rows": extra_rows,
 		"endless": endless,
+		"best_payout": best_payout,
 	}
 	data.merge(economy.snapshot())
 	return data

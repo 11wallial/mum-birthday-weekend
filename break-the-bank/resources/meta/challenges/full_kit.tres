@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"full_kit"
+display_name = "Full Kit"
+description = "Every verb from the basement: the market, the stake, the ladder, the vault, the office, the works. The House is counting from the start too."
+early_systems = Array[StringName]([&"market", &"stake", &"gamble", &"vault", &"contracts", &"expansion", &"heat"])

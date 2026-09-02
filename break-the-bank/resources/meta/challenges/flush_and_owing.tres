@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"flush_and_owing"
+display_name = "Flush and Owing"
+description = "Three hundred credits in hand, and three times the debt behind them."
+bonus_cash = 300
+debt_scale = 3.0

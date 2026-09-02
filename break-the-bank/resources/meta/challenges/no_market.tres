@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"no_market"
+display_name = "No Market"
+description = "The draft is what it is: no reroll, no selling back, no slate."
+locked_systems = Array[StringName]([&"market"])

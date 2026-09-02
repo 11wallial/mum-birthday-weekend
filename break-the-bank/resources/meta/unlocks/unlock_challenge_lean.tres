@@ -4,11 +4,10 @@
 
 [resource]
 script = ExtResource("1_unlockdef")
-id = &"unlock_marked_deck"
-display_name = "Marked Deck"
-description = "Audit 2 of 8. A win on the rung below opens it."
-kind = 2
-target_id = &"marked_deck"
-condition = 5
-threshold = 1
-condition_id = &"standard"
+id = &"unlock_challenge_lean"
+display_name = "Lean"
+description = "A challenge run: ten credits fewer to start, and nothing to make up for it."
+kind = 3
+target_id = &"lean"
+condition = 0
+threshold = 2

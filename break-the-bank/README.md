@@ -227,11 +227,32 @@ new run, or ending one, forgets it.
 
 **Meta-progression** persists in `user://profile.json` as plain JSON — readable,
 hand-editable, and unable to execute anything on load, which a `.tres` save
-could. Thirteen unlocks gate the most distinctive artifacts plus two starter
-variants and two difficulty modifiers; the panel shows what each still needs,
-nearest first. Unlocks reach the simulation only as `RunOptions`, so the core
-stays pure and the balance lab can pass the default (nothing restricted) and go
-on measuring the whole content set.
+could. Unlocks gate the most distinctive artifacts, two starter variants, the
+ladder and the challenges; the panel shows what each still needs, nearest
+first. Unlocks reach the simulation only as `RunOptions`, so the core stays
+pure and the balance lab can pass the default (nothing restricted) and go on
+measuring the whole content set.
+
+**The ladder** is eight audits of the account, each a `DifficultyDef` in
+`resources/meta/difficulties/` and each carrying every rule below it: a
+dearer ante, a heavier vig, a tighter purse, a bigger debt, faster interest,
+an adjusted machine, and house rules on top. A win on one
+rung opens the next. **Challenges** (`resources/meta/challenges/`) are
+eighteen rules of their own — no holds, skulls on the payroll, the vig
+doubled, the engine room closed, every verb from the basement — each a
+complete ruleset with the starter and the audit set aside, opened through
+play. Both reach the run only as
+`RunOptions`, and `tools/casino_lab/ladder.gd` prints what each does to the
+win rate:
+
+```bash
+godot --headless --path . --script res://tools/casino_lab/ladder.gd -- --runs=1000
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=2500 --difficulty=house_rules
+```
+
+**The lifetime ledger** on the setup panel keeps the spins, the biggest single
+spin, the vig paid to the House across every run, the deepest table after
+hours, and the artifact most often owned at the end of a run.
 
 **Leaderboard telemetry** is written to `user://leaderboard.json`, scored per
 ruleset — a Marked Deck run is not comparable to a standard one — and per daily

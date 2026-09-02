@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_full_kit"
+display_name = "Full Kit"
+description = "A challenge run: every verb from the basement: the market, the stake, the ladder, the vault, the office, the works."
+kind = 3
+target_id = &"full_kit"
+condition = 1
+threshold = 1

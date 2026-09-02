@@ -16,6 +16,12 @@ enum Condition {
 	LIFETIME_EARNED,
 	## Debt principal cleared across every run, via paydown artifacts.
 	DEBT_CLEARED,
+	## Runs won at the difficulty named by [member condition_id]. The ladder:
+	## each rung is unlocked by a win on the one below it.
+	WINS_AT,
+	## Floors cleared past the last, on the run that stayed at the table
+	## longest.
+	AFTER_HOURS,
 }
 
 enum Kind {
@@ -25,6 +31,8 @@ enum Kind {
 	STARTER,
 	## Makes a difficulty modifier selectable.
 	DIFFICULTY,
+	## Makes a challenge run selectable.
+	CHALLENGE,
 }
 
 @export var id: StringName = &""
@@ -35,6 +43,9 @@ enum Kind {
 @export var target_id: StringName = &""
 @export var condition: Condition = Condition.RUNS_PLAYED
 @export var threshold: int = 1
+## What the condition is about, for the conditions that name something: the
+## difficulty a win has to be at.
+@export var condition_id: StringName = &""
 
 
 ## True when [param stats] meets this unlock's condition.
@@ -54,6 +65,10 @@ func _stat_key() -> String:
 			return "lifetime_earned"
 		Condition.DEBT_CLEARED:
 			return "debt_cleared"
+		Condition.WINS_AT:
+			return "wins_at:%s" % condition_id
+		Condition.AFTER_HOURS:
+			return "deepest_after_hours"
 		_:
 			return "runs_played"
 
@@ -76,5 +91,9 @@ func requirement_text() -> String:
 			return "Earn %d credits in total" % threshold
 		Condition.DEBT_CLEARED:
 			return "Clear %d of debt principal" % threshold
+		Condition.WINS_AT:
+			return "Win %d at %s" % [threshold, String(condition_id).capitalize()]
+		Condition.AFTER_HOURS:
+			return "Last %d floors after hours" % threshold
 		_:
 			return ""

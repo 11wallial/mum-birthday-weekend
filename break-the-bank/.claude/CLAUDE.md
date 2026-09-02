@@ -168,7 +168,14 @@ so tools and tests are held to them too.
 
 Anything persistent lives in `scripts/meta/` and reaches a run only as
 [RunOptions]. Never let the simulation read a profile: the lab passes default
-options so its numbers keep describing the full content set.
+options so its numbers keep describing the full content set. The ladder
+(`DifficultyDef`) and the challenges (`ChallengeDef`) are data under
+`resources/meta/`, each applied to a `RunOptions`; a new rule is a new field
+on `RunOptions`, read by the simulation exactly where the number it changes
+is used, and a row in `tests/unit/test_audits.gd` that pins it. The lab
+measures a rung with `--difficulty=<id>` and the whole ladder with
+`ladder.gd`, so a rung is only shipped once it is shown to be harder than the
+one below it.
 
 Saves are plain JSON, and every loader treats a corrupt or newer-version file as
 "start fresh" rather than failing. Keep it that way. The run in progress is

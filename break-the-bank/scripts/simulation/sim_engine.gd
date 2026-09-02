@@ -227,6 +227,15 @@ func start_run(run_seed: int, options: RunOptions = null) -> RunState:
 	_bus.emit_event(EffectBus.Event.RUN_STARTED, {
 		"seed": run_seed, "cash": state.economy.cash, "debt": state.economy.debt,
 	})
+	# A challenge can hand a verb over before any floor does. Announced the
+	# way a floor would, so the interface puts it on screen the same way.
+	for early: StringName in state.options.early_systems:
+		if Systems.ORDER.has(early) and state.options.allows_system(early) \
+				and state.grant_system(early):
+			_bus.emit_event(EffectBus.Event.SYSTEM_GRANTED, {
+				"system": String(early), "title": Systems.title(early),
+				"brief": Systems.brief(early), "floor": state.floor_index,
+			})
 	begin_floor(state)
 	return state
 
@@ -326,6 +335,10 @@ func begin_floor(state: RunState) -> void:
 	# Announced before FLOOR_STARTED so the interface can put the new verb on
 	# screen as the floor opens rather than a beat into it.
 	for granted: StringName in floor_def.grants:
+		# A challenge can keep a verb from ever arriving. The floor opens all
+		# the same; it simply has nothing new to hand over.
+		if not state.options.allows_system(granted):
+			continue
 		if state.grant_system(granted):
 			_bus.emit_event(EffectBus.Event.SYSTEM_GRANTED, {
 				"system": String(granted),
@@ -675,6 +688,7 @@ func _do_collect(state: RunState) -> void:
 	state.last_line = board.line.duplicate()
 	state.last_pattern = board.pattern
 	state.last_payout = board.payout
+	state.best_payout = maxi(state.best_payout, board.payout)
 	state.decision = RunState.Decision.NONE
 	state.economy.credit(board.payout, &"payout")
 	_observe_heat(state, board.payout)
@@ -877,20 +891,23 @@ func _close_floor(state: RunState) -> void:
 	# The vig comes first: debt is serviced out of the same cash the ante needs,
 	# which is what makes carrying it a real decision rather than a late bill.
 	var serviced: int = 0
-	if state.floors_cleared >= state.config.debt_grace_floors:
+	var grace: int = 0 if state.options.no_grace else state.config.debt_grace_floors
+	if state.floors_cleared >= grace:
 		serviced = state.economy.service_debt(
-				state.config.debt_service_percent, state.config.debt_default_penalty_percent)
+				state.config.debt_service_percent * maxf(state.options.debt_service_scale, 0.0),
+				state.config.debt_default_penalty_percent)
 	var ante: int = _ante_for(state, floor_def)
 	if not state.economy.settle_ante(ante):
 		_end_run(state, RunState.Phase.LOST, &"ante_unpaid")
 		return
 	state.economy.accrue_debt_interest(maxf(0.0, floor_def.debt_interest_percent
-			+ ContractEngine.debt_interest_percent(state)))
+			+ ContractEngine.debt_interest_percent(state) + state.options.interest_delta))
 	ArtifactEngine.apply_debt_paydown(state)
 	state.floors_cleared += 1
 	state.set_contract(null)
-	# The count is a floor's worth of attention. A new floor is a new room.
-	state.heat = 0.0
+	# The count is a floor's worth of attention. A new floor is a new room —
+	# unless the audit says the House remembers.
+	state.heat *= clampf(state.options.heat_carry, 0.0, 1.0)
 	state.heat_ante_percent = 0.0
 	state.mark_reel_dirty()
 	_bus.emit_event(EffectBus.Event.FLOOR_CLEARED, {
@@ -1137,8 +1154,16 @@ func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
 	state.shop_offers = _roll_offers(state, floor_def)
 	state.shop_prices = []
 	for artifact: ArtifactDef in state.shop_offers:
-		state.shop_prices.append(state.economy.price_of(
-				artifact, state.config, state.floors_cleared, floor_def.ante))
+		state.shop_prices.append(price_for(state, artifact))
+
+
+## What [param artifact] costs this run today: the economy's price, scaled by
+## the audit. Public so the interface and the market quote the same number.
+func price_for(state: RunState, artifact: ArtifactDef) -> int:
+	var floor_def: FloorDef = state.current_floor()
+	var worth: int = state.economy.price_of(artifact, state.config,
+			state.floors_cleared, floor_def.ante if floor_def != null else 0)
+	return maxi(1, int(round(float(worth) * maxf(state.options.price_scale, 0.0))))
 
 
 func _offer_ids(state: RunState) -> Array[String]:
@@ -1223,9 +1248,7 @@ func _do_sell(state: RunState, index: int) -> int:
 	if index < 0 or index >= state.owned.size():
 		return 0
 	var artifact: ArtifactDef = state.owned[index]
-	var floor_def: FloorDef = state.current_floor()
-	var worth: int = state.economy.price_of(artifact, state.config,
-			state.floors_cleared, floor_def.ante if floor_def != null else 0)
+	var worth: int = price_for(state, artifact)
 	var refund: int = maxi(1, int(floor(float(worth)
 			* state.config.sellback_percent / 100.0)))
 	if not state.release(artifact):

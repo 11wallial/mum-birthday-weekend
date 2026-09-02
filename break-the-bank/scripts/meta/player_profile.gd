@@ -16,22 +16,51 @@ var lifetime_earned: int = 0
 var debt_cleared: int = 0
 ## Floors cleared past the last, on the run that stayed at the table longest.
 var deepest_after_hours: int = 0
+## The lifetime ledger: what a player has done to the House, in numbers meant
+## to be looked at and, in the vig's case, shared.
+var total_spins: int = 0
+var biggest_spin: int = 0
+var vig_paid: int = 0
+## Runs and wins per rung of the ladder, keyed by difficulty id. Challenge
+## runs are kept out of it: a win under a rule of its own is not a win on the
+## ladder, in either direction.
+var runs_by_difficulty: Dictionary = {}
+var wins_by_difficulty: Dictionary = {}
+## Times each artifact has been owned at the end of a run, keyed by id.
+var artifact_picks: Dictionary = {}
 ## Ids of unlocks already earned, so a message is only shown once.
 var unlocked: Array[StringName] = []
 var selected_starter: StringName = &"standard"
 var selected_difficulty: StringName = &"standard"
+## The challenge chosen for the next run, or empty for the ordinary game.
+var selected_challenge: StringName = &""
 ## Best score per ruleset key, keyed by "<ruleset>|<seed>" for daily comparison.
 var records: Dictionary = {}
 
 
 func stats() -> Dictionary:
-	return {
+	var out: Dictionary = {
 		"runs_played": runs_played,
 		"wins": wins,
 		"best_floor": best_floor,
 		"lifetime_earned": lifetime_earned,
 		"debt_cleared": debt_cleared,
+		"deepest_after_hours": deepest_after_hours,
 	}
+	for id: Variant in wins_by_difficulty:
+		out["wins_at:%s" % String(id)] = int(wins_by_difficulty[id])
+	return out
+
+
+## The artifact owned at the end of more runs than any other, or empty.
+func favourite_artifact() -> StringName:
+	var best: StringName = &""
+	var most: int = 0
+	for id: Variant in artifact_picks:
+		if int(artifact_picks[id]) > most:
+			most = int(artifact_picks[id])
+			best = StringName(String(id))
+	return best
 
 
 ## Folds a finished run into the profile. Returns the unlocks newly earned.
@@ -42,6 +71,17 @@ func record_run(state: RunState, catalogue: Array[UnlockDef]) -> Array[UnlockDef
 	best_floor = maxi(best_floor, state.floors_cleared)
 	lifetime_earned += state.economy.lifetime_earned
 	debt_cleared += maxi(0, state.config.starting_debt - state.economy.debt)
+	total_spins += state.spins_taken
+	biggest_spin = maxi(biggest_spin, state.best_payout)
+	vig_paid += state.economy.debt_serviced
+	for artifact: ArtifactDef in state.owned:
+		var key: String = String(artifact.id)
+		artifact_picks[key] = int(artifact_picks.get(key, 0)) + 1
+	if state.options.challenge_id == &"":
+		var rung: String = String(state.options.difficulty_id)
+		runs_by_difficulty[rung] = int(runs_by_difficulty.get(rung, 0)) + 1
+		if state.phase == RunState.Phase.WON:
+			wins_by_difficulty[rung] = int(wins_by_difficulty.get(rung, 0)) + 1
 	_remember_score(state)
 	return evaluate(catalogue)
 
@@ -105,9 +145,16 @@ func to_dict() -> Dictionary:
 		"lifetime_earned": lifetime_earned,
 		"debt_cleared": debt_cleared,
 		"deepest_after_hours": deepest_after_hours,
+		"total_spins": total_spins,
+		"biggest_spin": biggest_spin,
+		"vig_paid": vig_paid,
+		"runs_by_difficulty": runs_by_difficulty,
+		"wins_by_difficulty": wins_by_difficulty,
+		"artifact_picks": artifact_picks,
 		"unlocked": ids,
 		"selected_starter": String(selected_starter),
 		"selected_difficulty": String(selected_difficulty),
+		"selected_challenge": String(selected_challenge),
 		"records": records,
 	}
 
@@ -120,11 +167,16 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.lifetime_earned = int(data.get("lifetime_earned", 0))
 	profile.debt_cleared = int(data.get("debt_cleared", 0))
 	profile.deepest_after_hours = int(data.get("deepest_after_hours", 0))
+	profile.total_spins = int(data.get("total_spins", 0))
+	profile.biggest_spin = int(data.get("biggest_spin", 0))
+	profile.vig_paid = int(data.get("vig_paid", 0))
 	profile.selected_starter = StringName(data.get("selected_starter", "standard"))
 	profile.selected_difficulty = StringName(data.get("selected_difficulty", "standard"))
-	var records: Variant = data.get("records", {})
-	if records is Dictionary:
-		profile.records = records
+	profile.selected_challenge = StringName(data.get("selected_challenge", ""))
+	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks", "records"]:
+		var table: Variant = data.get(key, {})
+		if table is Dictionary:
+			profile.set(key, table)
 	for entry: Variant in data.get("unlocked", []):
 		profile.unlocked.append(StringName(entry))
 	return profile

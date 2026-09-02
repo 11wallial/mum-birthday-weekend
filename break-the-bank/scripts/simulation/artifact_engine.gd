@@ -40,7 +40,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 
 	# A contract can put the skulls on the payroll for a floor exactly as a ward
 	# can, and the two take the better of themselves rather than stacking.
-	var ward: float = maxf(_curse_ward(state), ContractEngine.curse_pays(state))
+	var ward: float = maxf(maxf(_curse_ward(state), ContractEngine.curse_pays(state)),
+			state.options.curse_pays)
 	var warded: bool = ward > 0.0
 	var cursed: bool = Probability.has_curse(line) and not warded
 	for symbol: SymbolDef in Probability.drawn(line):
@@ -100,6 +101,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	# And the House takes its share off the end of that, which is the order it
 	# would take it in: after everything, and off the top of what is left.
 	ctx.multiplier *= maxf(0.0, 1.0 - HeatEngine.skim(state))
+	# An audit's adjustment to the machine comes last of all.
+	ctx.multiplier *= maxf(0.0, state.options.payout_scale)
 	return ctx
 
 

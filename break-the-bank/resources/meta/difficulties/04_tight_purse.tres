@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DifficultyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/difficulty_def.gd" id="1_difficultydef"]
+
+[resource]
+script = ExtResource("1_difficultydef")
+id = &"tight_purse"
+display_name = "Tight Purse"
+description = "Everything in the draft costs a fifth more. The market has heard about you."
+tier = 4
+ante_scale = 1.08
+debt_service_scale = 1.5
+price_scale = 1.2

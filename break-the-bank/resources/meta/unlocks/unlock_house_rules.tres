@@ -6,8 +6,9 @@
 script = ExtResource("1_unlockdef")
 id = &"unlock_house_rules"
 display_name = "House Rules"
-description = "Every ante costs 60% more."
+description = "Audit 8 of 8. A win on the rung below opens it."
 kind = 2
 target_id = &"house_rules"
-condition = 1
-threshold = 3
+condition = 5
+threshold = 1
+condition_id = &"tight_machine"

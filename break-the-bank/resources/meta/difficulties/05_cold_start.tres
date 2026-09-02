@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DifficultyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/difficulty_def.gd" id="1_difficultydef"]
+
+[resource]
+script = ExtResource("1_difficultydef")
+id = &"cold_start"
+display_name = "Cold Start"
+description = "You owe half again what you owed. The paperwork was always going to say that."
+tier = 5
+ante_scale = 1.08
+debt_service_scale = 1.5
+debt_scale = 1.5
+price_scale = 1.2
