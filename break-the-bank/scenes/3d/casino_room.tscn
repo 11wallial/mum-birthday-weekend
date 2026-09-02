@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -15,6 +15,7 @@
 [ext_resource type="Script" path="res://scripts/presentation/title_screen.gd" id="14_title"]
 [ext_resource type="Script" path="res://scripts/presentation/tutorial_director.gd" id="15_clerk"]
 [ext_resource type="Script" path="res://scripts/presentation/payout_receipt.gd" id="16_receipt"]
+[ext_resource type="Script" path="res://scripts/presentation/recap_panel.gd" id="17_recap"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -94,3 +95,8 @@ script = ExtResource("15_clerk")
 [node name="PayoutReceipt" type="CanvasLayer" parent="."]
 layer = 2
 script = ExtResource("16_receipt")
+
+; The statement of account at the end of a run, on the clipboard.
+[node name="RecapPanel" type="CanvasLayer" parent="."]
+layer = 3
+script = ExtResource("17_recap")

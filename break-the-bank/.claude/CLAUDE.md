@@ -377,6 +377,15 @@ Rules that cost real time to learn:
   released on the beat the total lands. `FilmOverlay.set_strain` takes the
   same number for the render's tearing and grain; the room hands both out
   in `_settle_surety`, so the column and the picture can never disagree.
+- The run ends on the clipboard: `RunRecap.build` (pure, tested) makes the
+  statement from the state and the journal's entries, `RecapPanel` prints it
+  on the board's viewport, and `CasinoRoom._show_statement` walks the camera
+  to the desk and steadies the strain so it can be read. The draft, the
+  office and the statement share one viewport and one `mount` pattern.
+- `CasinoRoom._on_event` is a `match`: an arm that lists an event kind
+  shadows every later arm for it. A surety arm that named RUN_ENDED once
+  skipped the end of the run entirely; anything that must run for several
+  kinds goes after the match, not in it.
 - The door (`TitleScreen`) hides the HUD while it is up and owns Esc; the
   Clerk (`TutorialDirector`) owns the callout while the lesson runs and gates
   the machine to the move it is teaching through `CasinoRoom._allowed`. The

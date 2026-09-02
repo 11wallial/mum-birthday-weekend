@@ -220,3 +220,20 @@ unlocks with them; their definitions are in git at `58b5fc5` and come back
 one at a time, each with its own lab measurement, once the base game is
 stable.
 
+---
+
+## 10. The bot's win rate and the human target
+
+**Decided, 2 September 2026 — as a working relationship, to be replaced by
+data.** The balance guide targets 40–60% for experienced human play at
+base difficulty and effectively zero first-clears in a player's first five
+runs. The lab's gate holds the automated player at 12–28% (`balance_bands`),
+and the bot is neither an experienced human nor a first-timer: it plays a
+competent, unimaginative game with no foresight, which is roughly a
+player's tenth run. The relationship the repo works to until the cohort
+says otherwise: **the bot's rate is the floor of the experienced band's
+floor** — a build a person can improve on by a factor of three with
+foresight the bot lacks (which decisions were load-bearing, when to settle,
+what to hold) — and the first-run rate is measured by the recorder, never
+by the bot. Nothing in the gate moves for the guide's numbers until the
+recorder has thirty human runs. `docs/PLAYTEST.md` carries the questions.

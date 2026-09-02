@@ -44,6 +44,8 @@ var _title: TitleScreen
 var _tutorial: TutorialDirector
 ## The printed arithmetic of the last spin.
 var _receipt: PayoutReceipt
+## The statement of account, on the clipboard when the run is over.
+var _recap: RecapPanel
 ## The grade over the world, and the render's degradation with the surety.
 var _film: Node
 ## The clipboard's viewport: the draft and the back office are drawn into it
@@ -98,6 +100,7 @@ func _ready() -> void:
 	_title = get_node_or_null(title_path) as TitleScreen
 	_receipt = get_node_or_null(receipt_path) as PayoutReceipt
 	_film = get_node_or_null(^"FilmOverlay")
+	_recap = get_node_or_null(^"RecapPanel") as RecapPanel
 	if _receipt != null and _audio != null:
 		_receipt.set_audio(_audio)
 	_tutorial = get_node_or_null(tutorial_path) as TutorialDirector
@@ -177,6 +180,8 @@ func _ready() -> void:
 ## Starts a run. Pass 0 for a random seed.
 func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	var actual_seed: int = chosen_seed if chosen_seed != 0 else randi()
+	if _recap != null:
+		_recap.close()
 	# A new run replaces the one on the table. Whatever was saved is gone the
 	# moment this is asked for, not when the new one first writes.
 	RunSave.clear()
@@ -496,6 +501,8 @@ func _mount_board() -> void:
 		_shop.mount(_board_viewport)
 	if _contracts != null:
 		_contracts.mount(_board_viewport)
+	if _recap != null:
+		_recap.mount(_board_viewport)
 	var pick: Area3D = _room_parts.get("board_pick", null) as Area3D
 	if pick != null:
 		pick.input_event.connect(_on_board_input)
@@ -538,8 +545,10 @@ func _settle_surety() -> void:
 	var held: float = state.surety()
 	if _slot_view != null:
 		_slot_view.set_surety(held)
+	# A finished run holds the surety entirely, but the statement is read
+	# in the office: the picture steadies so the account can be read.
 	if _film != null and _film.has_method("set_strain"):
-		_film.call("set_strain", held)
+		_film.call("set_strain", 0.2 if state.is_over() else held)
 
 
 func _on_touch_camera() -> void:
@@ -842,6 +851,17 @@ func debug_fit_works(reels: int, rows: int, vault: int) -> void:
 
 
 ## Puts the back office on the table without clearing a floor. Visual QA only.
+## Ends the run on the spot, unpaid: for the storyboard's statement frame.
+func debug_lose() -> void:
+	if state == null or engine == null or state.is_over():
+		return
+	state.economy.cash = 0
+	state.spins_remaining = 0
+	state.decision = RunState.Decision.NONE
+	engine.step(state)
+	_after_input()
+
+
 func debug_open_contracts() -> void:
 	if state == null or engine == null:
 		return
@@ -1060,9 +1080,6 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				_receipt.set_light((FloorMood.MOODS[mood_id] as Dictionary)["key"] as Color)
 			_announce_floor(payload)
 			_settle_surety()
-		EffectBus.Event.RUN_STARTED, EffectBus.Event.FLOOR_CLEARED, \
-		EffectBus.Event.RUN_ENDED, EffectBus.Event.ANTE_SETTLED:
-			_settle_surety()
 		EffectBus.Event.SPIN_STARTED:
 			if _deck != null:
 				_deck.set_busy(true)
@@ -1110,6 +1127,12 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				_camera.set_view(CameraController.View.MACHINE)
 		_:
 			pass
+	# The surety moves with the money: at a run's start and end, a floor's
+	# close and an ante settled. Outside the match, because an arm that
+	# listed RUN_ENDED once shadowed the arm that ends the run.
+	if kind in [EffectBus.Event.RUN_STARTED, EffectBus.Event.FLOOR_CLEARED,
+			EffectBus.Event.RUN_ENDED, EffectBus.Event.ANTE_SETTLED]:
+		_settle_surety()
 	# The sign and the machine's own monitor track the run on every event, so
 	# they can never disagree with the HUD about where the player is.
 	_refresh_diegetic()
@@ -1152,6 +1175,19 @@ func _refresh_diegetic() -> void:
 		_slot_view.set_counter("ante", engine.ante_for(state) if engine != null else 0)
 
 
+## The statement of account on the clipboard, and the camera over it: the
+## run is diagnosed at the desk, not read off a line over the machine.
+func _show_statement(score_line: String) -> void:
+	if _recap == null or state == null:
+		return
+	var entries: Array = engine.journal.entries if engine != null and engine.journal != null else []
+	_recap.open(RunRecap.build(state, entries), SeedBook.to_code(state.seed_value), score_line)
+	if _receipt != null:
+		_receipt.clear()
+	if _camera != null:
+		_camera.set_view(CameraController.View.DESK)
+
+
 ## Folds the finished run into the profile and the local board, and tells the
 ## player what it earned them.
 func _finish_run(reason: String) -> void:
@@ -1184,6 +1220,7 @@ func _finish_run(reason: String) -> void:
 	lines.append("RUN OVER — %s" % reason)
 	lines.append("%s     score %d     rank %d on this ruleset" % [
 		SeedBook.to_code(state.seed_value), int(entry["score"]), rank])
+	_show_statement("score %d     rank %d on this ruleset" % [int(entry["score"]), rank])
 	if not earned.is_empty():
 		var names: PackedStringArray = PackedStringArray()
 		for unlock: UnlockDef in earned:

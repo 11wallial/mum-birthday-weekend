@@ -85,6 +85,7 @@ func _initialize() -> void:
 	_shots.append({"name": "10c_wide_machine_spin", "action": "spin"})
 	_shots.append({"name": "11_the_house", "action": "floor:7"})
 	_shots.append({"name": "11b_counted", "action": "spin"})
+	_shots.append({"name": "12_statement", "action": "lose"})
 
 
 func _process(delta: float) -> bool:
@@ -181,6 +182,9 @@ func _apply(action: String) -> void:
 		"works":
 			if _root_node.has_method("debug_fit_works"):
 				_root_node.call("debug_fit_works", 2, 2, 3000)
+		"lose":
+			if _root_node.has_method("debug_lose"):
+				_root_node.call("debug_lose")
 		_:
 			pass
 

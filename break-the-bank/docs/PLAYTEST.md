@@ -35,7 +35,11 @@ Known gaps a tester will hit, so nobody logs them twice:
   it or skips it, and whether they hold a pair unprompted on run two.
 - No tooltips. An artifact says what it does on the draft card and nowhere
   else once bought; the machine's hardware is the only reminder.
-- No run summary on death. The HUD log (bottom left) is the record.
+- The run ends on the statement of account, on the clipboard: the outcome
+  in the House's terms, the numbers, the moves, and up to four findings —
+  facts about the run in the places runs are lost. Ask the "what would you
+  do differently" question *before* they read the findings, then again
+  after; the difference is what the statement is worth.
 - Every sound is a placeholder. Ask about the *timing* of the spin ritual,
   not the sounds.
 - Two currencies: credits for the ante, chips for the draft. Ask whether the

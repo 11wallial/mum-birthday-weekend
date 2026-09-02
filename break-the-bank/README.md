@@ -317,8 +317,8 @@ floor's own boss and carries a rule the same way; every notice also puts two
 percent on every ante for the rest of the run. Measured on 2 September
 2026: the notice as first authored (ten pars, five percent) cost five
 points of win rate, so it sits at sixteen and two with floors 5–7 eased four
-percent (1,730 · 4,080 · 16,300) — 14.9% at 800 runs, the House noticing
-0.84 times a run.
+percent (1,730 · 4,080 · 16,300) — 15.3% at 10k, inside every band, the
+House noticing 0.85 times a run.
 
 A seed is a run, so a shared seed is a shared run. Seeds are shown and entered as
 five spoken words — `SOLAR-MIRTH-CANDLE-OX-DRIFT` — which survive being read
