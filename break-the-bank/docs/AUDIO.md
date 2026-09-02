@@ -391,3 +391,29 @@ thirty-one). The sourcing brief is the `frequency_notes` on each `.tres`.
 The SFX bus carries the vault's reverb now (`Reverb_vault` in
 `default_bus_layout.tres`): predelay 38 ms, a large room, damped, 22% wet.
 Positional cues are placed in the room by `AudioDirector.FOLEY_AT`.
+
+## 1c. The scoring performance — cues added 2 September 2026
+
+Six cues for the chain, the total and the loss. The chain's beat is pitched
+by the machine, a semitone a beat up a ladder of twelve
+(`ScoreDirector.pitch_scale`), so `score_beat` is sourced at its root and
+must take two octaves of pitch cleanly. Devices keep their own tier cues
+(`artifact_t1..t4_trigger`), which now play on the device's beat rather than
+the instant the lever is pulled.
+
+| Cue | Bus | Where it fires | Placeholder shape |
+| --- | --- | --- | --- |
+| `score_beat` | SFX | one beat of the chain, pitched up the ladder | BELL |
+| `score_break` | SFX | the rhythm break: the House, the stake, a bought row | CLACK |
+| `score_cap` | SFX | the ladder past its twelfth rung — the sound of an enormous chain | BELL |
+| `score_land` | SFX | the total landing after the pause | BELL |
+| `score_dead` | SFX | a losing spin: one dry thud, outside the ladder | THUD |
+| `tube_overload` | SFX | tier five: the tubes past what they were built for | BUZZ |
+
+The pause before the total is silence by design: `AudioDirector.hush` drops
+SFX, UI and Ambience fourteen decibels for exactly the pause and lets them
+back up as the number lands. Tier five also enables a hard clip on the
+master for under a second (`AudioDirector.overload`) — the one moment the
+mix is allowed to distort. Sourcing for these should be done against the
+timing, with the animation, never separately: the handover pairs P0.6 and
+P1.4 for that reason.

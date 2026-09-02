@@ -41,6 +41,19 @@ Known gaps a tester will hit, so nobody logs them twice:
 - Two currencies: credits for the ante, chips for the draft. Ask whether the
   tester understood that the draft could not be paid from the purse, and
   whether they ever settled a floor early on purpose.
+- The scoring performance is new and untuned against people. Watch for
+  three things the art handover asks for: do they lean in during an
+  extended last-drum stop, before the number; can they rank three replayed
+  spins by payout size without reading a number; do they find hold-to-hurry
+  on their own, and does a hurried payout still feel like a payout. The
+  pause before the total is deliberate — note anyone who says it is too
+  long, and how many spins in they say it.
+- The surety column (right flank) and the picture degrading with it are the
+  premise made mechanical. Ask, after a loss, what the column was doing —
+  and whether they can name the decision that killed the run. The guide's
+  bar is four in five.
+- Three machines at the door, not seven. The Lean, the High Roller, the
+  Bone Press and the Orchard are in git and return one at a time.
 
 ## The cohort
 

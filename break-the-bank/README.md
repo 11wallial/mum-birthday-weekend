@@ -49,6 +49,7 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 | Action | Keyboard / mouse | Gamepad | Touch |
 | --- | --- | --- | --- |
 | Spin, settle an ante, advance | Space, left click | A / Cross | tap the room |
+| Hurry a payout (the whole performance, scaled; the pause stays) | hold Space or the lever | hold A | hold |
 | Hold a reel, or nudge it | 1–5, or the machine's buttons | — | tap the button |
 | Settle the floor early, once the ante is covered | click **SETTLE NOW** | — | tap it |
 | Buy artifact 1–5 in the draft | 1–5, or click the row | — | tap the row |
@@ -70,6 +71,16 @@ Touch is not a separate build. `TouchBar` shows its strip of buttons only when
 `DisplayServer.is_touchscreen_available()`, and the prompts that name a key ask
 `TouchBar.hint()` for the wording that suits the device — so one package reads
 correctly whether it is opened on a desktop or a phone.
+
+A spin is a performance, not a number. Once the last drum lands, every symbol
+and device on the receipt scores as its own beat — the plate lights in the
+accent, the drum jolts, a bell climbs a semitone a beat, a device breaks the
+rhythm with its own voice — then the cash tubes roll up to just short of the
+total, everything stops for slightly longer than is comfortable, and the
+digits land. Six tiers judged against par decide what that does to the room:
+scraping, paid, strong, heavy, overload. A loss has weight too. The surety
+column on the machine's right flank — how much of you the House holds —
+moves on the same beat, and the picture degrades with it.
 
 When a floor's spins run out the ante is not settled silently — the run pauses
 on what is due against what you hold, and waits. Clearing a floor opens the
@@ -381,7 +392,10 @@ xvfb-run -a godot --rendering-driver opengl3 \
 ```
 
 It renders under Compatibility rather than Forward+, so volumetric fog and glow
-are absent from the shots; geometry, scale and framing are exact.
+are absent from the shots; geometry, scale and framing are exact. Locally it
+renders in Forward+. `--settle=<s>` is how long each frame waits before the
+capture; the default covers a spin's whole scoring performance, and a shorter
+one (`--settle=1.3`) catches the chain mid-flight.
 
 ## Audio
 

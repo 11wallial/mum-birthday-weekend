@@ -183,7 +183,9 @@ worth knowing before touching the simulation:
 - Machines are `MachineDef` data under `resources/meta/machines/` and reach
   a run only through `RunOptions` (`bonus_chips`, `starting_artifacts`,
   `weight_shifts`, plus the scales and `early_systems` the audits already
-  used). `SimEngine.start_run` fits the hardware through `acquire` and leans
+  used). Three ship — the Standard, the Overdraft, the Strongbox — by the
+  balance guide's rule of three deep starts over eight shallow ones; the
+  suite pins the count. The four cut are in git at `58b5fc5`. `SimEngine.start_run` fits the hardware through `acquire` and leans
   the reel before the first floor opens. The ruleset key carries all of it,
   so a machine's daily is its own board. `unlock_def`'s `STARTER` kind now
   opens a machine; the enum value stays, it is written into profiles.
@@ -350,6 +352,23 @@ Rules that cost real time to learn:
 - Nothing lit on the reels goes past the environment's 1.1 bloom threshold:
   a plate that bloomed bleached its own print. The window lamp is nearly
   all diffuse for the same reason.
+- **The value structure is one bulb.** The key in the pendant is the only
+  bright thing; the wall and ceiling washes are under 1.0, the cold tube is
+  the one fill, the ambient is 0.14, and `FloorMood` scales every floor's
+  ambient and cold fill down with them. Raising any of these to "see the
+  room" flattens the frame into one orange midtone — the art handover's
+  first finding. The palette and the accent rule are `docs/PALETTE.md`:
+  `Materials.SCORE` lights a plate because it paid, flashes the payline on
+  a win, flares a tube as the total lands, and nothing decorative uses it.
+- The machine view is a long lens, low and close (`machine_fov` 42, the eye
+  below centre, the box fitted to the chassis, crown and gearbox). The
+  spool and the lever's tip crop; the machine looms. Widening the field to
+  fit more puts the floor back in the shot.
+- The surety column on the right flank reads `RunState.surety()` through
+  `SlotView3D.set_surety`, held through a spin like the cash counter and
+  released on the beat the total lands. `FilmOverlay.set_strain` takes the
+  same number for the render's tearing and grain; the room hands both out
+  in `_settle_surety`, so the column and the picture can never disagree.
 - The door (`TitleScreen`) hides the HUD while it is up and owns Esc; the
   Clerk (`TutorialDirector`) owns the callout while the lesson runs and gates
   the machine to the move it is teaching through `CasinoRoom._allowed`. The
@@ -361,6 +380,39 @@ Rules that cost real time to learn:
   on desktop can burn the same surface white on the web build; scale the
   offender by `RenderingServer.get_current_rendering_method()` rather than
   splitting the whole rig.
+
+## The performance
+
+A spin is not an event that produces a number. The simulation still resolves
+it in one frame; `ScoreDirector.plan` turns the receipt's steps into a
+timetable and `SlotView3D._perform` keeps to it. Rules:
+
+- The plan is pure and tested (`tests/unit/test_score_director.gd`): the
+  tempo starts at 180 ms and floors at 60, the ladder climbs a semitone a
+  beat and caps at twelve, a device breaks the rhythm, the count-up scales
+  with magnitude and is capped, and the pause never drops below
+  `PAUSE_FLOOR` at any pace. Change a number there, not in the view.
+- The machine stays `_busy` from the lever to the total. `CasinoRoom._advance`
+  refuses to step while it is; `_awaiting` holds the cash counter and the
+  surety from the spin's start until `_land`, so a payout never appears on
+  the tubes before the chain has counted it up. `_finish_spin` does not
+  flush the counters on a banked spin; `_land` does.
+- The receipt prints in time with the plan (`print_board(..., over_seconds,
+  tier)`), its total on the beat the number lands. A standing board (a
+  decision owed) still prints at once.
+- Devices' cues play on their beat through `AudioDirector.tier_cue`; the
+  director deliberately ignores ARTIFACT_TRIGGERED, which arrives before a
+  reel has turned. `hush` and `overload` are the pause and tier five.
+- Six tiers (`ScoreDirector.Tier`, mirrored one to one by
+  `SlotView3D.Result`) judged against par: dead, scraping, paid, strong,
+  heavy, overload. The machine's package is `_package`; the room's —
+  shake, push-in, the lamp swinging, the lights flickering, the clip — is
+  `_on_result_judged`. Add to both or the feel splits.
+- Hold-to-hurry is `Engine.time_scale` while `bb_advance` is held and the
+  machine is busy: the whole sequence scales, nothing is cut. Pace is three
+  steps (`SlotView3D.PACES`); the profile stores the multiplier.
+- Steps carry `reel` on a symbol and `id` on a device (`SpinContext.step`'s
+  extra). The receipt and the chain both read them; keep them.
 
 ## Audio
 
