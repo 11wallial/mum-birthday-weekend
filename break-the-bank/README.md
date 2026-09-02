@@ -56,6 +56,7 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 | Leave the draft | Space or Q | B / Circle | **Leave the shop** |
 | Swap machine ↔ room view | Tab | Y / Triangle | **View** |
 | New run | F5 | — | **New run** |
+| Run this seed back, once the run is over | R | — | — |
 | The door: pause, settings, skip the lesson, abandon | Esc | Start | **Setup** |
 
 A session opens on the door — the title over the idling machine — where the

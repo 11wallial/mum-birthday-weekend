@@ -30,7 +30,9 @@ builds are self-contained and fetch nothing.
 Known gaps a tester will hit, so nobody logs them twice:
 
 - The door (Esc) is the pause: resume, settings (volume per bus, the reels'
-  pace), skip the Clerk's lesson, abandon the run. A profile's first run is
+  pace, a steady picture with no flicker, flash, tearing or shake), skip
+  the Clerk's lesson, abandon the run. Offer the steady picture to anyone
+  who asks about flashing before they play. A profile's first run is
   walked through the basement by the Clerk; watch whether the tester reads
   it or skips it, and whether they hold a pair unprompted on run two.
 - Hardware on the machine carries a paper tag: its name and what it does,

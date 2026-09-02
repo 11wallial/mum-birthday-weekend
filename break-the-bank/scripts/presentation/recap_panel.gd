@@ -112,7 +112,7 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 		_rows.add_child(kit)
 	_rows.add_child(_rule())
 	_rows.add_child(_cell(score_line, 12.0, UiSkin.PAPER_INK_MUTED))
-	_rows.add_child(_cell(TouchBar.hint("F5 for a new run     F2 for the door",
+	_rows.add_child(_cell(TouchBar.hint("R runs this seed back     F5 for a new run     F2 for the door",
 			"New run / Setup — the buttons top right"), 12.0, UiSkin.PAPER_INK_MUTED))
 
 

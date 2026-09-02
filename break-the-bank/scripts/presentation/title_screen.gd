@@ -384,6 +384,19 @@ func _draw_settings() -> void:
 				setting_changed.emit(&"overlay", now)
 				_redraw()))
 	_settings_box.add_child(toggle_row)
+	var steady_on: bool = float(_settings.get("steady", 0.0)) > 0.5
+	var steady_row: HBoxContainer = HBoxContainer.new()
+	steady_row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	var steady_name: Label = _label("PICTURE", 12.0, UiSkin.INK)
+	steady_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
+	steady_row.add_child(steady_name)
+	steady_row.add_child(_small("STEADY — no flicker, flash, tearing or shake: %s" % ("ON" if steady_on else "OFF"),
+			func() -> void:
+				var now: float = 0.0 if steady_on else 1.0
+				_settings["steady"] = now
+				setting_changed.emit(&"steady", now)
+				_redraw()))
+	_settings_box.add_child(steady_row)
 	var about: Label = _label("Pace is how long the reels and the count take; hold the lever, or Space, through a payout to hurry it. The machine carries its controls and its counters; on screen repeats them. Louder than 0 dB is the House's own risk.",
 			11.0, UiSkin.INK_MUTED)
 	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

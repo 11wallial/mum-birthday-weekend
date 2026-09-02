@@ -22,6 +22,12 @@ static var pace: float = 1.0
 ## The three steps the setting offers, slow to quick, and their names.
 const PACES: Array[float] = [1.45, 1.0, 0.62]
 const PACE_NAMES: Array[String] = ["SLOW", "NORMAL", "QUICK"]
+## A steady picture: no flicker, no flash past the tubes' running heat, no
+## tearing in the render, no shake, no swinging lamp. A setting, kept on
+## the profile, for anyone the machine's overload would hurt — the display
+## hygiene the roadmap lists — and the performance's timing is untouched by
+## it, so nothing is skipped, only the light held still.
+static var steady: bool = false
 ## Holding the lever — or Space — through a performance runs the clock this
 ## much faster. The whole sequence scales; nothing is cut out of it, and the
 ## pause before the total still stands, shorter.
@@ -461,6 +467,8 @@ func _finish_spin(payout: int, multiplier: float) -> void:
 ## that only ever play on a genuinely live line, because a tell that lies
 ## is a tell this audience will stop believing.
 func _tells(after: float, seconds: float) -> void:
+	if steady:
+		return
 	var tells: Tween = create_tween()
 	tells.tween_interval(after)
 	if _light != null:
@@ -1163,7 +1171,7 @@ func _show_surety(value: float) -> void:
 ## mechanical sound with no musical content, and on a near miss the failed
 ## reel held in the red for a moment.
 func _fail(_payout: int) -> void:
-	if _light != null:
+	if _light != null and not steady:
 		var flicker: Tween = create_tween()
 		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.15, 0.05)
 		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.8, 0.06)
@@ -1194,7 +1202,7 @@ func _package(result: Result, multiplier: float) -> void:
 		var tween: Tween = create_tween()
 		tween.tween_property(_light, "light_energy", flare, 0.08)
 		tween.tween_property(_light, "light_energy", LAMP_REST, 0.55)
-	if result == Result.OVERLOAD:
+	if result == Result.OVERLOAD and not steady:
 		_overbright(0.9)
 	if _audio == null:
 		return

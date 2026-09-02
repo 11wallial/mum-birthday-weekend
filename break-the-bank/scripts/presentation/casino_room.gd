@@ -311,6 +311,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_end_recording(&"abandoned")
 		new_run(0)
 		return
+	# Run it back: the same seed, the same reel, the same people — the
+	# statement's findings tested against the fork the player just found.
+	if event.is_action_pressed(&"bb_run_back") and state != null and state.is_over():
+		new_run(state.seed_value, _daily_key)
+		return
 	if event.is_action_pressed(&"bb_camera") and _camera != null:
 		_camera.toggle_view()
 	# Pulled back, the arrows walk the ring of room viewpoints. At the machine
@@ -378,7 +383,7 @@ func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) ->
 	_settle_surety()
 	# The tier's package, in the room: what a spin of this size does to
 	# everything around the machine. The machine's own part played already.
-	if _camera != null:
+	if _camera != null and not SlotView3D.steady:
 		match result:
 			SlotView3D.Result.OVERLOAD:
 				_camera.shake(1.0)
@@ -393,14 +398,14 @@ func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) ->
 				_camera.shake(0.2)
 			_:
 				pass
-	if result >= SlotView3D.Result.HEAVY:
+	if result >= SlotView3D.Result.HEAVY and not SlotView3D.steady:
 		_swing_lamp()
 		# Sustained: a second kick as the first dies, so the shake reads as
 		# the machine straining rather than a single knock.
 		if _camera != null:
 			var again: Tween = create_tween()
 			again.tween_callback(func() -> void: _camera.shake(0.7)).set_delay(0.3)
-	if result == SlotView3D.Result.OVERLOAD:
+	if result == SlotView3D.Result.OVERLOAD and not SlotView3D.steady:
 		_flicker_room(0.9)
 		if _audio != null:
 			_audio.overload(0.9)
@@ -549,7 +554,7 @@ func _settle_surety() -> void:
 	# A finished run holds the surety entirely, but the statement is read
 	# in the office: the picture steadies so the account can be read.
 	if _film != null and _film.has_method("set_strain"):
-		_film.call("set_strain", 0.2 if state.is_over() else held)
+		_film.call("set_strain", 0.0 if SlotView3D.steady else (0.2 if state.is_over() else held))
 	if _audio != null and not state.is_over():
 		_audio.set_tension(held)
 
@@ -646,7 +651,7 @@ func _on_tutorial_requested() -> void:
 
 ## Reads every setting off the profile into the buses and the reels.
 func _apply_settings() -> void:
-	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay"]:
+	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay", "steady"]:
 		_apply_setting(StringName(key), float(_profile.settings.get(key,
 				1.0 if key == "pace" else 0.0)))
 
@@ -657,6 +662,9 @@ func _apply_setting(key: StringName, value: float) -> void:
 	match key:
 		&"pace":
 			SlotView3D.pace = clampf(value, 0.25, 4.0)
+		&"steady":
+			SlotView3D.steady = value > 0.5
+			_settle_surety()
 		&"overlay":
 			# The machine carries its own controls and counters; the overlay
 			# repeats them on the screen for whoever wants that.
