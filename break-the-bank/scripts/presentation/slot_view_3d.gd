@@ -1354,12 +1354,65 @@ func _attach_module(artifact_id: StringName) -> void:
 		return
 	mount.add_child(module)
 	_collect_drives(module)
+	_tag_module(mount, module, artifact)
 	# Arrives oversized and settles, so a purchase is seen being fitted rather
 	# than simply existing on the next frame.
 	module.scale = Vector3.ONE * 1.7
 	var tween: Tween = create_tween()
 	tween.tween_property(module, "scale", Vector3.ONE, 0.42) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## The tag on a fitted piece of hardware: its name and what it does, on a
+## paper label that shows while the pointer is over it (or on a tap), and
+## for a moment as it is fitted. The first playtest had no way to read what
+## a bought artifact did once it was on the machine; the machine now says.
+func _tag_module(mount: Node3D, module: Node3D, artifact: ArtifactDef) -> void:
+	var tag: Label3D = Label3D.new()
+	tag.name = "Tag"
+	tag.text = "%s\n%s" % [artifact.display_name.to_upper(), artifact.description]
+	tag.font_size = 30
+	tag.pixel_size = 0.0011
+	tag.width = 520.0
+	tag.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	tag.modulate = Color(0.12, 0.1, 0.08)
+	tag.outline_size = 14
+	tag.outline_modulate = Color(0.9, 0.87, 0.8)
+	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	tag.no_depth_test = true
+	tag.render_priority = 10
+	tag.position = Vector3(0.0, 0.22, 0.12)
+	tag.visible = false
+	mount.add_child(tag)
+	var pick: Area3D = Area3D.new()
+	pick.name = "TagPick"
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var sphere: SphereShape3D = SphereShape3D.new()
+	sphere.radius = 0.16
+	shape.shape = sphere
+	pick.add_child(shape)
+	mount.add_child(pick)
+	pick.mouse_entered.connect(func() -> void: _show_tag(tag, true))
+	pick.mouse_exited.connect(func() -> void: _show_tag(tag, false))
+	pick.input_event.connect(func(_camera: Node, event: InputEvent, _at: Vector3,
+			_normal: Vector3, _shape: int) -> void:
+		if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+			_show_tag(tag, true, 3.0))
+	# Read as it is fitted, then put away.
+	_show_tag(tag, true, 3.0)
+
+
+## Shows or hides a hardware tag; with [param seconds], hides it again after.
+func _show_tag(tag: Label3D, shown: bool, seconds: float = 0.0) -> void:
+	if not is_instance_valid(tag):
+		return
+	tag.visible = shown
+	if shown and seconds > 0.0:
+		var later: Tween = tag.create_tween()
+		later.tween_callback(func() -> void:
+			if is_instance_valid(tag):
+				tag.visible = false).set_delay(seconds)
 
 
 ## Strips the frame back to bare metal for a new run.

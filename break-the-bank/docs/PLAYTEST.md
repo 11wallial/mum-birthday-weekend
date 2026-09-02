@@ -33,8 +33,9 @@ Known gaps a tester will hit, so nobody logs them twice:
   pace), skip the Clerk's lesson, abandon the run. A profile's first run is
   walked through the basement by the Clerk; watch whether the tester reads
   it or skips it, and whether they hold a pair unprompted on run two.
-- No tooltips. An artifact says what it does on the draft card and nowhere
-  else once bought; the machine's hardware is the only reminder.
+- Hardware on the machine carries a paper tag: its name and what it does,
+  shown as it is fitted and whenever the pointer rests on it (a tap, on a
+  phone). Watch whether testers find the hover on their own.
 - The run ends on the statement of account, on the clipboard: the outcome
   in the House's terms, the numbers, the moves, and up to four findings —
   facts about the run in the places runs are lost. Ask the "what would you
