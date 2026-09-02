@@ -104,6 +104,8 @@ static func _apply(engine: SimEngine, state: RunState, entry: Array) -> bool:
 			engine.settle_floor(state)
 		"press":
 			engine.press(state, arg)
+		"pay_doorman":
+			engine.pay_doorman(state)
 		_:
 			return false
 	return true

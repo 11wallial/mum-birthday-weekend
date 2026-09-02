@@ -123,3 +123,45 @@ func test_the_last_floor_has_nowhere_to_send_anyone() -> void:
 	_state.floor_index = 3
 	_bank(5000)
 	assert_object(_state.notice_pending).is_null()
+
+
+func test_the_doorman_is_only_spoken_to_at_the_desk_with_a_notice_in_hand() -> void:
+	_state.economy.chips = 50
+	assert_bool(_state.can_pay_doorman()).is_false()
+	assert_bool(_engine.pay_doorman(_state)).is_false()
+	_bank(120)
+	assert_bool(_state.can_pay_doorman()).is_false()
+	_state.economy.cash = 1000
+	_state.spins_remaining = 0
+	_engine.step(_state)
+	assert_int(_state.phase).is_equal(RunState.Phase.SHOPPING)
+	assert_bool(_state.can_pay_doorman()).is_true()
+
+
+func test_paying_the_doorman_sends_nobody_and_costs_more_next_time() -> void:
+	_bank(120)
+	_state.economy.cash = 1000
+	_state.spins_remaining = 0
+	_engine.step(_state)
+	_state.economy.chips = 20
+	var price: int = _state.doorman_price()
+	assert_bool(_engine.pay_doorman(_state)).is_true()
+	assert_object(_state.notice_pending).is_null()
+	assert_int(_state.economy.chips).is_equal(20 - price)
+	assert_int(_state.doorman_price()).is_greater(price)
+	assert_int(_bus.count_of(EffectBus.Event.DOORMAN_PAID)).is_equal(1)
+	# The notice stands on the ante: the doorman is not the House's memory.
+	assert_int(_state.notices).is_equal(1)
+	_engine.leave_shop(_state)
+	assert_object(_state.watcher).is_null()
+
+
+func test_the_doorman_wants_chips_the_purse_may_not_have() -> void:
+	_bank(120)
+	_state.economy.cash = 1000
+	_state.spins_remaining = 0
+	_engine.step(_state)
+	_state.economy.chips = 0
+	assert_bool(_state.can_pay_doorman()).is_false()
+	assert_bool(_engine.pay_doorman(_state)).is_false()
+	assert_object(_state.notice_pending).is_not_null()

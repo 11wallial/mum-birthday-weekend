@@ -145,6 +145,7 @@ func _ready() -> void:
 		_shop.leave_requested.connect(_on_leave_requested)
 		_shop.market_requested.connect(_on_market_requested)
 		_shop.press_requested.connect(_on_press_requested)
+		_shop.doorman_requested.connect(_on_doorman_requested)
 	if _deck != null:
 		_deck.action_requested.connect(_on_deck_action)
 		# The machine's physical buttons render the deck's model and their
@@ -1444,6 +1445,20 @@ func _on_sign_requested(index: int) -> void:
 		_contracts.close()
 		if _camera != null:
 			_camera.set_view(CameraController.View.MACHINE)
+
+
+## A word with the doorman, from the form: the same call the policy makes.
+func _on_doorman_requested() -> void:
+	if state == null or not state.can_pay_doorman():
+		return
+	var price: int = state.doorman_price()
+	if engine.pay_doorman(state):
+		_record(&"pay_doorman", {"paid": price})
+		if _shop != null and _shop.is_open():
+			_shop.refresh()
+		if _audio != null:
+			_audio.play(&"ui_chip_stack")
+		_mark_save()
 
 
 func _on_press_requested(index: int) -> void:

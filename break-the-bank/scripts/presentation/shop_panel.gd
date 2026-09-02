@@ -12,6 +12,8 @@ signal leave_requested()
 signal market_requested(action: StringName, index: int)
 ## A press job was asked for, by index into the state's press offers.
 signal press_requested(index: int)
+## The doorman: a word, and the House sends nobody after the notice.
+signal doorman_requested()
 
 const REROLL: StringName = &"reroll"
 const SLATE: StringName = &"slate"
@@ -135,6 +137,7 @@ func _redraw() -> void:
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	_draw_press()
+	_draw_doorman()
 	_draw_market()
 	if _footer != null:
 		var offers: int = maxi(_state.shop_offers.size(), 1)
@@ -194,6 +197,40 @@ func _draw_press() -> void:
 		row.add_child(chip)
 	parent.add_child(row)
 	parent.move_child(row, _rows.get_index() + 1)
+
+
+## The doorman's line on the form, only while someone is on their way: who
+## the House noticed you for, who is coming, and what a word costs.
+func _draw_doorman() -> void:
+	var parent: Control = _rows.get_parent() as Control
+	if parent == null:
+		return
+	var old: Node = parent.get_node_or_null(^"Doorman")
+	if old != null:
+		parent.remove_child(old)
+		old.queue_free()
+	if _state.notice_pending == null:
+		return
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Doorman"
+	row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+	var head: Label = _cell("THE DOORMAN", 13.0, UiSkin.PAPER_INK_MUTED)
+	head.custom_minimum_size = Vector2(96.0 * _scale, 0.0)
+	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(head)
+	var note: Label = _cell("The House noticed %d in one spin. %s is coming to floor %d: %s" % [
+			_state.noticed_payout, _state.notice_pending.display_name,
+			_state.floor_index + 1, _state.notice_pending.tell.to_lower()], 12.0, UiSkin.PAPER_INK)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(note)
+	row.add_child(_chip("A WORD   %d chips, and nobody comes" % _state.doorman_price(),
+			_state.can_pay_doorman(), UiSkin.PAPER_STAMP,
+			func() -> void: doorman_requested.emit()))
+	parent.add_child(row)
+	var press: Node = parent.get_node_or_null(^"Press")
+	parent.move_child(row, (press.get_index() + 1) if press != null else (_rows.get_index() + 1))
 
 
 ## The market's own row: a reroll, and everything the player already owns,

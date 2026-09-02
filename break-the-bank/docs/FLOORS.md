@@ -245,6 +245,13 @@ The player should be able to point at the moment: the callout names the
 payout, the ledger carries "Noticed. The Bouncer is coming." until the
 floor turns, and the floor's opening says who came and why.
 
+The player's one answer is **the doorman** (`pay_doorman`, a verb): at the
+draft after a notice, a word costs `doorman_chips` (six, and `doorman_step`
+more each time) and the House sends nobody. The notice itself stands — the
+ante markup is the House's memory — so it is two poor options, which is the
+guide's shape for keeping ownership through an event: the chips were the
+draft's. The bot pays when it holds twice the price.
+
 Three per floor, so the same floor plays three ways. The lab reports each
 boss's death rate against the floor's own (`boss_rates`), which is how a
 variant that out-kills its siblings is found, and `--no-bosses` measures what

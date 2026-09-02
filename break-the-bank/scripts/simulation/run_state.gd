@@ -138,6 +138,8 @@ var notice_pending: BossDef = null
 var notices: int = 0
 var noticed_floor: int = 0
 var noticed_payout: int = 0
+## Times the doorman has been paid this run: the price climbs with it.
+var doormen_paid: int = 0
 ## Who was sent to each floor so far, by floor order, empty where nobody
 ## was. Telemetry: the lab reads it to say which of them kills.
 var bosses_faced: Array[StringName] = []
@@ -439,6 +441,19 @@ func can_press(index: int) -> bool:
 	if phase != Phase.SHOPPING or index < 0 or index >= press_offers.size():
 		return false
 	return economy.can_afford_chips(int(press_offers[index].get("price", 0)))
+
+
+## Chips the doorman wants to send nobody after the notice in hand.
+func doorman_price() -> int:
+	return maxi(1, config.doorman_chips + doormen_paid * config.doorman_step)
+
+
+## True when there is a notice to answer and the draft is open: the doorman
+## is spoken to at the desk, between floors, and only while someone is
+## actually on their way.
+func can_pay_doorman() -> bool:
+	return phase == Phase.SHOPPING and notice_pending != null \
+			and economy.can_afford_chips(doorman_price())
 
 
 ## The counter [param artifact_id] has built up this run.

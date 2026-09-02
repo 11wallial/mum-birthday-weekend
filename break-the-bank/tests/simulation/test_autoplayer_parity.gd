@@ -90,6 +90,8 @@ func _proof(verb: StringName) -> bool:
 			return _seen(EffectBus.Event.FLOOR_SETTLED_EARLY)
 		&"press":
 			return _seen(EffectBus.Event.PRESS_RUN)
+		&"pay_doorman":
+			return _seen(EffectBus.Event.DOORMAN_PAID)
 		_:
 			return false
 
@@ -124,7 +126,7 @@ func test_this_suite_knows_how_to_prove_every_verb() -> void:
 			&"toggle_hold", &"nudge", &"gamble", &"set_stake", &"deposit", &"withdraw",
 			&"buy_reel", &"buy_row", &"launder", &"buy_offer", &"reroll_shop", &"sell",
 			&"buy_on_slate", &"sign_contract", &"stay_at_table", &"settle_floor",
-			&"press",
+			&"press", &"pay_doorman",
 		]
 		assert_bool(known).override_failure_message(
 				"add a proof for %s to test_autoplayer_parity.gd" % verb).is_true()

@@ -133,6 +133,14 @@ extends Resource
 ## attention, once caught, is never quite lost.
 @export var notice_ante_percent: float = 5.0
 
+## The doorman: chips to have the House send nobody after a notice, and
+## how much dearer each time. A word with the doorman is the player's one
+## answer to the House noticing — two poor options, the guide's shape for
+## keeping ownership through an event — and it never touches the ante
+## markup, which is the House's memory.
+@export var doorman_chips: int = 6
+@export var doorman_step: int = 3
+
 @export_group("The count")
 @export var heat_skim_at: float = 35.0
 @export var heat_cold_at: float = 65.0

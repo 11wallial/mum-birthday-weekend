@@ -78,6 +78,7 @@ const COVERAGE: Dictionary = {
 	&"stay_at_table": &"stay",
 	&"settle_floor": &"settle",
 	&"press": &"press_jobs",
+	&"pay_doorman": &"doorman",
 }
 
 
@@ -472,6 +473,19 @@ static func settle(state: RunState) -> bool:
 ## whatever this machine already leans on. One job a draft at most — the
 ## draft is the build, the press is its edge, and a player who spent every
 ## chip on the reel would own no hardware to spin it with.
+## Pays the doorman when the purse can stand it: the notice's watcher is a
+## floor of a second rule, and a person with chips to spare buys their way
+## out of it before they buy hardware — but not at the cost of the draft.
+## Three times the price in hand, or the watcher comes: at twice, the bot
+## paid its way out of a rule it could have carried and starved the draft
+## for it, and the batch lost two points.
+static func doorman(engine: SimEngine, state: RunState) -> void:
+	if not state.can_pay_doorman():
+		return
+	if state.economy.chips >= state.doorman_price() * 3:
+		engine.pay_doorman(state)
+
+
 static func press_jobs(engine: SimEngine, state: RunState) -> void:
 	if state.phase != RunState.Phase.SHOPPING or state.press_offers.is_empty():
 		return

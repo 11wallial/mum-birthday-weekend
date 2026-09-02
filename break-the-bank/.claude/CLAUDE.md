@@ -245,8 +245,11 @@ worth knowing before touching the simulation:
   HOUSE_NOTICED; `begin_floor` seats it as `RunState.watcher` beside the
   boss. Ask `BossEngine.people(state)` for everyone on the floor — never
   `state.boss` alone — and put the ante's `notices` markup only in
-  `ante_due_for`. No verb, so no AutoPlayer opinion; the lab reports
-  `notices` and the win rate is tuned with it in.
+  `ante_due_for`. The notice itself is no verb; the answer to it is —
+  `pay_doorman`, legal only while `RunState.can_pay_doorman()` (the draft
+  open, a notice in hand, the chips), journaled, with `AutoPlayer.doorman`
+  as its opinion and a parity proof on DOORMAN_PAID. The lab reports
+  `notices` and the win rate is tuned with both in.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.

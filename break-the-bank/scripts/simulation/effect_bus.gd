@@ -55,6 +55,10 @@ enum Event {
 	## next floor. Carries the watcher, their tell, the floor they arrive
 	## on, and the payout that caused it.
 	HOUSE_NOTICED,
+	## The doorman was paid and the House sends nobody after the notice in
+	## hand. Carries what it cost, what the next word costs, and who is not
+	## coming.
+	DOORMAN_PAID,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

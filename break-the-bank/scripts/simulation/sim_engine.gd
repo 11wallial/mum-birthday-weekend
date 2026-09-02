@@ -42,6 +42,7 @@ var market_policy: Callable = Callable()
 ## Works the press once the draft has been shopped. Signature:
 ## [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var press_policy: Callable = Callable()
+var doorman_policy: Callable = Callable()
 ## Decides whether a won run takes the House's offer and stays at the table.
 ## Signature: [code]func(state: RunState) -> bool[/code].
 var stay_policy: Callable = Callable()
@@ -65,7 +66,7 @@ const PLAYER_VERBS: Array[StringName] = [
 	&"toggle_hold", &"nudge", &"gamble", &"set_stake",
 	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
 	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
-	&"stay_at_table", &"settle_floor", &"press",
+	&"stay_at_table", &"settle_floor", &"press", &"pay_doorman",
 ]
 
 ## Jobs the press puts on the table with every draft, and what they do to the
@@ -108,6 +109,7 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	stay_policy = Callable(AutoPlayer, "stay")
 	settle_policy = Callable(AutoPlayer, "settle")
 	press_policy = Callable(AutoPlayer, "press_jobs")
+	doorman_policy = Callable(AutoPlayer, "doorman")
 
 
 ## Hands every decision back to whoever is calling.
@@ -129,6 +131,7 @@ func clear_policies() -> void:
 	stay_policy = Callable()
 	settle_policy = Callable()
 	press_policy = Callable()
+	doorman_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -1363,6 +1366,10 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 	# the draft could not find a use for — which in this economy is nothing.
 	if vault_policy.is_valid():
 		vault_policy.call(self, state)
+	# The doorman before the draft: standing with the House competes with
+	# hardware for the same chips, and that is the whole of the decision.
+	if doorman_policy.is_valid():
+		doorman_policy.call(self, state)
 	while not state.shop_offers.is_empty():
 		var choice: int = int(shop_policy.call(state, state.shop_offers, state.shop_prices))
 		if not buy_offer(state, choice):
@@ -1425,6 +1432,35 @@ func _roll_press(state: RunState) -> Array[Dictionary]:
 		if not repeat:
 			jobs.append(job)
 	return jobs
+
+
+## A word with the doorman: chips, and the House sends nobody after the
+## notice in hand. The notice itself stands — the ante markup is the House's
+## memory and no doorman touches it — and the next word costs more. The
+## player's one answer to being noticed, and a poor one on purpose: the
+## chips were the draft's.
+func pay_doorman(state: RunState) -> bool:
+	_enter(&"pay_doorman", [])
+	var out: bool = _do_pay_doorman(state)
+	_leave()
+	return out
+
+
+func _do_pay_doorman(state: RunState) -> bool:
+	if not state.can_pay_doorman():
+		return false
+	var price: int = state.doorman_price()
+	var who: BossDef = state.notice_pending
+	state.economy.debit_chips(price, &"doorman")
+	state.notice_pending = null
+	state.doormen_paid += 1
+	_bus.emit_event(EffectBus.Event.DOORMAN_PAID, {
+		"paid": price, "next_price": state.doorman_price(),
+		"watcher": String(who.id) if who != null else "",
+		"name": who.display_name if who != null else "",
+		"chips": state.economy.chips,
+	})
+	return true
 
 
 ## Runs the press job at [param index]: strikes a symbol off the reel a
