@@ -1,6 +1,8 @@
 ## The House's machines, held to their shape: every one loads, every one is
 ## opened by something or is the standard, and every one is a game — neither
-## unwinnable nor free — when the lab plays it.
+## unwinnable nor free — when the lab plays it. Three of them, deliberately:
+## the balance guide asked for three deep starts rather than eight shallow
+## ones, and each machine multiplies the surface the lab has to hold.
 extends GdUnitTestSuite
 
 const RUNS: int = 120
@@ -21,7 +23,7 @@ func test_the_standard_machine_exists_and_changes_nothing() -> void:
 
 
 func test_every_machine_has_a_name_a_line_and_a_way_in() -> void:
-	assert_int(_catalogue.machines.size()).is_greater_equal(5)
+	assert_int(_catalogue.machines.size()).is_equal(3)
 	var seen: Dictionary = {}
 	for machine: MachineDef in _catalogue.machines:
 		assert_bool(seen.has(machine.id)).override_failure_message(
@@ -58,16 +60,28 @@ func test_every_machine_names_real_hardware_and_real_symbols() -> void:
 			assert_bool(Systems.ORDER.has(system)).is_true()
 
 
-func test_a_machine_ships_fitted_and_leaned() -> void:
-	var high_roller: MachineDef = _catalogue.machine_by_id(&"high_roller")
-	assert_object(high_roller).is_not_null()
+func test_a_machine_ships_fitted_and_funded() -> void:
+	var strongbox: MachineDef = _catalogue.machine_by_id(&"strongbox")
+	assert_object(strongbox).is_not_null()
 	var engine: SimEngine = SimEngine.new()
 	engine.clear_policies()
-	var state: RunState = engine.start_run(3, high_roller.apply_to(RunOptions.new()))
-	assert_bool(state.has_system(Systems.STAKE)).is_true()
-	var orchard: MachineDef = _catalogue.machine_by_id(&"orchard")
-	var leaned: RunState = SimEngine.new().start_run(3, orchard.apply_to(RunOptions.new()))
-	assert_bool(leaned.owns(&"fruit_ledger")).is_true()
+	var state: RunState = engine.start_run(3, strongbox.apply_to(RunOptions.new()))
+	assert_bool(state.has_system(Systems.VAULT)).is_true()
+	var plain: RunState = SimEngine.new().start_run(3)
+	assert_int(state.economy.cash).is_greater(plain.economy.cash)
+	assert_int(state.economy.chips).is_greater(plain.economy.chips)
+	var overdraft: MachineDef = _catalogue.machine_by_id(&"flush")
+	var lent: RunState = SimEngine.new().start_run(3, overdraft.apply_to(RunOptions.new()))
+	assert_int(lent.economy.debt).is_greater(plain.economy.debt)
+
+
+func test_a_machine_can_lean_the_reel_through_its_options() -> void:
+	# No shipped machine leans the reel now; the field still has to work for
+	# the ones that come back.
+	var leaning: MachineDef = MachineDef.new()
+	leaning.id = &"probe"
+	leaning.weight_shifts = {&"cherry": 8}
+	var leaned: RunState = SimEngine.new().start_run(3, leaning.apply_to(RunOptions.new()))
 	var plain: RunState = SimEngine.new().start_run(3)
 	assert_float(Probability.symbol_chance(leaned.reel(), &"cherry")).is_greater(
 			Probability.symbol_chance(plain.reel(), &"cherry"))
@@ -85,8 +99,9 @@ func test_every_machine_is_a_game() -> void:
 
 
 func test_a_machines_options_survive_the_journal() -> void:
-	var press: MachineDef = _catalogue.machine_by_id(&"bone_press")
-	var options: RunOptions = press.apply_to(RunOptions.new())
+	var strongbox: MachineDef = _catalogue.machine_by_id(&"strongbox")
+	var options: RunOptions = strongbox.apply_to(RunOptions.new())
 	var back: RunOptions = RunOptions.from_dict(JSON.parse_string(JSON.stringify(options.to_dict())))
 	assert_str(back.ruleset_key()).is_equal(options.ruleset_key())
-	assert_int(int(back.weight_shifts.get(&"skull", 0))).is_equal(6)
+	assert_int(back.bonus_chips).is_equal(3)
+	assert_float(back.payout_scale).is_equal_approx(0.9, 0.001)

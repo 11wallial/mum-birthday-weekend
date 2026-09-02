@@ -288,12 +288,13 @@ What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 ## Seeds, dailies and meta-progression
 
 **The machines.** What a run starts on, chosen at the door: the Standard;
-the Overdraft (more cash, more debt); the Lean (less of both, a spin more a
-floor); the High Roller (the stake from the basement, every ante up a
-third); the Strongbox (the vault from the basement, cash and chips in hand,
-payouts down a tenth); the Bone Press (skulls on the payroll and six more of
-them); the Orchard (fruit heavy on the reel, a ledger of it fitted). Each is
-a `MachineDef` under `resources/meta/machines/`, reaches the run only as
+the Overdraft (more cash, more debt); the Strongbox (the vault from the
+basement, cash and chips in hand, payouts down a tenth). Three, deliberately
+— the balance guide asked for three deep starts rather than eight shallow
+ones, and each machine multiplies the surface the lab has to hold. The
+Lean, the High Roller, the Bone Press and the Orchard are in git at
+`58b5fc5` and come back one at a time, each measured. Each machine is a
+`MachineDef` under `resources/meta/machines/`, reaches the run only as
 `RunOptions`, opens through an unlock, and can be measured with
 `run_lab.gd --machine=<id>`.
 
