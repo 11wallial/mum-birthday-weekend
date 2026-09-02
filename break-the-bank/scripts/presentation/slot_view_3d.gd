@@ -59,6 +59,13 @@ var _gauge_stake: Node3D
 var _gauge_count: Node3D
 ## The pressure gauge on the gearbox flank: the run's HEAT, made physical.
 var _heat_needle: Node3D
+## The surety column on the right flank: its fluid's pivot and its lamp.
+var _surety_fluid: Node3D
+var _surety_lamp: MeshInstance3D
+## The level the column is waiting to show, or -1. Held through a spin like
+## the cash counter, so the surety moves on the spin's own beat.
+var _surety_pending: float = -1.0
+var _surety_shown: float = 0.0
 ## The charge cable's arc and the light it throws while it rides.
 var _arc_material: ShaderMaterial
 var _arc_light: OmniLight3D
@@ -190,6 +197,9 @@ func _ready() -> void:
 	var gearbox: Node3D = parts.get("gearbox", null) as Node3D
 	if gearbox != null:
 		_heat_needle = gearbox.get_node_or_null(^"Dial/HeatNeedle") as Node3D
+	var surety: Dictionary = parts.get("surety", {})
+	_surety_fluid = surety.get("fluid", null) as Node3D
+	_surety_lamp = surety.get("lamp", null) as MeshInstance3D
 	var arc: Dictionary = parts.get("arc", {})
 	_arc_material = arc.get("material", null) as ShaderMaterial
 	_arc_light = arc.get("light", null) as OmniLight3D
@@ -1136,7 +1146,41 @@ func _land(result: Result, payout: int, multiplier: float) -> void:
 		_flare_bank("cash", 1.0 if result >= Result.STRONG else 0.6)
 	_package(result, multiplier)
 	_busy = false
+	_flush_surety()
 	result_judged.emit(result, payout, true)
+
+
+## Writes the House's hold on the player onto the surety column, in 0..1.
+## Held through a spin and released as the total lands, so the level moves
+## on the spin's beat: up on a dead one, down on a paying one.
+func set_surety(value: float) -> void:
+	if _busy or _awaiting:
+		_surety_pending = value
+		return
+	_show_surety(value)
+
+
+func _flush_surety() -> void:
+	if _surety_pending >= 0.0:
+		_show_surety(_surety_pending)
+		_surety_pending = -1.0
+
+
+func _show_surety(value: float) -> void:
+	var level: float = clampf(value, 0.0, 1.0)
+	var rising: bool = level > _surety_shown + 0.001
+	_surety_shown = level
+	if _surety_fluid != null:
+		var rise: Tween = create_tween()
+		rise.tween_property(_surety_fluid, "scale:y", maxf(0.02, level), 0.5 * pace) \
+				.set_trans(Tween.TRANS_BACK if rising else Tween.TRANS_SINE) \
+				.set_ease(Tween.EASE_OUT)
+	if _surety_lamp != null:
+		var material: StandardMaterial3D = _surety_lamp.material_override as StandardMaterial3D
+		if material != null:
+			var lit: bool = level >= 0.85
+			material.emission_energy_multiplier = 1.0 if lit else 0.0
+			material.albedo_color = Color(0.75, 0.12, 0.1) if lit else Color(0.25, 0.06, 0.05)
 
 
 ## A losing spin, given weight: the lamp flickers once and settles, one dry

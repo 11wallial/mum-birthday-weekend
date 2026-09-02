@@ -1,9 +1,11 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 ; The final grade pass, above the world and below the UI: the HUD and the panels
-; sit on higher layers so their text stays crisp and unvignetted.
+; sit on higher layers so their text stays crisp and unvignetted. The script
+; drives the shader's strain — the render degrading with the surety.
 
 [ext_resource type="Shader" path="res://assets/shaders/film.gdshader" id="1_film"]
+[ext_resource type="Script" path="res://scripts/presentation/film_overlay.gd" id="2_script"]
 
 [sub_resource type="ShaderMaterial" id="Mat_film"]
 shader = ExtResource("1_film")
@@ -16,6 +18,7 @@ shader_parameter/shadow_tint = Color(0.027, 0.035, 0.055, 1)
 
 [node name="FilmOverlay" type="CanvasLayer"]
 layer = 1
+script = ExtResource("2_script")
 
 [node name="Rect" type="ColorRect" parent="."]
 material = SubResource("Mat_film")

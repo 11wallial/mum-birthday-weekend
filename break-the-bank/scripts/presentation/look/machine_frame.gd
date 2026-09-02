@@ -46,6 +46,8 @@ const GAUGE_SWEEP: float = 2.1
 const PAYLINE_ENERGY: float = 2.6
 ## Keys on the console rail. Six is the most the deck ever offers at once.
 const CONSOLE_KEYS: int = 6
+## The surety column's glass, in metres.
+const SURETY_HEIGHT: float = 0.46
 
 var _root: Node3D
 var _nixie_halo_material: StandardMaterial3D = null
@@ -71,6 +73,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var lever: Node3D = _lever()
 	var arc: Dictionary = _coil()
 	var spool: Node3D = _spool()
+	var surety: Dictionary = _surety_column()
 	var crown: Array[Node3D] = _crown()
 	var ladder: Array[Node3D] = _ladder()
 	_rivets()
@@ -96,6 +99,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 		"lever": lever,
 		"arc": arc,
 		"spool": spool,
+		"surety": surety,
 	}
 
 
@@ -1058,6 +1062,72 @@ func _lever() -> Node3D:
 
 ## The receipt spool, and the paper it has already paid out. The tape running
 ## off the plinth onto the floor is the machine's history made physical.
+## The surety column: the instrument that carries the player's own stake.
+##
+## The premise puts the player's life on the account, and a thing stated
+## once at the door is forgotten by the second floor. So it is a fixture: a
+## glass column on the machine's right flank, plumbed into
+## [method RunState.surety], with a red level that rises as the House's hold
+## on the player tightens and a lamp at the top for when it is nearly all
+## held. It moves on every spin — up on a dead one, down on a paying one —
+## which is what makes a loss something that happens to you rather than an
+## absence. Returns the fluid and the lamp for [SlotView3D] to drive.
+func _surety_column() -> Dictionary:
+	var column: Node3D = _group(&"Surety")
+	column.position = Vector3(CHASSIS.x + 0.1, CHASSIS_Y - 0.16, CHASSIS.z + 0.02)
+	var brass: StandardMaterial3D = Materials.brass(51)
+	# The base and the cap, and a bracket tying the column to the flank.
+	_box(column, Vector3(0.16, 0.05, 0.14), Vector3(0.0, 0.0, 0.0),
+			Materials.machined(Color(0.4, 0.39, 0.37), 71))
+	_cylinder(column, 0.062, 0.035, Vector3(0.0, 0.04, 0.0), Vector3.ZERO, brass)
+	_cylinder(column, 0.062, 0.035, Vector3(0.0, SURETY_HEIGHT + 0.06, 0.0),
+			Vector3.ZERO, brass)
+	_box(column, Vector3(0.1, 0.04, 0.06), Vector3(-0.1, SURETY_HEIGHT * 0.5, -0.06),
+			Materials.rusted(72))
+	# A pale backplate behind the glass, so the level reads against something
+	# on the flank the key light never reaches.
+	_box(column, Vector3(0.13, SURETY_HEIGHT + 0.04, 0.02),
+			Vector3(0.0, 0.06 + SURETY_HEIGHT * 0.5, -0.05),
+			Materials.enamel(Color(0.62, 0.585, 0.52), 74))
+	# The glass, and the fluid inside it: a cylinder of unit height, scaled by
+	# the level from a pivot at the bottom.
+	var glass: StandardMaterial3D = StandardMaterial3D.new()
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.albedo_color = Color(0.85, 0.72, 0.55, 0.12)
+	glass.roughness = 0.05
+	glass.metallic = 0.3
+	Prims.cylinder(column, 0.05, SURETY_HEIGHT, Vector3(0.0, 0.06 + SURETY_HEIGHT * 0.5, 0.0),
+			Vector3.ZERO, glass, 16)
+	var pivot: Node3D = Node3D.new()
+	pivot.name = "Fluid"
+	pivot.position = Vector3(0.0, 0.06, 0.0)
+	pivot.scale = Vector3(1.0, 0.02, 1.0)
+	column.add_child(pivot)
+	Prims.cylinder(pivot, 0.04, SURETY_HEIGHT, Vector3(0.0, SURETY_HEIGHT * 0.5, 0.0),
+			Vector3.ZERO, Materials.glowing(Color(0.72, 0.1, 0.08), 1.05), 14)
+	# Graduations: a scale on the glass, the way a sight glass is marked.
+	for i: int in 6:
+		_box(column, Vector3(0.03, 0.005, 0.005),
+				Vector3(0.062, 0.06 + SURETY_HEIGHT * float(i) / 5.0, 0.02),
+				Materials.machined(Color(0.8, 0.72, 0.5), 73))
+	# The lamp at the top, lit when the House holds nearly all of it.
+	var lamp: MeshInstance3D = Prims.sphere(column, 0.03,
+			Vector3(0.0, SURETY_HEIGHT + 0.11, 0.0),
+			Materials.glowing(Color(0.75, 0.12, 0.1), 0.0))
+	lamp.name = "Lamp"
+	lamp.material_override = (lamp.material_override as StandardMaterial3D).duplicate()
+	var caption: Label3D = Label3D.new()
+	caption.text = "SURETY"
+	caption.font_size = 30
+	caption.pixel_size = 0.0012
+	caption.modulate = Color(0.95, 0.82, 0.52)
+	caption.outline_size = 0
+	caption.shaded = false
+	caption.position = Vector3(0.0, -0.04, 0.075)
+	column.add_child(caption)
+	return {"fluid": pivot, "lamp": lamp}
+
+
 func _spool() -> Node3D:
 	var spool: Node3D = _group(&"Spool")
 	spool.position = Vector3(1.32, PLINTH_TOP + 0.3, 0.36)

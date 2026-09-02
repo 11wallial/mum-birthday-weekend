@@ -30,6 +30,10 @@ enum Decision {
 	GAMBLE,
 }
 
+## The most a spin can honestly be expected to pay, in pars: where the
+## surety reads full.
+const SURETY_REACH: float = 3.0
+
 var seed_value: int = 0
 var content: ContentDB
 var config: BalanceConfig
@@ -240,6 +244,35 @@ func can_settle_early() -> bool:
 	if phase != Phase.SPINNING or decision != Decision.NONE or spins_remaining <= 0:
 		return false
 	return economy.cash >= vig_due() + ante_due()
+
+
+## How much of the surety the House holds, in 0..1.
+##
+## The player's own life is the surety on the account. Stated once at the
+## door it would be forgotten by the second floor, so it is a number the
+## machine carries and reads on every spin: zero while the purse covers what
+## the floor's close will charge, one when what is still owed cannot be
+## reached by the spins left. Between the two it is what each remaining spin
+## would have to pay, against the most a spin can honestly be expected to —
+## [constant SURETY_REACH] times par — so a dead spin moves it up by exactly
+## the spin it wasted, and a paying one moves it down by what it paid.
+## Between floors the House holds nothing; a lost run is held entirely.
+func surety() -> float:
+	if phase == Phase.LOST:
+		return 1.0
+	if phase != Phase.SPINNING:
+		return 0.0
+	var owed: int = vig_due() + ante_due()
+	var shortfall: int = maxi(0, owed - economy.cash)
+	if shortfall <= 0:
+		return 0.0
+	if spins_remaining <= 0:
+		return 1.0
+	var floor_def: FloorDef = current_floor()
+	var par: float = maxf(1.0, float(ante_due()) / float(maxi(1,
+			floor_def.spins if floor_def != null else 1)))
+	var needed: float = float(shortfall) / float(spins_remaining)
+	return clampf(needed / (SURETY_REACH * par), 0.0, 1.0)
 
 
 ## Chips [param spins_left] unused spins would be worth at the close.

@@ -176,3 +176,47 @@ machine that fights back"; the floor-7 mechanic is the proof of it, and the
 endless offer is the second sentence.
 
 **Decided.** —
+
+---
+
+## 7. The frame: what the simulation is for
+
+**Decided, 2 September 2026.** The premise pivot — the machine is a game
+inside the casino's own simulation, the player has staked their life on
+beating the House — was accepted, on the art handover's condition that the
+frame have a mechanical job or be cut. The job it has: **the render degrades
+with the surety.** `FilmOverlay.set_strain` drives tearing, colour fringing,
+grain and brightness stutter from `RunState.surety()`, the same number the
+machine's own column reads. Nothing about the frame lives only in an
+opening; it is on screen every spin. The other candidates — the outer
+casino intruding at floor transitions, the machine acknowledging the
+simulation when pushed — stay open as additions, not alternatives.
+
+---
+
+## 8. The life stake: a new instrument
+
+**Decided, 2 September 2026.** The handover proposed repurposing the heat
+gauge. Rejected: HEAT is floor seven's own system, the House's count of how
+loudly you are winning, and reads the other way from the stake. The stake
+gets its own instrument — the **surety column** on the machine's right
+flank, plumbed into `RunState.surety()`: zero while the floor's close is
+covered, one when the spins left cannot reach it, and between the two what
+each remaining spin would have to pay against three pars. It moves on every
+spin, held through the spin and released on the beat the total lands. Named
+*surety* rather than *stake* because the wager level already owns that
+word on the machine (`Gauge_stake`, `RunState.stake`).
+
+---
+
+## 9. Machines: three, not seven
+
+**Decided, 2 September 2026.** The balance guide asks for three deep
+starting configurations rather than eight shallow ones, and it is right:
+each machine multiplies the balance surface and the reviewer is one person.
+The Standard, the Overdraft and the Strongbox stay. The Lean, the High
+Roller, the Bone Press and the Orchard are cut from the catalogue and their
+unlocks with them; their definitions are in git at `58b5fc5` and come back
+one at a time, each with its own lab measurement, once the base game is
+stable.
+

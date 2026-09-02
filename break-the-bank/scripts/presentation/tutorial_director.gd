@@ -208,9 +208,11 @@ func _say(at: Step) -> void:
 					TouchBar.hint("SPACE     %s" % hint, "TAP     %s" % hint))
 		Step.ANTE:
 			spoke.emit("THE CLERK — The ante is due when the spins run out. Cover it or the House "
-					+ "keeps the table. Cover it with spins to spare and you may SETTLE early: "
-					+ "the House pays you in chips for every spin you leave. Chips buy "
-					+ "hardware. Credits pay the ante. They never mix.", hint)
+					+ "keeps the table — and the surety on the account is you. The column on "
+					+ "the right is how much of you it holds; watch it. Cover the ante with "
+					+ "spins to spare and you may SETTLE early: the House pays you in chips for "
+					+ "every spin you leave. Chips buy hardware. Credits pay the ante. They "
+					+ "never mix.", hint)
 		Step.DRAFT:
 			spoke.emit("THE CLERK — The draft. Chips buy hardware; hardware bolts on and stays. "
 					+ "What you cannot afford, you may sign for — on the slate, against the "

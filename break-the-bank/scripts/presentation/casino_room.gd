@@ -44,6 +44,8 @@ var _title: TitleScreen
 var _tutorial: TutorialDirector
 ## The printed arithmetic of the last spin.
 var _receipt: PayoutReceipt
+## The grade over the world, and the render's degradation with the surety.
+var _film: Node
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
@@ -90,6 +92,7 @@ func _ready() -> void:
 	_contracts = get_node_or_null(contract_path) as ContractPanel
 	_title = get_node_or_null(title_path) as TitleScreen
 	_receipt = get_node_or_null(receipt_path) as PayoutReceipt
+	_film = get_node_or_null(^"FilmOverlay")
 	if _receipt != null and _audio != null:
 		_receipt.set_audio(_audio)
 	_tutorial = get_node_or_null(tutorial_path) as TutorialDirector
@@ -453,10 +456,19 @@ func _flicker_room(seconds: float) -> void:
 		flicker.tween_property(light, "light_energy", resting, 0.15)
 
 
-## The surety instrument on the machine: shown after a banked spin, not
-## during one, so it moves on the spin's own beat.
+## The surety — how much of the player the House holds — onto the column on
+## the machine and into the render. The machine holds the value through a
+## spin and moves it on the spin's beat; the render degrades with it, which
+## is the job the frame has: the game is being played from inside a
+## simulation, and the simulation is what the stake is burning.
 func _settle_surety() -> void:
-	pass
+	if state == null:
+		return
+	var held: float = state.surety()
+	if _slot_view != null:
+		_slot_view.set_surety(held)
+	if _film != null and _film.has_method("set_strain"):
+		_film.call("set_strain", held)
 
 
 func _on_touch_camera() -> void:
@@ -973,6 +985,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			FloorMood.apply(StringName(payload.get("environment", &"")),
 					_room_parts, _environment, self)
 			_announce_floor(payload)
+			_settle_surety()
+		EffectBus.Event.RUN_STARTED, EffectBus.Event.FLOOR_CLEARED, \
+		EffectBus.Event.RUN_ENDED, EffectBus.Event.ANTE_SETTLED:
+			_settle_surety()
 		EffectBus.Event.SPIN_STARTED:
 			if _deck != null:
 				_deck.set_busy(true)

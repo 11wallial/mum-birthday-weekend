@@ -18,6 +18,13 @@ uniform float vignette_start : hint_range(0.0, 1.5) = 0.42;
 uniform float vignette_strength : hint_range(0.0, 2.0) = 0.85;
 // A hair of warmth in the shadows, so the blacks stay part of the room.
 uniform vec3 shadow_tint : source_color = vec3(0.055, 0.043, 0.031);
+// How far the render has degraded: the surety, 0 while the House holds none
+// of the player and 1 when it holds all of it. The game is played from inside
+// a simulation and the simulation is what the stake is burning, so the frame
+// itself fails as it burns — tearing, colour fringing, the grain coming up,
+// the brightness stuttering. Light at the low end, so a covered floor looks
+// like a clean print; not subtle at the top, because by then it should not be.
+uniform float strain : hint_range(0.0, 1.0) = 0.0;
 
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
 
@@ -27,7 +34,23 @@ float hash(vec2 p) {
 }
 
 void fragment() {
-	vec3 colour = texture(screen_texture, SCREEN_UV).rgb;
+	vec2 uv = SCREEN_UV;
+	float strained = strain * strain;
+	// Tearing: a few rows a second shift sideways, more of them and further
+	// as the strain climbs. Rows are picked by a hash of their band and the
+	// frame, so the tear moves rather than sits.
+	float band = floor(uv.y * 40.0);
+	float pick = hash(vec2(band, floor(TIME * 9.0)));
+	float tear = step(1.0 - strained * 0.35, pick) * (hash(vec2(band, floor(TIME * 9.0) + 7.0)) - 0.5);
+	uv.x += tear * strained * 0.06;
+	// Colour fringing: the channels come apart sideways.
+	float split = strained * 0.006;
+	vec3 colour = vec3(
+			texture(screen_texture, uv + vec2(split, 0.0)).r,
+			texture(screen_texture, uv).g,
+			texture(screen_texture, uv - vec2(split, 0.0)).b);
+	// The brightness stutters.
+	colour *= 1.0 - strained * 0.25 * step(0.85, hash(vec2(floor(TIME * 14.0), 3.0)));
 
 	// The photograph's curve: a gentle S that crushes the toe into the room's
 	// warmth and firms the mids, with a hair of warm cast over everything.
@@ -55,7 +78,7 @@ void fragment() {
 	float luma = dot(colour, vec3(0.2126, 0.7152, 0.0722));
 	float weight = 1.0 - smoothstep(0.25, 0.95, luma);
 	float noise = hash(SCREEN_UV * vec2(1920.0, 1080.0) + fract(TIME) * 137.0) - 0.5;
-	colour += noise * grain_amount * weight;
+	colour += noise * (grain_amount + strained * 0.09) * weight;
 
 	COLOR = vec4(colour, 1.0);
 }

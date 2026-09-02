@@ -6,15 +6,45 @@ three belongs in a memo the CRT prints.
 
 ## Who you are
 
-A debtor. Not a hero, not a thief — someone who owed the House money before
-the first spin and was shown to a machine in the basement to earn it back.
-You have no name; the House has your account number. Everything you learn to
-do — hold a reel, work the market, raise the stake, sign for a floor, bolt on
-a drum — the House taught you, floor by floor, because a debtor who cannot
-play cannot pay.
+A debtor who has put themself up as the surety. Not a hero, not a thief —
+someone who owed the House money before the first spin, could not cover it,
+and signed the one instrument the House still accepts: their own life,
+against the account, with the payout on the other side of it being enough
+to walk out into. You were shown to a machine in the basement. You have no
+name; the House has your account number. Everything you learn to do — hold
+a reel, work the market, raise the stake, sign for a floor, bolt on a drum
+— the House taught you, floor by floor, because a debtor who cannot play
+cannot pay.
 
 You are competent, and getting better. That is the arc. The machine does not
-change; what you can do to it does.
+change; what you can do to it does. The late floors want foresight you do
+not have on your first visit, and they are meant to: an early run ends
+badly, and the run that clears the House is the one that learnt, floors
+ago, which decisions were load-bearing.
+
+## The frame
+
+The basement is not a room. It is the House's simulation, and you are
+playing it from inside a headset the House put on you — which is why the
+machine can be rebuilt between floors, why the floors are seven versions of
+the same basement, and why the House's people can be on every one of them.
+The frame is not a cinematic; it has a job every spin. The surety is what
+the simulation runs on, and as the House's hold on you tightens the render
+itself fails — the picture tears, the colour comes apart, the grain comes
+up, the brightness stutters. A covered floor is a clean print. A floor you
+cannot reach is barely a picture at all.
+
+The machine carries the same number as an instrument: the **surety
+column** on its right flank, a glass sight-gauge with a red level, plumbed
+into how much of you the House holds right now. Zero while the purse covers
+what the close will charge; full when the spins left cannot reach it. It
+moves on every spin, up on a dead one and down on a paying one, so a loss
+is something that happens to you rather than an absence. The Clerk names it
+once, at the first ante; after that the column does the talking.
+
+The horror is bureaucratic, not supernatural. Nobody bleeds. The surety is
+a clause, the column is a gauge, and the worst thing in the building is a
+receipt.
 
 ## What the House is
 
