@@ -36,8 +36,18 @@ const PREFERRED: Array = [&"seven", &"cherry", &"bar", &"orange", &"bell",
 		&"lemon", &"skull", &"watermelon", &"wild", &"grapes", &"double_bar",
 		&"horseshoe", &"bank", &"diamond"]
 
+## The three maps of one strip: the print, its relief, and where it is metal.
 static var _strip: ImageTexture = null
+static var _relief: ImageTexture = null
+static var _metal: ImageTexture = null
 static var _order: Array[StringName] = []
+## The symbols the press stencils in metal rather than prints in ink: the
+## bars, the bank, the diamond and the wild. The seven stays red ink — the
+## handover asked for red sevens and gold bars, in that order.
+const PREMIUM: Array[StringName] = [&"bar", &"double_bar", &"bank", &"diamond", &"wild"]
+## The symbol spans -1..1 across this fraction of the cell's short side. Up
+## from 0.9: the handover asked for symbols filling their segment.
+const SYMBOL_SCALE: float = 1.04
 static var _pending: Array[Callable] = []
 static var _baking: bool = false
 
@@ -45,6 +55,15 @@ static var _baking: bool = false
 ## The baked strip, or null while the bake is still in flight.
 static func strip() -> ImageTexture:
 	return _strip
+
+
+## The strip's normal map and metallic map, baked beside it.
+static func relief() -> ImageTexture:
+	return _relief
+
+
+static func metal() -> ImageTexture:
+	return _metal
 
 
 ## The strip cell printed with [param symbol_id], or -1 when the symbol has no
@@ -77,29 +96,43 @@ static func bake(host: Node, on_ready: Callable) -> void:
 
 static func _bake_async(host: Node) -> void:
 	_order = _strip_order()
-	var viewport: SubViewport = SubViewport.new()
-	viewport.disable_3d = true
-	viewport.transparent_bg = false
-	viewport.size = Vector2i(CELL_PX.x, CELL_PX.y * CELLS)
-	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var shader: Shader = load(PLATE_SHADER) as Shader
 	var content: ContentDB = ContentDB.shared()
-	for k: int in _order.size():
-		viewport.add_child(_cell(k, content.symbol_by_id(_order[k]), shader))
-	host.add_child(viewport)
+	# Three viewports, one per map, drawn in the same two frames: the print,
+	# the relief the room's light will catch, and the metal.
+	var viewports: Array[SubViewport] = []
+	for pass_kind: int in 3:
+		var viewport: SubViewport = SubViewport.new()
+		viewport.disable_3d = true
+		viewport.transparent_bg = false
+		viewport.size = Vector2i(CELL_PX.x, CELL_PX.y * CELLS)
+		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		for k: int in _order.size():
+			viewport.add_child(_cell(k, content.symbol_by_id(_order[k]), shader, pass_kind))
+		host.add_child(viewport)
+		viewports.append(viewport)
 	# One frame queues the render, the second guarantees it has been drawn on
 	# every driver this ships on — including the web export, where a same-frame
 	# grab returns an empty target.
 	await host.get_tree().process_frame
 	await host.get_tree().process_frame
-	var target: ViewportTexture = viewport.get_texture()
-	var image: Image = target.get_image() if target != null else null
-	viewport.queue_free()
+	var images: Array[Image] = []
+	for viewport: SubViewport in viewports:
+		var target: ViewportTexture = viewport.get_texture()
+		images.append(target.get_image() if target != null else null)
+		viewport.queue_free()
+	var image: Image = images[0]
 	if image != null:
 		# The strip is read at grazing angles around the whole drum, so it needs
 		# the mip chain a render target does not carry.
 		image.generate_mipmaps()
 		_strip = ImageTexture.create_from_image(image)
+		if images[1] != null:
+			images[1].generate_mipmaps()
+			_relief = ImageTexture.create_from_image(images[1])
+		if images[2] != null:
+			images[2].generate_mipmaps()
+			_metal = ImageTexture.create_from_image(images[2])
 	else:
 		# A driver that cannot hand back the target leaves the machine on plain
 		# paper rather than taking the run down with it; clearing the order is
@@ -114,7 +147,7 @@ static func _bake_async(host: Node) -> void:
 
 ## One cell: a rect running the plate shader, plus the glyph as printed text
 ## when the symbol has no instruction list — new content lands legible.
-static func _cell(index: int, def: SymbolDef, shader: Shader) -> Control:
+static func _cell(index: int, def: SymbolDef, shader: Shader, pass_kind: int = 0) -> Control:
 	var rect: ColorRect = ColorRect.new()
 	rect.position = Vector2(0.0, float(index * CELL_PX.y))
 	rect.size = Vector2(CELL_PX)
@@ -134,7 +167,14 @@ static func _cell(index: int, def: SymbolDef, shader: Shader) -> Control:
 	material.set_shader_parameter(&"line_ink", SymbolArt.INK)
 	material.set_shader_parameter(&"cell_px", Vector2(CELL_PX))
 	material.set_shader_parameter(&"seed", float(index) * 7.31)
+	material.set_shader_parameter(&"symbol_scale", SYMBOL_SCALE)
+	material.set_shader_parameter(&"pass_kind", pass_kind)
+	material.set_shader_parameter(&"metal",
+			1.0 if def != null and PREMIUM.has(def.id) else 0.0)
 	rect.material = material
+	# Lettering is print, not relief: only the albedo pass carries it.
+	if pass_kind != 0:
+		return rect
 	if ops.is_empty() and def != null:
 		var label: Label = Label.new()
 		label.text = def.glyph
@@ -147,7 +187,7 @@ static func _cell(index: int, def: SymbolDef, shader: Shader) -> Control:
 	elif def != null:
 		# The press's lettering over the drawing: BAR on the bar, the word
 		# under the bank. Positioned in the symbol's own -1..1 space.
-		var half_span: float = float(mini(CELL_PX.x, CELL_PX.y)) * 0.5 * 0.9
+		var half_span: float = float(mini(CELL_PX.x, CELL_PX.y)) * 0.5 * SYMBOL_SCALE
 		for caption: Array in SymbolArt.captions_for(def.id):
 			var label: Label = Label.new()
 			label.text = String(caption[0])

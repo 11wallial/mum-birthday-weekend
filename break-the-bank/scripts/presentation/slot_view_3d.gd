@@ -82,22 +82,9 @@ var _banked: int = -1
 ## Reels the player has locked, and how many nudges the board is owed. Held so
 ## the lamps can be redrawn without asking the simulation anything.
 var _held: Array[bool] = []
-## How much a symbol has to be worth before it lights up at all, and the value
-## at which its backlight is at full strength. Below the floor a symbol is just
-## printed on the strip; a machine where everything glows says nothing about
-## what landed.
-const GLOW_FLOOR: float = 4.0
-const GLOW_CEILING: float = 14.0
-## Extra backlight per artifact the run has bought, as a fraction. A stacked
-## machine is visibly hotter than a fresh one — the glow is the run's progress
-## made physical, which is the same job the cash stacks and floor markers do.
-const GLOW_PER_UPGRADE: float = 0.16
-## Brightness of a top-value symbol on a fresh machine, and the most a cell may
-## ever be lit. Both held under the environment's 1.1 bloom threshold: past it
-## the cell bloomed white and the symbol on it vanished, which on a stacked
-## machine was every good spin. The flare a jackpot deserves comes from the
-## machine's own lamp and the coins, not from bleaching the print.
-const GLOW_GAIN: float = 0.9
+## The most a plate may ever be lit, when it flares on a beat of the chain.
+## Held under the environment's 1.1 bloom threshold: past it the cell bloomed
+## white and the symbol on it vanished. A plate at rest is not lit at all.
 const GLOW_MAX: float = 1.02
 
 ## How a spin's payout is judged, as a share of what one spin has to be worth
@@ -437,39 +424,21 @@ func _face(reel: Node3D, row: NodePath, symbol_id: StringName) -> bool:
 	return true
 
 
-## Backlights the payline cell in proportion to what it is worth, scaled by how
-## many upgrades the run is carrying. The plate itself is made emissive — a
-## lamp behind printed paper lights the whole cell through the print, which is
-## exactly how a fruit machine's win lamps read.
-func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
+## A landed plate rests unlit. It used to be backlit in proportion to its
+## value — a lamp behind the paper — and the art handover named that as the
+## thing that made the symbols read as UI rather than as print on a drum:
+## light that did not come from the room. The plate is lit by the room now,
+## and lights up only as a beat of the scoring chain, in the accent, because
+## it paid.
+func _set_glow(reel: Node3D, _tint: Color, _value: float) -> void:
 	var plate: MeshInstance3D = \
 			reel.get_node_or_null(^"Payline") as MeshInstance3D
 	if plate == null:
 		return
 	var material: StandardMaterial3D = \
 			plate.material_override as StandardMaterial3D
-	if material == null:
-		return
-	var importance: float = clampf(
-			inverse_lerp(GLOW_FLOOR, GLOW_CEILING, value), 0.0, 1.0)
-	if importance <= 0.0:
+	if material != null:
 		material.emission_enabled = false
-		return
-	# Scaled past 1 deliberately: the environment blooms above 1.1, so a top
-	# symbol on a stacked machine does not merely tint the cell, it flares.
-	var energy: float = minf(
-			importance * GLOW_GAIN * (1.0 + float(_upgrades) * GLOW_PER_UPGRADE),
-			GLOW_MAX)
-	material.emission_enabled = true
-	# The lamp is behind the paper: enough to light the cell through the print,
-	# not enough to bleach the ink out of it.
-	material.emission = tint * 0.8
-	material.emission_energy_multiplier = energy
-	# A short flare as it lands, settling back to its resting brightness.
-	material.emission_energy_multiplier = minf(energy * 1.2, GLOW_MAX)
-	var tween: Tween = create_tween()
-	tween.tween_property(material, "emission_energy_multiplier", energy * 0.7,
-			0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _finish_spin(payout: int, multiplier: float) -> void:

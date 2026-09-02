@@ -7,13 +7,31 @@
 // first). Neither is the original: the instruction list is, which is what
 // stops the CPU fallback and the GPU bake drifting apart.
 //
-// Everything around the symbol — the aged paper, the double keyline, the drop
-// shadow, the gloss, the ink wear — is composed here per pixel, because
+// Everything around the symbol — the aged paper, the double keyline, the ink
+// wear, the grime at the edges — is composed here per pixel, because
 // "printed on a strip" is a property of the whole cell, not of the glyph. The
 // old approach drew the glyph alone and floated it over blank enamel, and that
 // is exactly why the drums read as toilet rolls.
+//
+// Nothing here is lit. The art handover found the symbols read as clipart
+// pasted on a lit machine, and the reason was that the print carried its own
+// light — a painted gloss, a drop shadow, an emboss faked in the albedo. The
+// bake now runs three passes: the albedo (flat ink on paper), a normal map
+// (the ink standing proud of the paper, the paper's own tooth) and a
+// metallic map (the premium symbols' stencil), and the room's key light does
+// the rest. A symbol on the drum takes the curvature shading and the shadow
+// of the bezel exactly as the brass beside it does.
 shader_type canvas_item;
 render_mode unshaded;
+
+// Which map this pass is baking: 0 albedo, 1 normal, 2 metallic.
+uniform int pass_kind = 0;
+// 1.0 for a premium symbol: the ink is metal, stencilled rather than printed.
+uniform float metal = 0.0;
+// How far the ink stands off the paper, in the symbol's -1..1 space, and how
+// steep its shoulder is.
+uniform float relief = 0.05;
+uniform float shoulder = 0.09;
 
 // 12 floats per op, 3 vec4 rows, up to 14 ops. See SymbolArt.ops_for.
 const int MAX_OPS = 14;
@@ -155,6 +173,46 @@ void fragment() {
 	// which is how value plates on old machines are printed. Distances in px.
 	vec2 edge = min(px, cell_px - px);
 	float border = min(edge.x, edge.y);
+
+	// The relief and the metal passes leave early with their own answers.
+	if (pass_kind == 1) {
+		// Height: the ink stands proud of the paper with a soft shoulder, the
+		// paper has a fine tooth, and the rules are pressed in. The normal is
+		// the height field's slope, sampled by finite difference in the
+		// symbol's own space so it scales with the cell.
+		float e = 0.012;
+		float d0 = 1.0e6;
+		float dx = 1.0e6;
+		float dy = 1.0e6;
+		if (op_count > 0) {
+			d0 = symbol_distance(p);
+			dx = symbol_distance(p + vec2(e, 0.0));
+			dy = symbol_distance(p + vec2(0.0, e));
+		}
+		float h0 = relief * (1.0 - smoothstep(-shoulder, 0.02, d0));
+		float hx = relief * (1.0 - smoothstep(-shoulder, 0.02, dx));
+		float hy = relief * (1.0 - smoothstep(-shoulder, 0.02, dy));
+		// Paper tooth, and the pressed rules.
+		float tooth = 0.0035;
+		h0 += vnoise(px * 0.9) * tooth;
+		hx += vnoise((px + vec2(1.0, 0.0)) * 0.9) * tooth;
+		hy += vnoise((px + vec2(0.0, 1.0)) * 0.9) * tooth;
+		h0 -= (1.0 - smoothstep(0.0, 1.5, abs(border - 8.0) - 3.4)) * 0.006;
+		vec3 n = normalize(vec3(-(hx - h0) / e, (hy - h0) / e, 1.0));
+		COLOR = vec4(n * 0.5 + 0.5, 1.0);
+	} else if (pass_kind == 2) {
+		float m = 0.0;
+		if (op_count > 0 && metal > 0.5) {
+			vec2 s = symbol_sample(p);
+			// The stencil: the fill is metal, the keyline and the black stay ink.
+			m = coverage(s.x, pixel) * (s.y < 2.5 ? 1.0 : 0.0);
+		}
+		COLOR = vec4(vec3(m), 1.0);
+	} else {
+	// Grime toward the cell's edges, where the strip has been handled and
+	// the bezel's shadow keeps the dust.
+	float grime = 1.0 - smoothstep(6.0, 46.0, border);
+	col *= 1.0 - grime * 0.22 * (0.6 + 0.4 * vnoise(px * 0.07 + 5.0));
 	float rule_a = 1.0 - smoothstep(0.0, 1.5, abs(border - 8.0) - 3.4);
 	float rule_b = 1.0 - smoothstep(0.0, 1.2, abs(border - 16.0) - 1.1);
 	col = mix(col, line_ink.rgb, rule_a * 0.92 + rule_b * 0.6);
@@ -174,34 +232,24 @@ void fragment() {
 		} else if (sample.y > 2.5) {
 			paint = line_ink.rgb;
 		}
-		// Drop shadow first, offset down-right and soft, only outside the ink.
-		float d_shadow = symbol_distance(p - vec2(0.09, 0.11));
-		float shadow = coverage(d_shadow, pixel * 5.0);
 		// Erosion: high-frequency noise eats the coverage near the shape edge,
 		// so the ink loses its skin where the strip has been handled.
 		float erode = smoothstep(0.25, 0.75, vnoise(px * 0.9 + 7.0));
 		float loss = wear * erode * smoothstep(-0.22, 0.02, d);
 		float fill = coverage(d, pixel) * (1.0 - loss);
 		float outer = coverage(d - stroke, pixel) * (1.0 - loss * 0.7);
-		col = mix(col, line_ink.rgb, shadow * (1.0 - outer) * 0.32);
-		// Outline, then fill, then the same up-left emboss the CPU path uses:
-		// the distance field's own slope, sampled once, lighting the rim —
-		// and the gloss high on the left shoulder, inside the ink only.
+		// The keyline, then the fill: flat ink. No shadow, no gloss, no
+		// painted emboss — the relief pass and the room's light do those.
 		col = mix(col, line_ink.rgb, outer);
-		float slope = symbol_distance(p - vec2(0.055, 0.055)) - d;
-		float rim = clamp(1.0 + d / 0.62, 0.0, 1.0);
-		float lift = clamp(slope / 0.055, -1.0, 1.0) * rim;
-		vec3 ink_lit = paint;
-		if (lift > 0.0) {
-			ink_lit = mix(ink_lit, vec3(1.0, 0.98, 0.94), lift * 0.5);
-		} else {
-			ink_lit = mix(ink_lit, line_ink.rgb, -lift * 0.45);
+		vec3 flat_ink = paint;
+		if (metal > 0.5 && sample.y < 2.5) {
+			// Metal reads through its albedo: darker and warmer than the ink
+			// it replaces, so the metallic map has something to reflect with.
+			flat_ink = paint * vec3(0.95, 0.86, 0.62);
 		}
-		float inside = clamp(-d / 0.16, 0.0, 1.0);
-		float cap = 1.0 - smoothstep(0.0, 0.62, length(p - vec2(-0.3, -0.42)));
-		ink_lit = mix(ink_lit, vec3(1.0, 0.99, 0.96), cap * inside * 0.42);
-		col = mix(col, ink_lit, fill);
+		col = mix(col, flat_ink, fill);
 	}
 
 	COLOR = vec4(col, 1.0);
+	}
 }

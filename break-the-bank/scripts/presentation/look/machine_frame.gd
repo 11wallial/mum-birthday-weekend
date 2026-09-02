@@ -312,8 +312,21 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 	# them synchronously.
 	ReelPrint.bake(_root, func() -> void:
 		var strip: ImageTexture = ReelPrint.strip()
+		var relief: ImageTexture = ReelPrint.relief()
+		var metal: ImageTexture = ReelPrint.metal()
 		for material: StandardMaterial3D in strip_materials:
-			material.albedo_texture = strip)
+			material.albedo_texture = strip
+			# The print stands proud of the paper and the premium symbols are
+			# metal, both lit by the room: the art handover's "paint on metal,
+			# not a texture" is these two maps.
+			if relief != null:
+				material.normal_enabled = true
+				material.normal_texture = relief
+				material.normal_scale = 1.0
+			if metal != null:
+				material.metallic = 1.0
+				material.metallic_texture = metal
+				material.metallic_specular = 0.5)
 	return reels
 
 
@@ -380,7 +393,9 @@ func _strip_material() -> StandardMaterial3D:
 	material.albedo_color = Color(0.93, 0.91, 0.87)
 	# Matte paper. Coated paper's gloss read as glare from the lamp a foot
 	# in front of it, and the print is the one thing here that must be read.
-	material.roughness = 0.82
+	# The metal comes from the bake's metallic map once it lands; until then
+	# the strip is paper through and through.
+	material.roughness = 0.72
 	material.metallic = 0.0
 	material.metallic_specular = 0.25
 	material.texture_filter = \
