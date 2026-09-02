@@ -550,6 +550,8 @@ func _settle_surety() -> void:
 	# in the office: the picture steadies so the account can be read.
 	if _film != null and _film.has_method("set_strain"):
 		_film.call("set_strain", 0.2 if state.is_over() else held)
+	if _audio != null and not state.is_over():
+		_audio.set_tension(held)
 
 
 func _on_touch_camera() -> void:

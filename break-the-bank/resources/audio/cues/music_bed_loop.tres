@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"music_bed_loop"
+file_name = "music/music_bed_loop.wav"
+category = 2
+bus = &"Music"
+duration_ms = Vector2i(30000, 60000)
+frequency_notes = "The score's bed: a low sustained pad on the root, one semitone lower every floor down. Seamless, no events; the thing the room is tuned to."
+pitch_jitter = Vector2(1.0, 1.0)
+volume_jitter_db = Vector2(0.0, 0.0)
+base_volume_db = -20.0
+positional = false
+loops = true
+max_voices = 1
+priority = 2
+duck_music_db = 0.0
+fallback = 4
+fallback_hz = 55.0

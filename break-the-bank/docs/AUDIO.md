@@ -410,6 +410,18 @@ the instant the lever is pulled.
 | `score_dead` | SFX | a losing spin: one dry thud, outside the ladder | THUD |
 | `tube_overload` | SFX | tier five: the tubes past what they were built for | BUZZ |
 
+## 1d. The score — placeholders added 2 September 2026
+
+The Music bus had nothing feeding it. Three synthesised layers do now, as
+placeholders that establish the hooks a composer's adaptive score will
+take: `music_bed_loop` (a pad on the root, one semitone lower every floor
+down — the descent, heard), `music_fifth_loop` (a fifth above, entering on
+the third floor and thickening after), `music_pulse_loop` (a slow
+mechanical tick brought up with the surety and dropped when the floor is
+covered). `AudioDirector.set_floor` and `set_tension` are the hooks; the
+pause hushes the score with everything else. Sourcing: a composer, not a
+library — the layers are named for what they answer to.
+
 The pause before the total is silence by design: `AudioDirector.hush` drops
 SFX, UI and Ambience fourteen decibels for exactly the pause and lets them
 back up as the number lands. Tier five also enables a hard clip on the

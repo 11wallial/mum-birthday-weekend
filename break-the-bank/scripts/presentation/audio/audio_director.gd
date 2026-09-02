@@ -379,6 +379,8 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			else:
 				play(&"fail_sting_ante")
 				play(&"alarm_pulse")
+		EffectBus.Event.FLOOR_STARTED:
+			set_floor(int(payload.get("floor", 1)))
 		EffectBus.Event.FLOOR_CLEARED:
 			play(&"floor_clear_fanfare")
 			play_at(&"receipt_tear")
@@ -395,7 +397,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			start_loop(&"coil_buzz_loop")
 			start_loop(&"amb_vault_drone_loop")
 			start_loop(&"amb_wind_loop")
+			start_score()
 		EffectBus.Event.RUN_ENDED:
+			set_loop_volume(&"music_pulse_loop", -60.0, 1.5)
+			set_loop_volume(&"music_fifth_loop", -60.0, 3.0)
 			var reason: String = String(payload.get("end_reason", ""))
 			if String(payload.get("phase", "")) == "WON":
 				play(&"run_win_fanfare")
@@ -407,15 +412,83 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			pass
 
 
-## Everything stops. The room and the machine drop to room tone for the pause
-## before a total lands, and come back as it does. Music is left where it is:
-## it is the one thing the pause is not about.
+## The score. Three synthesised layers on the Music bus until a composer
+## replaces them, keyed to the run the way the art handover asked the room
+## to be: the bed on the root, a semitone lower every floor down (the
+## descent, heard); a fifth above it from the third floor; and a pulse that
+## comes up with the surety and drops when the floor is covered. The
+## placeholders establish the hooks — set_floor, set_tension — and the
+## timing; the sourcing brief is on each cue.
+func start_score() -> void:
+	start_loop(&"music_bed_loop")
+	start_loop(&"music_fifth_loop")
+	start_loop(&"music_pulse_loop")
+	set_loop_volume(&"music_fifth_loop", -60.0, 0.0)
+	set_loop_volume(&"music_pulse_loop", -60.0, 0.0)
+
+
+func stop_score() -> void:
+	for cue: StringName in [&"music_bed_loop", &"music_fifth_loop", &"music_pulse_loop"]:
+		stop_loop(cue)
+
+
+## The floor the score is on: the bed drops a semitone a floor, the fifth
+## enters on the third and thickens after.
+func set_floor(index: int) -> void:
+	var pitch: float = pow(2.0, -float(maxi(index - 1, 0)) / 12.0)
+	set_loop_pitch(&"music_bed_loop", pitch, 2.0)
+	set_loop_pitch(&"music_fifth_loop", pitch, 2.0)
+	var fifth: float = -60.0 if index < 3 else lerpf(-30.0, -22.0, clampf(float(index - 3) / 4.0, 0.0, 1.0))
+	set_loop_volume(&"music_fifth_loop", fifth, 2.5)
+
+
+## How exposed the run is, 0..1: the pulse comes up with it.
+func set_tension(held: float) -> void:
+	var level: float = clampf(held, 0.0, 1.0)
+	var target: float = -60.0 if level < 0.15 else lerpf(-34.0, -18.0, level)
+	set_loop_volume(&"music_pulse_loop", target, 1.2)
+	set_loop_pitch(&"music_pulse_loop", lerpf(0.85, 1.35, level), 1.2)
+
+
+## Eases a running loop's volume, in dB, over [param seconds]. Absolute: the
+## cue's own base is not added, so a layer can be brought to silence.
+func set_loop_volume(cue: StringName, target_db: float, seconds: float) -> void:
+	var player: AudioStreamPlayer = _loop_player(cue)
+	if player == null:
+		return
+	if seconds <= 0.0:
+		player.volume_db = target_db
+		return
+	var tween: Tween = player.create_tween()
+	tween.tween_property(player, "volume_db", target_db, seconds) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func set_loop_pitch(cue: StringName, target: float, seconds: float) -> void:
+	var player: AudioStreamPlayer = _loop_player(cue)
+	if player == null:
+		return
+	var tween: Tween = player.create_tween()
+	tween.tween_property(player, "pitch_scale", maxf(target, 0.05), seconds) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func _loop_player(cue: StringName) -> AudioStreamPlayer:
+	if _loops.has(cue):
+		return _loops[cue] as AudioStreamPlayer
+	if _feeders.has(cue):
+		return _feeders[cue] as AudioStreamPlayer
+	return null
+
+
+## Everything stops. The room, the machine and the score drop for the pause
+## before a total lands, and come back as it does.
 func hush(seconds: float) -> void:
 	if _hush_tween != null and _hush_tween.is_valid():
 		_hush_tween.kill()
 		_unhush()
 	_hush_tween = create_tween().set_parallel(true)
-	for bus_name: String in ["SFX", "Ambience", "UI"]:
+	for bus_name: String in ["SFX", "Ambience", "UI", "Music"]:
 		var index: int = AudioServer.get_bus_index(bus_name)
 		if index < 0:
 			continue
