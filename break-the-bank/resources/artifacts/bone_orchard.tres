@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"bone_orchard"
+display_name = "Bone Orchard"
+description = "Skulls grow where they are planted. +6 draw weight on Skull."
+cost = 8
+trigger = 2
+effect = 6
+magnitude = 6.0
+cap = 0.0
+symbol_filter = &"skull"
+pattern_filter = -1
+tags = Array[StringName]([&"chaos"])
+min_floor = 2
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"skulls"

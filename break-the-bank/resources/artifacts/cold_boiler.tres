@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"cold_boiler"
+display_name = "Cold Boiler"
+description = "Cold for forty spins. Then it lights: +1.6x on every line."
+cost = 10
+trigger = 2
+effect = 28
+magnitude = 1.6
+cap = 40.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 2
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"clock"

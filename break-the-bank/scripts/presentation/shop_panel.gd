@@ -212,6 +212,12 @@ func _build_row(index: int) -> Control:
 			UiSkin.INK if affordable else UiSkin.DENIED)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_cell)
+	# The build it belongs to, as a small plate beside the name: a player
+	# chasing the clamp should be able to see the clamp coming.
+	var build: ArchetypeDef = ContentDB.shared().archetype_by_id(artifact.archetype)
+	if build != null:
+		head.add_child(_cell(build.display_name.to_upper(), 11.0,
+				UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
 	var price_cell: Label = _cell("%d cr" % price, 17.0,
 			UiSkin.AMBER if affordable else UiSkin.DENIED)
 	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

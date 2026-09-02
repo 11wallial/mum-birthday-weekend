@@ -18,7 +18,8 @@ The core loop, made into a decision.
 
 **Hold.** Lock any reels but the last and only redraw what is not already
 working. Every lock is charged for — a spin's price is
-`spin_cost × stake × (1 + locks)`. Without that, holding a pair is strictly
+`spin_cost × stake × (1 + locks)`, plus the stake's premium once there is one
+(floor 3). Without that, holding a pair is strictly
 better than not holding one, and a move with no cost is not a decision; it is a
 thing the player learns to do without thinking about it.
 
@@ -48,10 +49,16 @@ everything meant that by floor six the shop was mostly floor-one trinkets.
 
 ## 3 — The High Roller Room · **THE STAKE AND THE LADDER**
 
-**Stake.** Wager one to five credits a spin. It costs that multiple and pays it
-back on the multiplier — and at stake three or more the machine runs hot enough
-to put a nudge on the house, which is the reason to raise it beyond a flat
-multiple of a number you were getting anyway.
+**Stake.** Wager one to five credits a spin. It pays that multiple back on the
+multiplier, and every level above the first costs a share of the floor's ante
+per spin on top of the spin (`BalanceConfig.stake_ante_percent`, a tenth). It
+used to cost only the multiple — one credit a level against payouts in the
+hundreds — which made the top of the stake right whenever the purse could stand
+it, and a wager that is always right is not a wager. Priced off the ante, a
+level pays for itself only on a machine paying better than the premium, and
+costs a machine that is not exactly the ante it needs; hardware that pays per
+stake level (the Whale) is what makes the premium worth paying anyway. At stake
+three or more the machine also runs hot enough to put a nudge on the house.
 
 **The ladder.** A win can be doubled instead of banked, up to four times. The
 odds get worse every rung — 50%, 45%, 40%, 35% — so the first rung is an even

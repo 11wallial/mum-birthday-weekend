@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"iou"
+display_name = "IOU"
+description = "Written on a napkin, honoured anyway. +0.06x for every 100 you owe, up to +0.6x."
+cost = 6
+trigger = 2
+effect = 13
+magnitude = 0.06
+cap = 0.6
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank"])
+min_floor = 1
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"marker"

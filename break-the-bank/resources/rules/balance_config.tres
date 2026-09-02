@@ -6,7 +6,7 @@
 script = ExtResource("1_balanceconfig")
 reel_count = 3
 starting_cash = 12
-starting_debt = 120
+starting_debt = 260
 spin_cost = 1
 base_multiplier = 0.0
 pattern_multipliers = PackedFloat32Array(0, 0.4, 1.2, 3, 0.6)
@@ -16,6 +16,7 @@ synergy_threshold = 3
 shop_inflation_percent = 15.0
 shop_ante_divisor = 400.0
 max_stake = 5
+stake_ante_percent = 10.0
 max_nudges = 3
 gamble_odds = PackedFloat32Array(0.5, 0.45, 0.4, 0.35)
 reroll_base_cost = 4

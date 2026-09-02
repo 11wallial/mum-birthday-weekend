@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"orchard_wall"
+display_name = "Orchard Wall"
+description = "More trees. +5 draw weight on every fruit."
+cost = 9
+trigger = 2
+effect = 6
+magnitude = 5.0
+cap = 0.0
+symbol_filter = &"fruit"
+pattern_filter = -1
+tags = Array[StringName]([&"luck"])
+min_floor = 2
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"orchard"

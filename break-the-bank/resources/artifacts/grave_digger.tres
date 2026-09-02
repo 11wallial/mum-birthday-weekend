@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"grave_digger"
+display_name = "Grave Digger"
+description = "He works the orchard. +2.0x while you own the Bone Orchard."
+cost = 20
+trigger = 2
+effect = 27
+magnitude = 2.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"chaos", &"mechanical"])
+min_floor = 4
+module_scene_path = ""
+partner = &"bone_orchard"
+tag_filter = &""
+archetype = &"skulls"

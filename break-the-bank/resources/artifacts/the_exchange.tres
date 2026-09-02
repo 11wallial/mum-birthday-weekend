@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"the_exchange"
+display_name = "The Exchange"
+description = "Every line is a trade, and every trade clears through it. +1.2x per other artifact that triggered on the line."
+cost = 54
+trigger = 2
+effect = 19
+magnitude = 1.2
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"greed"])
+min_floor = 7
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"exchange"

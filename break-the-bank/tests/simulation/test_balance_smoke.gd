@@ -80,16 +80,15 @@ func test_anomaly_detection_ignores_thin_samples() -> void:
 func test_a_late_artifact_is_judged_against_the_runs_that_reach_it() -> void:
 	# Owning an artifact that unlocks late already implies surviving that far —
 	# and, because prices track the ante, being rich when you got there. Judged
-	# against the whole batch it looks broken; against the cohort that both
-	# reached its floor and bought from its tier it is unremarkable, and only
-	# the second reading is worth acting on.
+	# against the whole batch it looks broken; against runs of the same market
+	# depth, in the same proportions, it is unremarkable, and only the second
+	# reading is worth acting on.
 	var rates: Dictionary = _report["artifact_win_rates"]
 	assert_bool(rates.has("house_contract")).override_failure_message(
 			"no run in the batch bought house_contract; the cohort test cannot run").is_true()
 	var late: Dictionary = rates["house_contract"]
 	assert_float(float(late["baseline"])).is_greater(float(_report["win_rate"]))
-	assert_str(String(late["baseline_note"])).is_equal(
-			"runs clearing 5+ floors and buying from that tier")
+	assert_str(String(late["baseline_note"])).is_equal("runs at the same market depth")
 
 
 func test_anomaly_detection_flags_a_dominant_artifact() -> void:

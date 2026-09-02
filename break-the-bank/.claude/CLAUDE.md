@@ -56,7 +56,39 @@ tuning constant in `scripts/simulation/` — if a number needs a name, add an
 Artifacts are data. `ArtifactDef.Effect` is a small, closed vocabulary resolved
 in one place (`ArtifactEngine`). Prefer expressing a new artifact with the
 existing effects; add a new `Effect` only when the idea genuinely cannot be
-composed, and handle it in `ArtifactEngine._apply_one` plus its own helper.
+composed, and handle it in `ArtifactEngine._apply_one` (line effects) or
+`_scaling_gain` (effects that read the run or the board) plus its own helper.
+`tests/simulation/test_shipped_archetypes.gd` pins the vocabulary's size, so
+growing it is a deliberate edit with the reason in the commit.
+
+Rules the synergy web added, each learnt by breaking something:
+
+- A tally (`RunState.tallies`, read through `state.tally()`) moves only in
+  `ArtifactEngine.record_spin`, which the engine calls once per settled spin
+  from `collect`. Never touch a tally from `evaluate_spin`: it is called for
+  previews, for every nudge and for every bought row, and a ledger that grew
+  when it was looked at would pay a different number each time the hint lamp
+  lit. `release()` erases the artifact's tally, so the market cannot keep a
+  ledger without its keeper.
+- `symbol_filter` names a symbol id or a family (`fruit`, `bar`), everywhere
+  it is read — `SYMBOL_BONUS`, `WEIGHT_SHIFT`, `MULT_PER_SEEN` — through
+  `ArtifactEngine.symbol_matches` and `Probability.build_reel`. Do not add a
+  second matching rule.
+- Every artifact that belongs to a build names it in `archetype`, by
+  `ArchetypeDef` id under `resources/archetypes/`. A build needs an enabler
+  by floor 2, an amplifier, a capstone from floor 6, a `brief` and a
+  `counter`; the content suite holds it to that. `AutoPlayer.shop` leans
+  towards whichever build the run has most of, so the lab measures builds a
+  person would actually assemble; `archetype_win_rates` in the report is
+  the build measured as a build.
+- The lab judges every cohort — artifact, tag, build — against runs at the
+  same market depth in the same proportions (`_stratified_rates`). Comparing
+  against "everyone who got at least this far" put every dear late item a
+  dozen points above a cohort it was never in, and called every floor-one
+  trinket a trap. `pick_rates` puts each artifact's pick rate beside its
+  lift over the pack's median lift; with the bot buying by price a pick
+  rate mostly says what it could afford, so read the verdicts as an
+  instrument for human batches.
 
 To choose a number rather than check one, sweep it — this mutates content in
 memory and writes nothing:
@@ -117,6 +149,13 @@ worth knowing before touching the simulation:
 - A spin does not end when the reels stop. `SimEngine.spin` leaves the run at a
   decision (`RunState.Decision`); `collect` is what moves the credits. The view
   animates on `SPIN_RESOLVED` and celebrates on `PAYOUT_CALCULATED`.
+- The stake is priced off the ante, not the spin: every level above the first
+  costs `BalanceConfig.stake_ante_percent` of the floor's ante per spin
+  (`RunState.stake_premium`). A spin cost one credit against payouts in the
+  hundreds, so playing at the top of the stake was right whenever the purse
+  could stand it, and the bot found that out the moment the whale's hardware
+  gave it a reason to raise. `AutoPlayer.stake` raises only when the machine
+  pays more per spin than a level costs, or when it owns `MULT_PER_STAKE`.
 - Every verb is a public `SimEngine` method the automated policy also calls, so
   a hand-played run and a batch exercise one code path. `clear_policies()` hands
   them all back for a human.

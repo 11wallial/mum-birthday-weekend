@@ -48,6 +48,16 @@ var floors_cleared: int = 0
 var owned: Array[ArtifactDef] = []
 ## Flat draw-weight deltas keyed by symbol id, accumulated from WEIGHT_SHIFT artifacts.
 var weight_shifts: Dictionary = {}
+## Counters that grow over the run — symbols seen, spins settled — keyed by
+## the id of the artifact keeping them. Only a settled spin moves one, an
+## artifact's own tally goes with it when it is sold, and nothing here is
+## ever serialised: a replayed journal rebuilds every one of them.
+var tallies: Dictionary = {}
+## Paying spins in a row, counted before the spin being scored. A dud resets it.
+var streak: int = 0
+## How many times each artifact has been put on a draft this run, keyed by id.
+## Telemetry only: the lab reads it to tell a trap pick from an auto-pick.
+var offers_seen: Dictionary = {}
 ## The three rows currently standing on the machine, and what they pay.
 var board: SpinBoard = SpinBoard.new()
 ## Systems the run has been handed, keyed by [Systems] name. A floor grants one;
@@ -173,7 +183,26 @@ func scoring_rows() -> int:
 ## — it is a thing the player learns to do without thinking about it.
 func spin_price() -> int:
 	var locks: int = board.held_count()
-	return maxi(0, config.spin_cost * maxi(1, stake) * (1 + locks))
+	return maxi(0, config.spin_cost * maxi(1, stake) * (1 + locks) + stake_premium())
+
+
+## What the wager above the first level costs on top of the spin, per spin:
+## a share of the floor's ante for every level raised. This is what makes the
+## stake a decision rather than a multiple — see
+## [member BalanceConfig.stake_ante_percent].
+func stake_premium() -> int:
+	return premium_at(stake)
+
+
+## The premium [param level] would carry on this floor.
+func premium_at(level: int) -> int:
+	if level <= 1 or config.stake_ante_percent <= 0.0:
+		return 0
+	var floor_def: FloorDef = current_floor()
+	if floor_def == null:
+		return 0
+	return int(round(float(floor_def.ante) * config.stake_ante_percent / 100.0
+			* float(level - 1)))
 
 
 ## True when the machine is mid-decision and must not be spun again.
@@ -237,6 +266,15 @@ func mark_reel_dirty() -> void:
 	_reel_cache_dirty = true
 
 
+## The counter [param artifact_id] has built up this run.
+func tally(artifact_id: StringName) -> float:
+	return float(tallies.get(artifact_id, 0.0))
+
+
+func add_tally(artifact_id: StringName, delta: float) -> void:
+	tallies[artifact_id] = tally(artifact_id) + delta
+
+
 func add_weight_shift(symbol_id: StringName, delta: int) -> void:
 	weight_shifts[symbol_id] = int(weight_shifts.get(symbol_id, 0)) + delta
 	_reel_cache_dirty = true
@@ -260,6 +298,9 @@ func release(artifact: ArtifactDef) -> bool:
 	owned.remove_at(index)
 	if artifact.effect == ArtifactDef.Effect.WEIGHT_SHIFT:
 		add_weight_shift(artifact.symbol_filter, -int(artifact.magnitude))
+	# A tally is the artifact's, not the run's: bought back later it starts
+	# again, or the market would be a way to keep a ledger without its keeper.
+	tallies.erase(artifact.id)
 	return true
 
 
@@ -324,6 +365,7 @@ func snapshot() -> Dictionary:
 		"extra_rows": extra_rows,
 		"endless": endless,
 		"best_payout": best_payout,
+		"streak": streak,
 	}
 	data.merge(economy.snapshot())
 	return data

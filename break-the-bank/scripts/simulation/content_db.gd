@@ -9,12 +9,14 @@ const SYMBOL_DIR: String = "res://resources/symbols"
 const ARTIFACT_DIR: String = "res://resources/artifacts"
 const FLOOR_DIR: String = "res://resources/rules/floors"
 const CONTRACT_DIR: String = "res://resources/contracts"
+const ARCHETYPE_DIR: String = "res://resources/archetypes"
 const BALANCE_PATH: String = "res://resources/rules/balance_config.tres"
 
 var symbols: Array[SymbolDef] = []
 var artifacts: Array[ArtifactDef] = []
 var floors: Array[FloorDef] = []
 var contracts: Array[ContractDef] = []
+var archetypes: Array[ArchetypeDef] = []
 var balance: BalanceConfig = BalanceConfig.new()
 
 static var _shared: ContentDB = null
@@ -32,6 +34,7 @@ func load_all() -> void:
 	symbols.assign(_load_dir(SYMBOL_DIR))
 	artifacts.assign(_load_dir(ARTIFACT_DIR))
 	contracts.assign(_load_dir(CONTRACT_DIR))
+	archetypes.assign(_load_dir(ARCHETYPE_DIR))
 	var loaded_floors: Array[FloorDef] = []
 	loaded_floors.assign(_load_dir(FLOOR_DIR))
 	loaded_floors.sort_custom(func(a: FloorDef, b: FloorDef) -> bool: return a.index < b.index)
@@ -41,6 +44,7 @@ func load_all() -> void:
 	symbols.sort_custom(func(a: SymbolDef, b: SymbolDef) -> bool: return String(a.id) < String(b.id))
 	artifacts.sort_custom(func(a: ArtifactDef, b: ArtifactDef) -> bool: return String(a.id) < String(b.id))
 	contracts.sort_custom(func(a: ContractDef, b: ContractDef) -> bool: return String(a.id) < String(b.id))
+	archetypes.sort_custom(func(a: ArchetypeDef, b: ArchetypeDef) -> bool: return String(a.id) < String(b.id))
 
 
 func symbol_by_id(id: StringName) -> SymbolDef:
@@ -62,6 +66,22 @@ func contract_by_id(id: StringName) -> ContractDef:
 		if contract.id == id:
 			return contract
 	return null
+
+
+func archetype_by_id(id: StringName) -> ArchetypeDef:
+	for archetype: ArchetypeDef in archetypes:
+		if archetype.id == id:
+			return archetype
+	return null
+
+
+## Every artifact that belongs to [param archetype_id].
+func artifacts_of(archetype_id: StringName) -> Array[ArtifactDef]:
+	var out: Array[ArtifactDef] = []
+	for artifact: ArtifactDef in artifacts:
+		if artifact.archetype == archetype_id:
+			out.append(artifact)
+	return out
 
 
 func floor_at(index: int) -> FloorDef:

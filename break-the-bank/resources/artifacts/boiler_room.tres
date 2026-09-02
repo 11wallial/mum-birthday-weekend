@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"boiler_room"
+display_name = "Boiler Room"
+description = "The whole floor runs on steam. +0.14x per spin left on the floor, up to +2.5x."
+cost = 28
+trigger = 2
+effect = 26
+magnitude = 0.14
+cap = 2.5
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"greed"])
+min_floor = 5
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"clock"

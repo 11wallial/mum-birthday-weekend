@@ -102,4 +102,27 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 				String(row["id"]), String(row["verdict"]), int(row["runs"]),
 				float(row["win_rate"]) * 100.0, float(row["baseline"]) * 100.0,
 				float(row["delta"]) * 100.0])
+	var archetypes: Dictionary = report.get("archetype_win_rates", {})
+	if not archetypes.is_empty():
+		print("archetypes:")
+		for key: String in archetypes:
+			var row: Dictionary = archetypes[key]
+			print("  %-14s runs %-6d win %.1f%% vs %.1f%% cohort (%+.1f pts)" % [
+				key, int(row["runs"]), float(row["win_rate"]) * 100.0,
+				float(row["baseline"]) * 100.0,
+				(float(row["win_rate"]) - float(row["baseline"])) * 100.0])
+	var picks: Dictionary = report.get("pick_rates", {})
+	var flagged: Array[String] = []
+	for key: String in picks:
+		var verdict: String = String(picks[key].get("verdict", "fair"))
+		if verdict != "fair" and verdict != "unmeasured":
+			flagged.append(key)
+	if not flagged.is_empty():
+		print("picks worth a look:")
+		for key: String in flagged:
+			var row: Dictionary = picks[key]
+			print("  %-18s %-8s taken from %.0f%% of %d drafts, win %.1f%% vs %.1f%% cohort, %+.1f pts against the pack" % [
+				key, String(row["verdict"]), float(row["pick_rate"]) * 100.0,
+				int(row["offered"]), float(row["win_rate"]) * 100.0,
+				float(row["baseline"]) * 100.0, float(row["delta"]) * 100.0])
 	print("report → %s" % out_path)

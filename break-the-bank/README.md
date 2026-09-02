@@ -141,23 +141,40 @@ principal with a penalty on top.
 
 | Floor | Name | Ante | Spins | What it introduces |
 | --- | --- | --- | --- | --- |
-| 1 | The Basement | 40 | 8 | Base slot mechanics |
-| 2 | The Casino | 60 | 9 | Shop and secondary devices |
-| 3 | The High Roller Room | 235 | 10 | High-stakes modifiers |
-| 4 | The Vault | 1,040 | 10 | Capital and interest |
-| 5 | The Back Office | 2,500 | 11 | Rule manipulation, contracts |
-| 6 | The Engine Room | 4,600 | 12 | Machine interconnection |
-| 7 | The House | 12,000 | 14 | Casino-wide rules, final encounter |
+| 1 | The Basement | 40 | 9 | Hold and nudge |
+| 2 | The Casino | 105 | 10 | The market: reroll, sell, the slate |
+| 3 | The High Roller Room | 350 | 10 | The stake and the gamble ladder |
+| 4 | The Vault | 1,050 | 11 | The vault: collateral and dividends |
+| 5 | The Back Office | 2,775 | 12 | Contracts |
+| 6 | The Engine Room | 5,400 | 13 | The works: reels and rows |
+| 7 | The House | 15,750 | 15 | The count |
 
-Artifacts are data, not scripts: a closed vocabulary of eighteen effects
+Artifacts are data, not scripts: a closed vocabulary of twenty-nine effects
+resolved in `ArtifactEngine`. Eighteen read the line and the economy
 (`FLAT_BONUS`, `MULT_BONUS`, `SYMBOL_BONUS`, `PATTERN_MULT`, `INTEREST`,
-`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`, the late-game `RETRIGGER`,
-`CURSE_WARD`, `MULT_PER_FLOOR`, `MULT_PER_ARTIFACT`, `DEBT_PAYDOWN`, and the
-five the later floors' systems asked for — `DEBT_LEVERAGE`, `SPIN_REFUND`,
-`NUDGE_BONUS`, `VAULT_YIELD`, `HEAT_SHIELD`) resolved in `ArtifactEngine`.
-That keeps balance edits confined to `.tres` files and keeps the effect surface
-small enough to reason about. Owning three artifacts sharing a tag lights a
-synergy and adds to every line's multiplier.
+`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`, `RETRIGGER`, `CURSE_WARD`,
+`MULT_PER_FLOOR`, `MULT_PER_ARTIFACT`, `DEBT_PAYDOWN`, `DEBT_LEVERAGE`,
+`SPIN_REFUND`, `NUDGE_BONUS`, `VAULT_YIELD`, `HEAT_SHIELD`); eleven read the
+run and the board, which is where the builds come from — a tally of every
+symbol that has landed (`MULT_PER_SEEN`), the boiler that lights after so many
+spins (`AWAKENED_MULT`), the exchange that pays per other artifact that
+triggered (`MULT_PER_TRIGGER`), the partner that pays only beside a named
+artifact (`PARTNER_MULT`), and multipliers per skull standing, per reel held,
+per nudge spent, per stake level, per paying spin in a row, per device of a
+tag, and per spin left on the floor. That keeps balance edits confined to
+`.tres` files and keeps the effect surface small enough to reason about.
+Owning three artifacts sharing a tag lights a synergy and adds to every line's
+multiplier.
+
+Eighty-six artifacts, sixty-one of them belonging to one of eight named builds
+(`resources/archetypes/`): the Payroll (skulls as wages), the Clamp (paid per
+reel held), the Trail (paid per nudge), the Marker (the debt as leverage), the
+Whale (the stake made superlinear), the Clock (spins and boilers), the
+Exchange (many small triggers and a switchboard) and the Orchard (the tally of
+everything landed). Each build has enablers on the first two floors, amplifiers
+in the middle, a capstone from floor six, and something written down that
+pushes back against it; the content suite holds every build to that shape,
+and `docs/ARCHETYPES.md` is the design.
 
 Artifacts with a `module_scene_path` physically bolt themselves onto the machine
 frame when acquired — the Brass Multiplier adds a gearbox, the Entropy Engine a
@@ -172,8 +189,14 @@ cleared, per-artifact and per-synergy win rates, and an `anomalies` list.
 Each win rate is judged against its own cohort rather than the headline number:
 an artifact that unlocks on floor 5 is only owned by runs that reached floor 5,
 so against the whole batch every late artifact looks overpowered. The baseline
-is the win rate among runs that got far enough to be offered it, and `anomalies`
-flags entries 25+ points off *that*.
+is the batch's win rate among runs at the same market depth — how deep a run
+got and how deep a tier it bought from — in the same proportions as the
+cohort's own runs, and `anomalies` lists whatever still sits far from it. The
+report also carries `archetype_win_rates`, each named build measured as a
+build (a run counts once it owns two of the build's artifacts), and
+`pick_rates`, every artifact's pick rate beside its lift over the pack's
+median lift with a verdict — trap, auto, sleeper, dead, fair — for the four
+corners of that scatter worth a look.
 
 The shipped numbers were calibrated with `tools/casino_lab/sweep.gd` against a
 target win rate of 15–20%. Over 10,000 seeded runs (`--seed=1`) with the
@@ -181,29 +204,35 @@ built-in, deliberately mediocre `AutoPlayer`, measured 2026-09-02:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | 19.6% |
-| Mean floors cleared | 5.58 of 7 |
-| Earnings | mean 34,755 · p50 23,629 · p95 119,936 · p99 188,305 |
-| Deaths by floor | 85 · 185 · 437 · 674 · 985 · 1240 · 2141, then 2,295 to the final debt |
-| Debt | vig mean 478 (p95 767) · 0.5% of runs default · 30.8% buy a paydown |
+| Win rate | 18.6% |
+| Mean floors cleared | 4.68 of 7 |
+| Earnings | mean 89,619 · p50 9,077 · p95 600,404 · p99 1,055,027 |
+| Deaths by floor | 85 · 276 · 1,040 · 1,641 · 1,848 · 1,025 · 1,624, then 602 to the final debt |
+| Debt | vig mean 761 (p95 1,600) · 3.2% of runs default · 12.5% buy a paydown |
 
-Deaths climb floor by floor, and the biggest killer is not a floor at all: a
-fifth of runs clear the House and still cannot repay what they owe. The floor 6
-cliff and the floor 5 spike of earlier calibrations are both gone — the first
-to the Tier 3/4 artifacts that keep income growing late, the second to the back
-office opening on the way into floor five rather than out of it.
+Deaths climb to the Back Office, ease through the Engine Room — the floor that
+hands over the works — and climb again at the House, which is the run's wall
+now; a further 602 clear it and cannot repay what they owe. The synergy web
+moved the whole curve: with thirty-nine scaling artifacts a built machine
+outgrows the late antes it used to die to, so the House's ante went from
+15,750 to 24,000, the Engine Room's came down from 5,400 to 5,000 so it would
+not out-kill the floor after it, and the opening debt went from 120 to 260 so
+the final bill stays a threat.
 
 What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 
-1. **Payouts are widely spread.** Mean earnings are 34,755 against a median of
-   23,629, with a p99 eight times the median — a few builds run away with it.
-   That is roguelike shaped, but it means the mean is a poor summary; read p50
-   and p95.
-2. **The final debt is the wall.** 2,295 of 10,000 runs clear all seven floors
-   and lose to the repayment. The shape is deliberate — the debt is the run's
-   clock, and the House is meant to keep some winners — but it is the first
-   number to revisit once a human has played, because a loss after the last
-   floor reads very differently to a person than to a bot.
+1. **Payouts are very widely spread.** Mean earnings are 89,619 against a
+   median of 9,077, with a p99 over a hundred times the median — the builds
+   that come together run away with it, which is what a build is for. The
+   mean is no summary at all; read p50 and p95.
+2. **The House is the wall, and the debt is the coda.** 1,624 of 10,000 runs
+   die to the House's ante and 602 more to the repayment after it. Both are
+   the first numbers to revisit once a human has played: a loss after the
+   last floor reads very differently to a person than to a bot.
+3. **The stake had to be priced.** A spin cost one credit against payouts in
+   the hundreds, so the top of the stake was right whenever the purse could
+   stand it; every level above the first now costs a tenth of the floor's
+   ante per spin, and the Whale's hardware is what makes that worth paying.
 
 ## Seeds, dailies and meta-progression
 

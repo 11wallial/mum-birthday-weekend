@@ -169,7 +169,7 @@ func _build_reels() -> void:
 		var standing: SymbolDef = board.line[i] if i < board.line.size() else null
 		if nudging:
 			var gain: int = ArtifactEngine.score_line(
-					_state, board.preview_nudge(i)) * maxi(1, _state.stake) - board.payout
+					_state, board.preview_nudge(i), true) * maxi(1, _state.stake) - board.payout
 			_reel_button(NUDGE, i, "NUDGE", incoming,
 					("+%d" % gain) if gain > 0 else "no better",
 					board.can_nudge(i), gain > 0, board.reel_count())

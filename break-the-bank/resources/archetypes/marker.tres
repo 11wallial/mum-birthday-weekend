@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"marker"
+display_name = "The Marker"
+brief = "The debt is the build. Every hundred owed is leverage, every creditor on the machine a multiplier, and paying it down is the one thing the build cannot afford."
+counter = "The vig every floor, the interest every floor after the grace, and the bill at the end that has to be paid in full."

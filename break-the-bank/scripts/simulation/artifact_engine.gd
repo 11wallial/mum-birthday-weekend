@@ -30,8 +30,12 @@ class SpinContext extends RefCounted:
 ## Set [param announce] false to score without emitting: previewing a nudge, or
 ## rescoring a board the player has changed, must not fill the telemetry with
 ## artifact triggers that never happened.
+## [param extra_nudges] is for a preview of a nudge not yet taken: the hardware
+## that pays per nudge has to price the one being considered, or the hint lamp
+## and the automated player undervalue every nudge by exactly one.
 static func evaluate_spin(state: RunState, line: Array[SymbolDef],
-		pattern: Probability.Pattern, announce: bool = true) -> SpinContext:
+		pattern: Probability.Pattern, announce: bool = true,
+		extra_nudges: int = 0) -> SpinContext:
 	var config: BalanceConfig = state.config
 	var ctx: SpinContext = SpinContext.new()
 	ctx.line = line
@@ -67,26 +71,33 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	for _tag: StringName in state.active_synergies():
 		ctx.multiplier += config.synergy_bonus
 
-	# Scaling effects read the run rather than the line, so they resolve once
-	# the per-artifact pass is done and the owned set is known.
+	# Scaling effects read the run and the board rather than the line, so they
+	# resolve once the per-artifact pass is done and the owned set is known.
+	# Each is announced like a trigger when it actually added something, so
+	# the hardware that earned the number is the hardware that lights.
+	var nudges: int = state.board.nudges_used + maxi(0, extra_nudges)
+	var curses: int = _curse_count(line)
 	for artifact: ArtifactDef in state.owned:
-		match artifact.effect:
-			ArtifactDef.Effect.MULT_PER_FLOOR:
-				ctx.multiplier += artifact.magnitude * float(state.floors_cleared)
-			ArtifactDef.Effect.MULT_PER_ARTIFACT:
-				ctx.multiplier += artifact.magnitude * float(state.owned.size())
-			ArtifactDef.Effect.RETRIGGER:
+		if artifact.effect == ArtifactDef.Effect.RETRIGGER:
+			if _pattern_allowed(artifact, pattern) and artifact.magnitude > 0.0:
 				ctx.retriggers += artifact.magnitude
-			ArtifactDef.Effect.DEBT_LEVERAGE:
-				# Per hundred owed. Capped, because debt compounds and an
-				# uncapped multiplier on it would make defaulting the strategy.
-				var leveraged: float = artifact.magnitude \
-						* (float(state.economy.debt) / 100.0)
-				if artifact.cap > 0.0:
-					leveraged = minf(leveraged, artifact.cap)
-				ctx.multiplier += leveraged
-			_:
-				pass
+				_note(state, artifact, ctx, announce)
+			continue
+		var gained: float = _scaling_gain(state, artifact, nudges, curses)
+		if gained > 0.0:
+			ctx.multiplier += gained
+			_note(state, artifact, ctx, announce)
+	# The exchange reads the list every other device has written itself onto,
+	# so it goes last and never counts itself. Two of them count each other,
+	# which is the point of owning two.
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect != ArtifactDef.Effect.MULT_PER_TRIGGER:
+			continue
+		var others: int = ctx.triggered.size()
+		if others <= 0 or artifact.magnitude <= 0.0:
+			continue
+		ctx.multiplier += artifact.magnitude * float(others)
+		_note(state, artifact, ctx, announce)
 
 	ctx.multiplier += vault_collateral(state)
 
@@ -106,6 +117,114 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	return ctx
 
 
+## What one scaling artifact adds to the multiplier for this line, reading
+## the run and the board. Zero when it has nothing to add, which is also
+## how the caller knows not to announce it.
+static func _scaling_gain(state: RunState, artifact: ArtifactDef, nudges: int,
+		curses: int) -> float:
+	var mag: float = artifact.magnitude
+	match artifact.effect:
+		ArtifactDef.Effect.MULT_PER_FLOOR:
+			return mag * float(state.floors_cleared)
+		ArtifactDef.Effect.MULT_PER_ARTIFACT:
+			return mag * float(state.owned.size())
+		ArtifactDef.Effect.DEBT_LEVERAGE:
+			# Per hundred owed. Capped, because debt compounds and an
+			# uncapped multiplier on it would make defaulting the strategy.
+			return _capped(mag * (float(state.economy.debt) / 100.0), artifact.cap)
+		ArtifactDef.Effect.MULT_PER_SEEN:
+			return _capped(mag * state.tally(artifact.id), artifact.cap)
+		ArtifactDef.Effect.MULT_PER_CURSE:
+			return mag * float(curses)
+		ArtifactDef.Effect.MULT_PER_HOLD:
+			return mag * float(state.board.holds_used)
+		ArtifactDef.Effect.MULT_PER_NUDGE:
+			return mag * float(nudges)
+		ArtifactDef.Effect.MULT_PER_STAKE:
+			return mag * float(maxi(0, state.stake - 1))
+		ArtifactDef.Effect.MULT_PER_STREAK:
+			return _capped(mag * float(state.streak), artifact.cap)
+		ArtifactDef.Effect.MULT_PER_TAG:
+			if artifact.tag_filter == &"":
+				return 0.0
+			return mag * float(state.count_tag(artifact.tag_filter))
+		ArtifactDef.Effect.MULT_PER_SPIN_LEFT:
+			return _capped(mag * float(maxi(0, state.spins_remaining)), artifact.cap)
+		ArtifactDef.Effect.PARTNER_MULT:
+			if artifact.partner == &"" or artifact.partner == artifact.id:
+				return 0.0
+			return mag if state.owns(artifact.partner) else 0.0
+		ArtifactDef.Effect.AWAKENED_MULT:
+			if artifact.cap <= 0.0:
+				return 0.0
+			return mag if state.tally(artifact.id) >= artifact.cap else 0.0
+		_:
+			return 0.0
+
+
+static func _capped(value: float, cap: float) -> float:
+	return minf(value, cap) if cap > 0.0 else value
+
+
+static func _pattern_allowed(artifact: ArtifactDef, pattern: Probability.Pattern) -> bool:
+	return artifact.pattern_filter < 0 or artifact.pattern_filter == int(pattern)
+
+
+## True when [param symbol] is what [param filter] names: the symbol itself,
+## or any symbol of the family, or anything at all when the filter is empty.
+static func symbol_matches(symbol: SymbolDef, filter: StringName) -> bool:
+	if symbol == null:
+		return false
+	if filter == &"" or symbol.id == filter:
+		return true
+	return symbol.family != &"" and symbol.family == filter
+
+
+static func _curse_count(line: Array[SymbolDef]) -> int:
+	var total: int = 0
+	for symbol: SymbolDef in line:
+		if symbol != null and symbol.is_curse:
+			total += 1
+	return total
+
+
+## Folds a settled spin into the run's tallies. Called once per spin, by the
+## engine, when the credits move — never by a preview, which is what keeps a
+## nudge hint from growing the ledger just by being looked at.
+##
+## Returns the artifacts that lit on this spin, so the engine can announce
+## a boiler catching without the resolver knowing there is anyone to tell.
+static func record_spin(state: RunState, board: SpinBoard) -> Array[ArtifactDef]:
+	var lit: Array[ArtifactDef] = []
+	for artifact: ArtifactDef in state.owned:
+		match artifact.effect:
+			ArtifactDef.Effect.MULT_PER_SEEN:
+				var hits: int = 0
+				for symbol: SymbolDef in board.line:
+					if symbol_matches(symbol, artifact.symbol_filter):
+						hits += 1
+				if hits > 0:
+					state.add_tally(artifact.id, float(hits))
+			ArtifactDef.Effect.AWAKENED_MULT:
+				var before: float = state.tally(artifact.id)
+				state.add_tally(artifact.id, 1.0)
+				if artifact.cap > 0.0 and before < artifact.cap \
+						and state.tally(artifact.id) >= artifact.cap:
+					lit.append(artifact)
+			_:
+				pass
+	state.streak = state.streak + 1 if board.payout > 0 else 0
+	return lit
+
+
+## Spins settled since [param artifact] was bought, over the spins it needs,
+## in 0.0..1.0. Presentation reads it for the gauge; 1.0 once it has lit.
+static func awakening(state: RunState, artifact: ArtifactDef) -> float:
+	if artifact.effect != ArtifactDef.Effect.AWAKENED_MULT or artifact.cap <= 0.0:
+		return 0.0
+	return clampf(state.tally(artifact.id) / artifact.cap, 0.0, 1.0)
+
+
 ## Credits each curse pays instead of costing, or 0.0 when unwarded.
 static func _curse_ward(state: RunState) -> float:
 	var best: float = 0.0
@@ -120,9 +239,10 @@ static func _curse_ward(state: RunState) -> float:
 ## The nudge hint and the automated policy both have to know whether a move
 ## helps before it is made, and a preview that emitted — or that drew a
 ## replacement symbol — would change the run just by being looked at.
-static func score_line(state: RunState, line: Array[SymbolDef]) -> int:
+## [param nudged] prices the line as the result of one more nudge.
+static func score_line(state: RunState, line: Array[SymbolDef], nudged: bool = false) -> int:
 	var pattern: Probability.Pattern = Probability.detect_pattern(line)
-	return evaluate_spin(state, line, pattern, false).total()
+	return evaluate_spin(state, line, pattern, false, 1 if nudged else 0).total()
 
 
 ## Extra nudges the run's hardware adds to every award.
@@ -238,17 +358,23 @@ static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinConte
 	for artifact: ArtifactDef in state.owned:
 		if artifact.trigger != trigger:
 			continue
-		var contributed: bool = _apply_one(artifact, ctx)
-		if contributed:
-			ctx.triggered.append(artifact.id)
-			if not announce:
-				continue
-			state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
-				"artifact": artifact.id,
-				"effect": String(ArtifactDef.Effect.keys()[artifact.effect]),
-				"multiplier": ctx.multiplier,
-				"flat_bonus": ctx.flat_bonus,
-			})
+		if _apply_one(artifact, ctx):
+			_note(state, artifact, ctx, announce)
+
+
+## Writes [param artifact] onto the line's record and, when asked, tells
+## everyone watching what it did to the numbers so far.
+static func _note(state: RunState, artifact: ArtifactDef, ctx: SpinContext,
+		announce: bool) -> void:
+	ctx.triggered.append(artifact.id)
+	if not announce:
+		return
+	state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
+		"artifact": artifact.id,
+		"effect": String(ArtifactDef.Effect.keys()[artifact.effect]),
+		"multiplier": ctx.multiplier,
+		"flat_bonus": ctx.flat_bonus,
+	})
 
 
 ## Returns true when the artifact actually changed the context.
@@ -263,21 +389,20 @@ static func _apply_one(artifact: ArtifactDef, ctx: SpinContext) -> bool:
 		ArtifactDef.Effect.SYMBOL_BONUS:
 			var hits: int = 0
 			for symbol: SymbolDef in ctx.line:
-				if artifact.symbol_filter == &"" or symbol.id == artifact.symbol_filter:
+				if symbol_matches(symbol, artifact.symbol_filter):
 					hits += 1
 			if hits == 0:
 				return false
 			ctx.flat_bonus += artifact.magnitude * float(hits)
 			return true
 		ArtifactDef.Effect.PATTERN_MULT:
-			if artifact.pattern_filter >= 0 and artifact.pattern_filter != int(ctx.pattern):
+			if not _pattern_allowed(artifact, ctx.pattern):
 				return false
 			ctx.multiplier += artifact.magnitude
 			return true
 		_:
 			# EXTRA_SPINS, WEIGHT_SHIFT, INTEREST, ANTE_DISCOUNT, CURSE_WARD,
 			# DEBT_PAYDOWN, NUDGE_BONUS, VAULT_YIELD, HEAT_SHIELD and the
-			# scaling effects all resolve
-			# elsewhere: in evaluate_spin after this pass, or in their own
-			# helpers above.
+			# scaling effects all resolve elsewhere: in evaluate_spin after
+			# this pass, or in their own helpers above.
 			return false

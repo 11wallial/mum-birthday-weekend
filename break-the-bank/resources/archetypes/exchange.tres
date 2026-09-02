@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"exchange"
+display_name = "The Exchange"
+brief = "Many small devices, each firing on every line, and a switchboard that pays by the trigger. The build that is more than the sum of its trinkets."
+counter = "Prices track the ante, and a machine of trinkets has to keep buying them. One big device beats six small ones until the exchange is wired in."

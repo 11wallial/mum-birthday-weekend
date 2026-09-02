@@ -6,5 +6,7 @@
 script = ExtResource("1_challengedef")
 id = &"bare_reels"
 display_name = "Bare Reels"
-description = "No holds and no nudges. The basement never taught you, and the machine does not owe you a trail."
+description = "No holds and no nudges; three spins a floor and a tenth on every line in lieu. The basement never taught you, and the machine does not owe you a trail."
 locked_systems = Array[StringName]([&"hold"])
+spins_delta = 3
+payout_scale = 1.1

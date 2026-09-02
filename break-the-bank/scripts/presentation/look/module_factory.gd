@@ -60,6 +60,19 @@ static func build(artifact: ArtifactDef) -> Node3D:
 		ArtifactDef.Effect.DEBT_PAYDOWN: _shredder(root, finish)
 		ArtifactDef.Effect.DEBT_LEVERAGE: _scale(root, finish)
 		ArtifactDef.Effect.SPIN_REFUND: _freewheel(root, finish)
+		# The synergy web's effects borrow the shapes of what they resemble
+		# until the hardware kit (§5 of the roadmap) gives each its own.
+		ArtifactDef.Effect.MULT_PER_SEEN: _meter(root, finish)
+		ArtifactDef.Effect.AWAKENED_MULT: _meter(root, finish)
+		ArtifactDef.Effect.MULT_PER_TRIGGER: _manifold(root, finish)
+		ArtifactDef.Effect.MULT_PER_TAG: _manifold(root, finish)
+		ArtifactDef.Effect.MULT_PER_CURSE: _bell_jar(root, finish)
+		ArtifactDef.Effect.MULT_PER_HOLD: _coil(root, finish)
+		ArtifactDef.Effect.MULT_PER_NUDGE: _escapement(root, finish)
+		ArtifactDef.Effect.MULT_PER_SPIN_LEFT: _escapement(root, finish)
+		ArtifactDef.Effect.MULT_PER_STAKE: _scale(root, finish)
+		ArtifactDef.Effect.MULT_PER_STREAK: _flywheel(root, finish)
+		ArtifactDef.Effect.PARTNER_MULT: _comparator(root, finish)
 		_: _gears(root, finish)
 	return root
 

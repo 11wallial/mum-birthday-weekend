@@ -17,3 +17,4 @@ pattern_filter = -1
 tags = Array[StringName]([&"contract", &"bank"])
 min_floor = 6
 module_scene_path = ""
+archetype = &"marker"

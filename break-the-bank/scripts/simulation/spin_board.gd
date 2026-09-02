@@ -17,6 +17,9 @@ var line: Array[SymbolDef] = []
 var below: Array[SymbolDef] = []
 ## Reels the player has locked for the next spin.
 var held: Array[bool] = []
+## Reels that were locked when this board was drawn. The locks themselves are
+## spent by the draw; the hardware that pays per hold reads this instead.
+var holds_used: int = 0
 ## Nudges the machine will allow on this board. Taking one costs a spin off the
 ## floor's allowance unless a free one is left, which is the whole reason a
 ## nudge is a decision rather than a free look.

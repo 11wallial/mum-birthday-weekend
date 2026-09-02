@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"clamp"
+display_name = "The Clamp"
+brief = "Every reel locked is a reel that pays. The machine is held still and charged for it, and the charge comes back with interest."
+counter = "A lock is charged for on every spin, and the last reel can never be held. A clamp on nothing is a spin bought twice."

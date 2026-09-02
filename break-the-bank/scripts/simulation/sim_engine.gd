@@ -419,7 +419,9 @@ func _draw_board(state: RunState) -> void:
 				middle,
 				Probability.draw_weighted(reel, weights, state.band_rng))
 	# Holds are spent by the spin they bought. Leaving them set would let one
-	# lucky pair be held for the rest of the floor for free.
+	# lucky pair be held for the rest of the floor for free. What they were is
+	# kept on the board, because hardware pays for them after the fact.
+	board.holds_used = board.held_count()
 	board.clear_holds()
 	board.nudges = 0
 	board.free_nudges = 0
@@ -691,9 +693,17 @@ func _do_collect(state: RunState) -> void:
 	state.best_payout = maxi(state.best_payout, board.payout)
 	state.decision = RunState.Decision.NONE
 	state.economy.credit(board.payout, &"payout")
+	# The ledgers move only now, with the credits: a spin previewed, nudged
+	# and rescored a dozen times is still one spin to the hardware counting.
+	var lit: Array[ArtifactDef] = ArtifactEngine.record_spin(state, board)
 	_observe_heat(state, board.payout)
 	if not _bus.is_live():
 		return
+	for artifact: ArtifactDef in lit:
+		_bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
+			"artifact": artifact.id, "effect": "AWAKENED",
+			"multiplier": artifact.magnitude, "flat_bonus": 0.0,
+		})
 	var payload: Dictionary = board.breakdown.duplicate()
 	payload["payout"] = board.payout
 	payload["pattern"] = Probability.pattern_name(board.pattern)
@@ -1155,6 +1165,7 @@ func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
 	state.shop_prices = []
 	for artifact: ArtifactDef in state.shop_offers:
 		state.shop_prices.append(price_for(state, artifact))
+		state.offers_seen[artifact.id] = int(state.offers_seen.get(artifact.id, 0)) + 1
 
 
 ## What [param artifact] costs this run today: the economy's price, scaled by

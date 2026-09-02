@@ -44,6 +44,14 @@ extends Resource
 @export var debt_default_penalty_percent: float = 50.0
 ## Highest multiple of [member spin_cost] a single spin may be wagered at.
 @export var max_stake: int = 5
+## What every stake level above the first costs on top of the spin, per spin,
+## as a percent of the floor's ante. Without it the wager was a free multiple:
+## a spin cost one credit against payouts in the hundreds, so playing at the
+## top of the stake was right whenever the purse could stand it, and the
+## automated player found that out the moment it was given a reason to look.
+## Priced off the ante, raising pays only for a machine paying better than
+## the premium — and costs a machine that is not exactly the ante it needs.
+@export var stake_ante_percent: float = 0.0
 ## Most nudges one board can be owed, however they were earned.
 @export var max_nudges: int = 3
 ## Chance of winning each rung of the gamble ladder, in 0.0..1.0. The first rung

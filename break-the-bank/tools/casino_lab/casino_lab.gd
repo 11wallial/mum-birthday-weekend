@@ -8,6 +8,17 @@ extends RefCounted
 
 ## Percentile boundaries reported for every distribution.
 const PERCENTILES: Array = [50.0, 95.0, 99.0]
+## Artifacts of one archetype a run has to own before it counts as having
+## played that build. Two: one is a purchase, two is a plan.
+const ARCHETYPE_THRESHOLD: int = 2
+## Where the pick-rate scatter draws its lines: an offer taken this often is
+## a habit, one taken this rarely is being passed over, and a win-rate delta
+## past the lift is the difference between a habit and a trap.
+const PICK_HIGH: float = 0.6
+const PICK_LOW: float = 0.25
+const PICK_LIFT: float = 0.05
+## Runs a cohort needs before the lab will call it anything.
+const MIN_COHORT: int = 30
 
 ## Simulates [param count] runs from consecutive seeds and returns the report.
 ## [param options] is what every run starts with: the default measures the
@@ -29,6 +40,20 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var artifact_wins: Dictionary = {}
 	var synergy_runs: Dictionary = {}
 	var synergy_wins: Dictionary = {}
+	# The builds, as builds: a run that owned two or more of an archetype's
+	# artifacts played it, whatever else it bought.
+	var archetype_runs: Dictionary = {}
+	var archetype_wins: Dictionary = {}
+	# Where each artifact's, tag's and build's runs sat in the market buckets
+	# below, so every cohort can be judged against runs of the same depth
+	# rather than "everyone who got at least this far".
+	var artifact_depths: Dictionary = {}
+	var synergy_depths: Dictionary = {}
+	var archetype_depths: Dictionary = {}
+	# Drafts each artifact appeared on, so a pick rate can be put beside its
+	# win rate: the thing people buy that loses is the trap the lab exists
+	# to find before a person does.
+	var offered_runs: Dictionary = {}
 	# Runs and wins bucketed by how many floors they cleared, so an artifact can
 	# be compared against the cohort that got far enough to be offered it.
 	var runs_by_depth: PackedInt32Array = PackedInt32Array()
@@ -112,13 +137,32 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			artifact_runs[key] = int(artifact_runs.get(key, 0)) + 1
 			if won:
 				artifact_wins[key] = int(artifact_wins.get(key, 0)) + 1
+			_bump(artifact_depths, key, market, runs_by_market.size())
 		for tag: StringName in state.active_synergies():
 			var tag_key: String = String(tag)
 			synergy_runs[tag_key] = int(synergy_runs.get(tag_key, 0)) + 1
 			if won:
 				synergy_wins[tag_key] = int(synergy_wins.get(tag_key, 0)) + 1
+			_bump(synergy_depths, tag_key, market, runs_by_market.size())
+		for offered: StringName in state.offers_seen:
+			var offered_key: String = String(offered)
+			offered_runs[offered_key] = int(offered_runs.get(offered_key, 0)) + 1
+		for archetype: ArchetypeDef in content.archetypes:
+			var members: int = 0
+			for artifact: ArtifactDef in state.owned:
+				if artifact.archetype == archetype.id:
+					members += 1
+			if members < ARCHETYPE_THRESHOLD:
+				continue
+			var archetype_key: String = String(archetype.id)
+			archetype_runs[archetype_key] = int(archetype_runs.get(archetype_key, 0)) + 1
+			if won:
+				archetype_wins[archetype_key] = int(archetype_wins.get(archetype_key, 0)) + 1
+			_bump(archetype_depths, archetype_key, market, runs_by_market.size())
 
 	var win_rate: float = float(wins) / float(maxi(count, 1))
+	var artifact_rates: Dictionary = _stratified_rates(
+			artifact_runs, artifact_wins, artifact_depths, runs_by_market, wins_by_market, win_rate)
 	return {
 		"runs": count,
 		"base_seed": base_seed,
@@ -142,10 +186,12 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			"floors": describe(after_hours),
 			"deaths_by_floor": after_hours_deaths,
 		},
-		"artifact_win_rates": _artifact_rates(
-				artifact_runs, artifact_wins, content, runs_by_market, wins_by_market),
-		"synergy_win_rates": _synergy_rates(synergy_runs, synergy_wins, content,
+		"artifact_win_rates": artifact_rates,
+		"synergy_win_rates": _stratified_rates(synergy_runs, synergy_wins, synergy_depths,
 				runs_by_market, wins_by_market, _ratio(stocked_wins, stocked_runs)),
+		"archetype_win_rates": _stratified_rates(archetype_runs, archetype_wins,
+				archetype_depths, runs_by_market, wins_by_market, win_rate),
+		"pick_rates": pick_rates(offered_runs, artifact_runs, artifact_rates),
 		"anomalies": [],
 	}
 
@@ -187,7 +233,7 @@ static func percentile(sorted_sample: PackedInt32Array, p: float) -> int:
 static func find_anomalies(report: Dictionary, lift: float = 0.25) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var batch_baseline: float = float(report.get("win_rate", 0.0))
-	for group: String in ["artifact_win_rates", "synergy_win_rates"]:
+	for group: String in ["artifact_win_rates", "synergy_win_rates", "archetype_win_rates"]:
 		var rates: Dictionary = report.get(group, {})
 		for key: String in rates:
 			var entry: Dictionary = rates[key]
@@ -210,60 +256,22 @@ static func find_anomalies(report: Dictionary, lift: float = 0.25) -> Array[Dict
 	return out
 
 
-static func _rates(runs: Dictionary, wins: Dictionary, baseline: float) -> Dictionary:
-	var out: Dictionary = {}
-	var keys: Array = runs.keys()
-	keys.sort()
-	for key: String in keys:
-		var seen: int = int(runs[key])
-		var won: int = int(wins.get(key, 0))
-		out[key] = {
-			"runs": seen,
-			"wins": won,
-			"win_rate": _ratio(won, seen),
-			"baseline": baseline,
-		}
-	return out
-
-
-## Per-artifact rates, each against the cohort that reached the floor where the
-## artifact first appears in a shop and bought from that tier.
+## One cohort's win rate beside the win rate of runs that sat at the same
+## market depth, in the same proportions.
 ##
-## Comparing against the whole batch instead would flag every late artifact as
-## overpowered: owning one that unlocks on floor 5 already means surviving to
-## floor 5, so its win rate measures the player who got there, not the artifact.
-## Controlling for depth alone is not enough either — see the market buckets in
-## [method run_batch] for why.
-static func _artifact_rates(runs: Dictionary, wins: Dictionary, content: ContentDB,
-		runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array) -> Dictionary:
-	var out: Dictionary = {}
-	var keys: Array = runs.keys()
-	keys.sort()
-	for key: String in keys:
-		var seen: int = int(runs[key])
-		var won: int = int(wins.get(key, 0))
-		var artifact: ArtifactDef = content.artifact_by_id(StringName(key))
-		# An artifact is first offered in the shop after its min_floor is cleared.
-		var unlock_depth: int = artifact.min_floor if artifact != null else 0
-		out[key] = {
-			"runs": seen,
-			"wins": won,
-			"win_rate": _ratio(won, seen),
-			"baseline": _depth_baseline(runs_by_depth, wins_by_depth, unlock_depth),
-			"baseline_note": "runs clearing %d+ floors and buying from that tier" % unlock_depth,
-		}
-	return out
-
-
-## Per-tag rates against the cohort that could actually light the synergy.
-##
-## A tag is only active once [member BalanceConfig.synergy_threshold] artifacts
-## carrying it are owned, so the cohort is runs that cleared far enough to be
-## offered that many — the threshold-th smallest min_floor among its members.
-## Baselining tags against "owns 3+ artifacts" instead left late tags looking
-## broken for the same survivorship reason artifacts once did.
-static func _synergy_rates(runs: Dictionary, wins: Dictionary, content: ContentDB,
-		runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array,
+## Owning an artifact that unlocks late already implies surviving that far,
+## and — because prices track the ante — being rich when you got there. The
+## first cure was to compare each artifact against every run that reached
+## its floor and bought from its tier; that still lumped a floor-one trinket's
+## owners in with the whole batch, and put every dear late item a dozen
+## points above a cohort it was never really in. So each key's runs are
+## counted by the market bucket they fell in, and the baseline is the batch's
+## win rate at each of those depths, weighted by how many of the key's runs
+## were there. What is left is the difference the thing itself made among
+## runs of the same standing. [param fallback] covers a key that somehow has
+## no depth on record.
+static func _stratified_rates(runs: Dictionary, wins: Dictionary, depths: Dictionary,
+		runs_by_market: PackedInt32Array, wins_by_market: PackedInt32Array,
 		fallback: float) -> Dictionary:
 	var out: Dictionary = {}
 	var keys: Array = runs.keys()
@@ -271,39 +279,118 @@ static func _synergy_rates(runs: Dictionary, wins: Dictionary, content: ContentD
 	for key: String in keys:
 		var seen: int = int(runs[key])
 		var won: int = int(wins.get(key, 0))
-		var depth: int = _tag_unlock_depth(content, StringName(key))
+		var baseline: float = fallback
+		if depths.has(key):
+			baseline = _stratified_baseline(depths[key], runs_by_market, wins_by_market, fallback)
 		out[key] = {
 			"runs": seen,
 			"wins": won,
 			"win_rate": _ratio(won, seen),
-			"baseline": _depth_baseline(runs_by_depth, wins_by_depth, depth) if depth > 0 else fallback,
-			"baseline_note": "runs clearing %d+ floors" % depth if depth > 0 else "runs owning 3+ artifacts",
+			"baseline": baseline,
+			"baseline_note": "runs at the same market depth",
 		}
 	return out
 
 
-## Floors that must be cleared before enough artifacts carrying [param tag] can
-## be owned for its synergy to light. Zero when the tag can never reach it.
-static func _tag_unlock_depth(content: ContentDB, tag: StringName) -> int:
-	var floors: Array[int] = []
-	for artifact: ArtifactDef in content.artifacts:
-		if artifact.has_tag(tag):
-			floors.append(artifact.min_floor)
-	if floors.size() < content.balance.synergy_threshold:
-		return 0
-	floors.sort()
-	return floors[content.balance.synergy_threshold - 1]
+## The batch's win rate across the market buckets in [param histogram]'s
+## proportions.
+static func _stratified_baseline(histogram: PackedInt32Array,
+		runs_by_market: PackedInt32Array, wins_by_market: PackedInt32Array,
+		fallback: float) -> float:
+	var weighted: float = 0.0
+	var total: int = 0
+	for depth: int in histogram.size():
+		var here: int = histogram[depth]
+		if here <= 0 or depth >= runs_by_market.size():
+			continue
+		weighted += float(here) * _ratio(wins_by_market[depth], runs_by_market[depth])
+		total += here
+	if total <= 0:
+		return fallback
+	return weighted / float(total)
 
 
-## Win rate among runs that cleared at least [param from_depth] floors.
-static func _depth_baseline(runs_by_depth: PackedInt32Array, wins_by_depth: PackedInt32Array,
-		from_depth: int) -> float:
-	var seen: int = 0
-	var won: int = 0
-	for depth: int in range(clampi(from_depth, 0, runs_by_depth.size()), runs_by_depth.size()):
-		seen += runs_by_depth[depth]
-		won += wins_by_depth[depth]
-	return _ratio(won, seen)
+## Counts one run at [param depth] under [param key].
+static func _bump(histogram: Dictionary, key: String, depth: int, size: int) -> void:
+	if not histogram.has(key):
+		var fresh: PackedInt32Array = PackedInt32Array()
+		fresh.resize(size)
+		histogram[key] = fresh
+	var counts: PackedInt32Array = histogram[key]
+	counts[clampi(depth, 0, counts.size() - 1)] += 1
+	histogram[key] = counts
+
+
+## Every artifact's pick rate — the share of drafts it appeared on that ended
+## with it owned — beside its win rate against its cohort, and a verdict.
+##
+## Four corners of the scatter are worth a name. A trap is bought often and
+## loses; an auto-pick is bought often and wins, which is a decision the game
+## has stopped asking; a sleeper is passed over and wins; dead stock is passed
+## over and loses. Everything near the middle is fair.
+##
+## "Wins" and "loses" are measured against the pack, not against zero: what
+## survivorship the stratified baseline leaves behind moves every lift the
+## same way, and the median of the lifts is the honest zero. With the
+## automated player buying by price, a pick rate is mostly a statement about
+## what it could afford — the instrument is here for when the player is a
+## person.
+static func pick_rates(offered: Dictionary, taken: Dictionary,
+		artifact_rates: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	var keys: Array = offered.keys()
+	keys.sort()
+	var lifts: PackedFloat32Array = PackedFloat32Array()
+	for key: String in keys:
+		if int(taken.get(key, 0)) < MIN_COHORT:
+			continue
+		var rates: Dictionary = artifact_rates.get(key, {})
+		lifts.append(float(rates.get("win_rate", 0.0)) - float(rates.get("baseline", 0.0)))
+	var pack: float = _median(lifts)
+	for key: String in keys:
+		var drafts: int = int(offered[key])
+		var owned: int = int(taken.get(key, 0))
+		var pick: float = _ratio(owned, drafts)
+		var rates: Dictionary = artifact_rates.get(key, {})
+		var win_rate: float = float(rates.get("win_rate", 0.0))
+		var baseline: float = float(rates.get("baseline", 0.0))
+		var delta: float = win_rate - baseline - pack
+		out[key] = {
+			"offered": drafts,
+			"taken": owned,
+			"pick_rate": pick,
+			"win_rate": win_rate,
+			"baseline": baseline,
+			"pack_lift": pack,
+			"delta": delta,
+			"verdict": pick_verdict(drafts, owned, pick, delta),
+		}
+	return out
+
+
+static func pick_verdict(drafts: int, owned: int, pick: float, delta: float) -> String:
+	if drafts < MIN_COHORT or owned < MIN_COHORT:
+		return "unmeasured"
+	if pick >= PICK_HIGH and delta <= -PICK_LIFT:
+		return "trap"
+	if pick >= PICK_HIGH and delta >= PICK_LIFT:
+		return "auto"
+	if pick <= PICK_LOW and delta >= PICK_LIFT:
+		return "sleeper"
+	if pick <= PICK_LOW and delta <= -PICK_LIFT:
+		return "dead"
+	return "fair"
+
+
+static func _median(sample: PackedFloat32Array) -> float:
+	if sample.is_empty():
+		return 0.0
+	var sorted: PackedFloat32Array = sample.duplicate()
+	sorted.sort()
+	var middle: int = sorted.size() / 2
+	if sorted.size() % 2 == 1:
+		return sorted[middle]
+	return (sorted[middle - 1] + sorted[middle]) * 0.5
 
 
 static func _ratio(part: int, whole: int) -> float:

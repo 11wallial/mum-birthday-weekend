@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"bar_tab"
+display_name = "Bar Tab"
+description = "Every Bar goes on the tab. +0.1x per Bar landed this run, up to +4.0x."
+cost = 22
+trigger = 2
+effect = 18
+magnitude = 0.1
+cap = 4.0
+symbol_filter = &"bar"
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"greed"])
+min_floor = 4
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"orchard"

@@ -17,3 +17,4 @@ pattern_filter = -1
 tags = Array[StringName]([&"chaos", &"contract"])
 min_floor = 7
 module_scene_path = ""
+archetype = &"whale"

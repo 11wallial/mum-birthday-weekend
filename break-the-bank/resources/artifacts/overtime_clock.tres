@@ -17,3 +17,4 @@ pattern_filter = -1
 tags = Array[StringName]([&"mechanical"])
 min_floor = 1
 module_scene_path = ""
+archetype = &"clock"

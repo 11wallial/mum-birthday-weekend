@@ -31,14 +31,17 @@ class ReelEntry extends RefCounted:
 
 
 ## Builds a reel from the content set, applying any per-run weight shifts.
-## [param weight_shifts] maps a symbol id to a flat weight delta; the empty
-## StringName key shifts every symbol.
+## [param weight_shifts] maps a symbol id — or a family name, which shifts
+## every symbol of the family — to a flat weight delta; the empty StringName
+## key shifts every symbol.
 static func build_reel(symbols: Array[SymbolDef], weight_shifts: Dictionary = {}) -> Array[ReelEntry]:
 	var reel: Array[ReelEntry] = []
 	for symbol: SymbolDef in symbols:
 		var weight: int = symbol.base_weight
 		if weight_shifts.has(symbol.id):
 			weight += int(weight_shifts[symbol.id])
+		if symbol.family != &"" and weight_shifts.has(symbol.family):
+			weight += int(weight_shifts[symbol.family])
 		if weight_shifts.has(&""):
 			weight += int(weight_shifts[&""])
 		reel.append(ReelEntry.new(symbol, maxi(weight, 0)))

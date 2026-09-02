@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"skulls"
+display_name = "The Payroll"
+brief = "Skulls on the reel, skulls on the payroll, and a book that pays more the more of them stand. The House's own curse, turned into wages."
+counter = "Without a ward every skull costs the penalty and takes the pattern bonus with it, and a jackpot is a line the skulls are not on."

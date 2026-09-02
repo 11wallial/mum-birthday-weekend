@@ -17,6 +17,10 @@ enum Trigger {
 	FLOOR_CLEARED,
 }
 
+## The closed vocabulary. Every artifact is one of these with numbers on it,
+## resolved in one place ([ArtifactEngine]); a new entry is a design decision,
+## not a convenience. Append, never reorder: the value is written into saves
+## and content fingerprints.
 enum Effect {
 	## Adds [member magnitude] credits to the payout.
 	FLAT_BONUS,
@@ -35,6 +39,7 @@ enum Effect {
 	## Reduces the floor ante by [member magnitude] percent.
 	ANTE_DISCOUNT,
 	## Scores the line [member magnitude] extra times: payout x (1 + magnitude).
+	## Honours [member pattern_filter] when one is set.
 	RETRIGGER,
 	## Curses stop suppressing the pattern bonus and pay [member magnitude] each
 	## instead of costing the curse penalty.
@@ -62,6 +67,48 @@ enum Effect {
 	## Cuts the count the House gains by [member magnitude] percent. The only
 	## thing in the game that buys down attention rather than buying up power.
 	HEAT_SHIELD,
+	## Adds [member magnitude] to the multiplier per symbol matching
+	## [member symbol_filter] that has landed on the payline since this was
+	## bought, capped by [member cap]. The tally lives on the run, grows only
+	## with settled spins, and is wiped when the artifact is sold — the first
+	## effect that gets stronger the longer it is owned rather than the deeper
+	## the run is.
+	MULT_PER_SEEN,
+	## Adds [member magnitude] to the multiplier per other artifact that
+	## triggered on the line. Resolved last, so a build of many small devices
+	## has a reason to exist beyond the sum of them.
+	MULT_PER_TRIGGER,
+	## Adds [member magnitude] to the multiplier per curse standing on the
+	## line, warded or not. Skulls as a thing to want.
+	MULT_PER_CURSE,
+	## Adds [member magnitude] to the multiplier per reel held for the spin.
+	## Holding is charged for; this is what makes the charge worth paying.
+	MULT_PER_HOLD,
+	## Adds [member magnitude] to the multiplier per nudge spent on the board.
+	## A paid nudge is a spin off the floor; this is what buys it back.
+	MULT_PER_NUDGE,
+	## Adds [member magnitude] to the multiplier per stake level above the
+	## first. The stake already multiplies the payout; this makes a raised
+	## wager superlinear, and the count is what pushes back.
+	MULT_PER_STAKE,
+	## Adds [member magnitude] to the multiplier per paying spin in a row
+	## before this one, capped by [member cap]. A dud resets it.
+	MULT_PER_STREAK,
+	## Adds [member magnitude] to the multiplier per owned artifact carrying
+	## [member tag_filter]. The synergy bonus made tags matter once, at the
+	## threshold; this makes every device of a kind matter.
+	MULT_PER_TAG,
+	## Adds [member magnitude] to the multiplier per spin still left on the
+	## floor, capped by [member cap]. Pays for winning early and decays as
+	## the floor runs on.
+	MULT_PER_SPIN_LEFT,
+	## Adds [member magnitude] to the multiplier while [member partner] is
+	## also owned, and nothing at all on its own: a combo built on purpose.
+	PARTNER_MULT,
+	## Nothing until [member cap] spins have been settled since it was
+	## bought; then [member magnitude] on every line for the rest of the run.
+	## The one effect that transforms rather than scales.
+	AWAKENED_MULT,
 }
 
 @export var id: StringName = &""
@@ -72,10 +119,12 @@ enum Effect {
 @export var effect: Effect = Effect.FLAT_BONUS
 @export var magnitude: float = 1.0
 ## Upper bound for effects that scale without one. Ignored when zero or less.
+## For AWAKENED_MULT it is the spins to wait, not a ceiling.
 @export var cap: float = 0.0
-## Restricts SYMBOL_BONUS / WEIGHT_SHIFT to one symbol id. Empty means every symbol.
+## Restricts SYMBOL_BONUS / WEIGHT_SHIFT / MULT_PER_SEEN to one symbol id, or
+## to every symbol of a family when it names one. Empty means every symbol.
 @export var symbol_filter: StringName = &""
-## Restricts PATTERN_MULT to one [enum Probability.Pattern] value. -1 means every pattern.
+## Restricts PATTERN_MULT and RETRIGGER to one [enum Probability.Pattern] value. -1 means every pattern.
 @export var pattern_filter: int = -1
 ## Tags feeding the synergy table, e.g. &"mechanical", &"greed".
 @export var tags: Array[StringName] = []
@@ -83,6 +132,14 @@ enum Effect {
 @export var min_floor: int = 1
 ## Scene fragment bolted onto the machine frame when owned. Presentation only.
 @export var module_scene_path: String = ""
+## The artifact PARTNER_MULT wants to see beside it. Empty otherwise.
+@export var partner: StringName = &""
+## The tag MULT_PER_TAG counts. Empty otherwise.
+@export var tag_filter: StringName = &""
+## The build this artifact belongs to, by [ArchetypeDef] id, or empty for a
+## device that fits any machine. The lab measures each build's win rate by
+## it, and the automated player chases whichever it has the most of.
+@export var archetype: StringName = &""
 
 
 func has_tag(tag: StringName) -> bool:
@@ -94,3 +151,15 @@ func has_tag(tag: StringName) -> bool:
 ## floor 1 trinket.
 func tier() -> int:
 	return clampi(int(ceil(float(min_floor) / 2.0)), 1, 4)
+
+
+## What this artifact is to its build, read off where it unlocks: an enabler
+## on the first two floors, a capstone from the engine room up, an amplifier
+## between. Derived rather than authored so the shape of a build is a fact
+## about the content and not an opinion written beside it.
+func role() -> StringName:
+	if min_floor <= 2:
+		return &"enabler"
+	if min_floor >= 6:
+		return &"capstone"
+	return &"amplifier"

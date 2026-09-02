@@ -42,6 +42,10 @@ const REROLL_SHARE: float = 0.1
 ## report the win rate of a run that ends on the final bill every time.
 const SLATE_SHARE: float = 0.5
 const SLATE_DEBT_ANTES: float = 2.0
+## How much dearer an offer from the build this player has already started
+## looks to it, as a share of its price. A lean, not a rule: it only ever
+## decides between things the purse could cover anyway.
+const BUILD_LEAN: float = 0.5
 
 ## Which opinion covers which verb, by the static method that holds it. The
 ## parity suite holds this to [constant SimEngine.PLAYER_VERBS]: a verb added
@@ -68,24 +72,57 @@ const COVERAGE: Dictionary = {
 
 
 ## Buys the most expensive artifact it can afford while keeping a share of the
-## coming ante in hand.
+## coming ante in hand, leaning towards the build it has already started.
 ##
 ## Not an optimal buyer, but not a spendthrift either. It used to keep back a
 ## single credit, which meant it arrived on every floor with nothing and made
 ## the vault and the works unreachable in every batch the lab ever ran — so the
 ## numbers it reported were for a game with three of its systems switched off.
+## The lean is what a person does after their second purchase: chase the thing
+## they are making. A buyer that went by price alone would assemble a machine
+## at random, and the lab would be reporting the win rate of no build at all.
 static func shop(state: RunState, offers: Array[ArtifactDef], prices: Array[int]) -> int:
 	var best: int = -1
-	var best_price: int = -1
+	var best_score: float = -1.0
 	var reserve: int = maxi(state.config.spin_cost,
 			int(round(float(_next_ante(state)) * SHOP_RESERVE)))
+	var chased: StringName = chased_archetype(state)
 	for i: int in offers.size():
 		if prices[i] > state.economy.cash - reserve:
 			continue
-		if prices[i] > best_price:
-			best_price = prices[i]
+		var score: float = float(prices[i])
+		if chased != &"" and offers[i].archetype == chased:
+			score *= 1.0 + BUILD_LEAN
+		if score > best_score:
+			best_score = score
 			best = i
 	return best
+
+
+## The build this run has the most of, or empty before it has started one.
+## Ties go to the earlier name, so a batch is reproducible.
+static func chased_archetype(state: RunState) -> StringName:
+	var counts: Dictionary = {}
+	for artifact: ArtifactDef in state.owned:
+		if artifact.archetype != &"":
+			counts[artifact.archetype] = int(counts.get(artifact.archetype, 0)) + 1
+	var best: StringName = &""
+	var best_count: int = 0
+	var ids: Array = counts.keys()
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	for id: StringName in ids:
+		if int(counts[id]) > best_count:
+			best_count = int(counts[id])
+			best = id
+	return best
+
+
+## True when the run owns any artifact with [param effect].
+static func owns_effect(state: RunState, effect: ArtifactDef.Effect) -> bool:
+	for artifact: ArtifactDef in state.owned:
+		if artifact.effect == effect:
+			return true
+	return false
 
 
 ## Nudges the reel that gains the most, and only when the gain beats what the
@@ -102,7 +139,7 @@ static func nudge(state: RunState, board: SpinBoard) -> int:
 	for i: int in board.reel_count():
 		if not board.can_nudge(i):
 			continue
-		var gain: int = ArtifactEngine.score_line(state, board.preview_nudge(i)) \
+		var gain: int = ArtifactEngine.score_line(state, board.preview_nudge(i), true) \
 				* maxi(1, state.stake) - board.payout
 		if gain > best_gain:
 			best_gain = gain
@@ -122,16 +159,46 @@ static func gamble(state: RunState, board: SpinBoard) -> bool:
 
 
 ## Raises the stake only when the floor is nearly out and the ante is not met —
-## the desperation raise, which is the one every player actually makes.
+## the desperation raise, which is the one every player actually makes — unless
+## the machine pays for the wager itself, in which case it plays at whatever
+## stake the purse can carry for the rest of the floor with the ante still
+## covered. Without that, a batch owning the whale's hardware would report
+## the win rate of a whale who never raised.
 static func stake(state: RunState) -> int:
 	if not state.has_system(Systems.STAKE):
 		return 1
 	var floor_def: FloorDef = state.current_floor()
-	if floor_def == null or state.spins_remaining > 3:
+	if floor_def == null:
+		return 1
+	var carried: int = _stake_carried(state, floor_def)
+	if carried > 1:
+		if owns_effect(state, ArtifactDef.Effect.MULT_PER_STAKE):
+			return carried
+		# Without hardware, a level costs its premium every spin and pays one
+		# more helping of what the machine pays. Only a machine paying better
+		# than the premium should raise — which is the decision the stake is.
+		var pays: float = float(state.economy.lifetime_earned) / float(maxi(1, state.spins_taken))
+		if pays > float(state.premium_at(2)):
+			return carried
+	if state.spins_remaining > 3:
 		return 1
 	if state.economy.cash >= floor_def.ante:
 		return 1
 	return mini(2, maxi(1, state.config.max_stake))
+
+
+## The highest stake the purse can hold for the rest of the floor with the
+## ante still covered from what is in hand, or 1.
+static func _stake_carried(state: RunState, floor_def: FloorDef) -> int:
+	var spare: int = state.economy.cash - floor_def.ante
+	var spins: int = maxi(1, state.spins_remaining)
+	var carried: int = 1
+	for level: int in range(2, maxi(1, state.config.max_stake) + 1):
+		var per_spin: int = state.config.spin_cost * level + state.premium_at(level)
+		if per_spin * spins > spare:
+			break
+		carried = level
+	return carried
 
 
 
@@ -166,10 +233,18 @@ static func hold(state: RunState, board: SpinBoard) -> PackedInt32Array:
 		if members.size() <= keep.size() or members.size() >= board.reel_count():
 			continue
 		var symbol: SymbolDef = board.line[members[0]]
-		if symbol == null or symbol.is_curse or symbol.base_value < HOLD_FLOOR:
+		if symbol == null or symbol.is_curse or symbol.base_value < _hold_floor(state):
 			continue
 		keep = members
 	return keep
+
+
+## What a symbol has to be worth before a pair of it is held. Anything at all
+## once the machine pays per reel held: the hold is then the point, not the pair.
+static func _hold_floor(state: RunState) -> int:
+	if owns_effect(state, ArtifactDef.Effect.MULT_PER_HOLD):
+		return 1
+	return HOLD_FLOOR
 
 
 ## Signs whichever contract adds the most spins, and otherwise the first.
