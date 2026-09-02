@@ -99,6 +99,9 @@ const ROOM_VIEWS: Array = [
 ## of sight. Tweened in and out by [method push_in].
 var _push: float = 0.0
 
+## Said whenever the view changes, so the room can light the survey.
+signal view_changed(view: View)
+
 var current_view: View = View.MACHINE
 ## Where on the ring of room viewpoints the camera last stood.
 var _room_index: int = 0
@@ -155,7 +158,10 @@ func _process(delta: float) -> void:
 
 
 func set_view(view: View, immediate: bool = false) -> void:
+	var changed: bool = view != current_view
 	current_view = view
+	if changed:
+		view_changed.emit(view)
 	if _camera == null:
 		return
 	var eye: Vector3

@@ -540,6 +540,24 @@ func _on_board_input(_camera: Node, event: InputEvent, position: Vector3,
 		_board_viewport.push_input(forwarded)
 
 
+## The survey is lit to be surveyed. At the machine the room falls to
+## near-black around the one bulb, which is the value structure the art
+## handover asked for; pulled back, that same room is a black frame with a
+## lit island in it and the things the run has accumulated — the stacks,
+## the plaques, each floor's dressing — cannot be seen. The washes come up
+## while the camera stands back, and go down again as it returns.
+func _on_view_changed(view: CameraController.View) -> void:
+	var survey: bool = view == CameraController.View.ROOM
+	for entry: Array in [["wash", 0.8, 3.4], ["ceiling", 0.55, 2.2], ["cold", 1.0, 2.6]]:
+		var light: Light3D = _room_parts.get(String(entry[0]), null) as Light3D
+		if light == null:
+			continue
+		var target: float = float(entry[2]) if survey else float(entry[1])
+		var tween: Tween = create_tween()
+		tween.tween_property(light, "light_energy", target, 0.7) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 ## The surety — how much of the player the House holds — onto the column on
 ## the machine and into the render. The machine holds the value through a
 ## spin and moves it on the spin's beat; the render degrades with it, which
@@ -579,6 +597,8 @@ func _open_door(resumed: bool) -> void:
 	_show_overlay(false)
 	if _camera != null:
 		_camera.desk_board = _clipboard
+		if not _camera.view_changed.is_connected(_on_view_changed):
+			_camera.view_changed.connect(_on_view_changed)
 		_camera.set_view(CameraController.View.DOOR, true)
 	_sync_deck()
 
