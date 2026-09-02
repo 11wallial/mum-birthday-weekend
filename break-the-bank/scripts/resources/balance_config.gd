@@ -113,6 +113,17 @@ extends Resource
 ## Count the House reaches before it starts skimming, before it cools the reels,
 ## and before it sends someone over. The count rises with what you win and falls
 ## with every spin you do not.
+@export_group("The draft's offers")
+## Weight multiplier on an offer whose build the run has already started —
+## light, by the balance guide: enough to keep offers relevant, not enough
+## to funnel every run down the same lane.
+@export var offer_build_weight: float = 1.5
+## Most offers of one build in a single draft: anti-flood.
+@export var offer_build_cap: int = 2
+## A symbol an offer is keyed to has to land at least this often for the
+## offer to be usable; below it the offer is dead and is not put out.
+@export var offer_symbol_floor: float = 0.01
+
 @export_group("The notice")
 ## A single spin paying this many pars — the ante over the spins allowed —
 ## is loud enough for the House to notice. It answers by sending one more

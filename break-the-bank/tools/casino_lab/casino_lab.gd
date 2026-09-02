@@ -62,6 +62,7 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	# artifacts played it, whatever else it bought.
 	var archetype_runs: Dictionary = {}
 	var archetype_wins: Dictionary = {}
+	var primary_wins: Dictionary = {}
 	# Where each artifact's, tag's and build's runs sat in the market buckets
 	# below, so every cohort can be judged against runs of the same depth
 	# rather than "everyone who got at least this far".
@@ -192,11 +193,19 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		for offered: StringName in state.offers_seen:
 			var offered_key: String = String(offered)
 			offered_runs[offered_key] = int(offered_runs.get(offered_key, 0)) + 1
+		# The run's primary build: the archetype it owns most of. A winning
+		# run on a stacked machine plays several builds; the primary one is
+		# what the solved-metagame tell counts, or every winner "plays" all.
+		var primary: String = ""
+		var primary_members: int = 0
 		for archetype: ArchetypeDef in content.archetypes:
 			var members: int = 0
 			for artifact: ArtifactDef in state.owned:
 				if artifact.archetype == archetype.id:
 					members += 1
+			if members > primary_members:
+				primary_members = members
+				primary = String(archetype.id)
 			if members < ARCHETYPE_THRESHOLD:
 				continue
 			var archetype_key: String = String(archetype.id)
@@ -204,6 +213,8 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			if won:
 				archetype_wins[archetype_key] = int(archetype_wins.get(archetype_key, 0)) + 1
 			_bump(archetype_depths, archetype_key, market, runs_by_market.size())
+		if won and primary != "":
+			primary_wins[primary] = int(primary_wins.get(primary, 0)) + 1
 
 	var win_rate: float = float(wins) / float(maxi(count, 1))
 	var artifact_rates: Dictionary = _stratified_rates(
@@ -244,10 +255,24 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 				runs_by_market, wins_by_market, _ratio(stocked_wins, stocked_runs)),
 		"archetype_win_rates": _stratified_rates(archetype_runs, archetype_wins,
 				archetype_depths, runs_by_market, wins_by_market, win_rate),
+		# The balance guide's solved-metagame tell: the share of winning runs
+		# that played the most common build (it wants under a quarter).
+		"top_build_share": _top_share(primary_wins, wins),
 		"pick_rates": pick_rates(offered_runs, artifact_runs, artifact_rates),
 		"boss_rates": _boss_rates(boss_faced, boss_killed, floor_deaths, reached, content),
 		"anomalies": [],
 	}
+
+
+## The largest share of [param total] any one key holds.
+static func _top_share(counts: Dictionary, total: int) -> Dictionary:
+	var top: String = ""
+	var most: int = 0
+	for key: Variant in counts:
+		if int(counts[key]) > most:
+			most = int(counts[key])
+			top = String(key)
+	return {"build": top, "share": _ratio(most, total)}
 
 
 static func _sum(sample: PackedInt32Array) -> int:

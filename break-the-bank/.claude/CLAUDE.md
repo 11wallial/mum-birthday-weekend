@@ -230,6 +230,15 @@ worth knowing before touching the simulation:
   `--no-bosses`) measures what the staff costs; `boss_rates` in the report
   puts each against the floor's own death rate, which is how a variant that
   out-kills its siblings is found. The basement has nobody.
+- The offer generator is `SimEngine._roll_offers`, and the balance guide's
+  four requirements live there and nowhere else: a dead offer (keyed to a
+  symbol the reel cannot land, `_offer_is_dead`) is not dealt; a draft the
+  purse can buy nothing from is re-dealt one affordable slot; a started
+  build is leaned toward by `offer_build_weight` (light, on purpose); no
+  more than `offer_build_cap` of one build in a draft. All off the shop
+  stream. `tests/unit/test_offer_generation.gd` holds each; the lab's
+  `top_build_share` is the solved-metagame tell (the guide wants it under
+  a quarter of wins).
 - The House notices: `SimEngine._observe_notice` on every banked spin, at
   `BalanceConfig.notice_par_multiple` pars, sets `RunState.notice_pending`
   (a `BossDef` from the next floor's pool, off the `boss` stream) and emits

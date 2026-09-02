@@ -1485,25 +1485,84 @@ func _offer_ids(state: RunState) -> Array[String]:
 ## from everything unlocked so far means that by floor six the stock is mostly
 ## floor-one trinkets, and the draft stops being the thing you were looking
 ## forward to on the way up the stairs.
+## The offer generator. The balance guide calls it the most important
+## system in the game after the scoring resolution, and gives it four
+## requirements, all here: no dead offers (an artifact keyed to a symbol the
+## reel cannot land is not put out, and a draft the purse can buy nothing
+## from is re-dealt one affordable slot); build awareness held at arm's
+## length (a light weight on the builds the run has started —
+## [member BalanceConfig.offer_build_weight]); anti-flood (no more than
+## [member BalanceConfig.offer_build_cap] of one build in a draft); and
+## staleness, so an artifact the floor has outgrown drifts out of the deal.
+## Every draw is off the shop stream, so a seed's drafts are its own.
 func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
+	var config: BalanceConfig = state.config
+	var started: Dictionary = {}
+	for owned: ArtifactDef in state.owned:
+		if owned.archetype != &"":
+			started[owned.archetype] = int(started.get(owned.archetype, 0)) + 1
 	var pool: Array[ArtifactDef] = []
 	var weights: PackedInt32Array = PackedInt32Array()
 	for artifact: ArtifactDef in _content.artifacts:
-		if (artifact.min_floor <= floor_def.index and not state.owns(artifact.id)
-				and state.options.allows(artifact)):
-			pool.append(artifact)
-			weights.append(maxi(1, FRESH_WEIGHT
-					- (floor_def.index - artifact.min_floor) * STALE_STEP))
+		if artifact.min_floor > floor_def.index or state.owns(artifact.id) \
+				or not state.options.allows(artifact):
+			continue
+		if _offer_is_dead(state, artifact):
+			continue
+		pool.append(artifact)
+		var weight: float = float(maxi(1, FRESH_WEIGHT
+				- (floor_def.index - artifact.min_floor) * STALE_STEP))
+		if artifact.archetype != &"" and started.has(artifact.archetype):
+			weight *= maxf(config.offer_build_weight, 0.0)
+		weights.append(maxi(1, int(round(weight))))
 	var offers: Array[ArtifactDef] = []
+	var dealt: Dictionary = {}
 	var slots: int = mini(floor_def.shop_slots, pool.size())
-	for i: int in slots:
+	while offers.size() < slots and not pool.is_empty():
 		var index: int = state.shop_rng.weighted_index(weights)
 		if index < 0:
 			break
-		offers.append(pool[index])
+		var pick: ArtifactDef = pool[index]
 		pool.remove_at(index)
 		weights.remove_at(index)
+		# Anti-flood: a draft is not three of the same build.
+		if pick.archetype != &"" and int(dealt.get(pick.archetype, 0)) >= config.offer_build_cap:
+			continue
+		dealt[pick.archetype] = int(dealt.get(pick.archetype, 0)) + 1
+		offers.append(pick)
+	# Dead-draft prevention: a draft the purse can buy nothing from is a
+	# wasted bump. If anything left in the pool is affordable, the last slot
+	# is re-dealt from the affordable ones, still off the shop stream.
+	if not offers.is_empty() and not _any_affordable(state, offers):
+		var affordable: Array[ArtifactDef] = []
+		var affordable_weights: PackedInt32Array = PackedInt32Array()
+		for i: int in pool.size():
+			if state.economy.can_afford_chips(price_for(state, pool[i])):
+				affordable.append(pool[i])
+				affordable_weights.append(weights[i])
+		if not affordable.is_empty():
+			var index: int = state.shop_rng.weighted_index(affordable_weights)
+			if index >= 0:
+				offers[offers.size() - 1] = affordable[index]
 	return offers
+
+
+## True when an offer could do nothing for this run: it is keyed to a symbol
+## the reel cannot land. A family is never dead; a struck-out symbol is.
+func _offer_is_dead(state: RunState, artifact: ArtifactDef) -> bool:
+	if artifact.symbol_filter == &"":
+		return false
+	if _content.symbol_by_id(artifact.symbol_filter) == null:
+		return false
+	return Probability.symbol_chance(state.reel(), artifact.symbol_filter) \
+			< state.config.offer_symbol_floor
+
+
+func _any_affordable(state: RunState, offers: Array[ArtifactDef]) -> bool:
+	for artifact: ArtifactDef in offers:
+		if state.economy.can_afford_chips(price_for(state, artifact)):
+			return true
+	return false
 
 
 ## Buys a fresh set of offers. Each reroll in the same draft costs more than the
