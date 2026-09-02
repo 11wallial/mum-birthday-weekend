@@ -49,6 +49,8 @@ var _recorder: PlaytestRecorder
 var _profile: PlayerProfile
 var _catalogue: MetaCatalogue
 var _board: Leaderboard
+## What the House prints on the ledger, chosen from where the run stands.
+var _memos: MemoBook
 ## Daily-challenge key for the current run, empty for an ordinary run.
 var _daily_key: String = ""
 ## Seed of the run in progress, so the setup panel can offer it back.
@@ -90,6 +92,8 @@ func _ready() -> void:
 	_profile = PlayerProfile.load_or_new()
 	_catalogue = MetaCatalogue.new()
 	_catalogue.load_all()
+	_memos = MemoBook.new()
+	_memos.load_all()
 	# A profile from an older build may already meet newer conditions.
 	_profile.evaluate(_catalogue.unlocks)
 	_board = Leaderboard.load_or_new()
@@ -152,6 +156,10 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	state = engine.start_run(actual_seed, options)
 	if _deck != null:
 		_deck.bind(state)
+	# Every event of the run's opening fired before there was a state to draw
+	# from, so the sign and the ledger have to be drawn now, or they show the
+	# scene's placeholders until the first spin.
+	_refresh_diegetic()
 	print("Break the Bank — seed %d (%s)%s" % [
 		actual_seed, SeedBook.to_code(actual_seed),
 		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
@@ -724,7 +732,8 @@ func _refresh_diegetic() -> void:
 			if child is Label3D:
 				(child as Label3D).text = _floor_sign.text
 	if _slot_view != null:
-		_slot_view.set_readout(state.economy.debt, floor_name)
+		_slot_view.set_readout(state.economy.debt, floor_name,
+				_memos.memo_for(state) if _memos != null else "")
 
 
 ## Folds the finished run into the profile and the local board, and tells the

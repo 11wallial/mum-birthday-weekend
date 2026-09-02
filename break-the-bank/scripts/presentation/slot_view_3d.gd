@@ -671,11 +671,23 @@ func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void
 
 
 ## Puts the run's debt on the machine's own monitor, as the ledger a terminal
-## would actually be showing.
-func set_readout(debt: int, floor_name: String) -> void:
-	if _readout != null:
-		_readout.text = "LEDGER OF ACCOUNT\n--------------------\n%s\nPRINCIPAL  %d\n--------------------\n> _" \
-				% [floor_name.to_upper(), debt]
+## would actually be showing, with whatever the House has to say underneath.
+## The screen holds six short lines; a memo is two of them.
+func set_readout(debt: int, floor_name: String, memo: String = "") -> void:
+	if _readout == null:
+		return
+	var lines: PackedStringArray = PackedStringArray([
+		"LEDGER OF ACCOUNT", "--------------------", floor_name.to_upper(),
+		"PRINCIPAL  %d" % debt,
+	])
+	if memo.is_empty():
+		lines.append("--------------------")
+		lines.append("> _")
+	else:
+		var said: PackedStringArray = memo.split("\n", false)
+		for i: int in mini(said.size(), 2):
+			lines.append(("> " if i == 0 else "  ") + said[i].strip_edges())
+	_readout.text = "\n".join(lines)
 
 
 ## How this spin went, relative to what the floor needs per spin.
