@@ -42,6 +42,6 @@ launder_relief = 40.0
 debt_service_percent = 12.0
 debt_default_penalty_percent = 50.0
 debt_grace_floors = 1
-endless_ante_growth = 1.35
+endless_ante_growth = 2.0
 endless_spins_bonus = 0
 endless_floors_max = 24

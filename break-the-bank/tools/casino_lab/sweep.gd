@@ -8,7 +8,10 @@
 ##       --knob=ante --floor=6 --values=3000,3600,4200 --runs=3000
 ##
 ## Knobs: ante (needs --floor), spins (needs --floor), payout_scale (--floor),
-##        debt, service, debt_growth, synergy_bonus.
+##        debt, service, debt_growth, synergy_bonus, endless_growth,
+##        endless_floors.
+## --stay tells every run to take the House's offer, which is how the two
+## endless knobs are measured: the curve after the win is what they shape.
 extends SceneTree
 
 const DEFAULT_RUNS: int = 3000
@@ -28,19 +31,35 @@ func _initialize() -> void:
 
 	var content: ContentDB = ContentDB.shared()
 	var target: FloorDef = content.floor_at(floor_index)
-	print("sweep %s (floor %d) over %d values, %d runs each" % [
-		knob, floor_index, values.size(), runs])
-	print("%-12s %-9s %-9s %-8s %s" % ["value", "win rate", "floors", "p50", "deaths by floor"])
+	var options: RunOptions = null
+	if args.has("stay"):
+		options = RunOptions.new()
+		options.stay_at_table = true
+	print("sweep %s (floor %d) over %d values, %d runs each%s" % [
+		knob, floor_index, values.size(), runs, ", staying at the table" if options != null else ""])
+	if options != null:
+		print("%-12s %-9s %-9s %-9s %-8s %s" % [
+			"value", "win rate", "stayed", "after hrs", "dawn", "deaths after hours"])
+	else:
+		print("%-12s %-9s %-9s %-8s %s" % ["value", "win rate", "floors", "p50", "deaths by floor"])
 
 	for value: float in values:
 		_apply(knob, content, target, value)
-		var report: Dictionary = CasinoLab.run_batch(runs, base_seed)
+		var report: Dictionary = CasinoLab.run_batch(runs, base_seed, options)
 		var floors: Dictionary = report["floors_cleared"]
 		var earnings: Dictionary = report["earnings"]
-		print("%-12s %-9.1f %-9.2f %-8d %s" % [
-			_format_value(value), float(report["win_rate"]) * 100.0,
-			float(floors["mean"]), int(earnings["p50"]),
-			JSON.stringify(report["deaths_by_floor"])])
+		if options != null:
+			var after: Dictionary = report["after_hours"]
+			var beyond: Dictionary = after["floors"]
+			print("%-12s %-9.1f %-9d %-9.1f %-8d %s" % [
+				_format_value(value), float(report["win_rate"]) * 100.0,
+				int(after["stayed"]), float(beyond.get("mean", 0.0)), int(after["dawns"]),
+				JSON.stringify(after["deaths_by_floor"])])
+		else:
+			print("%-12s %-9.1f %-9.2f %-8d %s" % [
+				_format_value(value), float(report["win_rate"]) * 100.0,
+				float(floors["mean"]), int(earnings["p50"]),
+				JSON.stringify(report["deaths_by_floor"])])
 	quit(0)
 
 
@@ -63,6 +82,10 @@ func _apply(knob: String, content: ContentDB, target: FloorDef, value: float) ->
 					floor_def.debt_interest_percent = value
 		"synergy_bonus":
 			content.balance.synergy_bonus = value
+		"endless_growth":
+			content.balance.endless_ante_growth = value
+		"endless_floors":
+			content.balance.endless_floors_max = int(round(value))
 		_:
 			push_error("sweep: unknown knob %s" % knob)
 

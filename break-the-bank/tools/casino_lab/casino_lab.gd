@@ -51,13 +51,19 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var serviced: PackedInt32Array = PackedInt32Array()
 	var defaulted_runs: int = 0
 	var paydown_runs: int = 0
+	# The floors after hours, for a batch told to stay: how many runs took
+	# the offer, how far each got, where each ended, and how many saw dawn.
+	var stayed: int = 0
+	var dawns: int = 0
+	var after_hours: PackedInt32Array = PackedInt32Array()
+	var after_hours_deaths: Dictionary = {}
 
 	var started: int = Time.get_ticks_msec()
 	for i: int in count:
 		var state: RunState = engine.simulate_run(base_seed + i,
 				options.duplicate_options() if options != null else null)
 		# A run that stayed at the table had already won; how it ended after
-		# hours is the floors-cleared figure's business, not the win rate's.
+		# hours is the after-hours figures' business, not the win rate's.
 		var won: bool = state.phase == RunState.Phase.WON or state.endless
 		earnings.append(state.economy.lifetime_earned)
 		spins.append(state.spins_taken)
@@ -66,6 +72,14 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			wins += 1
 		else:
 			floor_deaths[state.floor_index] = int(floor_deaths.get(state.floor_index, 0)) + 1
+		if state.endless:
+			stayed += 1
+			var beyond: int = state.floors_cleared - content.floors.size()
+			after_hours.append(beyond)
+			if state.end_reason == &"dawn":
+				dawns += 1
+			else:
+				after_hours_deaths[beyond + 1] = int(after_hours_deaths.get(beyond + 1, 0)) + 1
 		var depth: int = clampi(state.floors_cleared, 0, runs_by_depth.size() - 1)
 		runs_by_depth[depth] += 1
 		if won:
@@ -122,6 +136,12 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			"paydown_owned_rate": _ratio(paydown_runs, count),
 		},
 		"deaths_by_floor": floor_deaths,
+		"after_hours": {
+			"stayed": stayed,
+			"dawns": dawns,
+			"floors": describe(after_hours),
+			"deaths_by_floor": after_hours_deaths,
+		},
 		"artifact_win_rates": _artifact_rates(
 				artifact_runs, artifact_wins, content, runs_by_market, wins_by_market),
 		"synergy_win_rates": _synergy_rates(synergy_runs, synergy_wins, content,

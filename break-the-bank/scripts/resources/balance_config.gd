@@ -114,7 +114,7 @@ extends Resource
 ## before it, for a run that stays at the table. The floors are made, not
 ## authored — see [Endless] — so this is the whole difficulty curve of the
 ## endless game, and the number the leaderboard is really measuring.
-@export var endless_ante_growth: float = 1.35
+@export var endless_ante_growth: float = 2.0
 ## Spins added to every endless floor's allowance. Zero keeps the last floor's.
 @export var endless_spins_bonus: int = 0
 ## Floors after hours before the House closes. A build that outgrows the

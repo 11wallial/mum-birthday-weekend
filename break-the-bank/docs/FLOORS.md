@@ -137,7 +137,11 @@ not take back — because a build that has outgrown the ante would never miss
 one, and a run that cannot end is not a run.
 
 What the leaderboard measures for a run that stayed is how many floors it
-lasted at a table that gets dearer every time. The default lab batch does not
+lasted at a table that gets dearer every time. The ante doubles a floor after
+hours: swept against the automated player, 35% a floor let every winner reach
+dawn, 50% let most of them get close, and doubling lands a typical stayer
+around ten floors with dawn exceptional — which is the shape a leaderboard
+wants, and a number to revisit against human data like every other. The default lab batch does not
 stay — it measures the game that ends — and a batch told to
 (`RunOptions.stay_at_table`) measures the curve after it.
 
