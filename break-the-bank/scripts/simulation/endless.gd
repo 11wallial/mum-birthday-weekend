@@ -13,7 +13,7 @@ extends RefCounted
 
 
 ## What the run owes when it stays: the reason there is still a clock.
-const OFFER: String = "The House offers your debt back, and a chair."
+const OFFER: String = "The House offers your debt back, a chair, and the surety signed again."
 
 
 ## True when [param index] is past every authored floor.

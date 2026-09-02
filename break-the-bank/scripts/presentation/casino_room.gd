@@ -1265,7 +1265,11 @@ func _finish_run(reason: String) -> void:
 	var entry: Dictionary = _board.submit(state, _daily_key)
 	_board.save()
 	var rank: int = _board.rank_of(int(entry["score"]), String(entry["ruleset"]))
-	lines.append("RUN OVER — %s" % reason)
+	# The ending, in the House's own terms: the surety kept or returned.
+	# The headline is the outcome; the reason code stays on the statement.
+	lines.append("THE ACCOUNT IS SETTLED" if state.phase == RunState.Phase.WON
+			else "THE HOUSE KEEPS THE SURETY")
+	lines.append(RunRecap.outcome_line(state))
 	lines.append("%s     score %d     rank %d on this ruleset" % [
 		SeedBook.to_code(state.seed_value), int(entry["score"]), rank])
 	_show_statement("score %d     rank %d on this ruleset" % [int(entry["score"]), rank])

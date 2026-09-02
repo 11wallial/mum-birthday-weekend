@@ -95,8 +95,13 @@ otherwise.
 ## The ending, and the offer
 
 Clear the seventh ante and repay what you owe, and you have beaten the House.
-The ledger prints a zero. The lights come up. That is the win, and it is
-recorded as one.
+The ledger prints a zero. The surety is returned — the column empties, the
+picture steadies to a clean print — and the payout is the one the account
+was opened for: enough to walk out into, and enough, the premise says, to
+collapse the House that paid it. The lights come up. That is the win, and
+it is recorded as one, in the House's words: *the account is settled*.
+A loss is the other sentence, and the only one the House ever needs:
+*the House keeps the surety*.
 
 Then the House makes its counter-offer. Your debt back, and a chair. Stay,
 and the floors go on after hours — each dearer than the last, the shop still
