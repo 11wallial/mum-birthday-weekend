@@ -36,15 +36,21 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 ## whatever shape the screen is. The old three-quarter framing cropped the
 ## flanks on a wide window and the crown on a phone, and every fix was a new
 ## magic eye position; fitting the box is the fix that stays fixed.
-@export var machine_frame_center: Vector3 = Vector3(0.03, 1.18, 0.15)
-@export var machine_frame_extents: Vector2 = Vector2(1.68, 1.36)
+## Tightened by the art handover: the machine had a third of the frame, with
+## a dead zone on the right and a run of empty floor doing nothing. The box
+## now holds the chassis, the crown and the gearbox and lets the spool and the
+## lever's tip crop; the reference titles are claustrophobic on purpose.
+@export var machine_frame_center: Vector3 = Vector3(0.03, 1.2, 0.15)
+@export var machine_frame_extents: Vector2 = Vector2(1.36, 1.16)
 ## Breathing room between the camera and the frame box, on top of the fitted
 ## distance — the machine's front hardware protrudes toward the lens.
-@export var machine_depth_margin: float = 0.95
-@export var machine_fov: float = 55.0
-## A hair above dead centre, so the frontal view keeps the machine's top
-## surfaces without stopping being square-on.
-@export var machine_eye_lift: float = 0.14
+@export var machine_depth_margin: float = 0.55
+## A long lens. A wide field puts the floor in the shot and makes the machine a
+## thing on a stage; a narrow one makes it a wall in front of you.
+@export var machine_fov: float = 42.0
+## Below dead centre, looking slightly up: the machine over the player rather
+## than displayed to them.
+@export var machine_eye_lift: float = -0.1
 @export var room_fov: float = 62.0
 
 ## The room is read from a ring of anchored viewpoints, walked with the arrow

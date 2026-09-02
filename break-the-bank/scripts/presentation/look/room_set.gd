@@ -68,10 +68,11 @@ func _wall_wash() -> void:
 	var wash: OmniLight3D = OmniLight3D.new()
 	wash.name = "WallWash"
 	wash.light_color = Color(0.596, 0.51, 0.404)
-	# Brighter than it was: the machine stood in a void, and a void reads as
-	# a rendering budget rather than as darkness. The room has to be seen to
-	# be a room.
-	wash.light_energy = 3.2
+	# Low. It was 3.2 once, to keep the machine out of a void, and the whole
+	# frame flattened into one band of orange midtone: nothing was dark, so
+	# nothing was bright. The room is allowed to fall to near-black now; the
+	# wash only keeps the back wall from vanishing entirely.
+	wash.light_energy = 0.8
 	wash.light_specular = 0.15
 	wash.omni_range = 7.5
 	wash.omni_attenuation = 1.1
@@ -82,7 +83,7 @@ func _wall_wash() -> void:
 	var ceiling: OmniLight3D = OmniLight3D.new()
 	ceiling.name = "CeilingWash"
 	ceiling.light_color = Color(0.62, 0.51, 0.376)
-	ceiling.light_energy = 3.2
+	ceiling.light_energy = 0.55
 	ceiling.light_specular = 0.1
 	ceiling.omni_range = 6.0
 	ceiling.omni_attenuation = 1.4
@@ -419,7 +420,7 @@ func _cage_lamp() -> void:
 	var light: OmniLight3D = OmniLight3D.new()
 	light.name = "Bulb"
 	light.light_color = Color(1.0, 0.78, 0.5)
-	light.light_energy = 2.4
+	light.light_energy = 1.4
 	light.light_volumetric_fog_energy = 0.8
 	light.omni_range = 5.0
 	light.omni_attenuation = 1.4
@@ -468,8 +469,8 @@ func _pendant() -> MeshInstance3D:
 	var key: SpotLight3D = SpotLight3D.new()
 	key.name = "Key"
 	key.light_color = Materials.LAMP
-	key.light_energy = 8.0
-	key.light_indirect_energy = 1.5
+	key.light_energy = 9.5
+	key.light_indirect_energy = 1.2
 	# The beam itself, in the dust: the volumetric shaft the first playtest
 	# asked for is the key light's own fog energy, and a thicker air under it.
 	key.light_volumetric_fog_energy = 2.4
@@ -479,9 +480,11 @@ func _pendant() -> MeshInstance3D:
 	key.shadow_normal_bias = 1.4
 	key.shadow_blur = 1.5
 	key.spot_range = 11.0
-	key.spot_attenuation = 1.3
-	key.spot_angle = 38.0
-	key.spot_angle_attenuation = 1.5
+	# A tighter cone than the shade suggests: the machine face is the one
+	# bright thing in the frame, and the floor in front of it steps down.
+	key.spot_attenuation = 1.6
+	key.spot_angle = 31.0
+	key.spot_angle_attenuation = 2.0
 	_root.add_child(key)
 	_aim(key, LAMP + Vector3(0.0, -0.08, 0.0), LAMP_TARGET)
 	# Thicker air under the lamp, so the cone is a cone and not a suggestion.
@@ -516,7 +519,7 @@ func _strip_light() -> void:
 	var tube: OmniLight3D = OmniLight3D.new()
 	tube.name = "Tube"
 	tube.light_color = Color(0.686, 0.769, 0.882)
-	tube.light_energy = 2.2
+	tube.light_energy = 1.0
 	tube.light_specular = 0.35
 	tube.omni_range = 6.5
 	tube.omni_attenuation = 1.5

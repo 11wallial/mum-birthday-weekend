@@ -29,6 +29,12 @@ const PHOSPHOR: Color = Color(0.353, 1.0, 0.427)
 const SIGN: Color = Color(1.0, 0.376, 0.078)
 const JACKPOT: Color = Color(0.847, 0.153, 0.129)
 const LAMP: Color = Color(1.0, 0.831, 0.616)
+## The accent, and the one rule about it: SCORE is reserved for scoring and
+## state feedback — a plate lit because it paid, the payline bar on a win, a
+## tube flaring as the total lands, the receipt's total. Nothing decorative
+## may use it, so the player learns that this colour flashing means the
+## machine paid. The swatches are in docs/PALETTE.md.
+const SCORE: Color = Color(1.0, 0.71, 0.22)
 
 ## Scanned surfaces, by folder under [code]assets/textures/[/code]. Each supplies
 ## an albedo, an OpenGL-convention normal, and an ARM map packing ambient

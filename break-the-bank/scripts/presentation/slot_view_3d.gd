@@ -883,7 +883,7 @@ func set_action_controls(models: Array) -> void:
 			material.emission_enabled = false
 			continue
 		var primary: bool = bool(model.get("lit", false))
-		var tint: Color = Color(1.0, 0.72, 0.3) if primary else Color(0.92, 0.86, 0.72)
+		var tint: Color = Color(0.95, 0.8, 0.5) if primary else Color(0.92, 0.86, 0.72)
 		material.albedo_color = tint * 0.8
 		material.emission_enabled = true
 		material.emission = tint
@@ -928,7 +928,7 @@ func _ripple(result: Result) -> void:
 		pulse.tween_interval(0.07 * float(i) * pace)
 		pulse.tween_callback(func() -> void:
 			material.emission_enabled = true
-			material.emission = Color(1.0, 0.86, 0.6)
+			material.emission = Materials.SCORE
 			material.emission_energy_multiplier = GLOW_MAX * strength)
 		pulse.tween_property(material, "emission_energy_multiplier", resting, 0.5 * pace) \
 				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
