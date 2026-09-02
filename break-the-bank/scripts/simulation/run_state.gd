@@ -168,6 +168,10 @@ var gamble_rng: RngStream
 ## Draws for who the House sends to a floor, so restaffing a floor can never
 ## move the reels, the shop or the ladder.
 var boss_rng: RngStream
+## The day's lean on the reel, drawn once at the start and never again.
+var lean_rng: RngStream
+## The symbols the reel ships heavy and light on this seed, by id, or empty.
+var ship_lean: Dictionary = {}
 
 var _reel_cache: Array[Probability.ReelEntry] = []
 var _reel_weight_cache: PackedInt32Array = PackedInt32Array()
@@ -192,6 +196,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	band_rng = RngStream.new(p_seed, &"band")
 	gamble_rng = RngStream.new(p_seed, &"gamble")
 	boss_rng = RngStream.new(p_seed, &"boss")
+	lean_rng = RngStream.new(p_seed, &"lean")
 	board.resize(config.reel_count)
 
 

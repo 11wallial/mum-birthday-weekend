@@ -271,6 +271,7 @@ func start_run(run_seed: int, options: RunOptions = null) -> RunState:
 			state.acquire(artifact)
 	for key: Variant in state.options.weight_shifts:
 		state.add_weight_shift(StringName(String(key)), int(state.options.weight_shifts[key]))
+	_lean_reel_for_the_day(state)
 	# A challenge can hand a verb over before any floor does. Announced the
 	# way a floor would, so the interface puts it on screen the same way.
 	for early: StringName in state.options.early_systems:
@@ -282,6 +283,29 @@ func start_run(run_seed: int, options: RunOptions = null) -> RunState:
 			})
 	begin_floor(state)
 	return state
+
+
+## The reel as it ships today: one symbol heavier, one lighter, drawn off
+## the run's own lean stream so a seed's reel is its own and the reels' draws
+## never move for it. Never the skull, never the wild, never the same symbol
+## twice. Read off the ledger before the first spin, which is the point.
+func _lean_reel_for_the_day(state: RunState) -> void:
+	var weight: int = state.config.ship_lean_weight
+	if weight <= 0:
+		return
+	var candidates: Array[SymbolDef] = []
+	for symbol: SymbolDef in _content.symbols:
+		if not symbol.is_curse and not symbol.is_wild and symbol.base_weight > weight:
+			candidates.append(symbol)
+	if candidates.size() < 2:
+		return
+	var heavy: int = state.lean_rng.next_int(0, candidates.size() - 1)
+	var light: int = state.lean_rng.next_int(0, candidates.size() - 2)
+	if light >= heavy:
+		light += 1
+	state.add_weight_shift(candidates[heavy].id, weight)
+	state.add_weight_shift(candidates[light].id, -weight)
+	state.ship_lean = {"heavy": candidates[heavy].id, "light": candidates[light].id}
 
 
 ## Plays a run to its end and returns the final state.

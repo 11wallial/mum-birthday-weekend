@@ -309,6 +309,13 @@ Lean, the High Roller, the Bone Press and the Orchard are in git at
 `RunOptions`, opens through an unlock, and can be measured with
 `run_lab.gd --machine=<id>`.
 
+**The reel today.** Every seed ships its reel leaned: one symbol three
+draw-weight heavier, one lighter, drawn off the run's own `lean` stream so
+the reels' draws never move for it, and said with the first floor ("THE
+REEL TODAY — cherries heavy, bars light"). The balance guide's restart
+novelty: minute one of run two is not minute one of run one, and it is the
+first thing a veteran reads before the first spin.
+
 **The offers.** The draft's generator keeps the balance guide's four rules:
 no dead offers (an artifact keyed to a symbol the reel cannot land is not
 put out; a draft the purse can buy nothing from is re-dealt one affordable

@@ -1543,6 +1543,12 @@ func _announce_floor(payload: Dictionary) -> void:
 	if boss_name != "":
 		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])
 		lines.append(String(payload.get("boss_tell", "")))
+	if state != null and state.floor_index == 1 and not state.ship_lean.is_empty():
+		var heavy: SymbolDef = ContentDB.shared().symbol_by_id(state.ship_lean["heavy"])
+		var light: SymbolDef = ContentDB.shared().symbol_by_id(state.ship_lean["light"])
+		if heavy != null and light != null:
+			lines.append("THE REEL TODAY — %s heavy, %s light." % [
+					heavy.display_name.to_lower(), light.display_name.to_lower()])
 	var watcher_name: String = String(payload.get("watcher_name", ""))
 	if watcher_name != "":
 		lines.append("%s, BECAUSE THE HOUSE NOTICED — %s" % [watcher_name.to_upper(),

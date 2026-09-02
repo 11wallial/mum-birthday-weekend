@@ -31,8 +31,12 @@ Consequences worth protecting:
 
 - A run is a function call: `SimEngine.new().simulate_run(seed)` returns a
   finished `RunState`. That is what makes 100k-run batches cheap.
-- A seed replays exactly. RNG is drawn from named `RngStream`s so adding a die
-  roll in the shop cannot shift the reels.
+- A seed replays exactly. RNG is drawn from named `RngStream`s (reels, band,
+  shop, tempo, gamble, boss, lean) so adding a die roll in the shop cannot
+  shift the reels. The `lean` stream is drawn exactly twice, at the start:
+  the reel as it ships today (`SimEngine._lean_reel_for_the_day`, one
+  symbol `ship_lean_weight` heavier and one lighter, never the skull or
+  the wild), announced with the first floor. The guide's restart novelty.
 - Deleting the whole presentation layer leaves a playable, testable game.
 
 ## Layout

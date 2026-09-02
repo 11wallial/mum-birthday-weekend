@@ -113,6 +113,13 @@ extends Resource
 ## Count the House reaches before it starts skimming, before it cools the reels,
 ## and before it sends someone over. The count rises with what you win and falls
 ## with every spin you do not.
+@export_group("The reel as it ships")
+## Draw weight moved on the day's reel: one symbol this much heavier, one
+## this much lighter, chosen by the seed. The balance guide's restart
+## novelty — minute one of run two is not minute one of run one — and the
+## first thing a veteran reads before the first spin.
+@export var ship_lean_weight: int = 3
+
 @export_group("The draft's offers")
 ## Weight multiplier on an offer whose build the run has already started —
 ## light, by the balance guide: enough to keep offers relevant, not enough
