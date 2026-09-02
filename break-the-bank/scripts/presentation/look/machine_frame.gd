@@ -44,6 +44,8 @@ const LADDER_RUNGS: int = 4
 const GAUGE_SWEEP: float = 2.1
 ## Brightness of the mark beside a row that pays.
 const PAYLINE_ENERGY: float = 2.6
+## Keys on the console rail. Six is the most the deck ever offers at once.
+const CONSOLE_KEYS: int = 6
 
 var _root: Node3D
 var _nixie_halo_material: StandardMaterial3D = null
@@ -59,6 +61,8 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var reels: Array[Node3D] = _reel_bank(reel_count)
 	_bezel(reel_count)
 	_button_row(reel_count)
+	var counters: Dictionary = _counter_bank()
+	var console: Array[Node3D] = _console()
 	var gearbox: Node3D = _gearbox()
 	_hoses()
 	var screen: MeshInstance3D = _monitor()
@@ -74,6 +78,10 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 	var mounts: Array[Node3D] = _mounts()
 	return {
 		"mounts": mounts,
+		"counters": counters,
+		"console": console,
+		"payline": _root.get_node_or_null(^"Bezel/Payline"),
+		"lever_pick": lever.get_node_or_null(^"Pick"),
 		"crown": crown,
 		"ladder": ladder,
 		"gauges": [
@@ -443,6 +451,150 @@ func _button_row(reel_count: int) -> void:
 		button.add_child(pick)
 
 
+## The counters: four banks of Nixie tubes across the chassis face above the
+## window — cash, the ante, the spins, the chips — so the run's numbers are
+## read off the machine and not off a corner of the screen. The first
+## playtest asked for the status bars to leave the overlay and live in the
+## world; this is where they live. Returns the digit labels per bank.
+func _counter_bank() -> Dictionary:
+	var housing: Node3D = _group(&"Counters")
+	var y: float = CHASSIS_Y + CHASSIS.y - 0.09
+	var z: float = CHASSIS.z + 0.02
+	# A brass rail the tubes are socketed into, the width of the chassis.
+	_box(housing, Vector3(CHASSIS.x * 1.92, 0.15, 0.05), Vector3(0.0, y, z),
+			Materials.painted(Color(0.11, 0.1, 0.09), 43))
+	_box(housing, Vector3(CHASSIS.x * 1.92, 0.012, 0.06), Vector3(0.0, y + 0.075, z),
+			Materials.brass(44))
+	# Five tubes for the money: a run past 99,999 reads in thousands with a
+	# K on the last tube, which a Nixie can show and a person can read.
+	var banks: Array = [
+		["cash", "CASH", 5, -0.66], ["ante", "ANTE", 5, -0.1],
+		["spins", "SPINS", 2, 0.33], ["chips", "CHIPS", 3, 0.66],
+	]
+	var out: Dictionary = {}
+	var glass: StandardMaterial3D = StandardMaterial3D.new()
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.albedo_color = Color(0.85, 0.72, 0.55, 0.1)
+	glass.roughness = 0.06
+	glass.metallic = 0.3
+	for bank: Array in banks:
+		var count: int = int(bank[2])
+		var centre: float = float(bank[3])
+		var spacing: float = 0.1
+		var digits: Array[Label3D] = []
+		for i: int in count:
+			var x: float = centre + (float(i) - float(count - 1) * 0.5) * spacing
+			var collar: MeshInstance3D = Prims.cylinder(housing, 0.042, 0.02,
+					Vector3(x, y - 0.065, z + 0.03), Vector3.ZERO, Materials.brass(45), 12)
+			collar.name = "Collar"
+			Prims.cylinder(housing, 0.044, 0.125, Vector3(x, y + 0.005, z + 0.03),
+					Vector3.ZERO, glass, 12)
+			var halo: MeshInstance3D = Prims.quad(housing, Vector2(0.16, 0.16),
+					Vector3(x, y + 0.005, z + 0.062), _nixie_halo())
+			halo.name = "Halo_%s_%d" % [bank[0], i]
+			halo.visible = false
+			var digit: Label3D = Label3D.new()
+			digit.name = "Digit_%s_%d" % [bank[0], i]
+			digit.text = ""
+			digit.font_size = 100
+			digit.pixel_size = 0.0013
+			digit.modulate = Color(1.0, 0.6, 0.18) * 2.6
+			digit.outline_size = 0
+			digit.shaded = false
+			digit.position = Vector3(x, y + 0.005, z + 0.068)
+			housing.add_child(digit)
+			digits.append(digit)
+		# The caption, engraved under the bank.
+		var caption: Label3D = Label3D.new()
+		caption.text = String(bank[1])
+		caption.font_size = 36
+		caption.pixel_size = 0.0013
+		caption.modulate = Color(0.95, 0.82, 0.52)
+		caption.outline_size = 0
+		caption.shaded = false
+		caption.position = Vector3(centre, y - 0.104, z + 0.034)
+		housing.add_child(caption)
+		out[String(bank[0])] = digits
+	# What the bank gives the chassis: a warm wash under the tubes.
+	var wash: OmniLight3D = OmniLight3D.new()
+	wash.light_color = Color(1.0, 0.5, 0.15)
+	wash.light_energy = 0.35
+	wash.omni_range = 0.9
+	wash.omni_attenuation = 1.6
+	wash.shadow_enabled = false
+	wash.position = Vector3(0.0, y, z + 0.14)
+	housing.add_child(wash)
+	return out
+
+
+## The console: a rail of keys under the reel buttons for everything else the
+## machine offers — take it, double, collect, settle, the stake, the vault,
+## the works, a word — each a lit key with its caption printed on it. Rendered
+## from the deck's own model, like the reel buttons, so the chassis and the
+## overlay can never disagree. Returns the keys, in slot order.
+func _console() -> Array[Node3D]:
+	var rail: Node3D = _group(&"Console")
+	var shelf: Node3D = Node3D.new()
+	shelf.position = Vector3(0.0, CHASSIS_Y - 0.66, CHASSIS.z + 0.24)
+	shelf.rotation.x = 0.52
+	rail.add_child(shelf)
+	var width: float = 1.94
+	Prims.box(shelf, Vector3(width, 0.04, 0.2), Vector3.ZERO,
+			Materials.weathered("painted_metal", Materials.PAINT, 0.9, 1.0,
+					0.3, 0.3, Materials.painted(Materials.PAINT, 46)))
+	for sx: float in [-1.0, 1.0]:
+		Prims.box(shelf, Vector3(0.05, 0.08, 0.22),
+				Vector3(sx * (width * 0.5 - 0.02), -0.03, 0.0), Materials.rusted(47))
+	# A lamp over the rail: the apron and the console sat in the chassis's
+	# shadow, and a control that cannot be read is not a control.
+	var lamp: OmniLight3D = OmniLight3D.new()
+	lamp.name = "ConsoleLamp"
+	lamp.light_color = Color(1.0, 0.86, 0.66)
+	lamp.light_energy = 0.9
+	lamp.light_specular = 0.2
+	lamp.omni_range = 1.4
+	lamp.omni_attenuation = 1.5
+	lamp.shadow_enabled = false
+	lamp.position = Vector3(0.0, 0.34, 0.24)
+	shelf.add_child(lamp)
+	var keys: Array[Node3D] = []
+	for i: int in CONSOLE_KEYS:
+		var x: float = (float(i) - float(CONSOLE_KEYS - 1) * 0.5) * 0.31
+		var key: Node3D = Node3D.new()
+		key.name = "ActionKey%d" % i
+		key.position = Vector3(x, 0.03, 0.0)
+		shelf.add_child(key)
+		Prims.box(key, Vector3(0.28, 0.02, 0.15), Vector3(0.0, -0.01, 0.0),
+				Materials.machined(Color(0.24, 0.23, 0.22), 48))
+		var cap: MeshInstance3D = Prims.box(key, Vector3(0.26, 0.026, 0.13),
+				Vector3(0.0, 0.012, 0.0), _button_lamp_material())
+		cap.name = "Lamp"
+		var caption: Label3D = Label3D.new()
+		caption.name = "Caption"
+		caption.text = ""
+		caption.font_size = 34
+		caption.pixel_size = 0.0012
+		caption.modulate = Color(0.12, 0.1, 0.08)
+		caption.outline_size = 0
+		caption.shaded = false
+		caption.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		caption.rotation.x = -PI * 0.5
+		caption.position = Vector3(0.0, 0.027, 0.0)
+		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		key.add_child(caption)
+		var pick: Area3D = Area3D.new()
+		pick.name = "Pick"
+		var shape: CollisionShape3D = CollisionShape3D.new()
+		var box: BoxShape3D = BoxShape3D.new()
+		box.size = Vector3(0.28, 0.08, 0.16)
+		shape.shape = box
+		pick.add_child(shape)
+		key.add_child(pick)
+		key.visible = false
+		keys.append(key)
+	return keys
+
+
 ## A lamp cap starts dark; SlotView3D drives its albedo and emission from the
 ## deck's model. Unique per button, since every button is its own lamp.
 func _button_lamp_material() -> StandardMaterial3D:
@@ -516,9 +668,12 @@ func _bezel(reel_count: int = 3) -> void:
 				Vector3(sx * REEL_SPACING * 0.5, y, z), steel)
 	# The payline, across the middle row only. It is the one thing on the machine
 	# that must be found instantly, and now that three rows are visible it is
-	# also the only thing saying which of them counts.
-	_box(bezel, Vector3(1.4, 0.014, 0.014), Vector3(0.0, y, z + 0.04),
-			Materials.glowing(Materials.JACKPOT, 1.8))
+	# also the only thing saying which of them counts. Its own material, so a
+	# win can flash it without flashing every red lamp on the machine.
+	var payline: MeshInstance3D = _box(bezel, Vector3(1.4, 0.014, 0.014),
+			Vector3(0.0, y, z + 0.04),
+			Materials.glowing(Materials.JACKPOT, 1.8).duplicate())
+	payline.name = "Payline"
 	for sx: float in [-1.0, 1.0]:
 		# Arrowheads at each end of the payline, pointing in at the row it marks.
 		var head: MeshInstance3D = _box(bezel, Vector3(0.05, 0.05, 0.014),
@@ -879,8 +1034,25 @@ func _lever() -> Node3D:
 			Materials.machined(Color(0.52, 0.51, 0.5), 64))
 	_cylinder(arm, 0.042, 0.03, Vector3(0.17, 0.72, 0.0), Vector3.ZERO,
 			Materials.brass(39))
+	# The grip: wrapped in tape, band over band, the way a handle that has
+	# been hauled for years is kept from splitting.
 	_cylinder(arm, 0.075, 0.13, Vector3(0.17, 0.84, 0.0), Vector3.ZERO,
 			Materials.timber())
+	for band: int in 5:
+		_cylinder(arm, 0.079, 0.012, Vector3(0.17, 0.79 + float(band) * 0.024, 0.0),
+				Vector3.ZERO, Materials.rubber(Color(0.16, 0.13, 0.1), 81 + band))
+	# Clickable along the whole arm: the lever is the machine's one big verb,
+	# and the first thing a new player reaches for.
+	var pick: Area3D = Area3D.new()
+	pick.name = "Pick"
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var capsule: CapsuleShape3D = CapsuleShape3D.new()
+	capsule.radius = 0.09
+	capsule.height = 0.95
+	shape.shape = capsule
+	shape.position = Vector3(0.17, 0.45, 0.0)
+	pick.add_child(shape)
+	arm.add_child(pick)
 	return arm
 
 

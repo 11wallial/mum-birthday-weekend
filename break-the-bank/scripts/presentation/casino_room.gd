@@ -23,6 +23,7 @@ extends Node3D
 @export var contract_path: NodePath = ^"ContractPanel"
 @export var title_path: NodePath = ^"TitleScreen"
 @export var tutorial_path: NodePath = ^"TutorialDirector"
+@export var receipt_path: NodePath = ^"PayoutReceipt"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -41,6 +42,8 @@ var _contracts: ContractPanel
 var _title: TitleScreen
 ## The Clerk on the tannoy, for a first run. Owns the prompt while it talks.
 var _tutorial: TutorialDirector
+## The printed arithmetic of the last spin.
+var _receipt: PayoutReceipt
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
@@ -86,6 +89,9 @@ func _ready() -> void:
 	_deck = get_node_or_null(deck_path) as ControlDeck
 	_contracts = get_node_or_null(contract_path) as ContractPanel
 	_title = get_node_or_null(title_path) as TitleScreen
+	_receipt = get_node_or_null(receipt_path) as PayoutReceipt
+	if _receipt != null and _audio != null:
+		_receipt.set_audio(_audio)
 	_tutorial = get_node_or_null(tutorial_path) as TutorialDirector
 	if _tutorial != null:
 		_tutorial.spoke.connect(_on_clerk_spoke)
@@ -131,6 +137,7 @@ func _ready() -> void:
 		# one intent path.
 		if _slot_view != null:
 			_deck.reels_modelled.connect(_slot_view.set_reel_controls)
+			_deck.actions_modelled.connect(_slot_view.set_action_controls)
 	if _slot_view != null:
 		_slot_view.control_pressed.connect(_on_deck_action)
 	if _contracts != null:
@@ -260,6 +267,8 @@ func _bind_viewers(bus: EffectBus, run_seed: int) -> void:
 		_audio.bind(bus)
 	if _dressing != null:
 		_dressing.bind(bus)
+	if _receipt != null:
+		_receipt.bind(bus)
 	if _shop != null:
 		_shop.close()
 	if _contracts != null:
@@ -335,6 +344,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) -> void:
 	if _hud != null and _hud.has_method("mark_result"):
 		_hud.call("mark_result", result, payout, settled)
+	# The receipt prints once the reels have shown the line it describes.
+	if _receipt != null and state != null:
+		_receipt.print_board(state.board.breakdown, payout, state.board.chips, settled)
 	# Only now does the machine offer its decision. The simulation knew what the
 	# board owed before a single reel had stopped; offering it then would ask the
 	# player to nudge symbols they had not been shown.
@@ -444,7 +456,7 @@ func _on_tutorial_requested() -> void:
 
 ## Reads every setting off the profile into the buses and the reels.
 func _apply_settings() -> void:
-	for key: String in ["master", "music", "sfx", "ambience", "pace"]:
+	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay"]:
 		_apply_setting(StringName(key), float(_profile.settings.get(key,
 				1.0 if key == "pace" else 0.0)))
 
@@ -455,6 +467,13 @@ func _apply_setting(key: StringName, value: float) -> void:
 	match key:
 		&"pace":
 			SlotView3D.pace = clampf(value, 0.25, 4.0)
+		&"overlay":
+			# The machine carries its own controls and counters; the overlay
+			# repeats them on the screen for whoever wants that.
+			if _deck != null:
+				_deck.show_overlay(value > 0.5)
+			if _hud != null and _hud.has_method("show_gauges"):
+				_hud.call("show_gauges", value > 0.5)
 		&"master":
 			_set_bus("Master", value)
 		&"music":
@@ -841,6 +860,11 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.SPIN_STARTED:
 			if _deck != null:
 				_deck.set_busy(true)
+		EffectBus.Event.REEL_NUDGED:
+			# The line changed under the receipt; print what stands now.
+			if _receipt != null and state != null:
+				_receipt.print_board(state.board.breakdown, state.board.payout,
+						state.board.chips, false)
 		EffectBus.Event.SHOP_OPENED:
 			# A callout left over from the floor that just ended would sit on
 			# top of the panel the player is being asked to read.
@@ -897,6 +921,12 @@ func _refresh_diegetic() -> void:
 		var memo: String = state.boss.tell if state.boss != null \
 				else (_memos.memo_for(state) if _memos != null else "")
 		_slot_view.set_readout(state.economy.debt, floor_name, memo)
+		# The counters across the chassis: the four numbers the overlay used
+		# to carry. The view holds a payout back until the drums land.
+		_slot_view.set_counter("cash", state.economy.cash)
+		_slot_view.set_counter("chips", state.economy.chips)
+		_slot_view.set_counter("spins", state.spins_remaining)
+		_slot_view.set_counter("ante", engine.ante_for(state) if engine != null else 0)
 
 
 ## Folds the finished run into the profile and the local board, and tells the
@@ -1032,6 +1062,8 @@ func _on_deck_action(action: StringName, index: int) -> void:
 		ControlDeck.HOLD:
 			var held: bool = engine.toggle_hold(state, index)
 			_record(action, {"reel": index, "held": held})
+			if _audio != null:
+				_audio.play(&"switch_click")
 			if held and _tutorial != null:
 				_tutorial.note_hold(index)
 		ControlDeck.NUDGE:
@@ -1056,9 +1088,13 @@ func _on_deck_action(action: StringName, index: int) -> void:
 		ControlDeck.STAKE_UP:
 			if engine.set_stake(state, state.stake + 1):
 				_record(action, {"stake": state.stake})
+				if _audio != null:
+					_audio.play(&"switch_click")
 		ControlDeck.STAKE_DOWN:
 			if engine.set_stake(state, state.stake - 1):
 				_record(action, {"stake": state.stake})
+				if _audio != null:
+					_audio.play(&"switch_click")
 		ControlDeck.DEPOSIT:
 			var banked: int = engine.deposit(state, _float_to_bank())
 			if banked > 0:

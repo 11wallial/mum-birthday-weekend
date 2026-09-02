@@ -40,6 +40,22 @@ var _bus: EffectBus
 var _music_base_db: float = 0.0
 var _duck_tween: Tween
 var _anchor: Node3D
+## The room's own noises, on their own clocks: a drip, a groan, the sign
+## popping. Seconds until each next fires.
+var _foley: Dictionary = {&"foley_drip": 4.0, &"foley_groan": 20.0, &"sign_pop": 8.0}
+## Where in the room each of them comes from, relative to the anchor.
+const FOLEY_AT: Dictionary = {
+	&"foley_drip": Vector3(-2.0, 0.0, 1.2),
+	&"foley_groan": Vector3(-2.6, 1.3, -3.2),
+	&"sign_pop": Vector3(3.5, 2.2, -3.2),
+}
+## How long each waits between firings, as (min, max) seconds.
+const FOLEY_EVERY: Dictionary = {
+	&"foley_drip": Vector2(5.0, 16.0),
+	&"foley_groan": Vector2(28.0, 70.0),
+	&"sign_pop": Vector2(9.0, 30.0),
+}
+var _room_alive: bool = false
 
 
 func _ready() -> void:
@@ -65,6 +81,21 @@ func _ready() -> void:
 	var music_bus: int = AudioServer.get_bus_index("Music")
 	if music_bus >= 0:
 		_music_base_db = AudioServer.get_bus_volume_db(music_bus)
+
+
+## The room's foley fires on its own clocks once a run has started. Random
+## from the engine's own generator: this is presentation, and nothing about
+## the run depends on when the ceiling drips.
+func _process(delta: float) -> void:
+	if not _room_alive:
+		return
+	for cue: StringName in _foley.keys():
+		_foley[cue] = float(_foley[cue]) - delta
+		if float(_foley[cue]) > 0.0:
+			continue
+		var every: Vector2 = FOLEY_EVERY.get(cue, Vector2(10.0, 20.0))
+		_foley[cue] = randf_range(every.x, every.y)
+		play_at(cue, FOLEY_AT.get(cue, Vector3.ZERO))
 
 
 ## Loads every cue in the manifest. Separate from _ready so tests can call it.
@@ -295,6 +326,18 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			play(&"ui_chip_place")
 		EffectBus.Event.SLATE_SIGNED:
 			play(&"contract_signed")
+			play(&"debt_sting")
+		EffectBus.Event.CHIPS_CHANGED:
+			# Scrip arriving lands as chips do; scrip spent is the purchase's
+			# own confirmation and needs nothing here.
+			if int(payload.get("delta", 0)) > 0 \
+					and StringName(payload.get("reason", &"")) != &"symbols":
+				play(&"ui_chip_stack")
+		EffectBus.Event.FLOOR_SETTLED_EARLY:
+			play_at(&"receipt_tear")
+		EffectBus.Event.BOSS_ACTED:
+			play(&"alarm_pulse")
+			play(&"debt_sting")
 		EffectBus.Event.CONTRACTS_OFFERED:
 			play(&"ui_panel_open")
 		EffectBus.Event.CONTRACT_SIGNED:
@@ -322,15 +365,26 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.ANTE_SETTLED:
 			if bool(payload.get("paid", false)):
 				play(&"ante_settled")
+				play_at(&"cash_thud")
 			else:
 				play(&"fail_sting_ante")
+				play(&"alarm_pulse")
 		EffectBus.Event.FLOOR_CLEARED:
 			play(&"floor_clear_fanfare")
+			play_at(&"receipt_tear")
 			if int(payload.get("serviced", 0)) > 0:
 				play(&"debt_vig_deduct")
+				play(&"debt_sting")
 		EffectBus.Event.RUN_STARTED:
+			_room_alive = true
 			start_loop(&"amb_room_hum_loop")
 			start_loop(&"machine_hum_loop")
+			start_loop(&"crt_hum_loop")
+			start_loop(&"nixie_hum_loop")
+			start_loop(&"sign_buzz_loop")
+			start_loop(&"coil_buzz_loop")
+			start_loop(&"amb_vault_drone_loop")
+			start_loop(&"amb_wind_loop")
 		EffectBus.Event.RUN_ENDED:
 			var reason: String = String(payload.get("end_reason", ""))
 			if String(payload.get("phase", "")) == "WON":

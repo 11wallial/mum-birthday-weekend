@@ -31,6 +31,20 @@ var _mounts: Array[Node3D] = []
 ## Every "Drive" node across the fitted modules, turned while the reels spin.
 var _drives: Array[Node3D] = []
 var _lever: Node3D
+## The Nixie counters across the chassis face, digit labels per bank.
+var _counters: Dictionary = {}
+## Values the counters are waiting to show: a payout is credited the frame
+## the reels are told to turn, and a counter that jumped then would spoil
+## the spin. Held until the drums land.
+var _counter_pending: Dictionary = {}
+var _counter_shown: Dictionary = {}
+## The console keys under the reel buttons, in slot order.
+var _console: Array[Node3D] = []
+## The payline bar, flashed on a win.
+var _payline: MeshInstance3D
+## Extra spin time on the last drum when the ones before it already match:
+## the anticipation every real machine sells.
+const TENSION_EXTRA: float = 0.85
 ## The four lamps of the gamble ladder, bottom rung first.
 var _ladder: Array[Node3D] = []
 ## The two dials on the crown: the wager, and the House's attention.
@@ -97,6 +111,8 @@ const JACKPOT_SHARE: float = 3.0
 var _busy: bool = false
 ## True while a redraw is waiting on the strip bake.
 var _redraw_booked: bool = false
+## The last memo the ledger printed, so a beep marks a new one only.
+var _last_memo: String = ""
 
 ## How the spin was judged. The HUD listens so its readout agrees with the
 ## machine rather than restating the number in its own words.
@@ -126,6 +142,16 @@ func _ready() -> void:
 	# a train of cogs sitting dead above turning reels is scenery, not works.
 	_drives.assign(parts.get("crown", []))
 	_ladder.assign(parts.get("ladder", []))
+	_counters = parts.get("counters", {})
+	_console.assign(parts.get("console", []))
+	_payline = parts.get("payline", null) as MeshInstance3D
+	var lever_pick: Area3D = parts.get("lever_pick", null) as Area3D
+	if lever_pick != null:
+		lever_pick.input_event.connect(_on_lever_input)
+	for key: Node3D in _console:
+		var pick: Area3D = key.get_node_or_null(^"Pick") as Area3D
+		if pick != null:
+			pick.input_event.connect(_on_key_input.bind(key))
 	var gauges: Array = parts.get("gauges", [])
 	_gauge_stake = (gauges[0] as Node3D) if gauges.size() > 0 else null
 	_gauge_count = (gauges[1] as Node3D) if gauges.size() > 1 else null
@@ -215,6 +241,10 @@ func is_busy() -> bool:
 
 
 ## Spins every reel, then stops them left to right.
+##
+## When every drum but the last has landed a match, the last one runs on: the
+## anticipation is the single most valuable feeling a slot machine has, and
+## the view is the only thing that knows the answer before the player does.
 func _play_spin(payout: int, multiplier: float) -> void:
 	_busy = true
 	_throw_lever()
@@ -223,19 +253,46 @@ func _play_spin(payout: int, multiplier: float) -> void:
 	if _audio != null:
 		_audio.play_at(&"handle_pull")
 		_audio.play_at(&"reel_start")
+		_audio.play_at(&"gear_grind")
 		_audio.start_loop(&"reel_spin_loop")
+		_audio.start_loop(&"axle_whir_loop")
 	var last: int = _reels.size() - 1
+	var tense: bool = _tension_builds()
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
 		var spin_time: float = (SPIN_DURATION + REEL_STAGGER * float(i)) * pace
+		if tense and i == last:
+			spin_time += TENSION_EXTRA * pace
 		var tween: Tween = create_tween()
 		tween.tween_property(reel, "rotation:x", reel.rotation.x + TAU * 4.0, spin_time) \
 				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tween.tween_callback(_settle_reel.bind(i))
+		# Lands past the stop and springs back: a drum with weight in it.
+		tween.tween_property(reel, "rotation:x", -MachineFrame.BAND_ANGLE * 0.14,
+				SETTLE_DURATION * 0.6 * pace).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tween.tween_property(reel, "rotation:x", 0.0, SETTLE_DURATION * pace) \
 				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if tense and i == last - 1:
+			tween.tween_callback(func() -> void:
+				if _audio != null:
+					_audio.play(&"reel_tension"))
 		if i == last:
 			tween.tween_callback(_finish_spin.bind(payout, multiplier))
+
+
+## True when the drums before the last one already agree — a pair, or more,
+## standing before the last stop — which is when a real machine slows down.
+func _tension_builds() -> bool:
+	if _pending.size() < 3:
+		return false
+	var line: Array[SymbolDef] = []
+	var content: ContentDB = ContentDB.shared()
+	for i: int in _pending.size() - 1:
+		var symbol: SymbolDef = content.symbol_by_id(StringName(_pending[i].get("symbol", &"")))
+		if symbol == null or symbol.is_curse:
+			return false
+		line.append(symbol)
+	return Probability.detect_pattern(line) >= Probability.Pattern.PAIR
 
 
 ## Reveals the landed symbol as its reel comes to rest.
@@ -251,6 +308,7 @@ func _settle_reel(index: int) -> void:
 	var is_last: bool = index >= _reels.size() - 1
 	if is_last:
 		_audio.stop_loop(&"reel_spin_loop")
+		_audio.stop_loop(&"axle_whir_loop")
 		_audio.play_at(&"reel_stop_final")
 	else:
 		const TICKS: Array = [&"reel_stop_tick_a", &"reel_stop_tick_b", &"reel_stop_tick_c"]
@@ -348,6 +406,7 @@ func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
 func _finish_spin(payout: int, multiplier: float) -> void:
 	_busy = false
 	_set_odds(multiplier)
+	_flush_counters()
 	if _banked >= 0:
 		_celebrate(_banked, multiplier)
 		return
@@ -362,6 +421,8 @@ func _finish_spin(payout: int, multiplier: float) -> void:
 func _throw_lever() -> void:
 	if _lever == null:
 		return
+	if _audio != null:
+		_audio.play_at(&"leather_squeak")
 	var tween: Tween = create_tween()
 	tween.tween_property(_lever, "rotation:x", 0.9, 0.14) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -722,7 +783,15 @@ func set_readout(debt: int, floor_name: String, memo: String = "") -> void:
 		var said: PackedStringArray = memo.split("\n", false)
 		for i: int in mini(said.size(), 2):
 			lines.append(("> " if i == 0 else "  ") + said[i].strip_edges())
-	_readout.text = "\n".join(lines)
+	var text: String = "\n".join(lines)
+	if text != _readout.text and _audio != null and not _readout.text.is_empty():
+		# The tube rewrites: a click, and a beep when the House has something
+		# new to say.
+		_audio.play(&"crt_click")
+		if memo != _last_memo:
+			_audio.play(&"crt_beep")
+	_last_memo = memo
+	_readout.text = text
 
 
 ## How this spin went, relative to what the floor needs per spin.
@@ -737,6 +806,144 @@ func _judge(payout: int) -> Result:
 	return Result.DEAD
 
 
+## Writes [param value] onto the [param bank] counter — cash, ante, spins or
+## chips. While the drums are turning the value is held and shown as they
+## land, so a payout never appears on the machine before the reels have.
+func set_counter(bank: String, value: int) -> void:
+	if _busy:
+		_counter_pending[bank] = value
+		return
+	_show_counter(bank, value)
+
+
+func _flush_counters() -> void:
+	for bank: String in _counter_pending:
+		_show_counter(bank, int(_counter_pending[bank]))
+	_counter_pending.clear()
+
+
+func _show_counter(bank: String, value: int) -> void:
+	var digits: Array = _counters.get(bank, [])
+	if digits.is_empty():
+		return
+	var text: String = str(maxi(0, value))
+	if text.length() > digits.size():
+		# In thousands, with a K on the last tube: a run that has outgrown
+		# five tubes has not outgrown reading.
+		text = "%dK" % (maxi(0, value) / 1000)
+		if text.length() > digits.size():
+			text = "%dM" % (maxi(0, value) / 1000000)
+	text = text.lpad(digits.size())
+	var before: String = String(_counter_shown.get(bank, ""))
+	_counter_shown[bank] = text
+	var tinked: bool = false
+	for i: int in digits.size():
+		var digit: Label3D = digits[i] as Label3D
+		var glyph: String = text[i]
+		var lit: bool = glyph != " "
+		digit.text = glyph
+		digit.visible = lit
+		var halo: MeshInstance3D = digit.get_parent().get_node_or_null(
+				"Halo_%s_%d" % [bank, i]) as MeshInstance3D
+		if halo != null:
+			halo.visible = lit
+		# A tube that changed strikes brighter for a moment, the way a Nixie
+		# does when its cathode swaps, and tinks once for the bank.
+		if lit and (before.length() != text.length() or before[i] != glyph):
+			var flash: Tween = create_tween()
+			digit.modulate = Color(1.0, 0.8, 0.42) * 2.8
+			flash.tween_property(digit, "modulate", Color(1.0, 0.6, 0.18) * 2.6, 0.35)
+			if not tinked and _audio != null and not before.is_empty():
+				_audio.play_at(&"nixie_tink")
+				tinked = true
+
+
+## Relights the console keys from ControlDeck's action model: the moves the
+## machine offers beyond the reels, up to six at a time. A key with nothing
+## to offer goes dark and out of the way.
+func set_action_controls(models: Array) -> void:
+	for i: int in _console.size():
+		var key: Node3D = _console[i]
+		var model: Dictionary = models[i] if i < models.size() else {}
+		key.visible = not model.is_empty()
+		key.set_meta(&"action", model.get("action", &""))
+		key.set_meta(&"enabled", bool(model.get("enabled", false)))
+		var caption: Label3D = key.get_node_or_null(^"Caption") as Label3D
+		if caption != null:
+			var note: String = String(model.get("note", ""))
+			caption.text = String(model.get("label", "")) \
+					+ ("\n" + note if not note.is_empty() else "")
+		var lamp: MeshInstance3D = key.get_node_or_null(^"Lamp") as MeshInstance3D
+		var material: StandardMaterial3D = \
+				(lamp.material_override as StandardMaterial3D) if lamp != null else null
+		if material == null:
+			continue
+		if model.is_empty() or not bool(model.get("enabled", false)):
+			material.albedo_color = Color(0.3, 0.28, 0.25)
+			material.emission_enabled = false
+			continue
+		var primary: bool = bool(model.get("lit", false))
+		var tint: Color = Color(1.0, 0.72, 0.3) if primary else Color(0.92, 0.86, 0.72)
+		material.albedo_color = tint * 0.8
+		material.emission_enabled = true
+		material.emission = tint
+		material.emission_energy_multiplier = 1.4 if primary else 0.7
+
+
+func _on_key_input(_camera: Node, event: InputEvent, _at: Vector3,
+		_normal: Vector3, _shape: int, key: Node3D) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click == null or not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not bool(key.get_meta(&"enabled", false)):
+		return
+	var action: StringName = key.get_meta(&"action", &"") as StringName
+	if action != &"":
+		control_pressed.emit(action, 0)
+
+
+## The lever is the spin. A click anywhere along the arm pulls it.
+func _on_lever_input(_camera: Node, event: InputEvent, _at: Vector3,
+		_normal: Vector3, _shape: int) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click == null or not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	control_pressed.emit(&"spin", 0)
+
+
+## The win, on the window: every payline plate flares in turn and the payline
+## bar flashes, so the eye is told which symbols paid before the number is.
+func _ripple(result: Result) -> void:
+	var strength: float = 1.0 if result == Result.JACKPOT else 0.6
+	for i: int in _reels.size():
+		var plate: MeshInstance3D = _reels[i].get_node_or_null(^"Payline") as MeshInstance3D
+		if plate == null:
+			continue
+		var material: StandardMaterial3D = plate.material_override as StandardMaterial3D
+		if material == null:
+			continue
+		var resting: float = material.emission_energy_multiplier if material.emission_enabled else 0.0
+		var resting_tint: Color = material.emission
+		var pulse: Tween = create_tween()
+		pulse.tween_interval(0.07 * float(i) * pace)
+		pulse.tween_callback(func() -> void:
+			material.emission_enabled = true
+			material.emission = Color(1.0, 0.86, 0.6)
+			material.emission_energy_multiplier = GLOW_MAX * strength)
+		pulse.tween_property(material, "emission_energy_multiplier", resting, 0.5 * pace) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		pulse.tween_callback(func() -> void:
+			material.emission = resting_tint
+			material.emission_enabled = resting > 0.0)
+	if _payline != null:
+		var bar: StandardMaterial3D = _payline.material_override as StandardMaterial3D
+		if bar != null:
+			var flash: Tween = create_tween()
+			bar.emission_energy_multiplier = 6.0 * strength
+			flash.tween_property(bar, "emission_energy_multiplier", 1.8, 0.7 * pace) \
+					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
 ## Everything that tells the player how the spin went, keyed to one judgement so
 ## the coins, the light, the shake and the sound can never disagree.
 ##
@@ -748,15 +955,25 @@ func _celebrate(payout: int, multiplier: float) -> void:
 	if _particles != null:
 		match result:
 			Result.JACKPOT:
-				_particles.amount = 220
+				_particles.amount = 260
 				_particles.restart()
 			Result.GOOD:
-				_particles.amount = 60
+				_particles.amount = 80
 				_particles.restart()
 			_:
 				# A thin or dead spin throws nothing. Silence and stillness are
 				# the feedback: you needed par and you did not get it.
 				pass
+	# Sparks off the works and smoke off the tube for the spins that earn it.
+	var sparks: CPUParticles3D = get_node_or_null(^"Sparks") as CPUParticles3D
+	var smoke: CPUParticles3D = get_node_or_null(^"Smoke") as CPUParticles3D
+	if result >= Result.GOOD:
+		_ripple(result)
+		if sparks != null:
+			sparks.amount = 140 if result == Result.JACKPOT else 50
+			sparks.restart()
+		if smoke != null and result == Result.JACKPOT:
+			smoke.restart()
 	if _light != null:
 		var flare: float = [0.35, 0.9, 2.6, 6.0][int(result)]
 		var tween: Tween = create_tween()
@@ -767,9 +984,13 @@ func _celebrate(payout: int, multiplier: float) -> void:
 			Result.JACKPOT:
 				_audio.play(&"jackpot_bells")
 				_audio.play_at(&"coin_cascade_large")
+				_audio.play_at(&"coin_clatter_concrete", Vector3(0.6, -1.0, 0.8))
+				_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.9, 1.7))
 			Result.GOOD:
 				_audio.play(&"payout_chime_big")
 				_audio.play_at(&"coin_cascade_small")
+				if multiplier >= 2.0:
+					_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.8, 1.4))
 			Result.THIN:
 				_audio.play(&"payout_chime_small")
 				_audio.play_at(&"coin_drop_single")

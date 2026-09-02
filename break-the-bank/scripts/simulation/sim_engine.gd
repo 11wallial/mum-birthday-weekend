@@ -499,6 +499,7 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 	var flat: float = 0.0
 	var chips: int = 0
 	var triggered: Array[StringName] = []
+	var steps: Array[Dictionary] = []
 	# The payline is the row the machine is read by, so its pattern and its
 	# multiplier are the ones reported; the bought rows add to the number
 	# without taking over what the spin is called.
@@ -521,6 +522,15 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 		if i == 0:
 			board.multiplier = ctx.multiplier * float(stake)
 			triggered = ctx.triggered
+			steps = ctx.steps.duplicate()
+		else:
+			# A bought row is one line on the receipt: what it added, not its
+			# own arithmetic all over again.
+			steps.append({"kind": "row", "label": "Row %d, %s" % [i + 1,
+					ArtifactEngine._pattern_label(pattern).to_lower()],
+					"text": "+%d" % ctx.total()})
+	if stake > 1:
+		steps.append({"kind": "stake", "label": "The stake", "text": "x%d" % stake})
 	board.payout = total * stake
 	board.chips = chips
 	board.breakdown = {
@@ -531,6 +541,7 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 		"stake": stake,
 		"rows": rows.size(),
 		"chips": chips,
+		"steps": steps,
 	}
 
 

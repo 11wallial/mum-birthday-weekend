@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/contract_panel.tscn" id="13_contracts"]
 [ext_resource type="Script" path="res://scripts/presentation/title_screen.gd" id="14_title"]
 [ext_resource type="Script" path="res://scripts/presentation/tutorial_director.gd" id="15_clerk"]
+[ext_resource type="Script" path="res://scripts/presentation/payout_receipt.gd" id="16_receipt"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -88,3 +89,8 @@ script = ExtResource("14_title")
 ; The Clerk on the tannoy: the guided first run. Presentation only.
 [node name="TutorialDirector" type="Node" parent="."]
 script = ExtResource("15_clerk")
+
+; The receipt: the spin's arithmetic, printed a line at a time.
+[node name="PayoutReceipt" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("16_receipt")

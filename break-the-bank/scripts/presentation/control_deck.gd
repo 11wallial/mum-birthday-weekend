@@ -17,6 +17,10 @@ signal action_requested(action: StringName, index: int)
 ## physical button row renders exactly this, so the buttons on the chassis and
 ## the chips on the overlay can never disagree — one model, two renderers.
 signal reels_modelled(models: Array)
+## The action row and the standing controls as data, emitted on every
+## refresh in the order they are laid out: action, label, note, enabled and
+## lit (the primary action). The machine's console keys render this.
+signal actions_modelled(models: Array)
 
 const SPIN: StringName = &"spin"
 const HOLD: StringName = &"hold"
@@ -50,6 +54,13 @@ var _status: HBoxContainer
 var _state: RunState
 ## What _build_reels last computed, for reels_modelled.
 var _reel_models: Array = []
+## What the action and extras rows last computed, for actions_modelled.
+var _action_models: Array = []
+## Whether the overlay is drawn at all. The machine carries the same model
+## on its console and its buttons; the overlay is for whoever wants it on
+## the screen as well, and off by default since the first playtest asked
+## for the world to carry its own controls.
+var overlay_shown: bool = false
 var _scale: float = 1.0
 ## Set while the reels are still turning: the machine must not offer a decision
 ## about a board the player has not been shown.
@@ -118,6 +129,7 @@ func refresh() -> void:
 	if _reels == null or _actions == null or _status == null or _extras == null:
 		return
 	_reel_models = []
+	_action_models = []
 	_clear(_status)
 	_clear(_reels)
 	_clear(_extras)
@@ -127,9 +139,21 @@ func refresh() -> void:
 		if _state.phase == RunState.Phase.SPINNING:
 			_build_reels()
 			_build_actions()
+	var root: Control = get_node_or_null(^"Root") as Control
+	if root != null:
+		var column: Control = root.get_node_or_null(^"Column") as Control
+		if column != null:
+			column.visible = overlay_shown
 	# Emitted on every path, empty included: a button row showing controls
 	# the deck no longer offers is worse than a dark one.
 	reels_modelled.emit(_reel_models)
+	actions_modelled.emit(_action_models)
+
+
+## Shows or hides the on-screen buttons. The status chips stay either way.
+func show_overlay(shown: bool) -> void:
+	overlay_shown = shown
+	refresh()
 
 
 func _build_status() -> void:
@@ -171,14 +195,14 @@ func _build_reels() -> void:
 		var incoming: SymbolDef = board.above[i] if i < board.above.size() else null
 		var standing: SymbolDef = board.line[i] if i < board.line.size() else null
 		if nudging:
+			var preview: Array[SymbolDef] = board.preview_nudge(i)
 			var gain: int = ArtifactEngine.score_line(
-					_state, board.preview_nudge(i), true) * maxi(1, _state.stake) - board.payout
-			_reel_button(NUDGE, i, "NUDGE", incoming,
-					("+%d" % gain) if gain > 0 else "no better",
+					_state, preview, true) * maxi(1, _state.stake) - board.payout
+			var note: String = nudge_note(board, i, preview, gain)
+			_reel_button(NUDGE, i, "NUDGE", incoming, note,
 					board.can_nudge(i), gain > 0, board.reel_count())
 			_reel_models.append({"action": NUDGE, "index": i,
-					"label": "NUDGE", "note": ("+%d" % gain) if gain > 0
-					else "no better", "enabled": board.can_nudge(i),
+					"label": "NUDGE", "note": note, "enabled": board.can_nudge(i),
 					"lit": gain > 0})
 		else:
 			var locked: bool = board.is_held(i)
@@ -191,6 +215,34 @@ func _build_reels() -> void:
 					"label": "HELD" if locked else "HOLD",
 					"note": "%d cr" % _state.config.spin_cost if not locked
 					else "locked", "enabled": not barred, "lit": locked})
+
+
+## What a nudge on [param reel] would leave, and why it pays what it pays:
+## the payout the line would then be worth, and the one thing that changed —
+## a skull gone, a skull arrived, a better pattern, or just the symbol that
+## came down. "+9" with a bar on the button read as a bug to the first
+## playtest; "→ 10 · skull out" is the same number with its reason.
+static func nudge_note(board: SpinBoard, reel: int, preview: Array[SymbolDef],
+		gain: int) -> String:
+	if not board.can_nudge(reel):
+		return "no nudge"
+	if gain <= 0:
+		return "no better"
+	var after: int = board.payout + gain
+	var leaving: SymbolDef = board.line[reel] if reel < board.line.size() else null
+	var arriving: SymbolDef = preview[reel] if reel < preview.size() else null
+	var was: Probability.Pattern = board.pattern
+	var now: Probability.Pattern = Probability.detect_pattern(preview)
+	var why: String = ""
+	if leaving != null and leaving.is_curse and (arriving == null or not arriving.is_curse):
+		why = "skull out"
+	elif arriving != null and arriving.is_curse:
+		why = "skull in"
+	elif now > was and now != Probability.Pattern.CLEAN_SWEEP:
+		why = ["", "a pair", "three", "jackpot", "sweep"][int(now)]
+	elif arriving != null:
+		why = "%s in" % arriving.display_name.to_lower()
+	return "→ %d · %s" % [after, why] if not why.is_empty() else "→ %d" % after
 
 
 func _build_actions() -> void:
@@ -344,6 +396,11 @@ func _reel_button(action: StringName, index: int, label: String,
 
 func _action(action: StringName, label: String, note: String,
 		enabled: bool, primary: bool) -> void:
+	# The spin is the lever on the machine, so it takes no key of its own
+	# there; everything else gets one.
+	if action != SPIN:
+		_action_models.append({"action": action, "label": label, "note": note,
+				"enabled": enabled, "lit": primary})
 	var button: Button = _new_button(enabled)
 	# A Button is not a container, so nothing sizes it around the labels laid
 	# out inside it. Without measuring them the whole row collapsed to zero
@@ -401,6 +458,8 @@ func _width_of(text: String, size: float) -> float:
 ## A standing control: the stake, the vault, the works, a quiet word. Smaller
 ## than the spin, and always in the same row, so the eye learns where they live.
 func _extra(action: StringName, label: String, note: String, enabled: bool) -> void:
+	_action_models.append({"action": action, "label": label, "note": note,
+			"enabled": enabled, "lit": false})
 	var button: Button = _new_button(enabled)
 	var caption: String = label if note.is_empty() else "%s   %s" % [label, note]
 	button.text = caption

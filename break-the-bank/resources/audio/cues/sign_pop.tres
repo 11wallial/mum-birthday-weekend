@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"sign_pop"
+file_name = "retro/sign_pop.wav"
+category = 3
+bus = &"Ambience"
+duration_ms = Vector2i(30, 70)
+frequency_notes = "The sign flickering: a pop off the transformer, now and then."
+pitch_jitter = Vector2(0.9, 1.1)
+volume_jitter_db = Vector2(-3.0, 1.0)
+base_volume_db = -10.0
+positional = true
+loops = false
+max_voices = 2
+priority = 3
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 1600.0

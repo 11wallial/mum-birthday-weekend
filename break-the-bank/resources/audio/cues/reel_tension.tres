@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"reel_tension"
+file_name = "mechanical/reel_tension.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(700, 1000)
+frequency_notes = "The last drum running on when the ones before it agree: a slow ratchet climbing, the machine taking its time."
+pitch_jitter = Vector2(0.98, 1.02)
+volume_jitter_db = Vector2(-1.0, 1.0)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 1
+priority = 7
+duck_music_db = 4.0
+fallback = 10
+fallback_hz = 60.0

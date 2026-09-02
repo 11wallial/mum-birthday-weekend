@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"amb_vault_drone_loop"
+file_name = "ambience/amb_vault_drone_loop.wav"
+category = 3
+bus = &"Ambience"
+duration_ms = Vector2i(6000, 12000)
+frequency_notes = "The building: distant plant, a sub-bass cavern under everything, seamless."
+pitch_jitter = Vector2(0.995, 1.005)
+volume_jitter_db = Vector2(-0.5, 0.5)
+base_volume_db = -14.0
+positional = false
+loops = true
+max_voices = 1
+priority = 3
+duck_music_db = 0.0
+fallback = 4
+fallback_hz = 38.0

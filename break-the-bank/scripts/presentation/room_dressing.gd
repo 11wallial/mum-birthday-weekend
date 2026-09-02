@@ -8,7 +8,7 @@ extends Node3D
 
 ## Where the first plaque hangs and how far apart the row is spaced. On the back
 ## wall above the dado rail, well clear of the floor sign and the door.
-const PLAQUE_ORIGIN: Vector3 = Vector3(-2.55, 1.72, -3.24)
+const PLAQUE_ORIGIN: Vector3 = Vector3(-1.45, 2.2, -3.24)
 const PLAQUE_SPACING: float = 0.42
 
 ## Credits represented by one stack block.

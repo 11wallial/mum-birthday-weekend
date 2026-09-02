@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"crt_hum_loop"
+file_name = "retro/crt_hum_loop.wav"
+category = 3
+bus = &"Ambience"
+duration_ms = Vector2i(3000, 6000)
+frequency_notes = "The ledger's tube, live: 50 Hz mains hum and its harmonics, a faint static crackle, the flyback whine up at 7.8 kHz, seamless."
+pitch_jitter = Vector2(0.995, 1.005)
+volume_jitter_db = Vector2(-0.5, 0.5)
+base_volume_db = -22.0
+positional = true
+loops = true
+max_voices = 1
+priority = 3
+duck_music_db = 0.0
+fallback = 20
+fallback_hz = 50.0

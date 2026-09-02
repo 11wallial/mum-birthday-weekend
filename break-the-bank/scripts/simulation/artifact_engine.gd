@@ -19,10 +19,20 @@ class SpinContext extends RefCounted:
 	var retriggers: float = 0.0
 	## Ids of the artifacts that contributed, in resolution order.
 	var triggered: Array[StringName] = []
+	## The arithmetic, one line at a time, in the order it was done: each a
+	## dictionary with "label", "kind" (symbol, pattern, artifact, synergy,
+	## house, stake) and "text" — the number as the receipt prints it. The
+	## first playtest read a nudge that paid nine for no visible match and
+	## called the logic buggy; the logic was right and the sum was hidden.
+	## Nothing here changes a number; it only says what changed it.
+	var steps: Array[Dictionary] = []
 
 	func total() -> int:
 		var base: float = (float(base_payout) + flat_bonus) * maxf(multiplier, 0.0)
 		return maxi(0, int(floor(base * (1.0 + maxf(retriggers, 0.0)))))
+
+	func step(kind: StringName, label: String, text: String) -> void:
+		steps.append({"kind": String(kind), "label": label, "text": text})
 
 
 ## Scores one line. Returns the context so callers (and tests) can inspect the
@@ -50,26 +60,42 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	var cursed: bool = Probability.has_curse(line) and not warded
 	for symbol: SymbolDef in Probability.drawn(line):
 		if not symbol.is_curse:
-			ctx.base_payout += maxi(0,
+			var worth: int = maxi(0,
 					symbol.base_value + ContractEngine.symbol_value(state, symbol.id))
+			ctx.base_payout += worth
+			ctx.step(&"symbol", symbol.display_name, "%d" % worth)
 		elif warded:
 			ctx.base_payout += int(ward)
+			ctx.step(&"symbol", "%s, on the payroll" % symbol.display_name, "%d" % int(ward))
 		else:
 			ctx.base_payout -= config.curse_penalty
+			ctx.step(&"symbol", symbol.display_name, "-%d" % config.curse_penalty)
 
 	# A curse on the line costs the player the pattern bonus entirely, unless a
 	# ward has turned the skulls into payroll.
-	if not cursed and pattern < config.pattern_multipliers.size():
+	if cursed:
+		ctx.step(&"pattern", "%s — voided by the skull" % _pattern_label(pattern), "x0")
+	elif pattern < config.pattern_multipliers.size():
 		ctx.multiplier += config.pattern_multipliers[pattern]
+		if pattern != Probability.Pattern.NONE:
+			ctx.step(&"pattern", _pattern_label(pattern),
+					"+%.2fx" % config.pattern_multipliers[pattern])
+		else:
+			ctx.step(&"pattern", "No pattern", "x%.2f" % config.pattern_multipliers[pattern])
 	if not cursed:
-		ctx.multiplier += ContractEngine.pattern_mult(state, pattern)
+		var clause: float = ContractEngine.pattern_mult(state, pattern)
+		if not is_zero_approx(clause):
+			ctx.multiplier += clause
+			ctx.step(&"house", "Contract, on the pattern", "%+.2fx" % clause)
 
 	_apply(state, ArtifactDef.Trigger.SPIN_STARTED, ctx, announce)
 	_apply(state, ArtifactDef.Trigger.SYMBOL_LANDED, ctx, announce)
 	_apply(state, ArtifactDef.Trigger.PAYOUT_CALCULATED, ctx, announce)
 
-	for _tag: StringName in state.active_synergies():
+	for tag: StringName in state.active_synergies():
 		ctx.multiplier += config.synergy_bonus
+		ctx.step(&"synergy", "%s synergy" % String(tag).capitalize(),
+				"+%.2fx" % config.synergy_bonus)
 
 	# Scaling effects read the run and the board rather than the line, so they
 	# resolve once the per-artifact pass is done and the owned set is known.
@@ -81,12 +107,13 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 		if artifact.effect == ArtifactDef.Effect.RETRIGGER:
 			if _pattern_allowed(artifact, pattern) and artifact.magnitude > 0.0:
 				ctx.retriggers += artifact.magnitude
-				_note(state, artifact, ctx, announce)
+				_note(state, artifact, ctx, announce,
+						"scores the line again x%.1f" % artifact.magnitude)
 			continue
 		var gained: float = _scaling_gain(state, artifact, nudges, curses)
 		if gained > 0.0:
 			ctx.multiplier += gained
-			_note(state, artifact, ctx, announce)
+			_note(state, artifact, ctx, announce, "+%.2fx" % gained)
 	# The exchange reads the list every other device has written itself onto,
 	# so it goes last and never counts itself. Two of them count each other,
 	# which is the point of owning two.
@@ -97,27 +124,61 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 		if others <= 0 or artifact.magnitude <= 0.0:
 			continue
 		ctx.multiplier += artifact.magnitude * float(others)
-		_note(state, artifact, ctx, announce)
+		_note(state, artifact, ctx, announce,
+				"+%.2fx, %d devices" % [artifact.magnitude * float(others), others])
 
-	ctx.multiplier += vault_collateral(state)
+	var collateral: float = vault_collateral(state)
+	if collateral > 0.0:
+		ctx.multiplier += collateral
+		ctx.step(&"house", "The vault, as collateral", "+%.2fx" % collateral)
 
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def != null:
 		ctx.multiplier *= floor_def.payout_scale
+		if not is_equal_approx(floor_def.payout_scale, 1.0):
+			ctx.step(&"house", floor_def.display_name, "x%.2f" % floor_def.payout_scale)
 	# The House's person on the floor taxes the pattern they were sent for.
-	ctx.multiplier *= BossEngine.pattern_scale(state, pattern)
+	var taxed: float = BossEngine.pattern_scale(state, pattern)
+	ctx.multiplier *= taxed
+	if not is_equal_approx(taxed, 1.0) and state.boss != null:
+		ctx.step(&"house", state.boss.display_name, "x%.2f" % taxed)
 	# The contract's cut comes off the end, after everything the player built.
 	# Signing away a quarter of the payout should cost a quarter of what the
 	# machine actually pays, not a quarter of its bare symbols.
-	ctx.multiplier *= maxf(0.0,
-			1.0 + ContractEngine.payout_percent(state) / 100.0)
+	var cut: float = maxf(0.0, 1.0 + ContractEngine.payout_percent(state) / 100.0)
+	ctx.multiplier *= cut
+	if not is_equal_approx(cut, 1.0) and state.contract != null:
+		ctx.step(&"house", state.contract.display_name, "x%.2f" % cut)
 	# And the House takes its share off the end of that, which is the order it
 	# would take it in: after everything, and off the top of what is left.
-	ctx.multiplier *= maxf(0.0, 1.0 - HeatEngine.skim(state))
-	ctx.multiplier *= maxf(0.0, 1.0 - BossEngine.skim(state))
+	var skim: float = maxf(0.0, 1.0 - HeatEngine.skim(state))
+	ctx.multiplier *= skim
+	if not is_equal_approx(skim, 1.0):
+		ctx.step(&"house", "The skim", "x%.2f" % skim)
+	var staff_skim: float = maxf(0.0, 1.0 - BossEngine.skim(state))
+	ctx.multiplier *= staff_skim
+	if not is_equal_approx(staff_skim, 1.0) and state.boss != null:
+		ctx.step(&"house", "%s skims" % state.boss.display_name, "x%.2f" % staff_skim)
 	# An audit's adjustment to the machine comes last of all.
 	ctx.multiplier *= maxf(0.0, state.options.payout_scale)
+	if not is_equal_approx(state.options.payout_scale, 1.0):
+		ctx.step(&"house", "The audit", "x%.2f" % state.options.payout_scale)
 	return ctx
+
+
+## The pattern, in the receipt's words.
+static func _pattern_label(pattern: Probability.Pattern) -> String:
+	match pattern:
+		Probability.Pattern.PAIR:
+			return "A pair"
+		Probability.Pattern.TRIPLE:
+			return "Three of a kind"
+		Probability.Pattern.JACKPOT:
+			return "Jackpot — the whole line"
+		Probability.Pattern.CLEAN_SWEEP:
+			return "Clean sweep"
+		_:
+			return "No pattern"
 
 
 ## What one scaling artifact adds to the multiplier for this line, reading
@@ -361,15 +422,24 @@ static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinConte
 	for artifact: ArtifactDef in state.owned:
 		if artifact.trigger != trigger:
 			continue
+		var flat_before: float = ctx.flat_bonus
+		var mult_before: float = ctx.multiplier
 		if _apply_one(artifact, ctx):
-			_note(state, artifact, ctx, announce)
+			var text: String = ""
+			if ctx.flat_bonus != flat_before:
+				text = "+%d" % int(round(ctx.flat_bonus - flat_before))
+			if ctx.multiplier != mult_before:
+				text += ("  " if not text.is_empty() else "") \
+						+ "%+.2fx" % (ctx.multiplier - mult_before)
+			_note(state, artifact, ctx, announce, text)
 
 
-## Writes [param artifact] onto the line's record and, when asked, tells
-## everyone watching what it did to the numbers so far.
+## Writes [param artifact] onto the line's record and the receipt and, when
+## asked, tells everyone watching what it did to the numbers so far.
 static func _note(state: RunState, artifact: ArtifactDef, ctx: SpinContext,
-		announce: bool) -> void:
+		announce: bool, text: String = "") -> void:
 	ctx.triggered.append(artifact.id)
+	ctx.step(&"artifact", artifact.display_name, text)
 	if not announce:
 		return
 	state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {

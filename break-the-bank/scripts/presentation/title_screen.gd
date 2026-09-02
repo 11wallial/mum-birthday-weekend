@@ -365,7 +365,20 @@ func _draw_settings() -> void:
 				-30.0, 6.0, float(_settings.get(String(bus[1]), 0.0))))
 	_settings_box.add_child(_slider("PACE", &"pace", 0.5, 2.0,
 			float(_settings.get("pace", 1.0))))
-	var about: Label = _label("Pace scales how long the reels take. Louder than 0 dB is the House's own risk.",
+	var overlay_on: bool = float(_settings.get("overlay", 0.0)) > 0.5
+	var toggle_row: HBoxContainer = HBoxContainer.new()
+	toggle_row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	var toggle_name: Label = _label("ON SCREEN", 12.0, UiSkin.INK)
+	toggle_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
+	toggle_row.add_child(toggle_name)
+	toggle_row.add_child(_small("CONTROLS AND COUNTERS: %s" % ("ON" if overlay_on else "OFF"),
+			func() -> void:
+				var now: float = 0.0 if overlay_on else 1.0
+				_settings["overlay"] = now
+				setting_changed.emit(&"overlay", now)
+				_redraw()))
+	_settings_box.add_child(toggle_row)
+	var about: Label = _label("Pace scales how long the reels take. The machine carries its controls and its counters; on screen repeats them. Louder than 0 dB is the House's own risk.",
 			11.0, UiSkin.INK_MUTED)
 	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_settings_box.add_child(about)

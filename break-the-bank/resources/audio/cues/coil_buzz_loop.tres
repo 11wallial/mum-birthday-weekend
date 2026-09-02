@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"coil_buzz_loop"
+file_name = "mechanical/coil_buzz_loop.wav"
+category = 3
+bus = &"Ambience"
+duration_ms = Vector2i(2000, 4000)
+frequency_notes = "The charge coil idling on the left of the crown: a thin, high electric buzz with the odd pop, seamless."
+pitch_jitter = Vector2(0.995, 1.005)
+volume_jitter_db = Vector2(-0.5, 0.5)
+base_volume_db = -18.0
+positional = true
+loops = true
+max_voices = 1
+priority = 3
+duck_music_db = 0.0
+fallback = 22
+fallback_hz = 118.0

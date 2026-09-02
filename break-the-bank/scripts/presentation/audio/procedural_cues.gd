@@ -150,6 +150,187 @@ static func _coins(hz: float, t: float, progress: float, seconds: float) -> floa
 	return value * (1.0 - progress * 0.35)
 
 
+## A motor: fundamental and a fifth over it, with the whir of the armature
+## rising through the cue. Looped, the whir is held at speed.
+static func _motor(hz: float, t: float, progress: float, loops: bool) -> float:
+	var speed: float = 1.0 if loops else smoothstep(0.0, 0.45, progress)
+	var hum: float = 0.5 * sin(TAU * hz * t) + 0.25 * sin(TAU * hz * 1.5 * t)
+	var whir: float = 0.22 * sin(TAU * hz * (6.0 + 4.0 * speed) * t) \
+			* (0.7 + 0.3 * sin(TAU * 13.0 * t))
+	return (hum + whir * speed) * (0.8 + 0.2 * speed)
+
+
+## Gears meshing: noise chopped at tooth rate over a low buzz that slips.
+static func _grind(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.35 * (rng.randf_range(-1.0, 1.0) - state)
+	var teeth: float = 0.55 + 0.45 * signf(sin(TAU * 27.0 * t))
+	var buzz: float = 0.35 * sin(TAU * hz * t * (1.0 - 0.1 * progress))
+	var envelope: float = smoothstep(0.0, 0.05, progress) * (1.0 - smoothstep(0.55, 1.0, progress))
+	return (_last_noise * 0.7 * teeth + buzz) * envelope
+
+
+## A dot-matrix printer: pins striking in bursts, a line every tenth of a
+## second, with the paper feed ticking between lines.
+static func _printer(hz: float, t: float, _progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.8 * (rng.randf_range(-1.0, 1.0) - state)
+	var line_phase: float = fposmod(t * 9.0, 1.0)
+	var printing: float = 1.0 if line_phase < 0.62 else 0.0
+	var pins: float = _last_noise * printing * (0.5 + 0.5 * signf(sin(TAU * hz * 0.6 * t)))
+	var feed: float = 0.0
+	if line_phase >= 0.62 and line_phase < 0.7:
+		feed = 0.5 * sin(TAU * hz * 0.25 * t) * exp(-(line_phase - 0.62) * 40.0)
+	return pins * 0.55 + feed
+
+
+## Paper torn off the spool: a burst of noise that rises as the tear runs.
+static func _tear(_hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	var cutoff: float = lerpf(0.3, 0.95, progress)
+	_last_noise = state + cutoff * (rng.randf_range(-1.0, 1.0) - state)
+	var fray: float = 0.7 + 0.3 * sin(TAU * (30.0 + 80.0 * progress) * t)
+	var envelope: float = smoothstep(0.0, 0.08, progress) * (1.0 - smoothstep(0.7, 1.0, progress))
+	return _last_noise * fray * envelope
+
+
+## Coins on concrete: the scatter of [method _coins] with the floor's dead
+## thud under each landing rather than a tray's ring.
+static func _clatter(hz: float, t: float, progress: float, seconds: float) -> float:
+	var pings: float = _coins(hz * 1.4, t, progress, seconds) * 0.7
+	var thud: float = 0.0
+	for i: int in 6:
+		var at: float = fposmod(sin(float(i) * 7.31) * 977.0, 1.0) * seconds * 0.7
+		if t >= at:
+			thud += 0.4 * sin(TAU * hz * 0.18 * (t - at)) * exp(-(t - at) * 30.0)
+	return pings + thud
+
+
+## A stack of paper landing: low, filtered, over almost at once.
+static func _thud(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.12 * (rng.randf_range(-1.0, 1.0) - state)
+	return (_last_noise * 1.4 + 0.5 * sin(TAU * hz * 0.3 * t)) * exp(-progress * 9.0)
+
+
+## Leather on a grip: a tone with a wobble in it, brief, breathy.
+static func _squeak(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.5 * (rng.randf_range(-1.0, 1.0) - state)
+	var wobble: float = hz * (1.0 + 0.12 * sin(TAU * 21.0 * t) - 0.2 * progress)
+	var envelope: float = smoothstep(0.0, 0.1, progress) * (1.0 - smoothstep(0.5, 1.0, progress))
+	return (0.6 * sin(TAU * wobble * t) + 0.25 * _last_noise) * envelope
+
+
+## A live CRT: mains hum with its harmonics, a faint crackle of static, and
+## the flyback whine high over it all. Loops.
+static func _hum(hz: float, t: float, state: float, rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.9 * (rng.randf_range(-1.0, 1.0) - state)
+	var mains: float = 0.5 * sin(TAU * hz * t) + 0.22 * sin(TAU * hz * 2.0 * t) \
+			+ 0.12 * sin(TAU * hz * 3.0 * t)
+	var whine: float = 0.06 * sin(TAU * 7800.0 * t)
+	var crackle: float = _last_noise * 0.02
+	return mains + whine + crackle
+
+
+## A Nixie cathode swapping: a short metallic tink with a glass ring behind.
+static func _tink(hz: float, t: float, progress: float) -> float:
+	var strike: float = 0.6 * sin(TAU * hz * 4.0 * t) * exp(-progress * 30.0)
+	var ring: float = 0.3 * sin(TAU * hz * 6.3 * t) * exp(-progress * 12.0)
+	return strike + ring
+
+
+## A gas-discharge transformer: a buzz with sputter, and the odd pop.
+static func _buzz(hz: float, t: float, rng: RandomNumberGenerator) -> float:
+	var body: float = 0.4 * signf(sin(TAU * hz * t)) * (0.7 + 0.3 * sin(TAU * 3.0 * t)) \
+			+ 0.2 * sin(TAU * hz * 2.0 * t)
+	var pop: float = 0.0
+	if rng.randf() < 0.0015:
+		pop = rng.randf_range(-0.8, 0.8)
+	return body * 0.6 + pop
+
+
+## One drop into a puddle: a blip falling in pitch, then the splash.
+static func _drip(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	var blip: float = 0.7 * sin(TAU * hz * (1.6 - 0.9 * progress) * t) * exp(-progress * 18.0)
+	var splash: float = 0.0
+	if progress > 0.25:
+		_last_noise = state + 0.5 * (rng.randf_range(-1.0, 1.0) - state)
+		splash = _last_noise * 0.4 * exp(-(progress - 0.25) * 14.0)
+	else:
+		_last_noise = state
+	return blip + splash
+
+
+## A structure shifting: a low tone bending down with a resonance riding it.
+static func _groan(hz: float, t: float, progress: float) -> float:
+	var bend: float = hz * (1.0 - 0.3 * progress + 0.05 * sin(TAU * 2.5 * t))
+	var body: float = 0.6 * sin(TAU * bend * t) + 0.3 * sin(TAU * bend * 2.01 * t)
+	var resonance: float = 0.2 * sin(TAU * bend * 5.0 * t) * (0.5 + 0.5 * sin(TAU * 7.0 * t))
+	var envelope: float = smoothstep(0.0, 0.2, progress) * (1.0 - smoothstep(0.6, 1.0, progress))
+	return (body + resonance) * envelope
+
+
+## A rising swell: three detuned saws climbing an octave, vibrato on the top.
+static func _swell(hz: float, t: float, progress: float) -> float:
+	var pitch: float = hz * pow(2.0, progress) * (1.0 + 0.012 * sin(TAU * 6.0 * t))
+	var value: float = 0.0
+	for detune: float in [0.993, 1.0, 1.007]:
+		value += fposmod(pitch * detune * t, 1.0) * 2.0 - 1.0
+	var envelope: float = smoothstep(0.0, 0.3, progress) * (1.0 - smoothstep(0.85, 1.0, progress))
+	return value * 0.25 * envelope
+
+
+## A sub drop: a sine falling from the fundamental to well under it.
+static func _drop(hz: float, t: float, progress: float) -> float:
+	var pitch: float = hz * pow(0.36, progress)
+	return 0.9 * sin(TAU * pitch * t) * (1.0 - smoothstep(0.6, 1.0, progress))
+
+
+## An alarm: a hard, bright tone gated on and off four times a second.
+static func _alarm(hz: float, t: float, _progress: float) -> float:
+	var gate: float = 1.0 if fposmod(t * 4.0, 1.0) < 0.5 else 0.0
+	return gate * (0.5 * signf(sin(TAU * hz * t)) * 0.6 + 0.4 * sin(TAU * hz * 1.5 * t))
+
+
+## A tactile switch: the click, then the copper zap of a contact closing.
+static func _switch(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.8 * (rng.randf_range(-1.0, 1.0) - state)
+	var click: float = _last_noise * exp(-progress * 60.0)
+	var zap: float = 0.0
+	if progress > 0.15:
+		zap = 0.35 * signf(sin(TAU * hz * 5.0 * t)) * exp(-(progress - 0.15) * 20.0) \
+				* (1.0 if rng.randf() > 0.3 else 0.2)
+	return click + zap
+
+
+## A tannoy keying on: a burst of static, the line's hum, and a voice's
+## mumble — pitch and rhythm and no words, which is all a placeholder for a
+## voice should ever be.
+static func _crackle(hz: float, t: float, progress: float, state: float,
+		rng: RandomNumberGenerator) -> float:
+	_last_noise = state + 0.9 * (rng.randf_range(-1.0, 1.0) - state)
+	var static_burst: float = _last_noise * 0.6 * exp(-progress * 12.0)
+	var hum: float = 0.08 * sin(TAU * 100.0 * t)
+	var talk: float = 0.0
+	if progress > 0.2:
+		var syllable: float = 0.5 + 0.5 * sin(TAU * 5.5 * t + sin(t * 17.0))
+		var voice: float = hz * (1.0 + 0.15 * sin(TAU * 2.1 * t)) * (1.0 + 0.04 * sin(TAU * 31.0 * t))
+		talk = 0.3 * syllable * (sin(TAU * voice * t) + 0.5 * sin(TAU * voice * 2.0 * t)) \
+				* (1.0 - smoothstep(0.8, 1.0, progress))
+	return static_burst + hum + talk
+
+
+## Wind through a vent: filtered noise that swells and dies slowly. Loops.
+static func _wind(t: float, state: float, rng: RandomNumberGenerator) -> float:
+	var breath: float = 0.5 + 0.5 * sin(TAU * 0.5 * t)
+	var cutoff: float = lerpf(0.04, 0.16, breath)
+	_last_noise = state + cutoff * (rng.randf_range(-1.0, 1.0) - state)
+	return _last_noise * (0.5 + 0.5 * breath) * 1.6
+
+
 ## Renders [param def] to a finite stream. Loops come back seamless.
 static func make_wav(def: SoundDef) -> AudioStreamWAV:
 	var seconds: float = LOOP_SECONDS if def.loops else clampf(
@@ -206,6 +387,52 @@ static func make_wav(def: SoundDef) -> AudioStreamWAV:
 				noise_state = _last_noise
 			SoundDef.Fallback.ZAP:
 				value = _zap(hz, t, progress, rng)
+			SoundDef.Fallback.MOTOR:
+				value = _motor(hz, t, progress, def.loops)
+			SoundDef.Fallback.GRIND:
+				value = _grind(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.PRINTER:
+				value = _printer(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.TEAR:
+				value = _tear(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.CLATTER:
+				value = _clatter(hz, t, progress, seconds)
+			SoundDef.Fallback.THUD:
+				value = _thud(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.SQUEAK:
+				value = _squeak(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.HUM:
+				value = _hum(hz, t, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.TINK:
+				value = _tink(hz, t, progress)
+			SoundDef.Fallback.BUZZ:
+				value = _buzz(hz, t, rng)
+			SoundDef.Fallback.DRIP:
+				value = _drip(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.GROAN:
+				value = _groan(hz, t, progress)
+			SoundDef.Fallback.SWELL:
+				value = _swell(hz, t, progress)
+			SoundDef.Fallback.DROP:
+				value = _drop(hz, t, progress)
+			SoundDef.Fallback.ALARM:
+				value = _alarm(hz, t, progress)
+			SoundDef.Fallback.SWITCH:
+				value = _switch(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.CRACKLE:
+				value = _crackle(hz, t, progress, noise_state, rng)
+				noise_state = _last_noise
+			SoundDef.Fallback.WIND:
+				value = _wind(t, noise_state, rng)
+				noise_state = _last_noise
 		if not def.loops:
 			value *= _edge_fade(progress)
 		# Soft-clipped, never clamped: a busy cue that sums past 1.0 should
@@ -247,6 +474,11 @@ static func fill_generator(playback: AudioStreamGeneratorPlayback, def: SoundDef
 		match def.fallback:
 			SoundDef.Fallback.SIREN:
 				value = sin(TAU * phase) * (0.7 + 0.3 * sin(TAU * phase * 0.02))
+			SoundDef.Fallback.HUM:
+				value = 0.5 * sin(TAU * phase) + 0.22 * sin(TAU * phase * 2.0) \
+						+ 0.1 * sin(TAU * phase * 3.0)
+			SoundDef.Fallback.BUZZ:
+				value = 0.4 * signf(sin(TAU * phase)) + 0.2 * sin(TAU * phase * 2.0)
 			_:
 				value = 0.7 * sin(TAU * phase) + 0.2 * sin(TAU * phase * 2.0)
 		var shaped: float = tanh(value * 1.1) * 0.42

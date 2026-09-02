@@ -34,10 +34,15 @@ var _root: Node3D
 func build(root: Node3D) -> Dictionary:
 	_root = root
 	_shell()
+	_tiles()
 	_conduit()
 	var sign_label: Label3D = _floor_sign()
 	_vault_door()
+	_intercom()
+	_props()
+	_puddles()
 	var bulb: MeshInstance3D = _pendant()
+	_cage_lamp()
 	_wall_wash()
 	_strip_light()
 	_dust()
@@ -47,6 +52,7 @@ func build(root: Node3D) -> Dictionary:
 	return {
 		"sign": sign_label,
 		"sign_spill": _root.get_node_or_null(^"FloorSign/Spill"),
+		"intercom_lamp": _root.get_node_or_null(^"Intercom/Lamp"),
 		"bulb": bulb,
 		"key": _root.get_node_or_null(^"Key"),
 		"cold": _root.get_node_or_null(^"StripLight/Tube"),
@@ -62,7 +68,10 @@ func _wall_wash() -> void:
 	var wash: OmniLight3D = OmniLight3D.new()
 	wash.name = "WallWash"
 	wash.light_color = Color(0.596, 0.51, 0.404)
-	wash.light_energy = 2.0
+	# Brighter than it was: the machine stood in a void, and a void reads as
+	# a rendering budget rather than as darkness. The room has to be seen to
+	# be a room.
+	wash.light_energy = 3.2
 	wash.light_specular = 0.15
 	wash.omni_range = 7.5
 	wash.omni_attenuation = 1.1
@@ -73,7 +82,7 @@ func _wall_wash() -> void:
 	var ceiling: OmniLight3D = OmniLight3D.new()
 	ceiling.name = "CeilingWash"
 	ceiling.light_color = Color(0.62, 0.51, 0.376)
-	ceiling.light_energy = 2.6
+	ceiling.light_energy = 3.2
 	ceiling.light_specular = 0.1
 	ceiling.omni_range = 6.0
 	ceiling.omni_attenuation = 1.4
@@ -127,7 +136,8 @@ func _conduit() -> void:
 	var pipe: StandardMaterial3D = Materials.rusted(27)
 	var duct: StandardMaterial3D = Materials.machined(Color(0.322, 0.310, 0.290), 71)
 	# Two horizontal runs high on the back wall, with brackets at intervals.
-	for run: float in [2.42, 2.66]:
+	# Up under the joists, clear of the sign.
+	for run: float in [2.6, 2.8]:
 		_segment(conduit, Vector3(-WIDTH, run, DEPTH_BACK + 0.16),
 				Vector3(WIDTH, run, DEPTH_BACK + 0.16), 0.055, pipe)
 		for i: int in 7:
@@ -157,9 +167,13 @@ func _conduit() -> void:
 
 ## The floor name, in orange, on the back wall. Reading where you are off the
 ## wall rather than off a text overlay is the whole point of the exercise.
+##
+## Right of centre and at eye height. It hung above the door at the height of
+## the coil's mast and the lever's knob, and from the machine both crossed it:
+## the first playtest read "FL OR 2: THE CAS NO" for a whole run.
 func _floor_sign() -> Label3D:
 	var housing: Node3D = _group(&"FloorSign")
-	housing.position = Vector3(2.15, 1.98, DEPTH_BACK + 0.12)
+	housing.position = Vector3(3.35, 2.22, DEPTH_BACK + 0.12)
 	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
 	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
@@ -210,25 +224,208 @@ func _floor_sign() -> Label3D:
 	return label
 
 
-## The door out, on the back wall under the sign. It is never opened; it exists
-## so the room has somewhere the next floor could be.
+## The door out, on the back wall, left of the machine. It is never opened; it
+## exists so the room has somewhere the next floor could be — and it is the
+## size of a vault's, because that is what the first playtest asked to see
+## behind the machine, and because a door a person could kick in is not the
+## House's.
 func _vault_door() -> void:
 	var door: Node3D = _group(&"VaultDoor")
-	door.position = Vector3(2.15, 0.0, DEPTH_BACK + 0.1)
-	_box(door, Vector3(1.5, 2.3, 0.12), Vector3(0.0, 1.15, -0.02),
-			Materials.machined(Color(0.196, 0.192, 0.184), 72))
-	# The frame, proud of the wall, and a heavy handle wheel.
+	door.position = Vector3(-2.65, 0.0, DEPTH_BACK + 0.1)
+	var steel: StandardMaterial3D = Materials.machined(Color(0.22, 0.215, 0.205), 72)
+	# The leaf, a step in from the frame, with a ring of bolt heads around it.
+	_box(door, Vector3(2.2, 2.6, 0.16), Vector3(0.0, 1.32, 0.0), steel)
+	_box(door, Vector3(1.9, 2.3, 0.06), Vector3(0.0, 1.32, 0.1),
+			Materials.machined(Color(0.19, 0.185, 0.18), 73))
+	for i: int in 14:
+		var t: float = float(i) / 14.0
+		var edge: Vector2
+		if t < 0.25:
+			edge = Vector2(-0.95 + t * 4.0 * 1.9, 2.42)
+		elif t < 0.5:
+			edge = Vector2(0.95, 2.42 - (t - 0.25) * 4.0 * 2.2)
+		elif t < 0.75:
+			edge = Vector2(0.95 - (t - 0.5) * 4.0 * 1.9, 0.22)
+		else:
+			edge = Vector2(-0.95, 0.22 + (t - 0.75) * 4.0 * 2.2)
+		Prims.sphere(door, 0.04, Vector3(edge.x, edge.y, 0.14), Materials.brass(74))
+	# The frame, proud of the wall, and the hinge knuckles down one side.
 	for sx: float in [-1.0, 1.0]:
-		_box(door, Vector3(0.12, 2.44, 0.2), Vector3(sx * 0.75, 1.22, 0.02),
+		_box(door, Vector3(0.18, 2.86, 0.28), Vector3(sx * 1.19, 1.43, 0.02),
 				Materials.rusted(29))
-	_box(door, Vector3(1.62, 0.12, 0.2), Vector3(0.0, 2.36, 0.02), Materials.rusted(30))
-	_cylinder(door, 0.24, 0.07, Vector3(0.0, 1.15, 0.09), Vector3(PI * 0.5, 0.0, 0.0),
-			Materials.brass(40))
+	_box(door, Vector3(2.56, 0.18, 0.28), Vector3(0.0, 2.77, 0.02), Materials.rusted(30))
+	for i: int in 3:
+		_cylinder(door, 0.09, 0.3, Vector3(-1.19, 0.55 + float(i) * 0.8, 0.16),
+				Vector3.ZERO, Materials.machined(Materials.STEEL, 75))
+	# The wheel: a rim, a hub, six spokes, big enough to need both hands.
+	var wheel: Node3D = Node3D.new()
+	wheel.name = "Wheel"
+	wheel.position = Vector3(0.15, 1.3, 0.2)
+	door.add_child(wheel)
+	Prims.cylinder(wheel, 0.44, 0.05, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0),
+			Materials.brass(40), 24)
+	Prims.cylinder(wheel, 0.36, 0.06, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0),
+			Materials.cavity(), 24)
+	Prims.cylinder(wheel, 0.1, 0.12, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0),
+			Materials.brass(41), 16)
+	for i: int in 6:
+		var spoke: MeshInstance3D = Prims.box(wheel, Vector3(0.04, 0.72, 0.04),
+				Vector3.ZERO, Materials.brass(41))
+		spoke.rotation.z = TAU * float(i) / 6.0
+	# A lamp over the lintel, red, lit: the way out is watched.
+	Prims.box(door, Vector3(0.22, 0.12, 0.14), Vector3(0.0, 2.92, 0.02),
+			Materials.machined(Color(0.2, 0.19, 0.18), 76))
+	Prims.sphere(door, 0.05, Vector3(0.0, 2.9, 0.1),
+			Materials.glowing(Color(1.0, 0.18, 0.1), 2.4))
+	var watch: OmniLight3D = OmniLight3D.new()
+	watch.light_color = Color(1.0, 0.25, 0.12)
+	watch.light_energy = 0.7
+	watch.omni_range = 1.8
+	watch.omni_attenuation = 1.8
+	watch.shadow_enabled = false
+	watch.position = Vector3(0.0, 2.86, 0.3)
+	door.add_child(watch)
+
+
+## Grout lines across the floor: a grid of dark seams that turns a slab of
+## concrete into laid tiles. Lines rather than a texture, because the floor
+## wears a triplanar scan already and a second material would want a shader;
+## thirty thin boxes read as a grid from every angle the room is seen from.
+func _tiles() -> void:
+	var grout: Node3D = _group(&"Tiles")
+	var seam: StandardMaterial3D = Materials.painted(Color(0.06, 0.056, 0.05), 91)
+	var depth: float = DEPTH_FRONT - DEPTH_BACK
+	var mid_z: float = (DEPTH_FRONT + DEPTH_BACK) * 0.5
+	const PITCH: float = 0.62
+	var x: float = -WIDTH + PITCH * 0.5
+	while x < WIDTH:
+		_box(grout, Vector3(0.016, 0.006, depth), Vector3(x, 0.003, mid_z), seam)
+		x += PITCH
+	var z: float = DEPTH_BACK + PITCH * 0.5
+	while z < DEPTH_FRONT:
+		_box(grout, Vector3(WIDTH * 2.0, 0.006, 0.016), Vector3(0.0, 0.003, z), seam)
+		z += PITCH
+
+
+## The intercom the Clerk speaks through: a speaker box on the back wall with
+## a grille and a lamp that lights while the tannoy is live. The House never
+## speaks in person; this is its hands' mouth.
+func _intercom() -> void:
+	var box: Node3D = _group(&"Intercom")
+	box.position = Vector3(1.55, 2.02, DEPTH_BACK + 0.1)
+	_box(box, Vector3(0.4, 0.5, 0.18), Vector3.ZERO,
+			Materials.painted(Color(0.16, 0.15, 0.13), 92))
+	_box(box, Vector3(0.36, 0.46, 0.02), Vector3(0.0, 0.0, 0.1),
+			Materials.cavity())
+	for i: int in 9:
+		_box(box, Vector3(0.3, 0.012, 0.02), Vector3(0.0, -0.18 + float(i) * 0.045, 0.11),
+				Materials.machined(Color(0.3, 0.29, 0.27), 93))
+	var lamp: MeshInstance3D = Prims.sphere(box, 0.028, Vector3(0.13, 0.19, 0.11),
+			Materials.lamp_glass(Color(1.0, 0.55, 0.2), 0.0))
+	lamp.name = "Lamp"
+	var plate: Label3D = Label3D.new()
+	plate.text = "TANNOY"
+	plate.font_size = 30
+	plate.pixel_size = 0.0009
+	plate.modulate = Color(0.7, 0.62, 0.45)
+	plate.shaded = false
+	plate.position = Vector3(-0.06, 0.19, 0.115)
+	box.add_child(plate)
+	# The cable up to the conduit.
+	_segment(box, Vector3(0.0, 0.25, -0.02), Vector3(0.0, 0.62, -0.02), 0.012,
+			Materials.rubber(Color(0.1, 0.09, 0.085), 94))
+
+
+## What a basement has in it besides the machine: barrels in the corner, a
+## crate or two, a fuse box, a manifold of pipes with a valve wheel. None of
+## it does anything; all of it says where you are.
+func _props() -> void:
+	var props: Node3D = _group(&"Props")
+	# Barrels, back left, one on its side.
+	for barrel: Array in [[Vector3(-3.7, 0.45, -2.2), 0.0], [Vector3(-3.05, 0.45, -2.55), 0.0],
+			[Vector3(-3.4, 0.45, -1.5), 0.0]]:
+		var at: Vector3 = barrel[0]
+		_cylinder(props, 0.3, 0.9, at, Vector3.ZERO, Materials.rusted(95))
+		for band: float in [-0.3, 0.0, 0.3]:
+			_cylinder(props, 0.31, 0.04, at + Vector3(0.0, band, 0.0), Vector3.ZERO,
+					Materials.machined(Materials.STEEL, 96))
+	# Crates, stacked, front left.
+	_box(props, Vector3(0.7, 0.5, 0.7), Vector3(-3.6, 0.25, 0.6), Materials.timber(101))
+	_box(props, Vector3(0.6, 0.45, 0.6), Vector3(-3.55, 0.725, 0.55), Materials.timber(102))
+	# A fuse box on the left wall, door ajar, a lamp on it.
+	_box(props, Vector3(0.12, 0.6, 0.45), Vector3(-WIDTH + 0.06, 1.6, -0.6),
+			Materials.painted(Color(0.2, 0.2, 0.17), 97))
+	Prims.sphere(props, 0.03, Vector3(-WIDTH + 0.13, 1.85, -0.6),
+			Materials.glowing(Color(0.4, 1.0, 0.45), 2.0))
+	# A manifold: three pipes down the right wall into a valve, wheel and all.
+	var pipe: StandardMaterial3D = Materials.rusted(98)
+	for i: int in 3:
+		var z: float = -1.2 + float(i) * 0.24
+		_segment(props, Vector3(WIDTH, CEILING - 0.3, z), Vector3(WIDTH, 0.9, z), 0.04, pipe)
+		_segment(props, Vector3(WIDTH, 0.9, z), Vector3(WIDTH - 0.5, 0.9, z), 0.04, pipe)
+	var valve: Node3D = Node3D.new()
+	valve.position = Vector3(WIDTH - 0.5, 0.9, -0.96)
+	props.add_child(valve)
+	Prims.cylinder(valve, 0.16, 0.03, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5),
+			Materials.brass(99), 18)
 	for i: int in 4:
-		var angle: float = TAU * float(i) / 4.0 + PI * 0.25
-		_box(door, Vector3(0.05, 0.05, 0.05),
-				Vector3(sin(angle) * 0.24, 1.15 + cos(angle) * 0.24, 0.11),
-				Materials.brass(41))
+		var spoke: MeshInstance3D = Prims.box(valve, Vector3(0.02, 0.3, 0.02),
+				Vector3.ZERO, Materials.brass(99))
+		spoke.rotation.x = TAU * float(i) / 4.0
+	# A sign over the manifold, the House's kind of joke.
+	var notice: Label3D = Label3D.new()
+	notice.text = "NO CREDIT"
+	notice.font_size = 44
+	notice.pixel_size = 0.0018
+	notice.modulate = Color(0.75, 0.68, 0.5)
+	notice.shaded = false
+	notice.rotation.y = -PI * 0.5
+	notice.position = Vector3(WIDTH - 0.02, 1.9, -0.96)
+	props.add_child(notice)
+
+
+## Oil on the concrete: dark, still, and the one thing on the floor that
+## reflects the lamp. Flat quads, near-mirror, laid where a machine leaks.
+func _puddles() -> void:
+	var oil: StandardMaterial3D = StandardMaterial3D.new()
+	oil.albedo_color = Color(0.03, 0.028, 0.025)
+	oil.roughness = 0.04
+	oil.metallic = 0.0
+	oil.metallic_specular = 0.9
+	for puddle: Array in [[Vector2(0.9, 0.6), Vector3(-1.9, 0.004, 1.3), 0.3],
+			[Vector2(0.55, 0.42), Vector3(1.6, 0.004, 2.2), -0.6],
+			[Vector2(0.7, 0.5), Vector3(-3.1, 0.004, -0.6), 0.9]]:
+		var quad: MeshInstance3D = Prims.quad(_root, puddle[0], puddle[1], oil)
+		quad.rotation.x = -PI * 0.5
+		quad.rotation.z = float(puddle[2])
+
+
+## A caged bulb over the back of the room, so the door and the barrels are in
+## a light of their own rather than in the pendant's leftovers.
+func _cage_lamp() -> void:
+	var cage: Node3D = _group(&"CageLamp")
+	cage.position = Vector3(-2.2, CEILING - 0.42, -1.6)
+	_segment(cage, Vector3(0.0, 0.42, 0.0), Vector3(0.0, 0.08, 0.0), 0.012,
+			Materials.rubber(Color(0.09, 0.085, 0.08), 98))
+	Prims.cylinder(cage, 0.06, 0.08, Vector3(0.0, 0.05, 0.0), Vector3.ZERO,
+			Materials.machined(Materials.STEEL, 78), 12)
+	for i: int in 6:
+		var wire: MeshInstance3D = Prims.box(cage, Vector3(0.008, 0.22, 0.008),
+				Vector3(0.0, -0.08, 0.0), Materials.machined(Materials.STEEL, 78))
+		wire.position += Vector3(cos(TAU * float(i) / 6.0) * 0.07, 0.0,
+				sin(TAU * float(i) / 6.0) * 0.07)
+	Prims.sphere(cage, 0.045, Vector3(0.0, -0.08, 0.0),
+			Materials.glowing(Color(1.0, 0.8, 0.55), 6.0))
+	var light: OmniLight3D = OmniLight3D.new()
+	light.name = "Bulb"
+	light.light_color = Color(1.0, 0.78, 0.5)
+	light.light_energy = 2.4
+	light.light_volumetric_fog_energy = 0.8
+	light.omni_range = 5.0
+	light.omni_attenuation = 1.4
+	light.shadow_enabled = true
+	light.position = Vector3(0.0, -0.1, 0.0)
+	cage.add_child(light)
 
 
 ## The pendant lamp. The key light lives at the bulb, so the shadows in the room
@@ -273,7 +470,9 @@ func _pendant() -> MeshInstance3D:
 	key.light_color = Materials.LAMP
 	key.light_energy = 8.0
 	key.light_indirect_energy = 1.5
-	key.light_volumetric_fog_energy = 1.1
+	# The beam itself, in the dust: the volumetric shaft the first playtest
+	# asked for is the key light's own fog energy, and a thicker air under it.
+	key.light_volumetric_fog_energy = 2.4
 	key.light_specular = 1.0
 	key.shadow_enabled = true
 	key.shadow_bias = 0.025
@@ -285,6 +484,20 @@ func _pendant() -> MeshInstance3D:
 	key.spot_angle_attenuation = 1.5
 	_root.add_child(key)
 	_aim(key, LAMP + Vector3(0.0, -0.08, 0.0), LAMP_TARGET)
+	# Thicker air under the lamp, so the cone is a cone and not a suggestion.
+	var shaft: FogVolume = FogVolume.new()
+	shaft.name = "Shaft"
+	shaft.shape = RenderingServer.FOG_VOLUME_SHAPE_CONE
+	shaft.size = Vector3(2.6, 2.6, 2.6)
+	var fog: FogMaterial = FogMaterial.new()
+	fog.density = 0.55
+	fog.albedo = Color(0.9, 0.82, 0.7)
+	fog.emission = Color(0.06, 0.045, 0.03)
+	fog.edge_fade = 0.2
+	shaft.material = fog
+	_root.add_child(shaft)
+	shaft.global_transform = Transform3D(Basis.IDENTITY, LAMP + Vector3(0.0, -0.1, 0.0)) \
+			.looking_at(LAMP_TARGET, Vector3.UP)
 	return bulb
 
 

@@ -168,6 +168,17 @@ func bind(bus: EffectBus) -> void:
 	_bus.event_emitted.connect(_on_event)
 
 
+## Shows or hides the three gauges. The machine carries the same numbers on
+## its Nixie counters, and the overlay only repeats them for whoever asks.
+func show_gauges(shown: bool) -> void:
+	var gauges: Control = get_node_or_null(^"Gauges") as Control
+	if gauges != null:
+		gauges.visible = shown
+	var line_row: Control = get_node_or_null(^"LineRow") as Control
+	if line_row != null:
+		line_row.visible = shown
+
+
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	match kind:
 		EffectBus.Event.RUN_STARTED:

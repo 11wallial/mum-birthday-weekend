@@ -47,6 +47,43 @@ enum Fallback {
 	STEAM,
 	## An electric arc: gated buzz with snap transients, for the charge cable.
 	ZAP,
+	## A motor under load: a low hum whose whir rises as it comes up to speed.
+	## The drive turning the drums; loops.
+	MOTOR,
+	## Gears meshing badly: broadband grind chopped at tooth rate over a buzz.
+	GRIND,
+	## A dot-matrix head: bursts of pin clicks at line rate, paper feed under.
+	PRINTER,
+	## Paper torn off a spool: a noise burst that rises and frays.
+	TEAR,
+	## Coins on concrete: a scatter of pings over a floor's dead thud.
+	CLATTER,
+	## A stack of paper landing: low, damped, no ring.
+	THUD,
+	## Leather on a grip: a short, wobbling squeak.
+	SQUEAK,
+	## A live tube: mains hum, its harmonics, and the flyback whine over it.
+	HUM,
+	## A Nixie cathode swapping: one metallic tink with a glassy ring.
+	TINK,
+	## A gas-discharge transformer: hundred-hertz buzz with flicker pops.
+	BUZZ,
+	## One drop into a puddle: a falling blip and a splash.
+	DRIP,
+	## A structure shifting: a low, resonant metallic groan.
+	GROAN,
+	## A rising analogue swell: detuned saws climbing with vibrato.
+	SWELL,
+	## A sub-bass drop: a sine falling an octave and a half.
+	DROP,
+	## An alarm: a hard tone gated four times a second.
+	ALARM,
+	## A tactile switch with a copper contact zap behind it.
+	SWITCH,
+	## A tannoy keying on: static, a hum, and the mumble of a voice.
+	CRACKLE,
+	## Wind through an iron vent: slow, filtered noise breathing.
+	WIND,
 }
 
 @export var id: StringName = &""

@@ -1,4 +1,4 @@
-[gd_resource type="AudioBusLayout" load_steps=5 format=3 uid="uid://bjewoofsej1y"]
+[gd_resource type="AudioBusLayout" load_steps=6 format=3 uid="uid://bjewoofsej1y"]
 
 [sub_resource type="AudioEffectLimiter" id="Limiter_master"]
 ceiling_db = -0.8
@@ -10,6 +10,14 @@ ratio = 3.5
 gain = 2.0
 attack_us = 12.0
 release_ms = 120.0
+
+[sub_resource type="AudioEffectReverb" id="Reverb_vault"]
+predelay_msec = 38.0
+predelay_feedback = 0.3
+room_size = 0.86
+damping = 0.42
+dry = 0.8
+wet = 0.22
 
 [sub_resource type="AudioEffectCompressor" id="Compressor_ui"]
 threshold = -18.0
@@ -42,6 +50,8 @@ bus/2/volume_db = -3.0
 bus/2/send = &"Master"
 bus/2/effect/0/effect = SubResource("Compressor_sfx")
 bus/2/effect/0/enabled = true
+bus/2/effect/1/effect = SubResource("Reverb_vault")
+bus/2/effect/1/enabled = true
 bus/3/name = &"UI"
 bus/3/solo = false
 bus/3/mute = false

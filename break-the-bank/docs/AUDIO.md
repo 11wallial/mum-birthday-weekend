@@ -22,7 +22,7 @@ Current state: `godot --headless --path . --script res://tools/audio/audit.gd`
 
 ## 1. Sound effect asset manifest
 
-62 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
+87 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
 fields shown here are the ones a sourcing pass needs. `Pitch` is the per-trigger
 random range, `Vol` the per-trigger dB jitter added to the authored level.
 
@@ -356,3 +356,38 @@ godot --headless --path . --script res://tools/audio/bake_placeholders.gd -- \
 Adding a cue: drop a `.tres` in `resources/audio/cues/`, and it is playable
 immediately as a placeholder. Sourcing a cue: drop the file at the manifest's
 `file_name` and add a row to `CREDITS.md`. Neither requires touching code.
+
+
+## 1b. The first playtest's list — cues added 2 September 2026
+
+Twenty-five cues from the review's brief, each with a synthesised placeholder
+of its own shape (`SoundDef.Fallback` grew from thirteen shapes to
+thirty-one). The sourcing brief is the `frequency_notes` on each `.tres`.
+
+| Cue | Bus | Where it fires | Placeholder shape |
+| --- | --- | --- | --- |
+| `axle_whir_loop` | SFX | the drive, from the pull to the last stop | MOTOR |
+| `gear_grind` | SFX | the train taking the load on a pull | GRIND |
+| `coil_buzz_loop` | Ambience | the charge coil idling, from run start | BUZZ |
+| `receipt_print` | SFX | the receipt printing after a spin | PRINTER |
+| `receipt_tear` | SFX | the floor closing, early or on time | TEAR |
+| `coin_clatter_concrete` | SFX | a jackpot overflowing the tray | CLATTER |
+| `cash_thud` | SFX | the ante settled | THUD |
+| `leather_squeak` | SFX | the grip at the top of the pull | SQUEAK |
+| `reel_tension` | SFX | the last drum running on with a match standing | RATCHET |
+| `crt_hum_loop` | Ambience | the ledger's tube, from run start | HUM |
+| `crt_click` / `crt_beep` | UI | the ledger rewriting; a new memo | CLICK / TONE |
+| `nixie_tink` | UI | a counter tube changing | TINK |
+| `nixie_hum_loop` / `sign_buzz_loop` | Ambience | the counters' supply; the sign's transformer | BUZZ |
+| `sign_pop` | Ambience | the sign flickering, on its own clock | CLICK |
+| `amb_vault_drone_loop` / `amb_wind_loop` | Ambience | the building; the vents | DRONE / WIND |
+| `foley_drip` / `foley_groan` | Ambience | a puddle; the door's frame, on their own clocks | DRIP / GROAN |
+| `mult_swell` | Music | a paying spin at ×2 or better, pitched by the multiplier | SWELL |
+| `debt_sting` | Music | the vig, the slate, the collector | DROP |
+| `alarm_pulse` | SFX | an ante missed, the House's person acting | ALARM |
+| `switch_click` | UI | a reel locked, the stake stepped | SWITCH |
+| `intercom_crackle` | UI | the Clerk keying the tannoy | CRACKLE |
+
+The SFX bus carries the vault's reverb now (`Reverb_vault` in
+`default_bus_layout.tres`): predelay 38 ms, a large room, damped, 22% wet.
+Positional cues are placed in the room by `AudioDirector.FOLEY_AT`.
