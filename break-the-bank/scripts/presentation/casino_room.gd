@@ -732,8 +732,11 @@ func _refresh_diegetic() -> void:
 			if child is Label3D:
 				(child as Label3D).text = _floor_sign.text
 	if _slot_view != null:
-		_slot_view.set_readout(state.economy.debt, floor_name,
-				_memos.memo_for(state) if _memos != null else "")
+		# The boss's rule stays on the ledger for the whole floor; the House's
+		# memos wait for a floor with nobody on it.
+		var memo: String = state.boss.tell if state.boss != null \
+				else (_memos.memo_for(state) if _memos != null else "")
+		_slot_view.set_readout(state.economy.debt, floor_name, memo)
 
 
 ## Folds the finished run into the profile and the local board, and tells the
@@ -976,6 +979,12 @@ func _announce_floor(payload: Dictionary) -> void:
 		lines.append(String(granted.get("title", "")))
 		lines.append(String(granted.get("brief", "")))
 	_granted.clear()
+	# Whoever the House has sent is announced with the floor, rule and all:
+	# a twist nobody was told about is not a boss, it is a bug report.
+	var boss_name: String = String(payload.get("boss_name", ""))
+	if boss_name != "":
+		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])
+		lines.append(String(payload.get("boss_tell", "")))
 	if state != null and state.floor_at(state.floor_index + 1) == null \
 			and state.economy.debt > 0:
 		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [

@@ -104,6 +104,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def != null:
 		ctx.multiplier *= floor_def.payout_scale
+	# The House's person on the floor taxes the pattern they were sent for.
+	ctx.multiplier *= BossEngine.pattern_scale(state, pattern)
 	# The contract's cut comes off the end, after everything the player built.
 	# Signing away a quarter of the payout should cost a quarter of what the
 	# machine actually pays, not a quarter of its bare symbols.
@@ -112,6 +114,7 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	# And the House takes its share off the end of that, which is the order it
 	# would take it in: after everything, and off the top of what is left.
 	ctx.multiplier *= maxf(0.0, 1.0 - HeatEngine.skim(state))
+	ctx.multiplier *= maxf(0.0, 1.0 - BossEngine.skim(state))
 	# An audit's adjustment to the machine comes last of all.
 	ctx.multiplier *= maxf(0.0, state.options.payout_scale)
 	return ctx

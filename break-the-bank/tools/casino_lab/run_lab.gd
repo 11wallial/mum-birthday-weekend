@@ -7,7 +7,8 @@
 ## --stay tells every run to take the House's offer and play on past the last
 ## floor, which measures the endless curve rather than the game that ends.
 ## --difficulty=<id> measures one rung of the ladder; --challenge=<id> one
-## challenge, each with the whole content set allowed.
+## challenge, each with the whole content set allowed. --no-bosses sends
+## nobody to any floor, which is how what the bosses cost is measured.
 ##
 ## Writes a JSON report and prints a short summary. The agent balance loop reads
 ## the JSON, edits resources/rules/*.tres, and runs it again.
@@ -34,12 +35,21 @@ func _initialize() -> void:
 		if options == null:
 			options = RunOptions.new()
 		options.stay_at_table = true
+	if args.has("no-bosses"):
+		if options == null:
+			options = RunOptions.new()
+		options.no_bosses = true
 
 	var report: Dictionary = CasinoLab.run_batch(runs, base_seed, options)
 	report["anomalies"] = CasinoLab.find_anomalies(report, lift)
 	_write(out_path, report)
 	_summarise(report, out_path)
 	quit(0)
+
+
+## Floor first, then name, so the table reads top to bottom like the run.
+func _boss_order(bosses: Dictionary, key: String) -> String:
+	return "%02d:%s" % [int(bosses[key]["floor"]), key]
 
 
 func _parse_args(argv: PackedStringArray) -> Dictionary:
@@ -111,6 +121,17 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 				key, int(row["runs"]), float(row["win_rate"]) * 100.0,
 				float(row["baseline"]) * 100.0,
 				(float(row["win_rate"]) - float(row["baseline"])) * 100.0])
+	var bosses: Dictionary = report.get("boss_rates", {})
+	if not bosses.is_empty():
+		print("bosses:")
+		var ids: Array = bosses.keys()
+		ids.sort_custom(func(a: String, b: String) -> bool:
+			return _boss_order(bosses, a) < _boss_order(bosses, b))
+		for key: String in ids:
+			var row: Dictionary = bosses[key]
+			print("  %d  %-16s met %-5d killed %.1f%% of them vs %.1f%% on the floor (%+.1f pts)" % [
+				int(row["floor"]), key, int(row["faced"]), float(row["death_rate"]) * 100.0,
+				float(row["floor_rate"]) * 100.0, float(row["lift"]) * 100.0])
 	var picks: Dictionary = report.get("pick_rates", {})
 	var flagged: Array[String] = []
 	for key: String in picks:

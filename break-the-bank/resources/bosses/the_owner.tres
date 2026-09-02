@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_owner"
+display_name = "The Owner"
+intro = "Every spin is rent."
+tell = "The ante rises 2.5% with every spin taken."
+floor = 7
+rule = 6
+magnitude = 2.5
+symbol = &""
+pattern = -1

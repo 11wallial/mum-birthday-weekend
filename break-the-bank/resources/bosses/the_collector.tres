@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_collector"
+display_name = "The Collector"
+intro = "He does not wait for the floor to end."
+tell = "The vig is charged again halfway through the floor."
+floor = 4
+rule = 3
+magnitude = 0.0
+symbol = &""
+pattern = -1

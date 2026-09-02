@@ -71,6 +71,8 @@ static func fingerprint(content: ContentDB) -> String:
 				contract.boon_magnitude, contract.toll, contract.toll_magnitude])
 	for floor_def: FloorDef in content.floors:
 		parts.append("%d:%d:%d" % [floor_def.index, floor_def.ante, floor_def.spins])
+	for boss: BossDef in content.bosses:
+		parts.append("%s:%d:%d:%s" % [boss.id, boss.floor, boss.rule, boss.magnitude])
 	parts.append("%d:%d:%d:%d" % [content.balance.reel_count, content.balance.starting_cash,
 			content.balance.starting_debt, content.balance.spin_cost])
 	return "%x" % ("|".join(parts)).hash()

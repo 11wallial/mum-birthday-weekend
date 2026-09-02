@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_accountant"
+display_name = "The Accountant"
+intro = "He bills for every drum you touch."
+tell = "Every lock costs triple."
+floor = 7
+rule = 1
+magnitude = 3.0
+symbol = &""
+pattern = -1

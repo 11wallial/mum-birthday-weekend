@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_dealer"
+display_name = "The Dealer"
+intro = "The diamonds are being counted elsewhere."
+tell = "No Diamonds on this floor."
+floor = 4
+rule = 0
+magnitude = 0.0
+symbol = &"diamond"
+pattern = -1

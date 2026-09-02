@@ -54,6 +54,12 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	# win rate: the thing people buy that loses is the trap the lab exists
 	# to find before a person does.
 	var offered_runs: Dictionary = {}
+	# Who the House sent, and whether the run ended on their floor, so a boss
+	# can be judged against the floor's ordinary death rate.
+	var boss_faced: Dictionary = {}
+	var boss_killed: Dictionary = {}
+	var reached: PackedInt32Array = PackedInt32Array()
+	reached.resize(content.floors.size() + 2)
 	# Runs and wins bucketed by how many floors they cleared, so an artifact can
 	# be compared against the cohort that got far enough to be offered it.
 	var runs_by_depth: PackedInt32Array = PackedInt32Array()
@@ -144,6 +150,16 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			if won:
 				synergy_wins[tag_key] = int(synergy_wins.get(tag_key, 0)) + 1
 			_bump(synergy_depths, tag_key, market, runs_by_market.size())
+		for floor_index: int in range(1, mini(state.floors_cleared + 1, content.floors.size()) + 1):
+			reached[floor_index] += 1
+		for faced_index: int in state.bosses_faced.size():
+			var boss_id: String = String(state.bosses_faced[faced_index])
+			if boss_id == "":
+				continue
+			boss_faced[boss_id] = int(boss_faced.get(boss_id, 0)) + 1
+			if not won and state.floor_index == faced_index + 1 \
+					and faced_index + 1 <= content.floors.size():
+				boss_killed[boss_id] = int(boss_killed.get(boss_id, 0)) + 1
 		for offered: StringName in state.offers_seen:
 			var offered_key: String = String(offered)
 			offered_runs[offered_key] = int(offered_runs.get(offered_key, 0)) + 1
@@ -192,6 +208,7 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"archetype_win_rates": _stratified_rates(archetype_runs, archetype_wins,
 				archetype_depths, runs_by_market, wins_by_market, win_rate),
 		"pick_rates": pick_rates(offered_runs, artifact_runs, artifact_rates),
+		"boss_rates": _boss_rates(boss_faced, boss_killed, floor_deaths, reached, content),
 		"anomalies": [],
 	}
 
@@ -308,6 +325,33 @@ static func _stratified_baseline(histogram: PackedInt32Array,
 	if total <= 0:
 		return fallback
 	return weighted / float(total)
+
+
+## Each boss's death rate — the share of runs that met them and ended on
+## their floor — beside the floor's own death rate over every run that
+## opened it, whoever was there. The lift is what the boss adds.
+static func _boss_rates(faced: Dictionary, killed: Dictionary, floor_deaths: Dictionary,
+		reached: PackedInt32Array, content: ContentDB) -> Dictionary:
+	var out: Dictionary = {}
+	var keys: Array = faced.keys()
+	keys.sort()
+	for key: String in keys:
+		var met: int = int(faced[key])
+		var died: int = int(killed.get(key, 0))
+		var boss: BossDef = content.boss_by_id(StringName(key))
+		var floor_index: int = boss.floor if boss != null else 0
+		var floor_rate: float = 0.0
+		if floor_index > 0 and floor_index < reached.size():
+			floor_rate = _ratio(int(floor_deaths.get(floor_index, 0)), reached[floor_index])
+		out[key] = {
+			"floor": floor_index,
+			"faced": met,
+			"killed": died,
+			"death_rate": _ratio(died, met),
+			"floor_rate": floor_rate,
+			"lift": _ratio(died, met) - floor_rate,
+		}
+	return out
 
 
 ## Counts one run at [param depth] under [param key].

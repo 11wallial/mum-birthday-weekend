@@ -178,6 +178,18 @@ worth knowing before touching the simulation:
   listener that treats an event as a moment — a chime, a fanfare, a scale-in —
   must check that flag; the audio director ignores everything resumed except
   the run starting.
+- From the Casino up every floor has one of the House's people on it
+  (`BossDef`, `resources/bosses/`, resolved in `BossEngine`): one rule, drawn
+  from the run's own `boss` stream in `begin_floor`, announced in the
+  FLOOR_STARTED payload (`boss`, `boss_name`, `boss_intro`, `boss_tell`),
+  printed on the ledger for the floor, and torn up in `_close_floor` like a
+  contract. Ask `BossEngine` what the boss does to a number exactly where
+  that number is used — the reel folds `weight_shifts`, `spin_price` asks
+  for the lock multiplier, `_award_nudges` asks whether free nudges stand —
+  and never gate on a boss id. `RunOptions.no_bosses` (the lab's
+  `--no-bosses`) measures what the staff costs; `boss_rates` in the report
+  puts each against the floor's own death rate, which is how a variant that
+  out-kills its siblings is found. The basement has nobody.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.

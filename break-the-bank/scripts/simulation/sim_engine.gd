@@ -158,12 +158,14 @@ func announce(state: RunState) -> void:
 		})
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def != null:
-		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, {
+		var standing: Dictionary = {
 			"floor": floor_def.index, "name": floor_def.display_name,
 			"ante": _ante_for(state, floor_def), "spins": state.spins_remaining,
 			"environment": floor_def.environment_id,
 			"description": floor_def.description, "resumed": true,
-		})
+		}
+		standing.merge(boss_payload(state))
+		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, standing)
 	_bus.emit_event(EffectBus.Event.CASH_CHANGED, {
 		"delta": 0, "cash": state.economy.cash, "reason": &"resumed", "resumed": true,
 	})
@@ -330,8 +332,19 @@ func begin_floor(state: RunState) -> void:
 	state.phase = RunState.Phase.SPINNING
 	state.decision = RunState.Decision.NONE
 	state.board.clear_holds()
+	# Who the House sends comes before the allowance is counted, because some
+	# of them come for the allowance.
+	state.boss = BossEngine.choose(state, floor_def)
+	state.bosses_faced.append(state.boss.id if state.boss != null else &"")
+	state.floor_spins = 0
+	state.boss_collected = false
+	if BossEngine.stake_frozen(state):
+		state.stake = 1
+	state.mark_reel_dirty()
 	state.spins_remaining = maxi(1, floor_def.spins + ArtifactEngine.spin_bonus(state)
-			+ state.options.bonus_spins + ContractEngine.spins_delta(state))
+			+ state.options.bonus_spins + ContractEngine.spins_delta(state)
+			+ BossEngine.spins_delta(state))
+	state.floor_spins_total = state.spins_remaining
 	# Announced before FLOOR_STARTED so the interface can put the new verb on
 	# screen as the floor opens rather than a beat into it.
 	for granted: StringName in floor_def.grants:
@@ -346,14 +359,28 @@ func begin_floor(state: RunState) -> void:
 				"brief": Systems.brief(granted),
 				"floor": floor_def.index,
 			})
-	_bus.emit_event(EffectBus.Event.FLOOR_STARTED, {
+	var opened: Dictionary = {
 		"floor": floor_def.index,
 		"name": floor_def.display_name,
 		"ante": _ante_for(state, floor_def),
 		"spins": state.spins_remaining,
 		"environment": floor_def.environment_id,
 		"description": floor_def.description,
-	})
+	}
+	opened.merge(boss_payload(state))
+	_bus.emit_event(EffectBus.Event.FLOOR_STARTED, opened)
+
+
+## Who is on the floor, for the payload that opens it. Empty strings when
+## nobody was sent, so a listener can read the keys without checking first.
+func boss_payload(state: RunState) -> Dictionary:
+	var boss: BossDef = state.boss
+	return {
+		"boss": String(boss.id) if boss != null else "",
+		"boss_name": boss.display_name if boss != null else "",
+		"boss_intro": boss.intro if boss != null else "",
+		"boss_tell": boss.tell if boss != null else "",
+	}
 
 
 ## Takes a single spin. Assumes the player can afford it.
@@ -381,6 +408,9 @@ func _do_spin(state: RunState) -> SpinBoard:
 	else:
 		state.spins_remaining -= 1
 	state.spins_taken += 1
+	state.floor_spins += 1
+	if BossEngine.collects_now(state):
+		_collect_mid_floor(state)
 	if _bus.is_live():
 		_bus.emit_event(EffectBus.Event.SPIN_STARTED, {
 			"spin": state.spins_taken,
@@ -397,6 +427,20 @@ func _do_spin(state: RunState) -> SpinBoard:
 	if state.decision == RunState.Decision.NONE:
 		collect(state)
 	return state.board
+
+
+## The collector's round: the vig, charged again halfway through the floor,
+## out of the same cash the ante needs. No grace applies — the grace is the
+## House's ordinary manners, and this is not one of its ordinary people.
+func _collect_mid_floor(state: RunState) -> void:
+	state.boss_collected = true
+	var serviced: int = state.economy.service_debt(
+			state.config.debt_service_percent * maxf(state.options.debt_service_scale, 0.0),
+			state.config.debt_default_penalty_percent)
+	_bus.emit_event(EffectBus.Event.BOSS_ACTED, {
+		"boss": String(state.boss.id), "name": state.boss.display_name,
+		"serviced": serviced, "cash": state.economy.cash, "debt": state.economy.debt,
+	})
 
 
 ## Fills the three rows, redrawing every reel the player has not held.
@@ -558,6 +602,8 @@ static func _award_nudges(state: RunState, board: SpinBoard) -> void:
 		board.free_nudges += 1
 	board.free_nudges = maxi(0, board.free_nudges)
 	board.free_nudges = mini(board.free_nudges, board.nudges)
+	if not BossEngine.free_nudges_allowed(state):
+		board.free_nudges = 0
 
 
 ## Locks or unlocks [param reel] for the next spin. Returns the new state.
@@ -849,6 +895,8 @@ func _do_set_stake(state: RunState, level: int) -> bool:
 	if not state.has_system(Systems.STAKE) or state.is_deciding():
 		return false
 	var wanted: int = clampi(level, 1, maxi(1, state.config.max_stake))
+	if wanted > 1 and BossEngine.stake_frozen(state):
+		return false
 	if wanted == state.stake:
 		return false
 	state.stake = wanted
@@ -915,6 +963,7 @@ func _close_floor(state: RunState) -> void:
 	ArtifactEngine.apply_debt_paydown(state)
 	state.floors_cleared += 1
 	state.set_contract(null)
+	state.boss = null
 	# The count is a floor's worth of attention. A new floor is a new room —
 	# unless the audit says the House remembers.
 	state.heat *= clampf(state.options.heat_carry, 0.0, 1.0)
@@ -1017,6 +1066,7 @@ func _ante_for(state: RunState, floor_def: FloorDef) -> int:
 	var ante: float = float(floor_def.ante) * state.options.ante_scale
 	ante *= maxf(0.0, 1.0 + ContractEngine.ante_percent(state) / 100.0)
 	ante *= 1.0 + state.heat_ante_percent / 100.0
+	ante *= 1.0 + BossEngine.ante_percent(state) / 100.0
 	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
 
 

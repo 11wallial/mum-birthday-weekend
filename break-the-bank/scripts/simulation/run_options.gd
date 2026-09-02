@@ -48,6 +48,10 @@ var challenge_id: StringName = &""
 ## to be told, so a batch can measure the endless floors on purpose and the
 ## default batch keeps measuring the game that ends.
 var stay_at_table: bool = false
+## Whether the House sends nobody to any floor. For the lab, to measure what
+## the bosses cost, and for tests that need a plain floor; not a rule a
+## player picks.
+var no_bosses: bool = false
 
 
 ## True when a floor may hand this run [param system].
@@ -73,11 +77,12 @@ func ruleset_key() -> String:
 	for system: StringName in early_systems:
 		early.append(String(system))
 	early.sort()
-	return "%s/%s/%s/%.2f/%d/%d/%d/%.2f/%.1f/%.2f/%.2f/%.2f/%.2f/%.1f/%s/%s/%s" % [
+	return "%s/%s/%s/%.2f/%d/%d/%d/%.2f/%.1f/%.2f/%.2f/%.2f/%.2f/%.1f/%s/%s/%s/%s" % [
 		String(starter_id), String(difficulty_id), String(challenge_id), ante_scale,
 		bonus_cash, bonus_debt, bonus_spins, debt_service_scale, interest_delta,
 		debt_scale, price_scale, heat_carry, payout_scale, curse_pays,
-		"+".join(locked), "+".join(early), "nograce" if no_grace else "grace"]
+		"+".join(locked), "+".join(early), "nograce" if no_grace else "grace",
+		"nobosses" if no_bosses else "bosses"]
 
 
 ## Everything a save needs to start the same run again. Plain data, so the
@@ -106,6 +111,7 @@ func to_dict() -> Dictionary:
 		"early_systems": early_systems.map(func(s: StringName) -> String: return String(s)),
 		"no_grace": no_grace,
 		"challenge_id": String(challenge_id),
+		"no_bosses": no_bosses,
 	}
 
 
@@ -139,6 +145,7 @@ static func from_dict(data: Dictionary) -> RunOptions:
 			options.early_systems.append(StringName(String(system)))
 	options.no_grace = bool(data.get("no_grace", false))
 	options.challenge_id = StringName(String(data.get("challenge_id", "")))
+	options.no_bosses = bool(data.get("no_bosses", false))
 	return options
 
 
@@ -163,4 +170,5 @@ func duplicate_options() -> RunOptions:
 	copy.early_systems = early_systems.duplicate()
 	copy.no_grace = no_grace
 	copy.challenge_id = challenge_id
+	copy.no_bosses = no_bosses
 	return copy

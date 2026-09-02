@@ -203,18 +203,19 @@ beside the batch's win rate among runs at the same market depth, in the same
 proportions. The bot chases whichever build it has most of, so these are the
 builds a person would actually assemble, played by a mediocre player.
 
-Measured on 2 September 2026, 10,000 runs from seed 1 (batch win rate 18.6%):
+Measured on 2 September 2026, 10,000 runs from seed 1 with the House's
+people on every floor (batch win rate 17.1%):
 
 | Build | Runs playing it | Win rate | Cohort | Lift |
 | --- | --- | --- | --- | --- |
-| The Whale | 2,087 | 59.2% | 53.7% | +5.5 |
-| The Marker | 2,732 | 47.5% | 44.7% | +2.8 |
-| The Clamp | 1,733 | 41.4% | 39.1% | +2.3 |
-| The Payroll | 3,255 | 35.2% | 34.2% | +1.0 |
-| The Trail | 3,779 | 34.4% | 33.7% | +0.7 |
-| The Clock | 6,193 | 28.2% | 27.6% | +0.7 |
-| The Orchard | 6,249 | 26.0% | 25.4% | +0.6 |
-| The Exchange | 7,693 | 23.9% | 23.8% | +0.1 |
+| The Whale | 2,030 | 56.7% | 51.2% | +5.5 |
+| The Marker | 2,791 | 42.7% | 40.4% | +2.3 |
+| The Clamp | 1,747 | 36.9% | 35.6% | +1.3 |
+| The Payroll | 3,390 | 31.9% | 30.8% | +1.1 |
+| The Trail | 3,824 | 31.1% | 30.3% | +0.9 |
+| The Clock | 6,208 | 25.9% | 25.3% | +0.5 |
+| The Orchard | 6,315 | 23.4% | 23.0% | +0.3 |
+| The Exchange | 7,635 | 22.2% | 22.1% | +0.1 |
 
 Read the lift, not the win rate: a build's win rate mostly says how deep its
 parts unlock. The Whale's lift is the one to watch — it was +45 points before

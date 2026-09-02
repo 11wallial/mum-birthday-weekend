@@ -39,6 +39,9 @@ enum Event {
 	## A won run has taken the House's offer: the debt is back and the floors
 	## past the last are open. Appended, so recorded event indices hold.
 	TABLE_KEPT,
+	## The House's person on the floor has done the thing they came to do —
+	## the collector's round, so far. The floor's opening names who is there.
+	BOSS_ACTED,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

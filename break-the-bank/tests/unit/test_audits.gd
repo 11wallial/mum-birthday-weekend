@@ -186,7 +186,9 @@ func test_every_knob_survives_a_round_trip_and_changes_the_ruleset_key() -> void
 	options.curse_pays = 6.0
 	options.early_systems = [Systems.HEAT]
 	options.no_grace = true
+	options.no_bosses = true
 	var back: RunOptions = RunOptions.from_dict(JSON.parse_string(JSON.stringify(options.to_dict())))
+	assert_bool(back.no_bosses).is_true()
 	assert_str(back.ruleset_key()).is_equal(options.ruleset_key())
 	assert_array(back.locked_systems).contains_exactly([Systems.HOLD, Systems.MARKET])
 	assert_array(back.early_systems).contains_exactly([Systems.HEAT])

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_notary"
+display_name = "The Notary"
+intro = "Two of a kind is a technicality."
+tell = "Pairs pay two-thirds."
+floor = 5
+rule = 4
+magnitude = 0.65
+symbol = &""
+pattern = 1

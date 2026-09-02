@@ -103,6 +103,17 @@ var shop_rerolls: int = 0
 var contract: ContractDef = null
 ## Contracts on the table while [member phase] is SIGNING.
 var contract_offers: Array[ContractDef] = []
+## The House's person on this floor, or null on a floor nobody was sent to.
+## Chosen as the floor opens, torn up as it closes, like a contract.
+var boss: BossDef = null
+## Who was sent to each floor so far, by floor order, empty where nobody
+## was. Telemetry: the lab reads it to say which of them kills.
+var bosses_faced: Array[StringName] = []
+## Spins taken on the floor being played, and the allowance it opened with.
+var floor_spins: int = 0
+var floor_spins_total: int = 0
+## Whether the collector has already been round this floor.
+var boss_collected: bool = false
 
 var reel_rng: RngStream
 var shop_rng: RngStream
@@ -115,6 +126,9 @@ var band_rng: RngStream
 ## Draws for the gamble ladder, so a player who never gambles gets the same
 ## reels as one who gambles every spin.
 var gamble_rng: RngStream
+## Draws for who the House sends to a floor, so restaffing a floor can never
+## move the reels, the shop or the ladder.
+var boss_rng: RngStream
 
 var _reel_cache: Array[Probability.ReelEntry] = []
 var _reel_weight_cache: PackedInt32Array = PackedInt32Array()
@@ -137,6 +151,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	tempo_rng = RngStream.new(p_seed, &"tempo")
 	band_rng = RngStream.new(p_seed, &"band")
 	gamble_rng = RngStream.new(p_seed, &"gamble")
+	boss_rng = RngStream.new(p_seed, &"boss")
 	board.resize(config.reel_count)
 
 
@@ -183,7 +198,9 @@ func scoring_rows() -> int:
 ## — it is a thing the player learns to do without thinking about it.
 func spin_price() -> int:
 	var locks: int = board.held_count()
-	return maxi(0, config.spin_cost * maxi(1, stake) * (1 + locks) + stake_premium())
+	var base: int = config.spin_cost * maxi(1, stake)
+	var lock_cost: int = int(round(float(base) * float(locks) * BossEngine.lock_multiplier(self)))
+	return maxi(0, base + lock_cost + stake_premium())
 
 
 ## What the wager above the first level costs on top of the spin, per spin:
@@ -239,7 +256,7 @@ func reel() -> Array[Probability.ReelEntry]:
 	if _reel_cache_dirty:
 		var shifts: Dictionary = weight_shifts.duplicate()
 		for source: Dictionary in [ContractEngine.weight_shifts(self),
-				HeatEngine.weight_shifts(self)]:
+				HeatEngine.weight_shifts(self), BossEngine.weight_shifts(self)]:
 			for key: StringName in source:
 				shifts[key] = int(shifts.get(key, 0)) + int(source[key])
 		_reel_cache = Probability.build_reel(content.symbols, shifts)
@@ -366,6 +383,8 @@ func snapshot() -> Dictionary:
 		"endless": endless,
 		"best_payout": best_payout,
 		"streak": streak,
+		"boss": String(boss.id) if boss != null else "",
+		"bosses_faced": bosses_faced.map(func(id: StringName) -> String: return String(id)),
 	}
 	data.merge(economy.snapshot())
 	return data

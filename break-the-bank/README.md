@@ -149,6 +149,15 @@ principal with a penalty on top.
 | 6 | The Engine Room | 5,400 | 13 | The works: reels and rows |
 | 7 | The House | 15,750 | 15 | The count |
 
+From the Casino up, every floor has one of the House's people on it — eighteen
+`BossDef`s across floors 2 to 7, three a floor, one rule each, drawn from the
+run's own stream so a seed always meets the same staff: the Croupier takes the
+sevens off the reel, the Bouncer doubles every lock, the Collector charges the
+vig again halfway through, the Notary pays pairs two-thirds, the Meter raises
+the ante with every spin, the Cooler sends the good symbols outside, the
+Cashier freezes the stake, the Manager skims. Each is announced with the floor
+and printed on the ledger for the whole of it. `docs/FLOORS.md` has the table.
+
 Artifacts are data, not scripts: a closed vocabulary of twenty-nine effects
 resolved in `ArtifactEngine`. Eighteen read the line and the economy
 (`FLAT_BONUS`, `MULT_BONUS`, `SYMBOL_BONUS`, `PATTERN_MULT`, `INTEREST`,
@@ -204,29 +213,32 @@ built-in, deliberately mediocre `AutoPlayer`, measured 2026-09-02:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | 18.6% |
-| Mean floors cleared | 4.68 of 7 |
-| Earnings | mean 89,619 · p50 9,077 · p95 600,404 · p99 1,055,027 |
-| Deaths by floor | 85 · 276 · 1,040 · 1,641 · 1,848 · 1,025 · 1,624, then 602 to the final debt |
-| Debt | vig mean 761 (p95 1,600) · 3.2% of runs default · 12.5% buy a paydown |
+| Win rate | 17.1% |
+| Mean floors cleared | 4.69 of 7 |
+| Earnings | mean 80,174 · p50 9,421 · p95 542,795 · p99 975,461 |
+| Deaths by floor | 85 · 337 · 960 · 1,522 · 1,796 · 1,232 · 1,785, then 574 to the final debt |
+| Debt | vig mean 864 (p95 1,898) · 3.4% of runs default · 12.2% buy a paydown |
 
 Deaths climb to the Back Office, ease through the Engine Room — the floor that
 hands over the works — and climb again at the House, which is the run's wall
-now; a further 602 clear it and cannot repay what they owe. The synergy web
-moved the whole curve: with thirty-nine scaling artifacts a built machine
-outgrows the late antes it used to die to, so the House's ante went from
-15,750 to 24,000, the Engine Room's came down from 5,400 to 5,000 so it would
-not out-kill the floor after it, and the opening debt went from 120 to 260 so
-the final bill stays a threat.
+now; a further 574 clear it and cannot repay what they owe. Two things moved
+the whole curve on the same day. The synergy web: with thirty-nine scaling
+artifacts a built machine outgrows the late antes it used to die to, so the
+House's ante went up, the Engine Room's came down so it would not out-kill the
+floor after it, and the opening debt went from 120 to 260 so the final bill
+stays a threat. Then the House's people: one rule on every floor from the
+Casino up cost eleven points as authored, so the sharpest twists were softened
+and floors 3 to 5 came down to meet them. The antes now run 40 · 105 · 300 ·
+950 · 2,300 · 5,000 · 21,000.
 
 What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 
-1. **Payouts are very widely spread.** Mean earnings are 89,619 against a
-   median of 9,077, with a p99 over a hundred times the median — the builds
+1. **Payouts are very widely spread.** Mean earnings are 80,174 against a
+   median of 9,421, with a p99 over a hundred times the median — the builds
    that come together run away with it, which is what a build is for. The
    mean is no summary at all; read p50 and p95.
-2. **The House is the wall, and the debt is the coda.** 1,624 of 10,000 runs
-   die to the House's ante and 602 more to the repayment after it. Both are
+2. **The House is the wall, and the debt is the coda.** 1,785 of 10,000 runs
+   die to the House's ante and 574 more to the repayment after it. Both are
    the first numbers to revisit once a human has played: a loss after the
    last floor reads very differently to a person than to a bot.
 3. **The stake had to be priced.** A spin cost one credit against payouts in

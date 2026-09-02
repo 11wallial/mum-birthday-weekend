@@ -174,3 +174,42 @@ behind the other or a batch is never seen using a verb.
 At the time of writing the batch lands around a 19% win rate with deaths
 climbing floor by floor, plus a further fifth of runs that clear the House and
 still cannot clear the debt.
+
+## The House's people
+
+From the Casino up, every floor has someone on it. A boss is not a bigger
+ante: it is one rule, announced with the floor and printed on the ledger for
+the whole of it, torn up when the floor closes. Who comes is drawn from the
+run's own `boss` stream, so a seed always meets the same people and
+restaffing a floor can never move the reels. The basement has nobody — the
+machine is still teaching — and the floors after hours draw from the House's
+own pool.
+
+The rules are a closed vocabulary (`BossDef.Rule`, resolved in
+`BossEngine`), each a twist to how the floor plays rather than to what it
+costs:
+
+| Rule | What it does | Who |
+| --- | --- | --- |
+| `SYMBOL_BANNED` | a symbol leaves the reel | the Croupier (sevens), the Dealer (diamonds), the Gilder (wilds) |
+| `HOLDS_COST_MORE` | every lock costs a multiple | the Bouncer (double), the Accountant (triple) |
+| `NO_FREE_NUDGES` | every nudge is paid, whatever the hardware says | the Inspector |
+| `VIG_MID_FLOOR` | the vig charged again halfway through, no grace | the Collector, the Bailiff |
+| `PATTERN_TAXED` | a named pattern pays a share | the Auditor (jackpots), the Notary (pairs) |
+| `SYMBOL_HEAVY` | a symbol lands more | the Undertaker (skulls) |
+| `ANTE_CREEPS` | the ante rises a percent per spin taken | the Meter, the Owner |
+| `COLD_REELS` | the good symbols at half weight, as the count's cold deck | the Cooler |
+| `SHORT_FLOOR` | fewer spins | the Timekeeper, the Engineer |
+| `STAKE_FROZEN` | the stake stays at one | the Cashier |
+| `SKIMMED` | a share off every payout, before the count's own | the Manager |
+
+Three per floor, so the same floor plays three ways. The lab reports each
+boss's death rate against the floor's own (`boss_rates`), which is how a
+variant that out-kills its siblings is found, and `--no-bosses` measures what
+the whole staff costs the win rate. Measured on 2 September 2026: the staff as authored cost eleven points of win
+rate (18.4% → 7.1% at 2k), most of it cumulative drag through floors 3 to 5,
+so the sharpest twists were softened and those floors' antes came down to
+meet them (300 · 950 · 2,300, the House 21,000). At 10k the game with the
+staff on it wins 17.1%; the Owner (+7) and the Meter (+4) are the variants
+that out-kill their floors, the Accountant (−7) and the Cooler (−5) the ones
+that fall short of theirs.

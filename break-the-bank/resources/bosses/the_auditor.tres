@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_auditor"
+display_name = "The Auditor"
+intro = "He finds jackpots suspicious."
+tell = "Jackpots pay six-tenths."
+floor = 3
+rule = 4
+magnitude = 0.6
+symbol = &""
+pattern = 3
