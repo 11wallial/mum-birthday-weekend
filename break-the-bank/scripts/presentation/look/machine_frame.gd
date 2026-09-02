@@ -1276,6 +1276,82 @@ func _wear() -> void:
 			Vector3(1.28, PLINTH_TOP + 0.058, 0.42),
 			_wear_material(ProcTextures.stain(86, Color(0.08, 0.06, 0.05))))
 	damp.rotation.x = -PI * 0.5
+	_decals(wear_root, front)
+
+
+## Decals: the art handover's last note on materials. Detail density high
+## around the face and near zero elsewhere — a serial plate, an inspection
+## sticker the House has voided, a scorch where the coil has arced onto the
+## paint, and a hand-lettered card on the plinth. Each is a thing someone
+## put there, which is what tells wear from wallpaper.
+func _decals(parent: Node3D, front: float) -> void:
+	# The serial plate, riveted low on the front: the machine has a number
+	# the way the player has an account.
+	var plate: Node3D = Node3D.new()
+	plate.name = "SerialPlate"
+	plate.position = Vector3(0.58, CHASSIS_Y - 0.42, front + 0.006)
+	parent.add_child(plate)
+	Prims.box(plate, Vector3(0.2, 0.06, 0.006), Vector3.ZERO, Materials.brass(102))
+	for sx: float in [-1.0, 1.0]:
+		Prims.cylinder(plate, 0.005, 0.004, Vector3(sx * 0.085, 0.0, 0.004),
+				Vector3(PI * 0.5, 0.0, 0.0), Materials.machined(Materials.STEEL, 103), 8)
+	var serial: Label3D = Label3D.new()
+	serial.text = "No. 0447 · THE HOUSE"
+	serial.font_size = 26
+	serial.pixel_size = 0.0009
+	serial.modulate = Color(0.16, 0.13, 0.09)
+	serial.shaded = false
+	serial.position = Vector3(0.0, 0.0, 0.005)
+	plate.add_child(serial)
+	# The inspection sticker, peeling, with the House's red across it.
+	var sticker: Node3D = Node3D.new()
+	sticker.name = "Sticker"
+	sticker.position = Vector3(-0.62, CHASSIS_Y + 0.02, front + 0.004)
+	sticker.rotation.z = 0.12
+	parent.add_child(sticker)
+	Prims.quad(sticker, Vector2(0.13, 0.09), Vector3.ZERO,
+			Materials.enamel(Color(0.78, 0.74, 0.62), 104))
+	var inspected: Label3D = Label3D.new()
+	inspected.text = "INSPECTED\n— · —"
+	inspected.font_size = 18
+	inspected.pixel_size = 0.0009
+	inspected.modulate = Color(0.2, 0.18, 0.14)
+	inspected.shaded = false
+	inspected.position = Vector3(0.0, 0.008, 0.002)
+	sticker.add_child(inspected)
+	var voided: Label3D = Label3D.new()
+	voided.text = "VOID"
+	voided.font_size = 34
+	voided.pixel_size = 0.0009
+	voided.modulate = Color(0.6, 0.14, 0.1, 0.85)
+	voided.shaded = false
+	voided.position = Vector3(0.0, -0.01, 0.003)
+	voided.rotation.z = -0.35
+	sticker.add_child(voided)
+	# The scorch: where the coil's arc has been landing on the paint.
+	_wear_card(parent, Vector2(0.26, 0.2),
+			Vector3(-0.78, CHASSIS_Y + 0.42, front + 0.02),
+			ProcTextures.stain(105, Color(0.05, 0.04, 0.035)))
+	# The hand-lettered card, taped to the plinth's face.
+	var card: Node3D = Node3D.new()
+	card.name = "Card"
+	card.position = Vector3(-0.72, PLINTH_TOP - 0.16, 0.58)
+	card.rotation.z = -0.06
+	parent.add_child(card)
+	Prims.quad(card, Vector2(0.24, 0.13), Vector3.ZERO,
+			Materials.enamel(Materials.PAPER, 106))
+	Prims.box(card, Vector3(0.05, 0.02, 0.002), Vector3(-0.08, 0.06, 0.002),
+			Materials.enamel(Color(0.72, 0.68, 0.55), 107))
+	Prims.box(card, Vector3(0.05, 0.02, 0.002), Vector3(0.09, -0.06, 0.002),
+			Materials.enamel(Color(0.72, 0.68, 0.55), 107))
+	var lettered: Label3D = Label3D.new()
+	lettered.text = "NO CREDIT.\nNO EXCEPTIONS.\n— MGMT"
+	lettered.font_size = 20
+	lettered.pixel_size = 0.0011
+	lettered.modulate = Color(0.14, 0.12, 0.1)
+	lettered.shaded = false
+	lettered.position = Vector3(0.0, 0.0, 0.003)
+	card.add_child(lettered)
 
 
 func _wear_card(parent: Node3D, size: Vector2, at: Vector3,

@@ -327,7 +327,8 @@ most common one — as the solved-metagame tell. Measured on 2 September
 2026: before the even deal the Exchange, with thirteen members to the
 others' five or six, was the primary build of 69% of wins at its own
 baseline win rate — availability, not strength; after it, 26%, and the
-batch rose from 15.0% to 17.2% on the variety alone.
+batch rose from 15.0% to 17.2% on the variety alone (16.7% at 10k, inside
+every band).
 
 **The notice.** The House acts against success, not only on a schedule: a
 single spin paying sixteen pars — most of an ante in one — is loud enough
