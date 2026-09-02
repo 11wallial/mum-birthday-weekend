@@ -102,6 +102,12 @@ var shop_offers: Array[ArtifactDef] = []
 var shop_prices: Array[int] = []
 ## Rerolls already bought in the draft currently open. Reset when it opens.
 var shop_rerolls: int = 0
+## Rerolls bought over the whole run, and the chips still in hand each time
+## a draft was left: the balance guide's two tells for a loose economy —
+## mitigation that is always affordable, and resources unspent at the end
+## of a shop phase. Read by the lab; never by the game.
+var rerolls_total: int = 0
+var chips_left_at_drafts: PackedInt32Array = PackedInt32Array()
 ## The press's jobs on offer while the draft is open: each a dictionary with
 ## "kind" (strike, print, gild), "symbol", "magnitude" and "price" in chips.
 ## The reel is the player's to edit — CloverPit's lesson, the review's ask —

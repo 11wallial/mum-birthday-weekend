@@ -39,6 +39,12 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var chips: PackedInt32Array = PackedInt32Array()
 	var hardware: PackedInt32Array = PackedInt32Array()
 	var settled: PackedInt32Array = PackedInt32Array()
+	# The balance guide's two tells for a loose economy: chips still in hand
+	# when a draft is left (it wants near zero), and rerolls per draft (it
+	# wants mitigation scarce enough to be a decision).
+	var unspent: PackedInt32Array = PackedInt32Array()
+	var rerolls: PackedInt32Array = PackedInt32Array()
+	var drafts_total: int = 0
 	# Offers put in front of every run, against what was taken: the share of
 	# the draft a run can afford is the number the chip supply is set by.
 	var offers_total: int = 0
@@ -112,6 +118,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		chips.append(state.economy.lifetime_chips)
 		hardware.append(state.owned.size())
 		settled.append(state.floors_settled_early)
+		for left: int in state.chips_left_at_drafts:
+			unspent.append(left)
+		drafts_total += state.chips_left_at_drafts.size()
+		rerolls.append(state.rerolls_total)
 		for seen: StringName in state.offers_seen:
 			offers_total += int(state.offers_seen[seen])
 		taken_total += state.owned.size()
@@ -209,6 +219,9 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"hardware": describe(hardware),
 		"settled_early": describe(settled),
 		"draft_take_rate": _ratio(taken_total, offers_total),
+		"chips_unspent_at_draft": describe(unspent),
+		"rerolls_per_run": describe(rerolls),
+		"rerolls_per_draft": _ratio(_sum(rerolls), drafts_total),
 		"end_reasons": end_reasons,
 		"debt": {
 			"serviced": describe(serviced),
@@ -231,6 +244,13 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"boss_rates": _boss_rates(boss_faced, boss_killed, floor_deaths, reached, content),
 		"anomalies": [],
 	}
+
+
+static func _sum(sample: PackedInt32Array) -> int:
+	var total: int = 0
+	for value: int in sample:
+		total += value
+	return total
 
 
 ## Mean, median and tail percentiles of a sample.

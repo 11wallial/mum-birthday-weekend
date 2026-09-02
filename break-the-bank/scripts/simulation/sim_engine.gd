@@ -1207,6 +1207,7 @@ func leave_shop(state: RunState) -> void:
 func _do_leave_shop(state: RunState) -> void:
 	if state.phase != RunState.Phase.SHOPPING:
 		return
+	state.chips_left_at_drafts.append(state.economy.chips)
 	state.shop_offers.clear()
 	state.shop_prices.clear()
 	state.press_offers.clear()
@@ -1464,6 +1465,7 @@ func _do_reroll_shop(state: RunState) -> bool:
 		return false
 	state.economy.debit_chips(price, &"reroll")
 	state.shop_rerolls += 1
+	state.rerolls_total += 1
 	_stock_shop(state, floor_def)
 	_bus.emit_event(EffectBus.Event.SHOP_REROLLED, {
 		"paid": price,
