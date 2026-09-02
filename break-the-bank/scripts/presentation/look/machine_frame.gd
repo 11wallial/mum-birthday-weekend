@@ -1144,49 +1144,51 @@ func _surety_column() -> Dictionary:
 
 
 func _spool() -> Node3D:
-	var spool: Node3D = _group(&"Spool")
-	spool.position = Vector3(1.32, PLINTH_TOP + 0.3, 0.36)
-	var paper: StandardMaterial3D = Materials.enamel(Materials.PAPER, 69)
-	_cylinder(spool, 0.17, 0.22, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5), paper)
-	_cylinder(spool, 0.05, 0.26, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5),
-			Materials.machined(Materials.STEEL, 65))
-	# The tape: a run of thin panels stepping down and away, each turned a little
-	# so the strip creases rather than falling as a plank.
-	# The tape hanging off the spool. Panels overlap along the run rather than
-	# butting: a gap between two thin plates shows their unlit edges, and a row
-	# of those reads as piano keys instead of paper.
-	# Printed, not blank: a receipt spool that has paid out nothing but paper
-	# is scenery, and the print is rows of faded figures at exactly the scale
-	# a passing glance expects.
+	# The receipt printer: a compact grey desk unit bolted to the plinth's
+	# right shoulder, its tape feeding out of the slot on top, down over the
+	# concrete and pooling on the floor. It replaced a paper spool on a pole
+	# — the art handover's P2 note — because a spool is a prop and a printer
+	# is a machine: the receipt the player reads is what this thing prints.
+	var printer: Node3D = _group(&"Printer")
+	printer.position = Vector3(1.24, PLINTH_TOP + 0.1, 0.34)
+	var grey: StandardMaterial3D = Materials.painted(Color(0.36, 0.36, 0.34), 69)
+	var dark: StandardMaterial3D = Materials.machined(Color(0.16, 0.16, 0.15), 65)
+	_box(printer, Vector3(0.3, 0.16, 0.34), Vector3.ZERO, grey)
+	# The lid, stepped, with the tear bar along its front edge.
+	_box(printer, Vector3(0.26, 0.04, 0.24), Vector3(0.0, 0.1, -0.03), grey)
+	_box(printer, Vector3(0.24, 0.006, 0.02), Vector3(0.0, 0.124, 0.1), dark)
+	_box(printer, Vector3(0.22, 0.02, 0.012), Vector3(0.0, 0.1, 0.1), Materials.cavity())
+	# A status lamp, a feed button, a cable out of the back into the flank.
+	Prims.sphere(printer, 0.012, Vector3(-0.1, 0.06, 0.175), Materials.glowing(Materials.PHOSPHOR, 0.9))
+	_cylinder(printer, 0.018, 0.01, Vector3(0.08, 0.06, 0.175), Vector3(PI * 0.5, 0.0, 0.0), dark)
+	_segment(_root, Vector3(1.24, PLINTH_TOP + 0.12, 0.17), Vector3(CHASSIS.x + 0.02, PLINTH_TOP + 0.3, 0.1),
+			0.01, Materials.rubber(Color(0.09, 0.085, 0.08), 98))
+	# Bolted down: two hex heads through the base flange.
+	for sx: float in [-1.0, 1.0]:
+		Prims.cylinder(printer, 0.014, 0.012, Vector3(sx * 0.13, -0.075, 0.15),
+				Vector3.ZERO, Materials.machined(Materials.STEEL, 66), 6)
+	# Printed, not blank: a receipt printer that has printed nothing but
+	# paper is scenery, and the print is rows of faded figures at exactly
+	# the scale a passing glance expects.
 	var printed: StandardMaterial3D = StandardMaterial3D.new()
 	printed.albedo_texture = ProcTextures.receipt(70)
 	printed.roughness = 0.85
 	printed.metallic = 0.0
 	printed.cull_mode = BaseMaterial3D.CULL_DISABLED
-	# The mouth the tape comes out of, bolted to the chassis flank: the tape
-	# used to hang in the air beside the machine, a run of separate panels
-	# that read as sheets falling — paper with no printer is litter. One
-	# continuous ribbon now runs out of the slot, drapes over the spool, and
-	# pools on the floor.
-	_box(_root, Vector3(0.1, 0.09, 0.3), Vector3(CHASSIS.x + 0.03, 1.14, 0.34),
-			Materials.machined(Color(0.24, 0.23, 0.22), 73))
-	_box(_root, Vector3(0.04, 0.024, 0.24),
-			Vector3(CHASSIS.x + 0.09, 1.14, 0.34), Materials.cavity())
+	# One continuous ribbon: out of the slot, over the lid's edge, down the
+	# plinth's face, pooling on the floor.
 	_ribbon(_root, [
-		Vector3(CHASSIS.x + 0.09, 1.13, 0.36),
-		Vector3(1.18, 1.06, 0.36),
-		Vector3(1.3, 0.92, 0.36),
-		Vector3(1.42, 0.74, 0.38),
-		Vector3(1.49, 0.4, 0.44),
-		Vector3(1.47, 0.09, 0.52),
-		Vector3(1.36, 0.014, 0.66),
+		Vector3(1.24, PLINTH_TOP + 0.235, 0.44),
+		Vector3(1.24, PLINTH_TOP + 0.2, 0.53),
+		Vector3(1.25, PLINTH_TOP + 0.02, 0.6),
+		Vector3(1.27, 0.2, 0.62),
+		Vector3(1.24, 0.014, 0.72),
 	], 0.19, printed)
-	# The pooled loops where the run lands.
-	for loop_config: Array in [[0.1, 0.006, Vector3(1.3, 0.006, 0.74)],
-			[0.075, 0.006, Vector3(1.4, 0.014, 0.7)]]:
+	for loop_config: Array in [[0.1, 0.006, Vector3(1.2, 0.006, 0.8)],
+			[0.075, 0.006, Vector3(1.3, 0.014, 0.76)]]:
 		_cylinder(_root, float(loop_config[0]), float(loop_config[1]),
 				loop_config[2] as Vector3, Vector3.ZERO, printed)
-	return spool
+	return printer
 
 
 ## A continuous strip of paper along [param points], width held along Z the
