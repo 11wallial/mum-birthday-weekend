@@ -80,6 +80,14 @@ the background or with a long timeout, and quote the report's `elapsed_ms`
 rather than remembering a number: the player has grown more careful and the
 batch slower every time a floor has been given a real verb.
 
+Then judge it. `tools/casino_lab/gate.gd` checks a report against
+`resources/rules/balance_bands.tres` — win rate, where the deaths fall, how
+many runs the final debt takes, the lab's anomaly list — and exits non-zero
+when a band is broken. CI runs it on every push and the nightly runs it at
+10k; the 400-run smoke suite runs it too. The bands are deliberately wide: a
+rebalance that needs to move one moves the `.tres`, with the reason in the
+commit, and never the tool.
+
 ## Tests
 
 ```

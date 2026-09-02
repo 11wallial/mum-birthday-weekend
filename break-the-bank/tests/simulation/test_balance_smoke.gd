@@ -102,3 +102,13 @@ func test_anomaly_detection_flags_a_dominant_artifact() -> void:
 	assert_int(found.size()).is_equal(1)
 	assert_str(String(found[0]["id"])).is_equal("broken_thing")
 	assert_str(String(found[0]["verdict"])).is_equal("overpowered")
+
+
+func test_the_batch_lands_inside_the_shipped_bands() -> void:
+	# The nightly's alarm, run on the same 400 runs: a content merge that moves
+	# the game past a band fails here, before it fails on CI at 5,000.
+	var bands: BalanceBands = load("res://resources/rules/balance_bands.tres") as BalanceBands
+	var checks: Array[Dictionary] = BalanceGate.check(
+			_report, bands, ContentDB.shared().floors.size())
+	assert_bool(BalanceGate.passed(checks)).override_failure_message(
+			"\n".join(BalanceGate.describe(checks))).is_true()

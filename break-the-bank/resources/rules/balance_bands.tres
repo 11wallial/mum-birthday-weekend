@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BalanceBands" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/balance_bands.gd" id="1_balancebands"]
+
+[resource]
+script = ExtResource("1_balancebands")
+win_rate_min = 0.12
+win_rate_max = 0.28
+floor_one_deaths_max = 0.15
+single_floor_share_max = 0.45
+debt_loss_min = 0.05
+debt_loss_max = 0.4
+default_rate_max = 0.2
+spins_per_run_max = 1000
+anomalies_max = 0

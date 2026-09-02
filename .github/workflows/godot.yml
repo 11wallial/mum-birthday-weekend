@@ -72,6 +72,15 @@ jobs:
           godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
             --runs=5000 --seed=1 --out=res://reports/balance_report.json
 
+      # A batch outside the bands is a content merge that has moved the game.
+      # The bands are wide on purpose: anything they catch is worth a human look
+      # before it lands, and the nightly judges the same bands at 10,000 runs.
+      - name: Gate the balance batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
+            --report=res://reports/balance_report.json
+
       # An audio asset with no licence row is a release blocker, not a warning.
       - name: Audit audio licences
         working-directory: ${{ env.PROJECT_DIR }}

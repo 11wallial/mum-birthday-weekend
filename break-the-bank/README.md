@@ -296,10 +296,22 @@ neither unwinnable nor free.
 ## CI
 
 `.github/workflows/godot.yml` installs Godot and GdUnit4, imports the project,
-runs both suites, runs a 5,000-run balance batch, and uploads the report as an
-artifact. A second job boots the project headless and fails on any script error —
-with untyped declarations promoted to errors in `project.godot`, that boot is the
+runs both suites, runs a 5,000-run balance batch, judges it against
+`resources/rules/balance_bands.tres`, and uploads the report as an artifact. A
+second job boots the project headless and fails on any script error — with
+untyped declarations promoted to errors in `project.godot`, that boot is the
 strict-typing gate.
+
+`.github/workflows/balance-nightly.yml` runs the full 10,000 every night on
+the default branch (or by hand from the Actions tab on any branch), gates it
+against the same bands, and prints the delta against the previous night. A
+failed nightly is the alarm: the game moved, and nobody meant it to.
+
+```bash
+# Judge any report against the bands; exits 1 when one is broken
+godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
+    --report=res://reports/balance_report.json
+```
 
 ## Repository layout
 
