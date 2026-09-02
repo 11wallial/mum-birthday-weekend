@@ -42,6 +42,10 @@ var settings: Dictionary = {}
 ## Whether the guided first run has been played through or skipped, so the
 ## Clerk only walks a debtor through the basement once unless asked.
 var tutorial_seen: bool = false
+## The collection: everything this profile has met, by kind then id —
+## hardware offered or owned, the House's people faced, contracts signed.
+## A codex of silhouettes fills in from this; nothing else reads it.
+var seen: Dictionary = {"artifacts": {}, "bosses": {}, "contracts": {}}
 
 
 func stats() -> Dictionary:
@@ -83,6 +87,7 @@ func record_run(state: RunState, catalogue: Array[UnlockDef]) -> Array[UnlockDef
 	for artifact: ArtifactDef in state.owned:
 		var key: String = String(artifact.id)
 		artifact_picks[key] = int(artifact_picks.get(key, 0)) + 1
+	note_seen_run(state)
 	if state.options.challenge_id == &"":
 		var rung: String = String(state.options.difficulty_id)
 		runs_by_difficulty[rung] = int(runs_by_difficulty.get(rung, 0)) + 1
@@ -90,6 +95,39 @@ func record_run(state: RunState, catalogue: Array[UnlockDef]) -> Array[UnlockDef
 			wins_by_difficulty[rung] = int(wins_by_difficulty.get(rung, 0)) + 1
 	_remember_score(state)
 	return evaluate(catalogue)
+
+
+## Folds a run's sightings into the collection: what was on the draft or
+## the machine, who was on the floors, what was signed for.
+func note_seen_run(state: RunState) -> void:
+	for offered: StringName in state.offers_seen:
+		note_seen("artifacts", offered)
+	for artifact: ArtifactDef in state.owned:
+		note_seen("artifacts", artifact.id)
+	for boss_id: StringName in state.bosses_faced:
+		if boss_id != &"":
+			note_seen("bosses", boss_id)
+	for contract_id: StringName in state.contracts_signed:
+		note_seen("contracts", contract_id)
+
+
+## Records one sighting. Returns true the first time, so the room can say so.
+func note_seen(kind: String, id: StringName) -> bool:
+	if not seen.has(kind):
+		seen[kind] = {}
+	var table: Dictionary = seen[kind]
+	if table.has(String(id)):
+		return false
+	table[String(id)] = true
+	return true
+
+
+func has_seen(kind: String, id: StringName) -> bool:
+	return seen.has(kind) and (seen[kind] as Dictionary).has(String(id))
+
+
+func seen_count(kind: String) -> int:
+	return (seen[kind] as Dictionary).size() if seen.has(kind) else 0
 
 
 ## Folds in what a run earned after it won and stayed at the table. The win
@@ -164,6 +202,7 @@ func to_dict() -> Dictionary:
 		"records": records,
 		"settings": settings,
 		"tutorial_seen": tutorial_seen,
+		"seen": seen,
 	}
 
 
@@ -182,7 +221,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.selected_difficulty = StringName(data.get("selected_difficulty", "standard"))
 	profile.selected_challenge = StringName(data.get("selected_challenge", ""))
 	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks",
-			"records", "settings"]:
+			"records", "settings", "seen"]:
 		var table: Variant = data.get(key, {})
 		if table is Dictionary:
 			profile.set(key, table)

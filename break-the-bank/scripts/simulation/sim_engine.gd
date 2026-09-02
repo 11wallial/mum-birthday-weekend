@@ -1361,6 +1361,7 @@ func _do_sign_contract(state: RunState, index: int) -> bool:
 		return false
 	var signed: ContractDef = state.contract_offers[index]
 	state.set_contract(signed)
+	state.contracts_signed.append(signed.id)
 	state.contract_offers.clear()
 	_bus.emit_event(EffectBus.Event.CONTRACT_SIGNED, {
 		"contract": signed.id,

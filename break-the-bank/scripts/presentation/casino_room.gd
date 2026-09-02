@@ -1143,6 +1143,20 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_granted.append(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
+		EffectBus.Event.ARTIFACT_ACQUIRED, EffectBus.Event.SHOP_OPENED:
+			# First sightings go in the collection as they happen, and the
+			# log says so once: the discovery is the run's, not the
+			# statement's.
+			if _profile != null and state != null and not bool(payload.get("resumed", false)):
+				var fresh: PackedStringArray = PackedStringArray()
+				for offered: StringName in state.offers_seen:
+					if _profile.note_seen("artifacts", offered):
+						var seen_def: ArtifactDef = ContentDB.shared().artifact_by_id(offered)
+						fresh.append(seen_def.display_name if seen_def != null else String(offered))
+				if not fresh.is_empty():
+					_profile.save()
+					if _hud != null and _hud.has_method("push_line"):
+						_hud.call("push_line", "First seen: %s" % ", ".join(fresh))
 		EffectBus.Event.HOUSE_NOTICED:
 			# Said the moment it is decided, naming the spin: the player
 			# should be able to point at it and say the House did that.

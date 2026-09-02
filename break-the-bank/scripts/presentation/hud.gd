@@ -387,6 +387,11 @@ func set_prompt(text: String, centred: bool = false) -> void:
 ## The last few lines of the log, for the ledger on the machine's monitor
 ## to carry: the handover asked for the log out of the corner, and the CRT
 ## is the thing in the room that prints.
+## A line from the room for the log: first sightings, mostly.
+func push_line(text: String) -> void:
+	_push(text)
+
+
 func recent_lines(count: int = 2) -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray()
 	for i: int in range(maxi(0, _lines.size() - count), _lines.size()):

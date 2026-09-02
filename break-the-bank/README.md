@@ -310,6 +310,12 @@ Lean, the High Roller, the Bone Press and the Orchard are in git at
 `RunOptions`, opens through an unlock, and can be measured with
 `run_lab.gd --machine=<id>`.
 
+**The collection.** The profile keeps what it has met — every piece of
+hardware offered or owned, every one of the House's people faced, every
+contract signed — and the door has a page for it: names and their lines
+once seen, a dash until then. A first sighting is said once in the run's
+log as it happens.
+
 **The reel today.** Every seed ships its reel leaned: one symbol three
 draw-weight heavier, one lighter, drawn off the run's own `lean` stream so
 the reels' draws never move for it, and said with the first floor ("THE

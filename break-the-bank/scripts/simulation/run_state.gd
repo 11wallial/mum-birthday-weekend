@@ -123,6 +123,8 @@ var press_jobs: int = 0
 var contract: ContractDef = null
 ## Contracts on the table while [member phase] is SIGNING.
 var contract_offers: Array[ContractDef] = []
+## Every contract signed this run, by id, for the collection.
+var contracts_signed: Array[StringName] = []
 ## The House's person on this floor, or null on a floor nobody was sent to.
 ## Chosen as the floor opens, torn up as it closes, like a contract.
 var boss: BossDef = null

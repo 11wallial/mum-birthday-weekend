@@ -59,6 +59,9 @@ Known gaps a tester will hit, so nobody logs them twice:
   premise made mechanical. Ask, after a loss, what the column was doing —
   and whether they can name the decision that killed the run. The guide's
   bar is four in five.
+- THE COLLECTION on the door lists what the profile has met, with dashes
+  for what it has not. Watch whether a tester opens it between runs, and
+  whether a dash makes them curious or makes them shrug.
 - Three machines at the door, not seven. The Lean, the High Roller, the
   Bone Press and the Orchard are in git and return one at a time.
 

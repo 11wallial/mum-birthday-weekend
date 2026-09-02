@@ -60,11 +60,13 @@ var _column: VBoxContainer
 var _wordmark: Label
 var _line: Label
 var _menu: VBoxContainer
+var _collection_box: VBoxContainer
 var _pickers: VBoxContainer
 var _seed_field: LineEdit
 var _stats: Label
 var _settings_box: VBoxContainer
 var _settings_open: bool = false
+var _collection_open: bool = false
 var _line_index: int = 0
 
 
@@ -176,6 +178,12 @@ func _build() -> void:
 	_settings_box.visible = false
 	_column.add_child(_settings_box)
 
+	_collection_box = VBoxContainer.new()
+	_collection_box.name = "Collection"
+	_collection_box.add_theme_constant_override(&"separation", 6)
+	_collection_box.visible = false
+	_column.add_child(_collection_box)
+
 	_stats = Label.new()
 	_stats.name = "Stats"
 	_stats.add_theme_color_override(&"font_color", UiSkin.INK_MUTED)
@@ -215,6 +223,8 @@ func _redraw() -> void:
 	_clear(_pickers)
 	_clear(_settings_box)
 	_settings_box.visible = _settings_open
+	_clear(_collection_box)
+	_collection_box.visible = _collection_open
 	_wordmark.text = "BREAK THE BANK" if _mode == Mode.TITLE else "THE FLOOR IS PAUSED"
 	_line.text = String(LINES[_line_index]) if _mode == Mode.TITLE \
 			else "The House waits. It is good at it."
@@ -222,6 +232,13 @@ func _redraw() -> void:
 		_draw_settings()
 		_menu.add_child(_button("BACK", "", func() -> void:
 			_settings_open = false
+			_redraw()))
+		_stats.text = ""
+		return
+	if _collection_open:
+		_draw_collection()
+		_menu.add_child(_button("BACK", "", func() -> void:
+			_collection_open = false
 			_redraw()))
 		_stats.text = ""
 		return
@@ -245,6 +262,11 @@ func _redraw() -> void:
 			resume_requested.emit()))
 	_menu.add_child(_button("PULL THE LEVER", "a new run on the machine below", func() -> void:
 		start_requested.emit(0, "")))
+	_menu.add_child(_button("THE COLLECTION", "%d of %d pieces of hardware seen" % [
+			_profile.seen_count("artifacts"), ContentDB.shared().artifacts.size()],
+			func() -> void:
+				_collection_open = true
+				_redraw(), false))
 	_menu.add_child(_button("THE DAILY", "%s — one seed, everyone" % SeedBook.today_key(),
 			func() -> void:
 				start_requested.emit(SeedBook.today_seed(), SeedBook.today_key())))
@@ -357,6 +379,48 @@ func _rung_requirement(rung: DifficultyDef) -> String:
 		if unlock.kind == UnlockDef.Kind.DIFFICULTY and unlock.target_id == rung.id:
 			return unlock.requirement_text().to_lower()
 	return "win at the rung below"
+
+
+## The collection: everything the profile has met, and silhouettes for
+## everything it has not. Hardware, the House's people, the contracts —
+## each a name and its line once seen, a dash until then. What converts a
+## content set into a reason to run again.
+func _draw_collection() -> void:
+	var content: ContentDB = ContentDB.shared()
+	_collection_box.add_child(_label("THE COLLECTION", 14.0, UiSkin.AMBER))
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(600.0 * _scale, 420.0 * _scale)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_collection_box.add_child(scroll)
+	var rows: VBoxContainer = VBoxContainer.new()
+	rows.add_theme_constant_override(&"separation", 2)
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(rows)
+	var sections: Array = [
+		["HARDWARE", "artifacts", content.artifacts],
+		["THE HOUSE'S PEOPLE", "bosses", content.bosses],
+		["CONTRACTS", "contracts", content.contracts],
+	]
+	for section: Array in sections:
+		var kind: String = String(section[1])
+		var defs: Array = section[2]
+		rows.add_child(_label("%s   %d of %d" % [String(section[0]),
+				_profile.seen_count(kind), defs.size()], 12.0, UiSkin.INK))
+		for def: Resource in defs:
+			var id: StringName = def.get("id")
+			var met: bool = _profile.has_seen(kind, id)
+			var line: String = "— · —"
+			if met:
+				var blurb: String = ""
+				if kind == "bosses":
+					blurb = String(def.get("tell"))
+				else:
+					blurb = String(def.get("description"))
+				line = "%s — %s" % [String(def.get("display_name")), blurb]
+			var entry: Label = _label(line, 11.0, UiSkin.INK if met else UiSkin.INK_MUTED)
+			entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			rows.add_child(entry)
 
 
 func _draw_settings() -> void:
