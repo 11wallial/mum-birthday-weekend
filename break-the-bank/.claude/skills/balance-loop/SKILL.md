@@ -16,9 +16,11 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
     --runs=10000 --seed=1 --out=res://reports/balance_report.json
 ```
 
-Use 10,000 runs while iterating (~25 seconds) and 100,000 before calling a
-change done (~4 minutes). Keep `--seed` fixed across a comparison so two reports
-differ only by your edit.
+Use 2,500 runs while iterating (about 70 seconds) and 10,000 before calling a
+change done (about four and a half minutes — start it in the background, or
+give it a ten-minute timeout). A 100,000 batch is most of an hour: overnight,
+not in the loop. Keep `--seed` fixed across a comparison so two reports differ
+only by your edit.
 
 ## 2. Read
 

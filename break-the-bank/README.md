@@ -94,8 +94,10 @@ The simulation never calls into the presentation layer. It emits events on
 listen. Three properties fall out of that, and all three are load-bearing:
 
 - **Headless.** `SimEngine.new().simulate_run(seed)` returns a finished run
-  without loading a single node. Measured throughput is ~415 runs/second, so a
-  10k batch is ~25 seconds and a 100k batch about four minutes.
+  without loading a single node. Measured throughput is ~37 runs/second now
+  that the automated player works all seven systems, so a 10k batch is about
+  four and a half minutes and a 100k batch most of an hour. Quote the report's
+  `elapsed_ms`, not this paragraph.
 - **Deterministic.** Every subsystem draws from its own named `RngStream`, so a
   new die roll in the shop cannot shift the reels. A seed replays exactly.
 - **Severable.** Delete `scripts/presentation/` and the game still runs and
@@ -139,11 +141,12 @@ principal with a penalty on top.
 | 6 | The Engine Room | 4,600 | 12 | Machine interconnection |
 | 7 | The House | 12,000 | 14 | Casino-wide rules, final encounter |
 
-Artifacts are data, not scripts: a closed vocabulary of thirteen effects
+Artifacts are data, not scripts: a closed vocabulary of eighteen effects
 (`FLAT_BONUS`, `MULT_BONUS`, `SYMBOL_BONUS`, `PATTERN_MULT`, `INTEREST`,
-`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`, and the late-game
-`RETRIGGER`, `CURSE_WARD`, `MULT_PER_FLOOR`, `MULT_PER_ARTIFACT`,
-`DEBT_PAYDOWN`) resolved in `ArtifactEngine`.
+`EXTRA_SPINS`, `WEIGHT_SHIFT`, `ANTE_DISCOUNT`, the late-game `RETRIGGER`,
+`CURSE_WARD`, `MULT_PER_FLOOR`, `MULT_PER_ARTIFACT`, `DEBT_PAYDOWN`, and the
+five the later floors' systems asked for — `DEBT_LEVERAGE`, `SPIN_REFUND`,
+`NUDGE_BONUS`, `VAULT_YIELD`, `HEAT_SHIELD`) resolved in `ArtifactEngine`.
 That keeps balance edits confined to `.tres` files and keeps the effect surface
 small enough to reason about. Owning three artifacts sharing a tag lights a
 synergy and adds to every line's multiplier.
@@ -165,30 +168,34 @@ is the win rate among runs that got far enough to be offered it, and `anomalies`
 flags entries 25+ points off *that*.
 
 The shipped numbers were calibrated with `tools/casino_lab/sweep.gd` against a
-target win rate of 15–20%. Over 10,000 seeded runs with the built-in,
-deliberately mediocre shop policy:
+target win rate of 15–20%. Over 10,000 seeded runs (`--seed=1`) with the
+built-in, deliberately mediocre `AutoPlayer`, measured 2026-09-02:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | 17.5% |
-| Mean floors cleared | 3.41 of 7 |
-| Earnings | mean 7,646 · p50 1,560 · p95 34,394 · p99 39,600 |
-| Deaths by floor | 1251 · 1482 · 1080 · 1265 · 1891 · 987 · 126, then 167 to the final debt |
-| Debt | vig mean 196 (p95 598) · 4.5% of runs default · 25.4% buy a paydown |
+| Win rate | 19.6% |
+| Mean floors cleared | 5.58 of 7 |
+| Earnings | mean 34,755 · p50 23,629 · p95 119,936 · p99 188,305 |
+| Deaths by floor | 85 · 185 · 437 · 674 · 985 · 1240 · 2141, then 2,295 to the final debt |
+| Debt | vig mean 478 (p95 767) · 0.5% of runs default · 30.8% buy a paydown |
 
-The floor 6 cliff is gone. Twelve Tier 3/4 artifacts (unlocking on floors 4–7)
-keep income growing past floor 5, so the ante that once collapsed the win rate
-from 40% to under 1% now costs about four points: 3,000 → 4,200 moves it 31% →
-26%, and the shipped 4,600 lands at 17.5%.
+Deaths climb floor by floor, and the biggest killer is not a floor at all: a
+fifth of runs clear the House and still cannot repay what they owe. The floor 6
+cliff and the floor 5 spike of earlier calibrations are both gone — the first
+to the Tier 3/4 artifacts that keep income growing late, the second to the back
+office opening on the way into floor five rather than out of it.
 
 What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 
-1. **Payouts are enormously spread.** Mean earnings are 7,646 against a median
-   of 1,560 — most runs die early and a few run away with it. That is roguelike
-   shaped, but it means the mean is a poor summary; read p50 and p95.
-2. **Floor 5 is the sharpest step.** It kills more runs than any other floor
-   (1,891 of 10,000). Deliberate for now — the Back Office is where the run is
-   meant to be decided — but it is the first number to revisit.
+1. **Payouts are widely spread.** Mean earnings are 34,755 against a median of
+   23,629, with a p99 eight times the median — a few builds run away with it.
+   That is roguelike shaped, but it means the mean is a poor summary; read p50
+   and p95.
+2. **The final debt is the wall.** 2,295 of 10,000 runs clear all seven floors
+   and lose to the repayment. The shape is deliberate — the debt is the run's
+   clock, and the House is meant to keep some winners — but it is the first
+   number to revisit once a human has played, because a loss after the last
+   floor reads very differently to a person than to a bot.
 
 ## Seeds, dailies and meta-progression
 

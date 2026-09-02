@@ -75,6 +75,11 @@ After any balance edit, run the lab and compare against the previous report:
 godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=10000 --out=res://reports/balance_report.json
 ```
 
+A 10k batch takes about four and a half minutes at ~37 runs/s, so run it in
+the background or with a long timeout, and quote the report's `elapsed_ms`
+rather than remembering a number: the player has grown more careful and the
+batch slower every time a floor has been given a real verb.
+
 ## Tests
 
 ```

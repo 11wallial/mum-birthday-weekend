@@ -22,7 +22,7 @@ Current state: `godot --headless --path . --script res://tools/audio/audit.gd`
 
 ## 1. Sound effect asset manifest
 
-48 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
+62 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
 fields shown here are the ones a sourcing pass needs. `Pitch` is the per-trigger
 random range, `Vol` the per-trigger dB jitter added to the authored level.
 
@@ -61,6 +61,15 @@ random range, `Vol` the per-trigger dB jitter added to the authored level.
 | `payout_chime_big` | `mechanical/payout_chime_big.wav` | 1.2–1.8 s | Three-note rise to a held fifth, partials to 5 kHz | 0.98–1.02 | −1.0/+1.0 |
 | `jackpot_bells` | `mechanical/jackpot_bells.wav` | 2.0–3.0 s | Mechanical bell struck repeatedly, 1.5–4 kHz, long metallic decay | 0.99–1.01 | −1.0/+1.0 |
 | `machine_hum_loop` | `mechanical/machine_hum_loop.wav` | 4–8 s **loop** | Cabinet idle: 50/60 Hz transformer hum + faint 400 Hz fan | 0.995–1.005 | ±0.5 |
+| `arc_charge` | `mechanical/arc_charge.wav` | 360–520 ms | The charge cable arcing as the machine powers: gated spark-gap buzz around 1.5-2.5 kHz with hard snap transients, dying out as the charge lands. | 0.94–1.06 | −1.5/+1.5 |
+| `lever_steam_release` | `mechanical/lever_steam_release.wav` | 620–880 ms | Pneumatic vent after the lever lands: broadband hiss opening fast, easing shut, low 9 Hz sputter underneath. The machine exhaling. | 0.94–1.06 | −1.5/+1.5 |
+| `reel_nudge` | `mechanical/reel_nudge.wav` | 120–190 ms | A single ratchet step: pawl lifting, drum dropping one stop, pawl seating. Shorter and drier than a reel stop. | 0.97–1.05 | −1.5/+1.0 |
+| `reel_stop_tick_a` | `mechanical/reel_stop_tick_a.wav` | 60–100 ms | Detent land, variant A. Punchy 120-250 Hz thock with 3 kHz tip. | 0.94–1.06 | −2.0/+1.5 |
+| `reel_stop_tick_b` | `mechanical/reel_stop_tick_b.wav` | 60–100 ms | Variant B: same family, marginally brighter, so three stops never repeat. | 0.94–1.06 | −2.0/+1.5 |
+| `reel_stop_tick_c` | `mechanical/reel_stop_tick_c.wav` | 60–100 ms | Variant C: same family, marginally duller and heavier. | 0.94–1.06 | −2.0/+1.5 |
+| `vault_break` | `mechanical/vault_break.wav` | 420–700 ms | The same door, opened the wrong way: a strained bolt, a squeal, and a clatter. | 0.97–1.01 | −1.5/+1.0 |
+| `vault_deposit` | `mechanical/vault_deposit.wav` | 380–620 ms | A drawer running out on rails, notes going in, and a heavy door shutting on them. | 0.98–1.02 | −1.5/+1.0 |
+| `works_fitted` | `mechanical/works_fitted.wav` | 500–900 ms | Spanner on a bolt, a housing dropping onto its seat, and a motor picking up the new load. | 0.98–1.03 | −1.5/+1.0 |
 
 ### Game logic & triggers — bus `SFX`, stingers on `Music`
 
@@ -84,6 +93,14 @@ T1 … floor 7 → T4), so a late payoff never sounds like an early trinket.
 | `fail_sting_ante` | 1.2–1.8 s | Descending minor third into a dead stop | 0.99–1.01 | 10 dB |
 | `fail_sting_debt` | 1.4–2.0 s | Lower and slower, 55 Hz sub tail — the debt took the run | 0.99–1.01 | 10 dB |
 | `curse_land` | 200–300 ms | Skull lands: dull bone knock 200–800 Hz, no bright partials | 0.94–1.06 | — |
+| `contract_signed` | 420–700 ms | A rubber stamp on a desk and paper being drawn away. Bureaucratic, final, faintly ominous. | 0.99–1.02 | −2 dB |
+| `gamble_lost` | 420–700 ms | The whole ladder dropping out at once. Falling, damped, and over quickly. | 0.96–1.02 | −4 dB |
+| `gamble_offered` | 300–500 ms | A ladder of lamps lighting in sequence, ending on a held tone that does not resolve. | 1.00–1.00 | — |
+| `gamble_won` | 360–560 ms | One rung up: a bright doubled chime, higher than the last. | 1.00–1.06 | −3 dB |
+| `heat_measure` | 700–1200 ms | A hard relay throw, then a siren figure that gives up halfway. Somebody has done something about you. | 0.99–1.01 | −6 dB |
+| `heat_rising` | 500–900 ms | A low room tone bending upward a semitone and staying there. The sound of being noticed. | 1.00–1.00 | −2 dB |
+| `nudge_offered` | 260–420 ms | Two bright electromechanical clicks and a held relay hum: the trail lamps coming up. An invitation, not an alarm. | 0.99–1.02 | — |
+| `system_granted` | 900–1500 ms | A rack of contactors closing in sequence and a new circuit coming alive underneath. The machine has grown a part. | 1.00–1.00 | −6 dB |
 
 ### Ambience — bus `Ambience`
 
@@ -130,7 +147,7 @@ second-hand is not a licence.
 | **OpenGameArt.org** | Gap-filling stingers and fanfares | Mixed — filter to CC0/public domain, check each entry |
 
 Kenney's Casino + UI packs alone should close most of the **UI & interactions**
-tier and a good part of the coin cues. Do that pass first: it is 13 of 48 cues
+tier and a good part of the coin cues. Do that pass first: it is 13 of 62 cues
 at zero licensing risk.
 
 ### Studio-grade commercial royalty-free
