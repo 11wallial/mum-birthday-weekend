@@ -837,7 +837,8 @@ func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void
 ## Puts the run's debt on the machine's own monitor, as the ledger a terminal
 ## would actually be showing, with whatever the House has to say underneath.
 ## The screen holds six short lines; a memo is two of them.
-func set_readout(debt: int, floor_name: String, memo: String = "") -> void:
+func set_readout(debt: int, floor_name: String, memo: String = "",
+		log: PackedStringArray = PackedStringArray()) -> void:
 	if _readout == null:
 		return
 	var lines: PackedStringArray = PackedStringArray([
@@ -851,6 +852,12 @@ func set_readout(debt: int, floor_name: String, memo: String = "") -> void:
 		var said: PackedStringArray = memo.split("\n", false)
 		for i: int in mini(said.size(), 2):
 			lines.append(("> " if i == 0 else "  ") + said[i].strip_edges())
+	# The run's last entries, printed under the memo: the event log lives on
+	# the ledger now, not in the corner of the screen.
+	if not log.is_empty():
+		lines.append("--------------------")
+		for entry: String in log:
+			lines.append("· " + entry.left(26))
 	var text: String = "\n".join(lines)
 	if text != _readout.text and _audio != null and not _readout.text.is_empty():
 		# The tube rewrites: a click, and a beep when the House has something

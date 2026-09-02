@@ -855,7 +855,9 @@ func _monitor() -> MeshInstance3D:
 	var readout: Label = Label.new()
 	readout.name = "Readout"
 	readout.text = "LEDGER OF ACCOUNT\n--------------------\nDEBT 0"
-	readout.add_theme_font_size_override(&"font_size", 23)
+	# Eight lines fit at this size: the heading, the floor, the principal,
+	# two of memo and two of the run's log under a rule.
+	readout.add_theme_font_size_override(&"font_size", 18)
 	readout.add_theme_color_override(&"font_color", Color(0.9, 1.0, 0.92))
 	# Inset well clear of the edges: the barrel distortion samples past the
 	# frame at the edge centres, and text placed there is text cut in half.

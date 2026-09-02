@@ -1167,7 +1167,10 @@ func _refresh_diegetic() -> void:
 			memo = "Noticed. %s is coming." % state.notice_pending.display_name
 		if memo.is_empty():
 			memo = _memos.memo_for(state) if _memos != null else ""
-		_slot_view.set_readout(state.economy.debt, floor_name, memo)
+		var log: PackedStringArray = PackedStringArray()
+		if _hud != null and _hud.has_method("recent_lines"):
+			log = _hud.call("recent_lines", 2)
+		_slot_view.set_readout(state.economy.debt, floor_name, memo, log)
 		# The counters across the chassis: the four numbers the overlay used
 		# to carry. The view holds a payout back until the drums land.
 		_slot_view.set_counter("cash", state.economy.cash)

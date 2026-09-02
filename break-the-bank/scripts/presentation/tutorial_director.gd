@@ -216,7 +216,10 @@ func _say(at: Step) -> void:
 		Step.DRAFT:
 			spoke.emit("THE CLERK — The draft. Chips buy hardware; hardware bolts on and stays. "
 					+ "What you cannot afford, you may sign for — on the slate, against the "
-					+ "debt, at the House's rate. Everything else the House will explain when "
-					+ "it charges you for it.", TouchBar.hint("SPACE leaves the draft", "Leave the draft"))
+					+ "debt, at the House's rate. Win loudly and the House notices: it sends "
+					+ "one more of its people to the next floor, and says so. The doorman on "
+					+ "this form takes chips to send nobody. Everything else the House will "
+					+ "explain when it charges you for it.",
+					TouchBar.hint("SPACE leaves the draft", "Leave the draft"))
 		_:
 			spoke.emit("", "")

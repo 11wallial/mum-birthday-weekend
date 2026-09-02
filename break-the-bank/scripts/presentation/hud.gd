@@ -384,6 +384,16 @@ func set_prompt(text: String, centred: bool = false) -> void:
 	_prompt_panel.offset_bottom = (height * 0.5 if centred else 18.0 + height) * _scale
 
 
+## The last few lines of the log, for the ledger on the machine's monitor
+## to carry: the handover asked for the log out of the corner, and the CRT
+## is the thing in the room that prints.
+func recent_lines(count: int = 2) -> PackedStringArray:
+	var out: PackedStringArray = PackedStringArray()
+	for i: int in range(maxi(0, _lines.size() - count), _lines.size()):
+		out.append(_lines[i])
+	return out
+
+
 func _push(text: String) -> void:
 	_lines.append(text)
 	while _lines.size() > LOG_LINES:
