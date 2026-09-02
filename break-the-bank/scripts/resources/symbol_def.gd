@@ -24,6 +24,18 @@ extends Resource
 @export var glyph: String = "?"
 ## Tint for the glyph and for this symbol's effects in the 3D layer.
 @export var color: Color = Color.WHITE
+## Second ink for the printed plate — the leaf on the fruit, the rind, the
+## lettering on the bar. Left transparent, the plate is printed in one colour.
+@export var color2: Color = Color(0.0, 0.0, 0.0, 0.0)
+## Chips paid to the run's purse of the House's scrip when this lands on a
+## scoring row. The one symbol that carries any is the bank: credits settle
+## the ante, chips buy the hardware, and the reel is where the two meet.
+@export var chip_value: int = 0
+
+
+## The second ink, or the first where none was printed.
+func second_color() -> Color:
+	return color2 if color2.a > 0.0 else color
 
 
 func matches(other: SymbolDef) -> bool:

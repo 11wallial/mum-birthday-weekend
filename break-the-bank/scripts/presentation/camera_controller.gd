@@ -11,6 +11,9 @@ enum View {
 	MACHINE,
 	## Pulled back: the whole room and everything the run has accumulated.
 	ROOM,
+	## Behind the door: the machine idling under its lamp, framed to the right
+	## so the title has the left of the screen.
+	DOOR,
 }
 
 const TRANSITION_TIME: float = 0.7
@@ -48,6 +51,11 @@ const DESIGN_ASPECT: float = 16.0 / 9.0
 ## keys: the wide establisher, the left angle onto the door and the sign, the
 ## right flank over the spool, and the back corner. Anchors rather than a free
 ## orbit, because each is a place future appliances can be composed for.
+## Where the camera stands while the title is up.
+const DOOR_VIEW: Dictionary = {
+	"eye": Vector3(-1.9, 1.75, 4.3), "target": Vector3(1.05, 1.15, 0.1),
+}
+
 const ROOM_VIEWS: Array = [
 	{"eye": Vector3(2.15, 2.2, 5.4), "target": Vector3(-0.25, 1.05, 0.15)},
 	{"eye": Vector3(-3.4, 2.0, 4.6), "target": Vector3(0.9, 1.1, -0.8)},
@@ -156,10 +164,10 @@ func set_view(view: View, immediate: bool = false) -> void:
 		eye = machine_frame_center \
 				+ Vector3(0.0, machine_eye_lift, distance)
 	else:
-		var anchor: Dictionary = ROOM_VIEWS[_room_index]
+		var anchor: Dictionary = DOOR_VIEW if view == View.DOOR else ROOM_VIEWS[_room_index]
 		eye = anchor["eye"]
 		target = anchor["target"]
-		fov = room_fov
+		fov = room_fov if view == View.ROOM else room_fov - 6.0
 		eye += Vector3.UP * portrait_eye_rise * _portrait
 		target += Vector3.UP * portrait_target_rise * _portrait
 		eye += (eye - target).normalized() * portrait_dolly_out * _portrait
@@ -177,6 +185,11 @@ func set_view(view: View, immediate: bool = false) -> void:
 
 func toggle_view() -> void:
 	set_view(View.ROOM if current_view == View.MACHINE else View.MACHINE)
+
+
+## True while the camera stands anywhere but at the machine.
+func is_pulled_back() -> bool:
+	return current_view != View.MACHINE
 
 
 ## Steps to the next or previous anchor on the room's ring of viewpoints.

@@ -180,6 +180,13 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				int(payload.get("ante", 0)), "paid" if paid else "UNPAID"])
 		EffectBus.Event.CASH_CHANGED:
 			_set_text(_cash, str(int(payload.get("cash", 0))))
+		EffectBus.Event.CHIPS_CHANGED:
+			var reason: StringName = StringName(payload.get("reason", &""))
+			var delta: int = int(payload.get("delta", 0))
+			if delta > 0 and reason != &"resumed" and reason != &"symbols":
+				_push("+%d chips (%s)" % [delta, String(reason)])
+		EffectBus.Event.FLOOR_SETTLED_EARLY:
+			_push("Settled with %d spins left" % int(payload.get("spins_left", 0)))
 		EffectBus.Event.FLOOR_STARTED:
 			_set_text(_ante, str(int(payload.get("ante", 0))))
 			_spins_left = int(payload.get("spins", 0))
@@ -278,7 +285,8 @@ func _show_line(payload: Dictionary) -> void:
 	for landed: Dictionary in _landed:
 		var tint: Color = landed.get("color", Color.WHITE)
 		var art: ImageTexture = SymbolArt.texture_for(
-				StringName(landed.get("symbol", &"")), tint)
+				StringName(landed.get("symbol", &"")), tint,
+				landed.get("color2", Color(0.0, 0.0, 0.0, 0.0)))
 		if art == null:
 			continue
 		var icon: TextureRect = TextureRect.new()

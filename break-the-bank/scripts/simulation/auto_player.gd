@@ -20,6 +20,16 @@ const HOLD_FLOOR: int = 4
 ## does not compound and a bought artifact does, so a buyer who hoards loses to
 ## one who spends. The slack is there for the vault and the works, not safety.
 const SHOP_RESERVE: float = 0.05
+## Share of the coming ante this player wants in hand, over the vig and the
+## ante of the floor it is on, before it will consider settling the floor
+## early. The spins it gives up are credits it will not have upstairs.
+const SETTLE_RESERVE: float = 0.25
+## The reserve in force, so the sweep can move it without editing this file.
+static var settle_reserve: float = SETTLE_RESERVE
+## Most of the purse a reroll may cost before the draft is simply left as it
+## is, and the fewest chips this player rerolls on at all.
+const REROLL_SHARE: float = 0.5
+const REROLL_FLOOR: int = 4
 ## Share of the coming ante kept liquid: enough to spin for the ante with, not
 ## enough to cover it. Covering it in cash would mean never banking anything,
 ## which is how the vault ends up as scenery.
@@ -33,8 +43,6 @@ const WORKS_RESERVE: float = 0.55
 ## Floors an artifact has to be behind the run before this player will sell it
 ## to afford something on the table. Three: the machine has outgrown it.
 const STALE_FLOORS: int = 3
-## Most of the purse a reroll may cost before the draft is simply left as it is.
-const REROLL_SHARE: float = 0.1
 ## What the slate may put on the debt, as a share of the coming ante, and how
 ## far the whole debt may stand above that ante before this player stops
 ## signing. Modest, because the slate is the one move in the game that turns
@@ -68,6 +76,7 @@ const COVERAGE: Dictionary = {
 	&"buy_on_slate": &"market",
 	&"sign_contract": &"contract",
 	&"stay_at_table": &"stay",
+	&"settle_floor": &"settle",
 }
 
 
@@ -84,11 +93,10 @@ const COVERAGE: Dictionary = {
 static func shop(state: RunState, offers: Array[ArtifactDef], prices: Array[int]) -> int:
 	var best: int = -1
 	var best_score: float = -1.0
-	var reserve: int = maxi(state.config.spin_cost,
-			int(round(float(_next_ante(state)) * SHOP_RESERVE)))
 	var chased: StringName = chased_archetype(state)
 	for i: int in offers.size():
-		if prices[i] > state.economy.cash - reserve:
+		# Chips buy nothing but the draft, so nothing is held back from it.
+		if prices[i] > state.economy.chips:
 			continue
 		var score: float = float(prices[i])
 		if chased != &"" and offers[i].archetype == chased:
@@ -352,12 +360,12 @@ static func market(engine: SimEngine, state: RunState) -> void:
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def == null:
 		return
-	var reserve: int = maxi(state.config.spin_cost,
-			int(round(float(_next_ante(state)) * SHOP_RESERVE)))
-	# Nothing bought and nothing affordable: one cheap reroll, then shop again.
-	if (state.shop_offers.size() >= floor_def.shop_slots and state.shop_rerolls == 0
-			and state.reroll_price() <= int(float(state.economy.cash) * REROLL_SHARE)
-			and _dearest_affordable(state, reserve) < 0):
+	# Chips left and nothing on the table they reach: one reroll, then shop
+	# again. What a person does with change in hand and a draft of dear
+	# things — the shop policy has already taken what it could afford.
+	if (state.shop_rerolls == 0 and state.economy.chips >= REROLL_FLOOR
+			and _dearest_affordable(state) < 0
+			and state.reroll_price() <= int(float(state.economy.chips) * REROLL_SHARE)):
 		if engine.reroll_shop(state):
 			var choice: int = shop(state, state.shop_offers, state.shop_prices)
 			while choice >= 0 and engine.buy_offer(state, choice):
@@ -365,19 +373,18 @@ static func market(engine: SimEngine, state: RunState) -> void:
 	var wanted: int = _dearest_offer(state)
 	if wanted < 0:
 		return
-	var short: int = state.shop_prices[wanted] - (state.economy.cash - reserve)
+	var short: int = state.shop_prices[wanted] - state.economy.chips
 	# Only for the thing the purse nearly covers. Nobody signs for what they
 	# could not have afforded half of.
 	if short <= 0 or short * 2 > state.shop_prices[wanted]:
 		return
 	# A trinket from floors ago, sold to close the gap.
 	var stale: int = _stalest_owned(state)
-	if stale >= 0 and _sellback(engine, state, state.owned[stale]) >= short:
+	if stale >= 0 and state.sellback_of(state.owned[stale]) >= short:
 		if engine.sell(state, stale) > 0 and engine.buy_offer(state, wanted):
 			return
 	# Or the slate, once, when the bill it adds stays small next to the ante.
-	var owed: int = int(ceil(float(state.shop_prices[wanted])
-			* (1.0 + state.config.slate_markup_percent / 100.0)))
+	var owed: int = state.slate_price(wanted)
 	var next_ante: int = _next_ante(state)
 	if (owed <= int(float(next_ante) * SLATE_SHARE)
 			and state.economy.debt + owed <= int(float(next_ante) * SLATE_DEBT_ANTES)):
@@ -393,11 +400,11 @@ static func _dearest_offer(state: RunState) -> int:
 	return best
 
 
-## Index of the dearest offer the purse can cover past [param reserve], or -1.
-static func _dearest_affordable(state: RunState, reserve: int) -> int:
+## Index of the dearest offer the chips cover, or -1.
+static func _dearest_affordable(state: RunState) -> int:
 	var best: int = -1
 	for i: int in state.shop_offers.size():
-		if state.shop_prices[i] > state.economy.cash - reserve:
+		if state.shop_prices[i] > state.economy.chips:
 			continue
 		if best < 0 or state.shop_prices[i] > state.shop_prices[best]:
 			best = i
@@ -417,12 +424,6 @@ static func _stalest_owned(state: RunState) -> int:
 	return best
 
 
-## What the market would hand back for [param artifact] today.
-static func _sellback(engine: SimEngine, state: RunState, artifact: ArtifactDef) -> int:
-	return maxi(1, int(floor(float(engine.price_for(state, artifact))
-			* state.config.sellback_percent / 100.0)))
-
-
 ## Has a word once the House has started taking the good symbols off the reel.
 ## Skimming is survivable; a cold deck is what actually ends the run.
 static func launder(state: RunState) -> bool:
@@ -432,6 +433,37 @@ static func launder(state: RunState) -> bool:
 	var floor_def: FloorDef = state.current_floor()
 	var reserve: int = floor_def.ante if floor_def != null else 0
 	return state.economy.cash - price >= reserve
+
+
+## Settles the floor early once the purse covers the vig, the ante and a
+## little of the next floor's, and there is at least a spin's worth of chips
+## in it. The trade every player is asked to make from the basement: the
+## spins left are credits upstairs would have had, the chips are the draft.
+## A person weighs it on the machine's numbers; this player takes it whenever
+## the reserve is there, so the lab measures a game in which it is taken.
+static func settle(state: RunState) -> bool:
+	if not state.can_settle_early():
+		return false
+	var bonus: int = state.settle_bonus(state.spins_remaining)
+	if bonus <= 0:
+		return false
+	var due: int = state.vig_due() + state.ante_due()
+	var reserve: int = int(round(float(_next_ante(state)) * settle_reserve))
+	if state.economy.cash < due + reserve:
+		return false
+	# The trade itself: a spin not taken is worth what the House pays for it
+	# in scrip, at the House's own rate; a spin taken is worth what this
+	# machine has been paying. Settle only when the House pays better — a
+	# machine paying above its keep should keep spinning, because the ante
+	# upstairs is what its credits are for, and the lab's first try at this
+	# (settle whenever covered) lost twenty points of win rate to exactly that.
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null:
+		return false
+	var per_spin: float = float(state.economy.lifetime_earned) / float(maxi(1, state.spins_taken))
+	var house_pays: float = float(CoreEconomy.chip_value(state.config, floor_def.ante)) \
+			* float(bonus) / float(maxi(1, state.spins_remaining))
+	return house_pays > per_spin
 
 
 ## Stays at the table when the batch has been told to. There is no judgement

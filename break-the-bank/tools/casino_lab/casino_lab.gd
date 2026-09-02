@@ -33,6 +33,16 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var earnings: PackedInt32Array = PackedInt32Array()
 	var spins: PackedInt32Array = PackedInt32Array()
 	var floors: PackedInt32Array = PackedInt32Array()
+	# The House's scrip: what a run earned of it, how much hardware that
+	# bought, and how often the run left a floor early to get it. The
+	# numbers the two-currency economy is tuned on.
+	var chips: PackedInt32Array = PackedInt32Array()
+	var hardware: PackedInt32Array = PackedInt32Array()
+	var settled: PackedInt32Array = PackedInt32Array()
+	# Offers put in front of every run, against what was taken: the share of
+	# the draft a run can afford is the number the chip supply is set by.
+	var offers_total: int = 0
+	var taken_total: int = 0
 	var wins: int = 0
 	var end_reasons: Dictionary = {}
 	var floor_deaths: Dictionary = {}
@@ -99,6 +109,12 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		earnings.append(state.economy.lifetime_earned)
 		spins.append(state.spins_taken)
 		floors.append(state.floors_cleared)
+		chips.append(state.economy.lifetime_chips)
+		hardware.append(state.owned.size())
+		settled.append(state.floors_settled_early)
+		for seen: StringName in state.offers_seen:
+			offers_total += int(state.offers_seen[seen])
+		taken_total += state.owned.size()
 		if won:
 			wins += 1
 		else:
@@ -189,6 +205,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"earnings": describe(earnings),
 		"spins_per_run": describe(spins),
 		"floors_cleared": describe(floors),
+		"chips": describe(chips),
+		"hardware": describe(hardware),
+		"settled_early": describe(settled),
+		"draft_take_rate": _ratio(taken_total, offers_total),
 		"end_reasons": end_reasons,
 		"debt": {
 			"serviced": describe(serviced),

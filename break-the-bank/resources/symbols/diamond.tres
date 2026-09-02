@@ -13,3 +13,4 @@ is_wild = false
 is_curse = false
 glyph = "DIA"
 color = Color(0.55, 0.86, 0.95, 1)
+color2 = Color(0.86, 0.96, 1.0, 1)

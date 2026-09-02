@@ -33,16 +33,30 @@ This is what finally makes the three-row window a mechanic instead of a
 decoration. The near miss the player is looking at is one they can do something
 about, at a price.
 
+**Settle.** The moment the purse covers the vig and the ante, the floor can be
+left with spins still on the clock, and the House pays chips for every spin
+left — two a spin, eight at most, on top of the floor's stipend. The spins
+given up are credits the next floor will not have; the chips are the draft it
+will. This is the trade the two currencies exist for, and it is offered from
+the basement because the basement is where the draft is first met.
+
 ## 2 — The Casino · **THE MARKET**
 
 The draft becomes a shop you can work.
 
-- **Reroll** the offers. The price doubles with every reroll in the same draft.
-- **Sell** owned hardware back at well under half of what it is worth today.
-  Selling is exactly the inverse of acquiring, so a permanent reel change cannot
-  be laundered through the market for cash.
-- **The slate.** Take an offer without paying and put the bill on the debt with
-  a markup. The only way in the game to turn future trouble into present power.
+The draft is paid in chips — the House's scrip, earned by settling floors and
+never by the reels except through the bank symbol — so a purse that has just
+covered the ante cannot simply buy the table. Priced in credits it could, from
+floor three, and a draft that can be bought whole is a list, not a decision.
+
+- **Reroll** the offers. Two chips, doubling with every reroll in the same draft.
+- **Sell** owned hardware back for half its chip price. Selling is exactly the
+  inverse of acquiring, so a permanent reel change cannot be laundered through
+  the market for chips.
+- **The slate.** Take an offer without paying and put the bill on the debt: the
+  chip price at the House's exchange rate — a chip is worth three percent of
+  the floor's ante — with a markup on top. The only way in the game to turn
+  future trouble into present power, and the one place the two currencies meet.
 
 Stock is weighted towards what the floor has just unlocked. A flat draw from
 everything meant that by floor six the shop was mostly floor-one trinkets.

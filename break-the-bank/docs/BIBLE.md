@@ -89,6 +89,10 @@ The tone of the ending recolours the whole run. Neither ending is a joke.
 | **the market** | Reroll, sell back, the slate. Floor two's gift. |
 | **after hours** | The floors past the seventh, for a run that stayed. |
 | **the ledger** | The CRT on the machine. The House's side of the conversation. |
+| **chips** | The House's scrip. Buys the draft, settles nothing. Paid for floors, for spins not taken, and by the bank symbol. |
+| **settling early** | Leaving a floor with spins on the clock, once the ante is covered, for chips. |
+| **the door** | The title, and the pause. Where the machine and the audit are chosen. |
+| **the Clerk** | The voice on the tannoy that walks a new debtor through the basement. Not the House; the House's hands. |
 
 ## Rules for anyone writing
 

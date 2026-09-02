@@ -31,6 +31,7 @@ const WITHDRAW: StringName = &"withdraw"
 const BUY_ROW: StringName = &"buy_row"
 const BUY_REEL: StringName = &"buy_reel"
 const LAUNDER: StringName = &"launder"
+const SETTLE: StringName = &"settle"
 
 ## Reel buttons sit above the action row so the two never compete for a thumb,
 ## and the standing controls — the stake, the vault, the works — sit in a row of
@@ -132,6 +133,8 @@ func refresh() -> void:
 
 
 func _build_status() -> void:
+	_chip("CHIPS", str(_state.economy.chips),
+			UiSkin.AMBER if _state.economy.chips > 0 else UiSkin.INK_MUTED)
 	if _state.has_system(Systems.STAKE):
 		_chip("STAKE", "x%d" % _state.stake, UiSkin.AMBER)
 	if _state.has_system(Systems.VAULT):
@@ -225,6 +228,12 @@ func _build_actions() -> void:
 		return
 	_action(SPIN, "SPIN", "%d cr" % _state.spin_price(),
 			_state.economy.can_afford(_state.spin_price()), true)
+	# The floor can be left early once the purse covers what it costs to
+	# leave. Offered beside the spin, priced in what it pays, because the
+	# choice between the two is the floor's whole decision.
+	if _state.can_settle_early():
+		var bonus: int = _state.settle_bonus(_state.spins_remaining)
+		_action(SETTLE, "SETTLE NOW", "ante covered   +%d chips" % bonus, true, false)
 	if _state.has_system(Systems.STAKE):
 		_extra(STAKE_DOWN, "STAKE −", "", _state.stake > 1)
 		_extra(STAKE_UP, "STAKE +", "", _state.stake < _state.config.max_stake)
@@ -312,7 +321,8 @@ func _reel_button(action: StringName, index: int, label: String,
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.add_theme_constant_override(&"separation", int(roundf(6.0 * _scale)))
 	if symbol != null:
-		var art: ImageTexture = SymbolArt.texture_for(symbol.id, symbol.color)
+		var art: ImageTexture = SymbolArt.texture_for(symbol.id, symbol.color,
+					symbol.second_color())
 		if art != null:
 			var icon: TextureRect = TextureRect.new()
 			icon.texture = art

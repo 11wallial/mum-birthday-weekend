@@ -21,8 +21,8 @@ const CHASSIS: Vector3 = Vector3(0.98, 0.62, 0.42)
 const CHASSIS_Y: float = 1.04
 const PLINTH_TOP: float = 0.42
 ## Big enough that three symbols fit around the front of the drum without the
-## outer two curving away out of sight.
-const REEL_RADIUS: float = 0.38
+## outer two curving away out of sight, at fourteen cells to the turn.
+const REEL_RADIUS: float = 0.44
 const REEL_SPACING: float = 0.43
 ## One printed cell of the reel strip, in radians. The drum divides into
 ## [code]ReelPrint.CELLS[/code] of them, and the band above and below the
@@ -134,8 +134,10 @@ func _chassis() -> void:
 				Materials.machined(Materials.STEEL, 55))
 	# A recessed housing behind the reels, so the drums sit in shadow rather than
 	# on a flat panel. This is most of what sells the depth of the front face.
-	_box(chassis, Vector3(1.44, 0.84, 0.34),
-			Vector3(0.0, CHASSIS_Y + 0.05, CHASSIS.z - 0.3),
+	# Deep enough to swallow the whole drum: a reel poking through the back of
+	# its own housing reads as a bug from any angle but the front.
+	_box(chassis, Vector3(1.44, 0.9, 0.62),
+			Vector3(0.0, CHASSIS_Y + 0.05, CHASSIS.z - 0.32),
 			Materials.cavity())
 	# Ventilation louvres on the lower front, an inspection hatch on the left.
 	for i: int in 5:
@@ -234,8 +236,11 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 			var plate_material: StandardMaterial3D = _strip_material()
 			plate_material.uv1_scale = Vector3(
 					1.0, 1.0 / float(ReelPrint.CELLS), 1.0)
-			plate_material.albedo_color = (Color.WHITE if slot == 1
-					else Color(0.8, 0.78, 0.75))
+			# Never pure white. A white plate under the window lamp specular
+			# went past the bloom threshold and bleached whatever was printed
+			# on it — the "glare" that made one panel a floor unreadable.
+			plate_material.albedo_color = (Color(0.93, 0.91, 0.87) if slot == 1
+					else Color(0.76, 0.74, 0.71))
 			plate.material_override = plate_material
 			strip_materials.append(plate_material)
 			plate.rotation.x = offset
@@ -278,11 +283,16 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 	# Compatibility clamps highlights where Forward+ rolls them off, so the
 	# same lamp that reads warm on desktop burns the strip white on the web
 	# build. One number, scaled per renderer, keeps the two in the same key.
-	lamp.light_energy = 1.05 			if RenderingServer.get_current_rendering_method() != "gl_compatibility" 			else 0.7
-	lamp.omni_range = 1.15
-	lamp.omni_attenuation = 1.4
+	lamp.light_energy = 0.85 \
+			if RenderingServer.get_current_rendering_method() != "gl_compatibility" \
+			else 0.6
+	# Diffuse, almost no specular: the lamp is a foot from the centre plate,
+	# and its highlight on coated paper was the glare the print vanished under.
+	lamp.light_specular = 0.12
+	lamp.omni_range = 1.3
+	lamp.omni_attenuation = 1.3
 	lamp.shadow_enabled = false
-	lamp.position = Vector3(0.0, 0.02, REEL_RADIUS + 0.3)
+	lamp.position = Vector3(0.0, 0.06, REEL_RADIUS + 0.34)
 	bank.add_child(lamp)
 	# Dress every drum and plate in the printed strip. The bake takes a frame
 	# on its first run, so the drums boot wearing plain paper and are dressed
@@ -300,9 +310,15 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 ## arc, with cell 0 centred on the payline at rest. Built by hand because a
 ## [CylinderMesh] cannot put the strip's V around its side, and the whole point
 ## of the drum is that the print and the geometry agree about where cells are.
+##
+## V runs 0..1 over the full turn. It used to run over a tenth of it, which
+## wrapped six cells of ten around the drum at half again their size — so at
+## rest the window showed cells cut through the middle and the top of the
+## next symbol peering in over the payline, until the first spin covered the
+## drum with plates. That was the "overlapping icons" of the first playtest.
 func _drum_tube(radius: float, width: float, segments: int) -> ArrayMesh:
 	return _arc_tube(radius, width, -0.5 * BAND_ANGLE, TAU - 0.5 * BAND_ANGLE,
-			segments, 1.0 / float(ReelPrint.CELLS))
+			segments, 1.0 / TAU)
 
 
 ## One cell of the same surface, centred on the front, V spanning 0..1 so a
@@ -349,9 +365,12 @@ func _arc_tube(radius: float, width: float, t0: float, t1: float,
 ## the print catches the key light the way coated paper does.
 func _strip_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.albedo_color = Color.WHITE
-	material.roughness = 0.62
+	material.albedo_color = Color(0.93, 0.91, 0.87)
+	# Matte paper. Coated paper's gloss read as glare from the lamp a foot
+	# in front of it, and the print is the one thing here that must be read.
+	material.roughness = 0.82
 	material.metallic = 0.0
+	material.metallic_specular = 0.25
 	material.texture_filter = \
 			BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return material

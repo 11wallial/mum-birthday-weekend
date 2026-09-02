@@ -100,6 +100,8 @@ static func _apply(engine: SimEngine, state: RunState, entry: Array) -> bool:
 			engine.sign_contract(state, arg)
 		"stay_at_table":
 			engine.stay_at_table(state)
+		"settle_floor":
+			engine.settle_floor(state)
 		_:
 			return false
 	return true

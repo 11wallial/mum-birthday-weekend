@@ -174,7 +174,7 @@ the trigger.
 | C | The Ledger | 7 | +0.25x per artifact owned |
 | C | The Exchange | 7 | +1.2x per other artifact that triggered |
 
-*Counter:* prices track the ante, and a machine of trinkets has to keep buying
+*Counter:* the draft is paid in chips, and a machine of trinkets has to keep buying
 them. One big device beats six small ones until the exchange is wired in.
 
 ### The Orchard (`orchard`)

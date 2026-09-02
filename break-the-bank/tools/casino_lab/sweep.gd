@@ -24,6 +24,14 @@ func _initialize() -> void:
 	var base_seed: int = int(args.get("seed", 1))
 	var floor_index: int = int(args.get("floor", 6))
 	var values: PackedFloat32Array = _floats(String(args.get("values", "")))
+	# A second knob held at one value under the sweep, as knob:value, for the
+	# pairs that only make sense together — the chip supply against the antes.
+	var also: String = String(args.get("also", ""))
+	if also.contains(":"):
+		var held: PackedStringArray = also.split(":")
+		_apply(held[0], ContentDB.shared(), ContentDB.shared().floor_at(floor_index),
+				held[1].to_float())
+		print("holding %s at %s" % [held[0], held[1]])
 	if values.is_empty():
 		push_error("sweep: --values is required, e.g. --values=3000,3600,4200")
 		quit(1)
@@ -41,7 +49,8 @@ func _initialize() -> void:
 		print("%-12s %-9s %-9s %-9s %-8s %s" % [
 			"value", "win rate", "stayed", "after hrs", "dawn", "deaths after hours"])
 	else:
-		print("%-12s %-9s %-9s %-8s %s" % ["value", "win rate", "floors", "p50", "deaths by floor"])
+		print("%-12s %-9s %-9s %-8s %-9s %-9s %-8s %s" % ["value", "win rate", "floors", "p50",
+				"hardware", "took", "settled", "deaths by floor"])
 
 	for value: float in values:
 		_apply(knob, content, target, value)
@@ -56,10 +65,13 @@ func _initialize() -> void:
 				int(after["stayed"]), float(beyond.get("mean", 0.0)), int(after["dawns"]),
 				JSON.stringify(after["deaths_by_floor"])])
 		else:
-			print("%-12s %-9.1f %-9.2f %-8d %s" % [
+			var hardware: Dictionary = report["hardware"]
+			var settled: Dictionary = report["settled_early"]
+			print("%-12s %-9.1f %-9.2f %-8d %-9.1f %-9s %-8.2f %s" % [
 				_format_value(value), float(report["win_rate"]) * 100.0,
-				float(floors["mean"]), int(earnings["p50"]),
-				JSON.stringify(report["deaths_by_floor"])])
+				float(floors["mean"]), int(earnings["p50"]), float(hardware["mean"]),
+				"%.0f%%" % (float(report["draft_take_rate"]) * 100.0),
+				float(settled["mean"]), JSON.stringify(report["deaths_by_floor"])])
 	quit(0)
 
 
@@ -86,6 +98,32 @@ func _apply(knob: String, content: ContentDB, target: FloorDef, value: float) ->
 			content.balance.endless_ante_growth = value
 		"endless_floors":
 			content.balance.endless_floors_max = int(round(value))
+		"chips":
+			# Every floor's stipend, scaled: the supply side of the draft.
+			for floor_def: FloorDef in content.floors:
+				floor_def.chips = maxi(1, int(round(float(floor_def.chips) * value)))
+		"chip_prices":
+			# Every artifact's price, scaled: the demand side.
+			for artifact: ArtifactDef in content.artifacts:
+				artifact.cost = maxi(1, int(round(float(artifact.cost) * value)))
+		"spin_left_chips":
+			content.balance.chips_per_spin_left = int(round(value))
+		"late_antes":
+			# Every ante from the third floor up, scaled together: the curve a
+			# machine that buys a share of the draft has to climb.
+			for floor_def: FloorDef in content.floors:
+				if floor_def.index >= 3:
+					floor_def.ante = maxi(1, int(round(float(floor_def.ante) * value)))
+		"settle_reserve":
+			# The automated player's threshold for leaving a floor early, as
+			# a share of the next ante over what this one costs to leave.
+			AutoPlayer.settle_reserve = value
+		"chips_and_hold":
+			# Both at once: the stipend doubled, and the player never leaving
+			# early, to read the reel change on its own.
+			for floor_def: FloorDef in content.floors:
+				floor_def.chips = maxi(1, int(round(float(floor_def.chips) * 2.0)))
+			AutoPlayer.settle_reserve = value
 		_:
 			push_error("sweep: unknown knob %s" % knob)
 

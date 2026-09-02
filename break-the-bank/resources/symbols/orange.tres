@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"orange"
+display_name = "Orange"
+base_value = 3
+base_weight = 10
+family = &"fruit"
+is_wild = false
+is_curse = false
+glyph = "OR"
+color = Color(1.0, 0.56, 0.12, 1)
+color2 = Color(0.36, 0.62, 0.27, 1)
+chip_value = 0

@@ -89,6 +89,14 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 	print("floors cleared mean %.2f  max %d" % [
 		float(floors.get("mean", 0.0)), int(floors.get("max", 0))])
 	print("deaths by floor %s" % JSON.stringify(report.get("deaths_by_floor", {})))
+	var chips: Dictionary = report.get("chips", {})
+	var hardware: Dictionary = report.get("hardware", {})
+	var settled: Dictionary = report.get("settled_early", {})
+	print("chips          mean %.1f  p50 %d  p95 %d   hardware mean %.1f  max %d   took %.0f%% of the draft   settled early mean %.2f floors" % [
+		float(chips.get("mean", 0.0)), int(chips.get("p50", 0)), int(chips.get("p95", 0)),
+		float(hardware.get("mean", 0.0)), int(hardware.get("max", 0)),
+		float(report.get("draft_take_rate", 0.0)) * 100.0,
+		float(settled.get("mean", 0.0))])
 	var after: Dictionary = report.get("after_hours", {})
 	if int(after.get("stayed", 0)) > 0:
 		var beyond: Dictionary = after.get("floors", {})

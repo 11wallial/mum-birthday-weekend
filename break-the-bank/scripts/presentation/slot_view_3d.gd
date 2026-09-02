@@ -15,6 +15,10 @@ extends Node3D
 const SPIN_DURATION: float = 0.34
 const REEL_STAGGER: float = 0.1
 const SETTLE_DURATION: float = 0.16
+## Multiplies every one of those. A setting: a long session wants the reels
+## quicker, a first one wants them slower, and the view is the only place
+## that knows how long a spin takes.
+static var pace: float = 1.0
 
 @export var module_anchor_path: NodePath = ^"ModuleAnchor"
 @export var payout_particles_path: NodePath = ^"PayoutParticles"
@@ -60,10 +64,13 @@ const GLOW_CEILING: float = 14.0
 ## machine is visibly hotter than a fresh one — the glow is the run's progress
 ## made physical, which is the same job the cash stacks and floor markers do.
 const GLOW_PER_UPGRADE: float = 0.16
-## Brightness of a top-value symbol on a fresh machine. Above the environment's
-## 1.1 bloom threshold, so the best symbols flare rather than just tint.
-const GLOW_GAIN: float = 2.3
-const GLOW_MAX: float = 3.4
+## Brightness of a top-value symbol on a fresh machine, and the most a cell may
+## ever be lit. Both held under the environment's 1.1 bloom threshold: past it
+## the cell bloomed white and the symbol on it vanished, which on a stacked
+## machine was every good spin. The flare a jackpot deserves comes from the
+## machine's own lamp and the coins, not from bleaching the print.
+const GLOW_GAIN: float = 0.9
+const GLOW_MAX: float = 1.02
 
 ## How a spin's payout is judged, as a share of what one spin has to be worth
 ## to clear the floor: the ante divided by the spins allowed. Judging against a
@@ -88,6 +95,8 @@ const JACKPOT_SHARE: float = 3.0
 ## refuses to advance the run while this holds, so the simulation can never get
 ## more than one spin ahead of what the player is looking at.
 var _busy: bool = false
+## True while a redraw is waiting on the strip bake.
+var _redraw_booked: bool = false
 
 ## How the spin was judged. The HUD listens so its readout agrees with the
 ## machine rather than restating the number in its own words.
@@ -218,12 +227,12 @@ func _play_spin(payout: int, multiplier: float) -> void:
 	var last: int = _reels.size() - 1
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
-		var spin_time: float = SPIN_DURATION + REEL_STAGGER * float(i)
+		var spin_time: float = (SPIN_DURATION + REEL_STAGGER * float(i)) * pace
 		var tween: Tween = create_tween()
 		tween.tween_property(reel, "rotation:x", reel.rotation.x + TAU * 4.0, spin_time) \
 				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tween.tween_callback(_settle_reel.bind(i))
-		tween.tween_property(reel, "rotation:x", 0.0, SETTLE_DURATION) \
+		tween.tween_property(reel, "rotation:x", 0.0, SETTLE_DURATION * pace) \
 				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		if i == last:
 			tween.tween_callback(_finish_spin.bind(payout, multiplier))
@@ -253,7 +262,20 @@ func _settle_reel(index: int) -> void:
 
 ## Puts one landed symbol on one reel, preferring the printed strip cell and
 ## falling back to the glyph token. Exactly one of the two is ever visible.
+##
+## The strip bakes a frame after the machine is built. A board shown before
+## it lands — every resumed run — fell back to the glyph tokens, and nothing
+## put the plates on once the print existed, so the tokens sat over the
+## drum's own printing for the rest of the floor. The redraw is booked here.
 func _show_symbol(reel: Node3D, landed: Dictionary) -> void:
+	if ReelPrint.strip() == null and not _redraw_booked:
+		_redraw_booked = true
+		ReelPrint.bake(self, func() -> void:
+			# Headless has no strip to bake and answers at once; redrawing
+			# then would book the same redraw again, without end.
+			if ReelPrint.strip() != null:
+				show_standing()
+			_redraw_booked = false)
 	var printed: bool = _face(reel, ^"Payline",
 			StringName(landed.get("symbol", &"")))
 	# The band above and below scores nothing. It is there so the player can see
@@ -317,7 +339,7 @@ func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
 	material.emission = tint * 0.8
 	material.emission_energy_multiplier = energy
 	# A short flare as it lands, settling back to its resting brightness.
-	material.emission_energy_multiplier = energy * 1.35
+	material.emission_energy_multiplier = minf(energy * 1.2, GLOW_MAX)
 	var tween: Tween = create_tween()
 	tween.tween_property(material, "emission_energy_multiplier", energy * 0.7,
 			0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -577,15 +599,24 @@ func _offer_nudges(nudges: int) -> void:
 		if arrow == null:
 			continue
 		arrow.visible = nudges > 0
+		# The last bob stops here either way: a looping tween left on an arrow
+		# that was hidden, or freed with its drum, spun forever and errored.
+		if arrow.has_meta(&"bob"):
+			var old: Tween = arrow.get_meta(&"bob") as Tween
+			if old != null and old.is_valid():
+				old.kill()
+			arrow.remove_meta(&"bob")
 		if not arrow.visible:
 			continue
 		# A slow bob rather than a flash: the arrow has to read as an invitation
 		# the player can take their time over, because taking it costs a spin.
-		var bob: Tween = create_tween().set_loops(0)
+		# Bound to the arrow, so it dies with the drum on a window rebuild.
+		var bob: Tween = arrow.create_tween().set_loops(0)
 		bob.tween_property(arrow, "position:y", 0.56, 0.5) \
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		bob.tween_property(arrow, "position:y", 0.5, 0.5) \
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		arrow.set_meta(&"bob", bob)
 
 
 ## Rolls one drum down a stop, then repaints it with what now stands on it.
@@ -628,12 +659,16 @@ func _fit_works(reels: int, rows: int, aloud: bool = true) -> void:
 func _light_rows(rows: int) -> void:
 	for reel: Node3D in _reels:
 		for i: int in 3:
-			var row: Sprite3D = reel.get_node_or_null(
-					NodePath(["Above", "Payline", "Below"][i])) as Sprite3D
+			var row: MeshInstance3D = reel.get_node_or_null(
+					NodePath(["Above", "Payline", "Below"][i])) as MeshInstance3D
 			if row == null:
 				continue
-			row.modulate = (Color(1, 1, 1, 1) if _row_pays(i, rows)
-					else Color(0.62, 0.6, 0.58))
+			var material: StandardMaterial3D = \
+					row.material_override as StandardMaterial3D
+			if material == null:
+				continue
+			material.albedo_color = (Color(0.93, 0.91, 0.87) if _row_pays(i, rows)
+					else Color(0.76, 0.74, 0.71))
 	for i: int in 3:
 		var marks: Node3D = get_node_or_null(
 				NodePath("Bezel/Paylines/Row%d" % i)) as Node3D

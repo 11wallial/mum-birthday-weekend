@@ -149,6 +149,29 @@ worth knowing before touching the simulation:
 - A spin does not end when the reels stop. `SimEngine.spin` leaves the run at a
   decision (`RunState.Decision`); `collect` is what moves the credits. The view
   animates on `SPIN_RESOLVED` and celebrates on `PAYOUT_CALCULATED`.
+- Two currencies, kept apart in `CoreEconomy`: `cash` pays the spin, the
+  ante and the vig and is what the reels pay; `chips` buy the draft, the
+  reroll and nothing else, and move only through `credit_chips` /
+  `debit_chips`. `RunState.can_buy`, `price_of`, `sellback_of` and
+  `slate_price` are the draft's arithmetic; the slate is the one place the
+  two meet, converting a chip price to debt at `CoreEconomy.chip_value`.
+  Chips arrive in `_close_floor`: the floor's `chips` stipend, the settle
+  bonus for `spins_left_at_settle`, and interest. The bank symbol carries
+  `chip_value`, summed in `_resolve_board` onto `board.chips` and paid in
+  `collect`. Never price anything for the draft in cash again: priced off
+  the ante the draft was free from floor three.
+- `settle_floor` is the verb that ends a floor early: legal only when
+  `RunState.can_settle_early()` — spinning, no decision owed, and cash
+  covering `vig_due() + ante_due()`. `ante_due` is the one place the ante is
+  computed; the engine's `ante_for` delegates to it. `AutoPlayer.settle`
+  takes the trade only when the House pays more per spin than the machine
+  has been — the first policy settled whenever covered and cost twenty
+  points, because a built machine's spins are worth more than the scrip.
+- The lab reports `chips`, `hardware`, `draft_take_rate` and
+  `settled_early`; the chip supply is the sharpest knob in the game (the
+  `chips` sweep runs 1.7% → 24% across ×1 → ×2). Sweep knobs `chips`,
+  `chip_prices`, `spin_left_chips`, `late_antes` and `settle_reserve`
+  exist, and `--also=knob:value` holds a second one under a sweep.
 - The stake is priced off the ante, not the spin: every level above the first
   costs `BalanceConfig.stake_ante_percent` of the floor's ante per spin
   (`RunState.stake_premium`). A spin cost one credit against payouts in the
@@ -297,7 +320,26 @@ Rules that cost real time to learn:
   cells once on the GPU, the drum wraps all of them, and a landed plate is the
   same bake addressed one cell at a time. `BAND_ANGLE` is exactly one cell, so
   a plate stays registered with the printing behind it — change either and you
-  must change both.
+  must change both. `ReelPrint.CELLS` is the symbol count (fourteen), so
+  every symbol has a plate; add a symbol and raise it, and check the drum
+  still fits the window. The drum's V runs 0..1 over the full turn
+  (`1.0 / TAU` in `_drum_tube`): it ran over a tenth of it once, and the
+  window showed cells cut through the middle until the first spin.
+- A symbol is drawn in two inks plus the press's black: `SymbolDef.color`,
+  `color2` (read through `second_color()`), and `SymbolArt.PAINT_*` on each
+  op. Adds paint in order, later on top; carves cut everything. Lettering
+  on a plate (`captions_for`) is a Label the bake overlays, so the CPU icon
+  has no lettering — a symbol must read without it. Both interpreters,
+  `SymbolArt._sample` and `reel_plate.gdshader`'s `symbol_sample`, fold the
+  same way; change one and change the other.
+- Nothing lit on the reels goes past the environment's 1.1 bloom threshold:
+  a plate that bloomed bleached its own print. The window lamp is nearly
+  all diffuse for the same reason.
+- The door (`TitleScreen`) hides the HUD while it is up and owns Esc; the
+  Clerk (`TutorialDirector`) owns the callout while the lesson runs and gates
+  the machine to the move it is teaching through `CasinoRoom._allowed`. The
+  `debug_*` tools skip both. `screenshot.gd --shots=a,b` captures only the
+  named frames, which is how a single frame is checked in seconds.
 - A glow faked by scaling a crisp text copy doubles its ends and reads as a
   misprint. Nudge same-size copies in each direction instead.
 - Compatibility clamps highlights where Forward+ rolls them off. A light tuned

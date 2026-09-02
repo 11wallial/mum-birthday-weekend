@@ -102,8 +102,9 @@ func _redraw() -> void:
 		_rows.remove_child(child)
 		child.queue_free()
 	if _title != null:
-		_title.text = "THE DRAFT — FLOOR %d CLEARED      CASH %d      DEBT %d" % [
-			_state.floors_cleared, _state.economy.cash, _state.economy.debt]
+		_title.text = "THE DRAFT — FLOOR %d CLEARED      CHIPS %d      CASH %d      DEBT %d" % [
+			_state.floors_cleared, _state.economy.chips, _state.economy.cash,
+			_state.economy.debt]
 		_title.add_theme_color_override(&"font_color", UiSkin.AMBER)
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
@@ -131,16 +132,12 @@ func _draw_market() -> void:
 	if not open_for_business:
 		return
 	var reroll_price: int = _state.reroll_price()
-	_market.add_child(_chip("REROLL  %d cr" % reroll_price,
-			_state.economy.can_afford(reroll_price), UiSkin.AMBER,
+	_market.add_child(_chip("REROLL  %d chips" % reroll_price,
+			_state.economy.can_afford_chips(reroll_price), UiSkin.AMBER,
 			func() -> void: market_requested.emit(REROLL, 0)))
 	for i: int in _state.owned.size():
 		var artifact: ArtifactDef = _state.owned[i]
-		var floor_def: FloorDef = _state.current_floor()
-		var worth: int = _state.economy.price_of(artifact, _state.config,
-				_state.floors_cleared, floor_def.ante if floor_def != null else 0)
-		var refund: int = maxi(1, int(floor(float(worth)
-				* _state.config.sellback_percent / 100.0)))
+		var refund: int = _state.sellback_of(artifact)
 		var index: int = i
 		_market.add_child(_chip("SELL %s  +%d" % [artifact.display_name, refund],
 				true, UiSkin.INK_MUTED,
@@ -218,7 +215,7 @@ func _build_row(index: int) -> Control:
 	if build != null:
 		head.add_child(_cell(build.display_name.to_upper(), 11.0,
 				UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
-	var price_cell: Label = _cell("%d cr" % price, 17.0,
+	var price_cell: Label = _cell("%d chips" % price, 17.0,
 			UiSkin.AMBER if affordable else UiSkin.DENIED)
 	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	head.add_child(price_cell)
@@ -243,9 +240,8 @@ func _build_row(index: int) -> Control:
 	var pair: HBoxContainer = HBoxContainer.new()
 	pair.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
 	pair.add_child(button)
-	var owed: int = maxi(1, int(ceil(float(price)
-			* (1.0 + _state.config.slate_markup_percent / 100.0))))
-	var slate: Button = _chip("SLATE\n%d owed" % owed, true, UiSkin.DENIED,
+	var owed: int = _state.slate_price(index)
+	var slate: Button = _chip("SLATE\n%d cr owed" % owed, true, UiSkin.DENIED,
 			func() -> void: market_requested.emit(SLATE, index))
 	slate.custom_minimum_size = Vector2(112.0, 58.0) * _scale
 	pair.add_child(slate)
@@ -260,7 +256,8 @@ func _symbol_badge(symbol_id: StringName, affordable: bool) -> TextureRect:
 	var symbol: SymbolDef = ContentDB.shared().symbol_by_id(symbol_id)
 	if symbol == null:
 		return null
-	var art: ImageTexture = SymbolArt.texture_for(symbol.id, symbol.color)
+	var art: ImageTexture = SymbolArt.texture_for(symbol.id, symbol.color,
+					symbol.second_color())
 	if art == null:
 		return null
 	var badge: TextureRect = TextureRect.new()

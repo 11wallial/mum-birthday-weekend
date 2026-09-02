@@ -24,17 +24,29 @@ extends Resource
 @export var synergy_bonus: float = 0.5
 ## Owned artifacts sharing a tag needed before the synergy bonus applies.
 @export var synergy_threshold: int = 3
-## Shop price inflation per cleared floor, as a percent of base cost. Applies to
-## an artifact's authored price, which is the floor its price never drops below.
-@export var shop_inflation_percent: float = 15.0
-## Credits of ante that one credit of an artifact's authored cost is worth once
-## the ante has outgrown it.
+## Chips the run starts with. The House's scrip: it buys hardware in the
+## draft and settles nothing, and the only ways to earn it are to clear a
+## floor, to clear it early, to hold some over, and to land the bank.
 ##
-## An artifact cost forty credits on the first floor and forty-six on the last,
-## against an ante that had grown four hundred times over — so from about floor
-## three the draft was free, and a floor's worth of decisions collapsed into
-## "buy all of it". Priced against the ante, every draft costs something.
-@export var shop_ante_divisor: float = 130.0
+## Credits used to buy the draft too, and priced against the ante the draft
+## was free from floor three: a purse that had just cleared the ante could
+## always afford every offer. Two currencies is the fix Balatro and CloverPit
+## both arrived at — points to survive, money to build — and the tension is
+## the same here: spins spent chasing credits are chips not earned.
+@export var starting_chips: int = 0
+## Chips paid per spin left on the clock when a floor is settled before its
+## allowance runs out, and the most that can be earned that way on one floor.
+@export var chips_per_spin_left: int = 2
+@export var chips_spin_left_cap: int = 8
+## Chips held over at a floor's close earn one more per this many, up to the
+## cap. Saving is a decision only when it pays.
+@export var chip_interest_per: int = 5
+@export var chip_interest_cap: int = 3
+## Credits one chip is worth to the House, as a percent of the floor's ante:
+## the rate the slate converts a chip price into debt at, and the number
+## telemetry values a chip at. Priced off the ante so a chip on floor six is
+## worth floor six's money.
+@export var chip_credit_rate_percent: float = 3.0
 ## Percent of outstanding debt demanded in cash when a floor is cleared. This is
 ## the vig: it is charged before the ante, so debt competes with survival every
 ## floor rather than being a single bill at the end of the run.
@@ -59,14 +71,15 @@ extends Resource
 ## player is taught what a house edge feels like, by paying for it.
 @export var gamble_odds: PackedFloat32Array = PackedFloat32Array([0.5, 0.45, 0.4, 0.35])
 
-## Credits the first reroll of a draft costs. Each further reroll in the same
+## Chips the first reroll of a draft costs. Each further reroll in the same
 ## draft costs the previous one multiplied by [member reroll_growth].
-@export var reroll_base_cost: int = 4
+@export var reroll_base_cost: int = 2
 @export var reroll_growth: float = 2.0
-## Share of an artifact's current price returned when it is sold back. Well
-## under half: a build has to be able to change its mind, but not for free.
-@export var sellback_percent: float = 45.0
-## Markup added to anything bought on the slate, on top of it becoming debt.
+## Share of an artifact's chip price returned when it is sold back. Half at
+## most: a build has to be able to change its mind, but not for free.
+@export var sellback_percent: float = 50.0
+## Markup added to anything bought on the slate, on top of it becoming debt
+## at the House's exchange rate ([member chip_credit_rate_percent]).
 @export var slate_markup_percent: float = 40.0
 
 ## Dividend the vault pays into the purse every time a floor is cleared, as a

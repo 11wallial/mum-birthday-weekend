@@ -114,6 +114,11 @@ var floor_spins: int = 0
 var floor_spins_total: int = 0
 ## Whether the collector has already been round this floor.
 var boss_collected: bool = false
+## Spins still on the clock when the floor was settled early, so the close
+## can pay for them. Zero on a floor played to its last spin.
+var spins_left_at_settle: int = 0
+## Floors this run left with spins still on the clock. Telemetry.
+var floors_settled_early: int = 0
 
 var reel_rng: RngStream
 var shop_rng: RngStream
@@ -156,10 +161,82 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 
 
 ## True when [param index] names an offer the player can currently afford.
+## The draft is paid in chips, never in the cash the ante needs.
 func can_buy(index: int) -> bool:
 	if phase != Phase.SHOPPING or index < 0 or index >= shop_offers.size():
 		return false
-	return economy.can_afford(shop_prices[index])
+	return economy.can_afford_chips(shop_prices[index])
+
+
+## What [param artifact] costs this run, in chips: the authored price, scaled
+## by the audit. Public so the draft, the market and the engine quote the
+## same number.
+func price_of(artifact: ArtifactDef) -> int:
+	return maxi(1, int(round(float(artifact.cost) * maxf(options.price_scale, 0.0))))
+
+
+## Chips the market hands back for [param artifact] today.
+func sellback_of(artifact: ArtifactDef) -> int:
+	return maxi(1, int(floor(float(price_of(artifact))
+			* config.sellback_percent / 100.0)))
+
+
+## Credits the slate puts on the debt for offer [param index]: the chip price
+## at the House's exchange rate, with the markup on top.
+func slate_price(index: int) -> int:
+	if index < 0 or index >= shop_prices.size():
+		return 0
+	var floor_def: FloorDef = current_floor()
+	var rate: int = CoreEconomy.chip_value(config, floor_def.ante if floor_def != null else 0)
+	return maxi(1, int(ceil(float(shop_prices[index] * rate)
+			* (1.0 + config.slate_markup_percent / 100.0))))
+
+
+## The vig the close of this floor will charge, in cash, before the ante.
+## Zero while the House is still extending its grace.
+func vig_due() -> int:
+	var grace: int = 0 if options.no_grace else config.debt_grace_floors
+	if economy.debt <= 0 or floors_cleared < grace:
+		return 0
+	var percent: float = config.debt_service_percent * maxf(options.debt_service_scale, 0.0)
+	if percent <= 0.0:
+		return 0
+	return int(ceil(float(economy.debt) * percent / 100.0))
+
+
+## What the floor in front of the player costs to leave, with every contract
+## clause and everything the House has added since it opened. One number,
+## computed in one place, so no prompt ever quotes a price nobody is charged.
+func ante_due() -> int:
+	var floor_def: FloorDef = current_floor()
+	return ante_due_for(floor_def) if floor_def != null else 0
+
+
+func ante_due_for(floor_def: FloorDef) -> int:
+	var discount: float = ArtifactEngine.ante_discount_percent(self)
+	var ante: float = float(floor_def.ante) * options.ante_scale
+	ante *= maxf(0.0, 1.0 + ContractEngine.ante_percent(self) / 100.0)
+	ante *= 1.0 + heat_ante_percent / 100.0
+	ante *= 1.0 + BossEngine.ante_percent(self) / 100.0
+	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
+
+
+## True when the floor can be settled now, with spins still on the clock:
+## the purse covers the vig and the ante, and the machine owes no decision.
+## Settling early is the trade the chips exist for — the spins not taken are
+## paid for in scrip — and it is the one move that ends a floor on purpose.
+func can_settle_early() -> bool:
+	if phase != Phase.SPINNING or decision != Decision.NONE or spins_remaining <= 0:
+		return false
+	return economy.cash >= vig_due() + ante_due()
+
+
+## Chips [param spins_left] unused spins would be worth at the close.
+func settle_bonus(spins_left: int) -> int:
+	if spins_left <= 0 or config.chips_per_spin_left <= 0:
+		return 0
+	return mini(spins_left * config.chips_per_spin_left,
+			maxi(0, config.chips_spin_left_cap))
 
 
 ## True once a floor has handed this run [param id]. See [Systems].
@@ -321,7 +398,7 @@ func release(artifact: ArtifactDef) -> bool:
 	return true
 
 
-## What the next reroll of the open draft costs.
+## What the next reroll of the open draft costs, in chips.
 func reroll_price() -> int:
 	return maxi(1, int(round(float(config.reroll_base_cost)
 			* pow(maxf(config.reroll_growth, 1.0), float(shop_rerolls)))))
@@ -385,6 +462,8 @@ func snapshot() -> Dictionary:
 		"streak": streak,
 		"boss": String(boss.id) if boss != null else "",
 		"bosses_faced": bosses_faced.map(func(id: StringName) -> String: return String(id)),
+		"floors_settled_early": floors_settled_early,
+		"artifacts_owned": owned.size(),
 	}
 	data.merge(economy.snapshot())
 	return data

@@ -42,6 +42,10 @@ var market_policy: Callable = Callable()
 ## Decides whether a won run takes the House's offer and stays at the table.
 ## Signature: [code]func(state: RunState) -> bool[/code].
 var stay_policy: Callable = Callable()
+## Decides whether to settle the floor now, with spins still on the clock,
+## and take the chips for them. Signature:
+## [code]func(state: RunState) -> bool[/code].
+var settle_policy: Callable = Callable()
 
 ## Where the verbs go when a run is being kept: null in a batch, a [RunJournal]
 ## when a person is playing and the run has to survive the app closing. Only
@@ -58,7 +62,7 @@ const PLAYER_VERBS: Array[StringName] = [
 	&"toggle_hold", &"nudge", &"gamble", &"set_stake",
 	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
 	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
-	&"stay_at_table",
+	&"stay_at_table", &"settle_floor",
 ]
 
 ## Contracts put on the table before a floor once the back office is open.
@@ -87,6 +91,7 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	works_policy = Callable(AutoPlayer, "works")
 	market_policy = Callable(AutoPlayer, "market")
 	stay_policy = Callable(AutoPlayer, "stay")
+	settle_policy = Callable(AutoPlayer, "settle")
 
 
 ## Hands every decision back to whoever is calling.
@@ -106,6 +111,7 @@ func clear_policies() -> void:
 	launder_policy = Callable()
 	market_policy = Callable()
 	stay_policy = Callable()
+	settle_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -168,6 +174,9 @@ func announce(state: RunState) -> void:
 		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, standing)
 	_bus.emit_event(EffectBus.Event.CASH_CHANGED, {
 		"delta": 0, "cash": state.economy.cash, "reason": &"resumed", "resumed": true,
+	})
+	_bus.emit_event(EffectBus.Event.CHIPS_CHANGED, {
+		"delta": 0, "chips": state.economy.chips, "reason": &"resumed", "resumed": true,
 	})
 	if state.economy.vault > 0:
 		_bus.emit_event(EffectBus.Event.VAULT_CHANGED, {
@@ -304,6 +313,12 @@ func _do_step(state: RunState) -> void:
 		works_policy.call(self, state)
 	if stake_policy.is_valid():
 		set_stake(state, int(stake_policy.call(state)))
+	# The floor can be left before the clock runs out, for chips. Asked before
+	# the spin, because the spin is what the settlement gives up.
+	if settle_policy.is_valid() and state.can_settle_early() \
+			and bool(settle_policy.call(state)):
+		settle_floor(state)
+		return
 	if hold_policy.is_valid() and state.has_system(Systems.HOLD):
 		state.board.clear_holds()
 		for reel: int in PackedInt32Array(hold_policy.call(state, state.board)):
@@ -482,6 +497,7 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 	var total: int = 0
 	var base: int = 0
 	var flat: float = 0.0
+	var chips: int = 0
 	var triggered: Array[StringName] = []
 	# The payline is the row the machine is read by, so its pattern and its
 	# multiplier are the ones reported; the bought rows add to the number
@@ -497,10 +513,16 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 		total += ctx.total()
 		base += ctx.base_payout
 		flat += ctx.flat_bonus
+		# The bank pays scrip wherever it stands on a paying row, unmultiplied:
+		# the wager is the player's, the scrip is the House's.
+		for symbol: SymbolDef in row:
+			if symbol != null:
+				chips += maxi(0, symbol.chip_value)
 		if i == 0:
 			board.multiplier = ctx.multiplier * float(stake)
 			triggered = ctx.triggered
 	board.payout = total * stake
+	board.chips = chips
 	board.breakdown = {
 		"base": base,
 		"flat_bonus": flat,
@@ -508,6 +530,7 @@ func _resolve_board(state: RunState, announce: bool) -> void:
 		"triggered": triggered,
 		"stake": stake,
 		"rows": rows.size(),
+		"chips": chips,
 	}
 
 
@@ -525,6 +548,7 @@ func _announce_board(state: RunState) -> void:
 		"multiplier": board.multiplier,
 		"pattern": Probability.pattern_name(board.pattern),
 		"stake": maxi(1, state.stake),
+		"chips": board.chips,
 	})
 
 
@@ -539,8 +563,10 @@ func reel_payload(board: SpinBoard, index: int) -> Dictionary:
 		"reel": index,
 		"symbol": middle.id if middle != null else &"",
 		"value": middle.base_value if middle != null else 0,
+		"chip_value": middle.chip_value if middle != null else 0,
 		"glyph": middle.glyph if middle != null else "",
 		"color": middle.color if middle != null else Color.WHITE,
+		"color2": middle.second_color() if middle != null else Color.WHITE,
 		"above": top.id if top != null else &"",
 		"above_color": top.color if top != null else Color.WHITE,
 		"below": bottom.id if bottom != null else &"",
@@ -739,6 +765,7 @@ func _do_collect(state: RunState) -> void:
 	state.best_payout = maxi(state.best_payout, board.payout)
 	state.decision = RunState.Decision.NONE
 	state.economy.credit(board.payout, &"payout")
+	state.economy.credit_chips(board.chips, &"symbols")
 	# The ledgers move only now, with the credits: a spin previewed, nudged
 	# and rescored a dozen times is still one spin to the hardware counting.
 	var lit: Array[ArtifactDef] = ArtifactEngine.record_spin(state, board)
@@ -961,6 +988,17 @@ func _close_floor(state: RunState) -> void:
 	state.economy.accrue_debt_interest(maxf(0.0, floor_def.debt_interest_percent
 			+ ContractEngine.debt_interest_percent(state) + state.options.interest_delta))
 	ArtifactEngine.apply_debt_paydown(state)
+	# The House pays the floor in its own scrip: the stipend, a chip for every
+	# spin the player did not need, and interest on what was held over. This
+	# is the whole of what the draft is bought with.
+	var spins_left: int = state.spins_left_at_settle
+	state.spins_left_at_settle = 0
+	var stipend: int = maxi(0, floor_def.chips)
+	var bonus: int = state.settle_bonus(spins_left)
+	state.economy.credit_chips(stipend, &"floor")
+	state.economy.credit_chips(bonus, &"settle")
+	var interest: int = state.economy.accrue_chip_interest(
+			state.config.chip_interest_per, state.config.chip_interest_cap)
 	state.floors_cleared += 1
 	state.set_contract(null)
 	state.boss = null
@@ -974,6 +1012,11 @@ func _close_floor(state: RunState) -> void:
 		"cash": state.economy.cash,
 		"debt": state.economy.debt,
 		"serviced": serviced,
+		"chips": state.economy.chips,
+		"stipend": stipend,
+		"chips_bonus": bonus,
+		"chips_interest": interest,
+		"spins_left": spins_left,
 	})
 	# Dawn. The House closes after so many floors after hours, and a run still
 	# standing walks out: the win the table could not take back.
@@ -1043,6 +1086,37 @@ func _do_stay_at_table(state: RunState) -> bool:
 	return true
 
 
+## Leaves the floor with spins still on the clock, and is paid in chips for
+## every one of them. The one move that ends a floor on purpose.
+##
+## Only when the purse already covers the vig and the ante: settling is not
+## a way to skip a bill, it is a way to stop chasing credits the run does not
+## need and take the House's scrip instead. The spins given up are credits
+## the next floor will not have; the chips are the draft it will. That trade
+## is the reason there are two currencies at all.
+func settle_floor(state: RunState) -> bool:
+	_enter(&"settle_floor", [])
+	var out: bool = _do_settle_floor(state)
+	_leave()
+	return out
+
+
+func _do_settle_floor(state: RunState) -> bool:
+	if not state.can_settle_early():
+		return false
+	state.spins_left_at_settle = state.spins_remaining
+	state.floors_settled_early += 1
+	_bus.emit_event(EffectBus.Event.FLOOR_SETTLED_EARLY, {
+		"floor": state.floor_index,
+		"spins_left": state.spins_remaining,
+		"chips": state.settle_bonus(state.spins_remaining),
+		"cash": state.economy.cash,
+	})
+	state.spins_remaining = 0
+	_close_floor(state)
+	return true
+
+
 func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> void:
 	state.phase = phase
 	state.end_reason = reason
@@ -1057,17 +1131,11 @@ func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> voi
 ## discount, which meant a contract or a pit boss left the prompt quoting a
 ## price nobody was going to be charged.
 func ante_for(state: RunState) -> int:
-	var floor_def: FloorDef = state.current_floor()
-	return _ante_for(state, floor_def) if floor_def != null else 0
+	return state.ante_due()
 
 
 func _ante_for(state: RunState, floor_def: FloorDef) -> int:
-	var discount: float = ArtifactEngine.ante_discount_percent(state)
-	var ante: float = float(floor_def.ante) * state.options.ante_scale
-	ante *= maxf(0.0, 1.0 + ContractEngine.ante_percent(state) / 100.0)
-	ante *= 1.0 + state.heat_ante_percent / 100.0
-	ante *= 1.0 + BossEngine.ante_percent(state) / 100.0
-	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
+	return state.ante_due_for(floor_def)
 
 
 ## Buys offer [param index]. Returns true when the purchase happened.
@@ -1085,7 +1153,7 @@ func buy_offer(state: RunState, index: int) -> bool:
 func _do_buy_offer(state: RunState, index: int) -> bool:
 	if not state.can_buy(index):
 		return false
-	state.economy.debit(state.shop_prices[index], &"artifact")
+	state.economy.debit_chips(state.shop_prices[index], &"artifact")
 	state.acquire(state.shop_offers[index])
 	state.shop_offers.remove_at(index)
 	state.shop_prices.remove_at(index)
@@ -1218,13 +1286,10 @@ func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
 		state.offers_seen[artifact.id] = int(state.offers_seen.get(artifact.id, 0)) + 1
 
 
-## What [param artifact] costs this run today: the economy's price, scaled by
-## the audit. Public so the interface and the market quote the same number.
+## What [param artifact] costs this run today, in chips. Public so the
+## interface and the market quote the same number the engine charges.
 func price_for(state: RunState, artifact: ArtifactDef) -> int:
-	var floor_def: FloorDef = state.current_floor()
-	var worth: int = state.economy.price_of(artifact, state.config,
-			state.floors_cleared, floor_def.ante if floor_def != null else 0)
-	return maxi(1, int(round(float(worth) * maxf(state.options.price_scale, 0.0))))
+	return state.price_of(artifact)
 
 
 func _offer_ids(state: RunState) -> Array[String]:
@@ -1274,12 +1339,12 @@ func _do_reroll_shop(state: RunState) -> bool:
 	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
 		return false
 	var price: int = state.reroll_price()
-	if not state.economy.can_afford(price):
+	if not state.economy.can_afford_chips(price):
 		return false
 	var floor_def: FloorDef = state.current_floor()
 	if floor_def == null:
 		return false
-	state.economy.debit(price, &"reroll")
+	state.economy.debit_chips(price, &"reroll")
 	state.shop_rerolls += 1
 	_stock_shop(state, floor_def)
 	_bus.emit_event(EffectBus.Event.SHOP_REROLLED, {
@@ -1291,11 +1356,11 @@ func _do_reroll_shop(state: RunState) -> bool:
 	return true
 
 
-## Sells owned hardware back at a fraction of what it is worth today.
+## Sells owned hardware back for a fraction of its chip price.
 ##
-## Well under half, and exactly the inverse of acquiring it: a build has to be
+## Half at most, and exactly the inverse of acquiring it: a build has to be
 ## able to change its mind, but not for free, and a permanent reel change must
-## not be launderable through the market for cash.
+## not be launderable through the market for chips.
 func sell(state: RunState, index: int) -> int:
 	_enter(&"sell", [index])
 	var out: int = _do_sell(state, index)
@@ -1309,12 +1374,10 @@ func _do_sell(state: RunState, index: int) -> int:
 	if index < 0 or index >= state.owned.size():
 		return 0
 	var artifact: ArtifactDef = state.owned[index]
-	var worth: int = price_for(state, artifact)
-	var refund: int = maxi(1, int(floor(float(worth)
-			* state.config.sellback_percent / 100.0)))
+	var refund: int = state.sellback_of(artifact)
 	if not state.release(artifact):
 		return 0
-	state.economy.credit(refund, &"sellback")
+	state.economy.credit_chips(refund, &"sellback")
 	_bus.emit_event(EffectBus.Event.ARTIFACT_SOLD, {
 		"artifact": artifact.id, "refund": refund, "floor": state.floor_index,
 	})
@@ -1386,8 +1449,9 @@ func _do_buy_on_slate(state: RunState, index: int) -> bool:
 	if index < 0 or index >= state.shop_offers.size():
 		return false
 	var artifact: ArtifactDef = state.shop_offers[index]
-	var owed: int = maxi(1, int(ceil(float(state.shop_prices[index])
-			* (1.0 + state.config.slate_markup_percent / 100.0))))
+	# A chip price, converted to the House's money at the House's rate, with
+	# the markup on top: the one way to turn chips you do not have into debt.
+	var owed: int = state.slate_price(index)
 	state.economy.debt += owed
 	state.acquire(artifact)
 	state.shop_offers.remove_at(index)

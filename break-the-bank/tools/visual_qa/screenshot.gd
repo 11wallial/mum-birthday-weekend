@@ -25,6 +25,7 @@ var _wait: float = 0.0
 var _applied: bool = false
 var _settle: float = DEFAULT_SETTLE
 var _out_dir: String = "user://shots"
+var _only: Array[String] = []
 
 
 func _initialize() -> void:
@@ -33,6 +34,12 @@ func _initialize() -> void:
 	_out_dir = String(args.get("out", "user://shots"))
 	var spins: int = int(args.get("spins", 6))
 	_settle = float(args.get("settle", DEFAULT_SETTLE))
+	# --shots=a,b keeps only the named frames' captures. The drive through
+	# the run still happens; what is skipped is the wait and the write, so a
+	# single frame can be checked in a fraction of the storyboard's time.
+	var only: String = String(args.get("shots", ""))
+	if not only.is_empty():
+		_only.assign(Array(only.split(",", false)))
 
 	DirAccess.make_dir_recursive_absolute(_out_dir)
 
@@ -44,9 +51,11 @@ func _initialize() -> void:
 	_root_node = packed.instantiate()
 	root.add_child(_root_node)
 
-	# A storyboard rather than one frame: the room has to be checked in both
-	# camera framings, and after the machine has accumulated some modules.
-	_shots.append({"name": "01_machine_view", "action": "none"})
+	# A storyboard rather than one frame: the door first, as a session opens,
+	# then the room in both camera framings, and after the machine has
+	# accumulated some modules.
+	_shots.append({"name": "00_title", "action": "none"})
+	_shots.append({"name": "01_machine_view", "action": "door"})
 	_shots.append({"name": "02_room_view", "action": "room"})
 	_shots.append({"name": "03_machine_view_back", "action": "machine"})
 	for i: int in spins:
@@ -79,11 +88,17 @@ func _process(delta: float) -> bool:
 		return false
 
 	var shot: Dictionary = _shots[_index]
+	var wanted: bool = _only.is_empty() or _only.has(String(shot["name"])) \
+			or (String(shot["name"]).begins_with("04b_") and _only.has("04b_draft"))
 	if not _applied:
 		_apply(String(shot["action"]))
 		_applied = true
 		# Tweens and particles need time to reach the state worth looking at.
-		_wait = _settle
+		_wait = _settle if wanted else 0.05
+		return false
+	if not wanted:
+		_index += 1
+		_applied = false
 		return false
 
 	var name: String = String(shot["name"])
@@ -128,6 +143,11 @@ func _apply(action: String) -> void:
 			if _root_node.has_method("debug_set_view"):
 				_root_node.call("debug_set_view", 1)
 		"machine":
+			if _root_node.has_method("debug_set_view"):
+				_root_node.call("debug_set_view", 0)
+		"door":
+			if _root_node.has_method("debug_close_door"):
+				_root_node.call("debug_close_door")
 			if _root_node.has_method("debug_set_view"):
 				_root_node.call("debug_set_view", 0)
 		"setup":

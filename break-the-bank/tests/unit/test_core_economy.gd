@@ -91,9 +91,34 @@ func test_forgiving_debt_never_goes_below_zero() -> void:
 	assert_int(_economy.forgive_debt(50.0)).is_equal(0)
 
 
-func test_shop_prices_inflate_per_cleared_floor() -> void:
-	var artifact: ArtifactDef = TestFixtures.artifact(&"x", ArtifactDef.Effect.FLAT_BONUS, 1.0)
-	artifact.cost = 10
-	_config.shop_inflation_percent = 20.0
-	assert_int(_economy.price_of(artifact, _config, 0)).is_equal(10)
-	assert_int(_economy.price_of(artifact, _config, 2)).is_equal(14)
+func test_chips_are_a_purse_of_their_own() -> void:
+	# The House's scrip: earned, spent, never below zero, never cash.
+	_economy.credit_chips(6, &"floor")
+	_economy.credit_chips(2, &"settle")
+	assert_int(_economy.chips).is_equal(8)
+	assert_int(_economy.lifetime_chips).is_equal(8)
+	assert_int(_economy.chips_from_settling).is_equal(2)
+	assert_int(_economy.cash).is_equal(100)
+	_economy.debit_chips(5, &"artifact")
+	assert_int(_economy.chips).is_equal(3)
+	assert_bool(_economy.can_afford_chips(4)).is_false()
+	_economy.debit_chips(9, &"artifact")
+	assert_int(_economy.chips).is_equal(0)
+	assert_int(_bus.count_of(EffectBus.Event.CHIPS_CHANGED)).is_equal(4)
+
+
+func test_chip_interest_pays_per_held_and_caps() -> void:
+	_economy.credit_chips(12, &"floor")
+	assert_int(_economy.accrue_chip_interest(5, 3)).is_equal(2)
+	assert_int(_economy.chips).is_equal(14)
+	_economy.credit_chips(30, &"floor")
+	assert_int(_economy.accrue_chip_interest(5, 3)).is_equal(3)
+	assert_int(_economy.chips_from_interest).is_equal(5)
+	_economy.debit_chips(99, &"artifact")
+	assert_int(_economy.accrue_chip_interest(5, 3)).is_equal(0)
+
+
+func test_a_chip_is_priced_off_the_ante() -> void:
+	_config.chip_credit_rate_percent = 3.0
+	assert_int(CoreEconomy.chip_value(_config, 1000)).is_equal(30)
+	assert_int(CoreEconomy.chip_value(_config, 10)).is_equal(1)

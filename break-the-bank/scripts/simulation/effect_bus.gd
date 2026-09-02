@@ -42,6 +42,12 @@ enum Event {
 	## The House's person on the floor has done the thing they came to do —
 	## the collector's round, so far. The floor's opening names who is there.
 	BOSS_ACTED,
+	## The run's chips moved: the House's scrip, which buys hardware and
+	## settles nothing. Carries delta, chips and a reason, like CASH_CHANGED.
+	CHIPS_CHANGED,
+	## The player settled the floor with spins still on the clock, trading
+	## the rest of the allowance for chips. Fired before FLOOR_CLEARED.
+	FLOOR_SETTLED_EARLY,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

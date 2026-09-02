@@ -17,11 +17,12 @@ extends Node3D
 @export var audio_path: NodePath = ^"AudioDirector"
 @export var dressing_path: NodePath = ^"RoomDressing"
 @export var shop_path: NodePath = ^"ShopPanel"
-@export var setup_path: NodePath = ^"RunSetup"
 @export var touch_bar_path: NodePath = ^"TouchBar"
 @export var room_set_path: NodePath = ^"RoomSet"
 @export var deck_path: NodePath = ^"ControlDeck"
 @export var contract_path: NodePath = ^"ContractPanel"
+@export var title_path: NodePath = ^"TitleScreen"
+@export var tutorial_path: NodePath = ^"TutorialDirector"
 ## Records every choice for comparison against agent telemetry.
 @export var record_playtest: bool = true
 
@@ -34,10 +35,12 @@ var _hud: Node
 var _audio: AudioDirector
 var _dressing: RoomDressing
 var _shop: ShopPanel
-var _setup: RunSetupPanel
 var _touch: TouchBar
 var _deck: ControlDeck
 var _contracts: ContractPanel
+var _title: TitleScreen
+## The Clerk on the tannoy, for a first run. Owns the prompt while it talks.
+var _tutorial: TutorialDirector
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
@@ -62,6 +65,10 @@ var _granted: Array[Dictionary] = []
 ## True while a save is waiting for the end of the frame. Every move marks it;
 ## one write happens.
 var _save_pending: bool = false
+## What the Clerk last said, kept so a prompt the room clears can be put
+## back while the lesson still owns the screen.
+var _tutorial_line: String = ""
+var _tutorial_hint: String = ""
 ## True once this run's win has gone into the profile and the board. A run
 ## that stays at the table ends a second time, and that ending is a record of
 ## how far it got, not a second run.
@@ -75,10 +82,14 @@ func _ready() -> void:
 	_audio = get_node_or_null(audio_path) as AudioDirector
 	_dressing = get_node_or_null(dressing_path) as RoomDressing
 	_shop = get_node_or_null(shop_path) as ShopPanel
-	_setup = get_node_or_null(setup_path) as RunSetupPanel
 	_touch = get_node_or_null(touch_bar_path) as TouchBar
 	_deck = get_node_or_null(deck_path) as ControlDeck
 	_contracts = get_node_or_null(contract_path) as ContractPanel
+	_title = get_node_or_null(title_path) as TitleScreen
+	_tutorial = get_node_or_null(tutorial_path) as TutorialDirector
+	if _tutorial != null:
+		_tutorial.spoke.connect(_on_clerk_spoke)
+		_tutorial.finished.connect(_on_lesson_finished)
 	var room_root: Node3D = get_node_or_null(room_set_path) as Node3D
 	if room_root != null:
 		_room_parts = RoomSet.new().build(room_root)
@@ -97,8 +108,14 @@ func _ready() -> void:
 	# A profile from an older build may already meet newer conditions.
 	_profile.evaluate(_catalogue.unlocks)
 	_board = Leaderboard.load_or_new()
-	if _setup != null:
-		_setup.start_requested.connect(_on_start_requested)
+	if _title != null:
+		_title.start_requested.connect(_on_start_requested)
+		_title.resume_requested.connect(_on_resume_requested)
+		_title.abandon_requested.connect(_on_abandon_requested)
+		_title.tutorial_requested.connect(_on_tutorial_requested)
+		_title.skip_requested.connect(_on_skip_requested)
+		_title.setting_changed.connect(_apply_setting)
+	_apply_settings()
 	if _slot_view != null and _audio != null:
 		_slot_view.set_audio(_audio)
 	if _slot_view != null:
@@ -126,9 +143,16 @@ func _ready() -> void:
 		_touch.new_run_requested.connect(_on_touch_new_run)
 	# A seed set in the inspector is a bug report being reproduced, and it wins
 	# over whatever was left on the table. Otherwise the run in progress comes
-	# back exactly where it was closed.
-	if run_seed != 0 or not _resume_saved_run():
+	# back exactly where it was closed — behind the door, which is where every
+	# session starts: the machine idling under its lamp, the title over it,
+	# and nothing spinning until the player says so.
+	if run_seed != 0:
 		new_run(run_seed)
+		return
+	var resumed: bool = _resume_saved_run()
+	if not resumed:
+		new_run(0)
+	_open_door(resumed)
 
 
 ## Starts a run. Pass 0 for a random seed.
@@ -160,6 +184,8 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	# from, so the sign and the ledger have to be drawn now, or they show the
 	# scene's placeholders until the first spin.
 	_refresh_diegetic()
+	if _tutorial != null:
+		_tutorial.bind(engine.get_bus(), state)
 	print("Break the Bank — seed %d (%s)%s" % [
 		actual_seed, SeedBook.to_code(actual_seed),
 		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
@@ -249,12 +275,10 @@ func _bind_viewers(bus: EffectBus, run_seed: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"bb_menu"):
-		if _setup != null and not _setup.is_open():
-			_setup.open(_profile, _catalogue, _current_seed)
-			_sync_deck()
+	if _title != null and _title.is_open():
 		return
-	if _setup != null and _setup.is_open():
+	if event.is_action_pressed(&"bb_menu"):
+		_pause()
 		return
 	if event.is_action_pressed(&"bb_new_run"):
 		_end_recording(&"abandoned")
@@ -285,15 +309,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			if not event.is_action_pressed(StringName("bb_slot_%d" % (reel + 1))):
 				continue
 			if state.decision == RunState.Decision.NUDGE:
-				engine.nudge(state, reel)
+				if _allowed(&"nudge", reel):
+					engine.nudge(state, reel)
 			elif state.decision == RunState.Decision.NONE:
-				engine.toggle_hold(state, reel)
+				if _allowed(&"hold", reel) and engine.toggle_hold(state, reel) \
+						and _tutorial != null:
+					_tutorial.note_hold(reel)
 			_after_input()
 			return
 		# Doubling is the deliberate press. Space is always the safe one, so a
 		# player tapping through cannot gamble a win away by rhythm.
 		if state.decision == RunState.Decision.GAMBLE \
-				and event.is_action_pressed(&"bb_confirm"):
+				and event.is_action_pressed(&"bb_confirm") and _allowed(&"gamble"):
 			engine.gamble(state)
 			_after_input()
 			return
@@ -332,9 +359,125 @@ func _on_touch_camera() -> void:
 
 
 func _on_touch_setup() -> void:
-	if _setup != null and not _setup.is_open():
-		_setup.open(_profile, _catalogue, _current_seed)
-		_sync_deck()
+	_pause()
+
+
+## Puts the door up over the room. [param resumed] says a run is on the
+## table, so CONTINUE is offered and the machine behind shows its board.
+func _open_door(resumed: bool) -> void:
+	if _title == null:
+		return
+	_title.open_title(_profile, _catalogue, resumed, _current_seed)
+	# The overlay comes down while the door is up: the title is the whole of
+	# the screen, and a ledger showing through it is two screens at once.
+	_show_overlay(false)
+	if _camera != null:
+		_camera.set_view(CameraController.View.DOOR, true)
+	_sync_deck()
+
+
+## Shows or hides the run's own overlay — the gauges, the log, the hint and
+## the callout — as one thing.
+func _show_overlay(shown: bool) -> void:
+	if _hud != null and _hud is CanvasLayer:
+		(_hud as CanvasLayer).visible = shown
+	if _touch != null:
+		_touch.visible = shown and (_touch.force_visible or TouchBar.is_touch_device())
+
+
+## The Clerk walks a debtor through the basement once: on the first run of a
+## profile that has not seen the lesson, from the first spin.
+func _begin_lesson_if_new() -> void:
+	if _tutorial == null or state == null or _profile.tutorial_seen:
+		return
+	if state.spins_taken > 0 or not _daily_key.is_empty() or not state.has_system(Systems.HOLD):
+		return
+	_tutorial.begin()
+	_clear_prompt()
+	_on_clerk_spoke(_tutorial_line, _tutorial_hint)
+
+
+## Pauses the run under the same door, with the pause's words on it.
+func _pause() -> void:
+	if _title == null or _title.is_open() or state == null:
+		return
+	_title.lesson_running = _lesson_running()
+	_title.open_pause(_profile, _catalogue, _current_seed)
+	_sync_deck()
+
+
+func _on_resume_requested() -> void:
+	var was_title: bool = _title != null and _title.mode() == TitleScreen.Mode.TITLE
+	if _title != null:
+		_title.close()
+	_show_overlay(true)
+	_sync_deck()
+	if _camera != null and _camera.is_pulled_back() \
+			and not (_shop != null and _shop.is_open()) \
+			and not (_contracts != null and _contracts.is_open()):
+		_camera.set_view(CameraController.View.MACHINE)
+	if _deck != null:
+		_deck.refresh()
+	if was_title:
+		_begin_lesson_if_new()
+
+
+func _on_abandon_requested() -> void:
+	_end_recording(&"abandoned")
+	new_run(0)
+	_open_door(false)
+
+
+func _on_tutorial_requested() -> void:
+	_profile.tutorial_seen = false
+	_profile.save()
+	if _title != null:
+		_title.close()
+	_show_overlay(true)
+	_sync_deck()
+	_end_recording(&"abandoned")
+	new_run(0)
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
+	_begin_lesson_if_new()
+
+
+## Reads every setting off the profile into the buses and the reels.
+func _apply_settings() -> void:
+	for key: String in ["master", "music", "sfx", "ambience", "pace"]:
+		_apply_setting(StringName(key), float(_profile.settings.get(key,
+				1.0 if key == "pace" else 0.0)))
+
+
+func _apply_setting(key: StringName, value: float) -> void:
+	_profile.settings[String(key)] = value
+	_profile.save()
+	match key:
+		&"pace":
+			SlotView3D.pace = clampf(value, 0.25, 4.0)
+		&"master":
+			_set_bus("Master", value)
+		&"music":
+			_set_bus("Music", value)
+		&"sfx":
+			_set_bus("SFX", value)
+			_set_bus("UI", value)
+		&"ambience":
+			_set_bus("Ambience", value)
+		_:
+			pass
+
+
+## Moves a bus relative to what the layout authored, so the mix's own
+## balance survives the sliders.
+func _set_bus(bus: String, offset_db: float) -> void:
+	var index: int = AudioServer.get_bus_index(bus)
+	if index < 0:
+		return
+	if not has_meta(StringName("bus_base_" + bus)):
+		set_meta(StringName("bus_base_" + bus), AudioServer.get_bus_volume_db(index))
+	var base: float = float(get_meta(StringName("bus_base_" + bus), 0.0))
+	AudioServer.set_bus_volume_db(index, base + offset_db)
 
 
 func _on_touch_new_run() -> void:
@@ -345,7 +488,12 @@ func _on_touch_new_run() -> void:
 ## Steps the run from a tool or a test, bypassing input. Visual QA uses this.
 func debug_advance() -> void:
 	# A tool driving the run has no hands to sign with, so the office is closed
-	# for it and the first contract taken.
+	# for it and the first contract taken — and no ears for the Clerk, whose
+	# lesson would otherwise hold the lever until a hold nobody makes.
+	if _tutorial != null and _tutorial.is_active():
+		_tutorial.skip()
+	if _title != null and _title.is_open():
+		_on_resume_requested()
 	if state != null and state.phase == RunState.Phase.SIGNING and _contracts != null:
 		_contracts.close()
 	_advance()
@@ -414,11 +562,16 @@ func debug_dress_room(floors: int, cash: int, mood: StringName) -> void:
 	FloorMood.apply(mood, _room_parts, _environment, self)
 
 
-## Opens the run-setup panel. For tools and tests.
+## Opens the door — the title — over the run. For tools and tests.
 func debug_open_setup() -> void:
-	if _setup != null:
-		_setup.open(_profile, _catalogue, _current_seed)
-		_sync_deck()
+	if _title != null:
+		_open_door(state != null)
+
+
+## Closes the door. For tools and tests.
+func debug_close_door() -> void:
+	if _title != null and _title.is_open():
+		_on_resume_requested()
 
 
 ## Drops the run onto [param floor_index] with everything that floor would have
@@ -435,8 +588,8 @@ func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 		_shop.close()
 	if _contracts != null:
 		_contracts.close()
-	if _setup != null:
-		_setup.close()
+	if _title != null:
+		_title.close()
 	state.floor_index = clampi(floor_index, 1, 7)
 	state.floors_cleared = state.floor_index - 1
 	state.economy.cash = cash
@@ -572,6 +725,9 @@ func _advance() -> void:
 	var spinning: bool = (state.phase == RunState.Phase.SPINNING
 			and state.spins_remaining > 0
 			and state.economy.can_afford(state.spin_price()))
+	# The lesson holds the lever until the move it is teaching has been made.
+	if spinning and not _allowed(&"spin"):
+		return
 	# Only an actual spin goes in the log. Settling the ante happens in the
 	# spinning phase too, and recording it as a spin put a phantom pull in the
 	# record at the end of every floor.
@@ -594,7 +750,7 @@ func _sync_deck() -> void:
 		return
 	var modal: bool = ((_shop != null and _shop.is_open())
 			or (_contracts != null and _contracts.is_open())
-			or (_setup != null and _setup.is_open()))
+			or (_title != null and _title.is_open()))
 	_deck.shelve(modal)
 
 
@@ -662,11 +818,15 @@ func _on_leave_requested() -> void:
 
 
 func _on_start_requested(run_seed: int, daily_key: String) -> void:
-	if _setup != null:
-		_setup.close()
+	if _title != null:
+		_title.close()
+	_show_overlay(true)
 	_sync_deck()
 	_end_recording(&"abandoned")
 	new_run(run_seed, daily_key)
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
+	_begin_lesson_if_new()
 
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
@@ -804,8 +964,50 @@ func _end_recording(reason: StringName) -> void:
 
 
 func _set_prompt(text: String, centred: bool = false) -> void:
+	# While the Clerk is talking, the callout is the Clerk's. A floor's
+	# announcement or a nudge hint over the top of the lesson is two voices.
+	if _lesson_running() and not centred:
+		return
 	if _hud != null and _hud.has_method("set_prompt"):
 		_hud.call("set_prompt", text, centred)
+
+
+func _lesson_running() -> bool:
+	return _tutorial != null and _tutorial.is_active()
+
+
+func _on_clerk_spoke(body: String, hint: String) -> void:
+	_tutorial_line = body
+	_tutorial_hint = hint
+	if _hud == null or not _hud.has_method("set_prompt"):
+		return
+	if body.is_empty():
+		_hud.call("set_prompt", "", false)
+		return
+	_hud.call("set_prompt", body + ("\n" + hint if not hint.is_empty() else ""), false)
+	if _audio != null:
+		_audio.play(&"intercom_crackle")
+
+
+func _on_lesson_finished(_skipped: bool) -> void:
+	_profile.tutorial_seen = true
+	_profile.save()
+	_tutorial_line = ""
+	_tutorial_hint = ""
+	if _title != null:
+		_title.lesson_running = false
+	_prompt_decision()
+
+
+func _on_skip_requested() -> void:
+	if _tutorial != null:
+		_tutorial.skip()
+	_on_resume_requested()
+
+
+## True when the lesson lets [param action] through right now.
+func _allowed(action: StringName, index: int = -1) -> bool:
+	return _tutorial == null or _tutorial.allows(action, index)
 
 
 func _clear_prompt() -> void:
@@ -822,12 +1024,16 @@ func _on_deck_action(action: StringName, index: int) -> void:
 		return
 	if _slot_view != null and _slot_view.is_busy():
 		return
+	if not _allowed(_lesson_verb(action), index):
+		return
 	match action:
 		ControlDeck.SPIN:
 			_advance()
 		ControlDeck.HOLD:
-			_record(action, {"reel": index,
-					"held": engine.toggle_hold(state, index)})
+			var held: bool = engine.toggle_hold(state, index)
+			_record(action, {"reel": index, "held": held})
+			if held and _tutorial != null:
+				_tutorial.note_hold(index)
 		ControlDeck.NUDGE:
 			var standing: int = state.board.payout
 			var free: bool = state.board.next_nudge_is_free()
@@ -873,12 +1079,39 @@ func _on_deck_action(action: StringName, index: int) -> void:
 			var price: int = HeatEngine.launder_price(state)
 			if engine.launder(state):
 				_record(action, {"paid": price, "heat": state.heat})
+		ControlDeck.SETTLE:
+			var left: int = state.spins_remaining
+			var bonus: int = state.settle_bonus(left)
+			if engine.settle_floor(state):
+				_record(action, {"spins_left": left, "chips": bonus})
 		_:
 			pass
 	if _deck != null:
 		_deck.refresh()
 	_prompt_decision()
 	_mark_save()
+
+
+## The lesson's name for a deck action: the deck says "take" for declining
+## the nudges and "collect" for banking, and the Clerk allows both by name.
+static func _lesson_verb(action: StringName) -> StringName:
+	match action:
+		ControlDeck.SPIN:
+			return &"spin"
+		ControlDeck.HOLD:
+			return &"hold"
+		ControlDeck.NUDGE:
+			return &"nudge"
+		ControlDeck.TAKE:
+			return &"take"
+		ControlDeck.COLLECT:
+			return &"collect"
+		ControlDeck.GAMBLE:
+			return &"gamble"
+		ControlDeck.SETTLE:
+			return &"settle"
+		_:
+			return action
 
 
 ## How much the BANK button puts away.

@@ -49,11 +49,19 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 | Action | Keyboard / mouse | Gamepad | Touch |
 | --- | --- | --- | --- |
 | Spin, settle an ante, advance | Space, left click | A / Cross | tap the room |
+| Hold a reel, or nudge it | 1–5, or the machine's buttons | — | tap the button |
+| Settle the floor early, once the ante is covered | click **SETTLE NOW** | — | tap it |
 | Buy artifact 1–5 in the draft | 1–5, or click the row | — | tap the row |
 | Leave the draft | Space or Q | B / Circle | **Leave the shop** |
 | Swap machine ↔ room view | Tab | Y / Triangle | **View** |
 | New run | F5 | — | **New run** |
-| Run setup (seeds, daily, meta) | F2 | — | **Setup** |
+| The door: pause, settings, skip the lesson, abandon | Esc | Start | **Setup** |
+
+A session opens on the door — the title over the idling machine — where the
+machine, the audit (the difficulty ladder, rungs opening on a win at the one
+below) and the challenge are chosen, a seed typed or the daily taken, and a
+run on the table resumed. A profile's first run is walked through the basement
+by the Clerk on the tannoy; the lesson can be skipped from the door.
 
 Bindings live in `project.godot` under `[input]` as `bb_*` actions; rebind there
 rather than in code.
@@ -127,6 +135,17 @@ pattern bonus. Clear the ante, shop for artifacts, take the next floor. Clear al
 seven and you still have to repay the debt that has been compounding since the
 first spin.
 
+Two currencies, kept apart. **Credits** are what the reels pay and what the
+spin, the ante and the vig take. **Chips** are the House's scrip: they buy the
+draft and settle nothing. A floor pays a stipend in chips when its ante is
+settled, and a chip for every spin left on the clock when the floor is settled
+early — which a run may do the moment its purse covers the vig and the ante,
+trading the rest of the allowance for the draft. Chips held over earn one more
+per five; the bank symbol pays one wherever it lands on a paying row; the slate
+turns a chip price into debt at the House's rate, with the markup on top.
+Priced in credits the draft was free from floor three; priced in chips it is
+never quite affordable, which is what a draft is for.
+
 Clear the debt and the House offers it back, with a chair: a run that stays at
 the table plays on past the last floor, each ante compounding on the one
 before, until an ante is missed. The win is recorded either way. Staying is the
@@ -139,15 +158,22 @@ you owe; the principal comes down through `DEBT_PAYDOWN` artifacts or not at
 all, and it compounds 80% per floor. Miss a payment and the shortfall returns as
 principal with a penalty on top.
 
-| Floor | Name | Ante | Spins | What it introduces |
-| --- | --- | --- | --- | --- |
-| 1 | The Basement | 40 | 9 | Hold and nudge |
-| 2 | The Casino | 105 | 10 | The market: reroll, sell, the slate |
-| 3 | The High Roller Room | 350 | 10 | The stake and the gamble ladder |
-| 4 | The Vault | 1,050 | 11 | The vault: collateral and dividends |
-| 5 | The Back Office | 2,775 | 12 | Contracts |
-| 6 | The Engine Room | 5,400 | 13 | The works: reels and rows |
-| 7 | The House | 15,750 | 15 | The count |
+| Floor | Name | Ante | Spins | Chips | What it introduces |
+| --- | --- | --- | --- | --- | --- |
+| 1 | The Basement | 40 | 9 | 5 | Hold and nudge |
+| 2 | The Casino | 105 | 10 | 6 | The market: reroll, sell, the slate |
+| 3 | The High Roller Room | 255 | 10 | 7 | The stake and the gamble ladder |
+| 4 | The Vault | 810 | 11 | 10 | The vault: collateral and dividends |
+| 5 | The Back Office | 1,800 | 12 | 12 | Contracts |
+| 6 | The Engine Room | 4,250 | 13 | 14 | The works: reels and rows |
+| 7 | The House | 17,000 | 15 | 18 | The count |
+
+Fourteen symbols on the reel: five fruit (cherry, lemon, orange, grapes,
+watermelon — a family, so any two of them pair), the bar and the double bar,
+the bell, the horseshoe, the seven, the diamond, the wild, the skull, and the
+bank, which pays a chip. Each is printed in two inks with a keyline, a shadow
+and a gloss, from one instruction list that the GPU bake and the CPU icons
+both read.
 
 From the Casino up, every floor has one of the House's people on it — eighteen
 `BossDef`s across floors 2 to 7, three a floor, one rule each, drawn from the
@@ -213,23 +239,23 @@ built-in, deliberately mediocre `AutoPlayer`, measured 2026-09-02:
 
 | Metric | Value |
 | --- | --- |
-| Win rate | 17.1% |
-| Mean floors cleared | 4.69 of 7 |
-| Earnings | mean 80,174 · p50 9,421 · p95 542,795 · p99 975,461 |
-| Deaths by floor | 85 · 337 · 960 · 1,522 · 1,796 · 1,232 · 1,785, then 574 to the final debt |
-| Debt | vig mean 864 (p95 1,898) · 3.4% of runs default · 12.2% buy a paydown |
+| Win rate | 17.2% |
+| Mean floors cleared | 5.17 of 7 |
+| Earnings | mean 71,171 · p50 11,542 · p95 481,710 · p99 828,284 |
+| Deaths by floor | 92 · 144 · 320 · 803 · 1,886 · 1,894 · 2,525, then 614 to the final debt |
+| Debt | vig mean 1,051 (p95 1,970) · 1.7% of runs default · 9.1% buy a paydown |
+| Chips | mean 68 a run · 14.2 artifacts owned · 69% of the draft taken · 0.12 floors settled early |
 
-Deaths climb to the Back Office, ease through the Engine Room — the floor that
-hands over the works — and climb again at the House, which is the run's wall
-now; a further 574 clear it and cannot repay what they owe. Two things moved
-the whole curve on the same day. The synergy web: with thirty-nine scaling
-artifacts a built machine outgrows the late antes it used to die to, so the
-House's ante went up, the Engine Room's came down so it would not out-kill the
-floor after it, and the opening debt went from 120 to 260 so the final bill
-stays a threat. Then the House's people: one rule on every floor from the
-Casino up cost eleven points as authored, so the sharpest twists were softened
-and floors 3 to 5 came down to meet them. The antes now run 40 · 105 · 300 ·
-950 · 2,300 · 5,000 · 21,000.
+Deaths climb all the way to the House, which kills a quarter of everything
+that reaches it; a further 614 clear it and cannot repay what they owe. The
+curve was re-cut on 2 September around two currencies. With the draft paid in
+chips the automated player owns fourteen artifacts a run instead of buying
+every offer, and a machine that size could not climb the old antes — 1.7% at
+the first try — so floors 3 to 7 came down (255 · 810 · 1,800 · 4,250 ·
+17,000) and the stipends went up a fifth, which is where 17.2% and a draft
+three-quarters affordable meet. The chip supply is the sharpest knob in the
+game: the lab's `chips` sweep runs 1.7% → 6% → 22% → 24% across ×1, ×1.25,
+×1.5, ×2 with nothing else moved.
 
 What remains worth knowing, recorded in `.claude/skills/balance-loop`:
 
@@ -245,12 +271,18 @@ What remains worth knowing, recorded in `.claude/skills/balance-loop`:
    the hundreds, so the top of the stake was right whenever the purse could
    stand it; every level above the first now costs a tenth of the floor's
    ante per spin, and the Whale's hardware is what makes that worth paying.
+4. **Settling early is usually wrong, and the bot knows it.** The first
+   settle policy left a floor the moment the ante was covered and lost twenty
+   points of win rate to it: a built machine's spins are worth far more in
+   credits than the House pays for them in chips. The bot now settles only
+   when the House pays better per spin than the machine has been — a tenth
+   of its floors — and a person will find the same trade on the numbers.
 
 ## Seeds, dailies and meta-progression
 
 A seed is a run, so a shared seed is a shared run. Seeds are shown and entered as
 five spoken words — `SOLAR-MIRTH-CANDLE-OX-DRIFT` — which survive being read
-aloud or typed back in. The setup panel (F2) also accepts a plain number, or any
+aloud or typed back in. The door (Esc) also accepts a plain number, or any
 phrase: `mum's birthday` hashes to a stable run you can tell someone about
 without explaining what a seed is.
 
@@ -291,7 +323,7 @@ godot --headless --path . --script res://tools/casino_lab/ladder.gd -- --runs=10
 godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=2500 --difficulty=house_rules
 ```
 
-**The lifetime ledger** on the setup panel keeps the spins, the biggest single
+**The lifetime ledger** on the door keeps the spins, the biggest single
 spin, the vig paid to the House across every run, the deepest table after
 hours, and the artifact most often owned at the end of a run.
 

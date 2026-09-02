@@ -8,9 +8,13 @@
 ## a context with no viewport. One instruction list serving both is what stops
 ## the print on the drum and the sprite behind it drifting apart.
 ##
-## A symbol with no instructions here is not an error: [SlotView3D] falls back
-## to the glyph text and [ReelPrint] bakes a plain plate with the glyph printed
-## on it, so new content lands legibly without needing art first.
+## Every symbol is printed in two inks plus the press's own black — the fruit
+## and its leaf, the bar and its lettering, the bank and its columns — with a
+## heavy keyline, a drop shadow and a gloss, which is the fruit-machine plate
+## the first playtest asked for by name. A symbol with no instructions here is
+## not an error: [SlotView3D] falls back to the glyph text and [ReelPrint]
+## bakes a plain plate with the glyph printed on it, so new content lands
+## legibly without needing art first.
 class_name SymbolArt
 extends RefCounted
 
@@ -19,25 +23,35 @@ const SIZE: int = 96
 ## outline is what stops a mid-tone fill from dissolving into it.
 const INK: Color = Color(0.09, 0.075, 0.063)
 ## Outline half-width, in normalised units where the sprite spans -1..1.
-const STROKE: float = 0.085
+## Heavy: a fruit-machine plate is a keyline first and a fill second.
+const STROKE: float = 0.12
 ## How far past the shapes the sprite is sampled, leaving room for the outline.
-const MARGIN: float = 1.16
+const MARGIN: float = 1.2
 
 # One instruction is twelve floats:
-#   [0] primitive  [1] carve flag  [2] rotation  [3] warp amount
+#   [0] primitive  [1] paint  [2] rotation  [3] warp amount
 #   [4] pos.x  [5] pos.y  [6] scale.x  [7] scale.y
 #   [8..10] primitive params  [11] warp base
 # The sample point is rotated, translated, warped, then scaled — in that order,
 # on both interpreters. reel_plate.gdshader decodes the same layout.
+#
+# Paint says what the op does to the print: adds in the symbol's first ink,
+# carves a hole, adds in the second ink, or adds in the press's black. Adds
+# are painted in order, later on top, so a leaf drawn after the fruit sits on
+# it; carves cut everything.
 const FLOATS_PER_OP: int = 12
-const MAX_OPS: int = 12
+const MAX_OPS: int = 14
 const OP_CIRCLE: float = 0.0
 const OP_BOX: float = 1.0
 const OP_RHOMBUS: float = 2.0
 ## A box whose x narrows as y descends: the bell's flare.
 const OP_SHEAR_BOX: float = 3.0
-## A box whose x narrows toward the tip: the star's spokes.
+## A box whose x narrows toward the tip: the star's spokes, the bank's roof.
 const OP_TAPER_BOX: float = 4.0
+const PAINT_INK: float = 0.0
+const PAINT_CARVE: float = 1.0
+const PAINT_INK2: float = 2.0
+const PAINT_BLACK: float = 3.0
 
 static var _cache: Dictionary = {}
 static var _ops_cache: Dictionary = {}
@@ -46,7 +60,7 @@ static var _ops_cache: Dictionary = {}
 ## Printing strength for a symbol's tint: ink, not a light source. A symbol at
 ## full saturation clips to white under the machine's own lamp.
 static func plate_ink(tint: Color) -> Color:
-	return tint.darkened(0.22)
+	return tint.darkened(0.12)
 
 
 ## The instruction list for [param symbol_id], or an empty array when the
@@ -59,16 +73,32 @@ static func ops_for(symbol_id: StringName) -> PackedFloat32Array:
 	return ops
 
 
+## Lettering the press adds over a symbol's drawing, as [text, y] pairs in
+## the -1..1 space, for the plates that are words as much as pictures.
+static func captions_for(symbol_id: StringName) -> Array:
+	match symbol_id:
+		&"bar":
+			return [["BAR", 0.02]]
+		&"double_bar":
+			return [["BAR", -0.32], ["BAR", 0.34]]
+		&"bank":
+			return [["BANK", 0.8]]
+		_:
+			return []
+
+
 ## The sprite for [param symbol_id], or null if this symbol has no drawing.
-## [param tint] is the symbol's own colour, used for the fill.
-static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
-	var key: String = "%s:%s" % [symbol_id, tint.to_html(false)]
+## [param tint] is the symbol's own colour and [param tint2] its second ink.
+static func texture_for(symbol_id: StringName, tint: Color,
+		tint2: Color = Color(0.0, 0.0, 0.0, 0.0)) -> ImageTexture:
+	var second: Color = tint2 if tint2.a > 0.0 else tint
+	var key: String = "%s:%s:%s" % [symbol_id, tint.to_html(false), second.to_html(false)]
 	if _cache.has(key):
 		return _cache[key] as ImageTexture
 	var ops: PackedFloat32Array = ops_for(symbol_id)
 	if ops.is_empty():
 		return null
-	var ink: Color = plate_ink(tint)
+	var inks: Array[Color] = [plate_ink(tint), INK, plate_ink(second), INK]
 	var image: Image = Image.create_empty(SIZE, SIZE, false, Image.FORMAT_RGBA8)
 	# One pixel, in the -1..1 space the shapes are described in. Edges are faded
 	# across exactly this much, which is what antialiases them.
@@ -80,16 +110,18 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 			var p: Vector2 = Vector2(
 					((float(x) + 0.5) / float(SIZE) * 2.0 - 1.0) * MARGIN,
 					((float(y) + 0.5) / float(SIZE) * 2.0 - 1.0) * MARGIN)
-			var d: float = _distance(ops, p)
+			var sample: Vector2 = _sample(ops, p)
+			var d: float = sample.x
 			# Two coverages from one distance: the fill, and the fill dilated by
 			# the stroke width. The difference between them is the outline.
 			var fill: float = _coverage(d, pixel)
 			var outer: float = _coverage(d - STROKE, pixel)
 			if outer <= 0.0:
 				continue
-			var colour: Color = ink.lerp(INK, 1.0 - fill)
+			var paint: Color = inks[clampi(int(sample.y), 0, 3)]
+			var colour: Color = paint.lerp(INK, 1.0 - fill)
 			if fill > 0.0:
-				colour = _emboss(ops, p, d, colour)
+				colour = _shade(ops, p, d, colour)
 			image.set_pixel(x, y, Color(colour.r, colour.g, colour.b, outer))
 	image.generate_mipmaps()
 	var texture: ImageTexture = ImageTexture.create_from_image(image)
@@ -98,19 +130,33 @@ static func texture_for(symbol_id: StringName, tint: Color) -> ImageTexture:
 
 
 ## Lights the fill from the upper left, so a symbol reads as struck enamel
-## rather than as a flat sticker. A signed distance field already knows which
-## way its own edge faces: sampling it a little up-and-left and differencing
-## gives the slope of the boundary, which is exactly the shading a bevel needs.
-static func _emboss(ops: PackedFloat32Array, p: Vector2, d: float,
+## rather than as a flat sticker, and lays a gloss across its shoulder. A
+## signed distance field already knows which way its own edge faces: sampling
+## it a little up-and-left and differencing gives the slope of the boundary,
+## which is exactly the shading a bevel needs.
+static func _shade(ops: PackedFloat32Array, p: Vector2, d: float,
 		colour: Color) -> Color:
 	const REACH: float = 0.055
-	var slope: float = _distance(ops, p - Vector2(REACH, REACH)) - d
+	var slope: float = _sample(ops, p - Vector2(REACH, REACH)).x - d
 	# Fades out toward the middle of a shape, so only the rim is bevelled.
 	var rim: float = clampf(1.0 + d / 0.62, 0.0, 1.0)
 	var lift: float = clampf(slope / REACH, -1.0, 1.0) * rim
+	var lit: Color = colour
 	if lift > 0.0:
-		return colour.lerp(Color(1.0, 0.98, 0.94), lift * 0.62)
-	return colour.lerp(INK, -lift * 0.5)
+		lit = colour.lerp(Color(1.0, 0.98, 0.94), lift * 0.55)
+	else:
+		lit = colour.lerp(INK, -lift * 0.45)
+	# The gloss: a soft cap of light high on the left, inside the ink only.
+	var gloss: float = gloss_at(p, d)
+	return lit.lerp(Color(1.0, 0.99, 0.96), gloss)
+
+
+## How much shine sits at [param p], for a point [param d] inside a shape.
+## Shared with the shader's reading of the same curve.
+static func gloss_at(p: Vector2, d: float) -> float:
+	var inside: float = clampf(-d / 0.16, 0.0, 1.0)
+	var cap: float = 1.0 - smoothstep(0.0, 0.62, (p - Vector2(-0.3, -0.42)).length())
+	return cap * inside * 0.42
 
 
 ## A soft radial falloff, white, for tinting into a backlight behind a symbol.
@@ -136,13 +182,17 @@ static func halo() -> ImageTexture:
 
 # --- the interpreter -------------------------------------------------------
 
-## Signed distance to the symbol: negative inside, positive outside. Additive
-## instructions fold with min; carving ones cut the result afterwards. Both
-## interpreters use this two-accumulator fold, and every shape's carves follow
-## its adds, so the fold order never changes a result.
-static func _distance(ops: PackedFloat32Array, p: Vector2) -> float:
+## Signed distance to the symbol, and which ink covers the point: negative
+## distance inside, positive outside; the ink is that of the last additive
+## op the point is inside, or the nearest one when it is outside all of them.
+## Additive instructions fold with min; carving ones cut the result
+## afterwards. Both interpreters use this fold, so the fold order never
+## changes a result.
+static func _sample(ops: PackedFloat32Array, p: Vector2) -> Vector2:
 	var added: float = 1.0e6
 	var carved: float = -1.0e6
+	var paint: float = PAINT_INK
+	var nearest: float = 1.0e6
 	var count: int = ops.size() / FLOATS_PER_OP
 	for i: int in count:
 		var base: int = i * FLOATS_PER_OP
@@ -161,11 +211,22 @@ static func _distance(ops: PackedFloat32Array, p: Vector2) -> float:
 			d = _rhombus(q, Vector2(ops[base + 8], ops[base + 9]))
 		else:
 			d = _box(q, Vector2(ops[base + 8], ops[base + 9]), ops[base + 10])
-		if ops[base + 1] > 0.5:
+		var mode: float = ops[base + 1]
+		if mode == PAINT_CARVE:
 			carved = maxf(carved, -d)
-		else:
-			added = minf(added, d)
-	return maxf(added, carved)
+			continue
+		added = minf(added, d)
+		# Painter's order: whatever was drawn last over this point owns it.
+		if d <= 0.0 or d < nearest:
+			if d <= 0.0 or added >= 0.0:
+				paint = mode
+			nearest = minf(nearest, d)
+	return Vector2(maxf(added, carved), paint)
+
+
+## The signed distance alone, for callers that only want the shape.
+static func _distance(ops: PackedFloat32Array, p: Vector2) -> float:
+	return _sample(ops, p).x
 
 
 # --- the symbols -----------------------------------------------------------
@@ -176,79 +237,135 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 		&"seven":
 			# A top bar and a stroke leaning down-left off its right end. The
 			# lean has to be real: an almost-vertical stroke plus a crossbar
-			# reads as a capital F.
-			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, -0.66),
-					[0.54, 0.16, 0.04])
-			_add(ops, OP_BOX, false, -0.34, _rotate(Vector2(0.1, 0.14), -0.34),
-					[0.155, 0.7, 0.04])
+			# reads as a capital F. A gold serif on the bar's left end.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.66),
+					[0.56, 0.17, 0.04])
+			_add(ops, OP_BOX, PAINT_INK, -0.34, _rotate(Vector2(0.1, 0.14), -0.34),
+					[0.16, 0.7, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.5, -0.56),
+					[0.08, 0.26, 0.03])
 		&"cherry":
-			# Two fruit on stems, with a leaf.
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(-0.38, 0.42), [0.34])
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.36, 0.5), [0.28])
-			_add(ops, OP_BOX, false, -0.42,
-					_rotate(Vector2(-0.24, -0.12), -0.42), [0.055, 0.42, 0.05])
-			_add(ops, OP_BOX, false, 0.34,
-					_rotate(Vector2(0.2, -0.06), 0.34), [0.05, 0.4, 0.05])
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.26, -0.62), [0.3],
-					Vector2(1.0, 2.6))
-		&"bar":
-			_add(ops, OP_BOX, false, 0.0, Vector2.ZERO, [0.72, 0.24, 0.07])
-		&"double_bar":
-			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, -0.32),
-					[0.72, 0.22, 0.07])
-			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.34),
-					[0.72, 0.22, 0.07])
-		&"bell":
-			# Domed body flaring to a foot, with a clapper below. The flare is
-			# the shear warp; its base is the original 0.1 plus this op's 0.06
-			# translation, because the warp now runs after the translate.
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.14), [0.46])
-			_add(ops, OP_SHEAR_BOX, false, 0.0, Vector2(0.0, 0.06),
-					[0.42, 0.42, 0.06], Vector2.ONE, 0.85, 0.16)
-			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.5), [0.78, 0.11, 0.05])
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, 0.72), [0.14])
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.66), [0.11])
+			# Two fruit on stems, with a leaf. Stems in the press's black, leaf
+			# in the second ink, drawn after the fruit so it sits on them.
+			_add(ops, OP_BOX, PAINT_BLACK, -0.42,
+					_rotate(Vector2(-0.24, -0.16), -0.42), [0.05, 0.44, 0.04])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.34,
+					_rotate(Vector2(0.2, -0.1), 0.34), [0.05, 0.42, 0.04])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(-0.38, 0.44), [0.36])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.38, 0.5), [0.3])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.5, _rotate(Vector2(0.3, -0.64), 0.5),
+					[0.28], Vector2(1.0, 2.4))
 		&"lemon":
-			# A tilted ellipse with a nub at each end. The nubs sit on the
-			# ellipse's own axis, which is what makes it a lemon, not a circle.
-			_add(ops, OP_CIRCLE, false, 0.36, Vector2.ZERO, [0.66],
-					Vector2(1.0, 1.55))
-			_add(ops, OP_RHOMBUS, false, 0.36, Vector2(0.7, 0.0), [0.24, 0.13])
-			_add(ops, OP_RHOMBUS, false, 0.36, Vector2(-0.7, 0.0), [0.24, 0.13])
+			# A tilted ellipse with a nub at each end, and a leaf at the top one.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2.ZERO, [0.66],
+					Vector2(1.0, 1.5))
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(0.7, 0.0), [0.26, 0.14])
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(-0.7, 0.0), [0.26, 0.14])
+			_add(ops, OP_CIRCLE, PAINT_INK2, -0.9, _rotate(Vector2(0.5, -0.66), -0.9),
+					[0.2], Vector2(1.0, 2.2))
+		&"orange":
+			# A whole fruit, a stub of stem and one leaf.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.08), [0.74])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.72), [0.06, 0.14, 0.03])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.55, _rotate(Vector2(0.32, -0.74), 0.55),
+					[0.26], Vector2(1.0, 2.3))
+		&"watermelon":
+			# A slice: the rind in the second ink, the flesh on it, three
+			# seeds in black, and the straight edge cut across the top.
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.12), [0.92])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.12), [0.64])
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.3, _rotate(Vector2(-0.3, 0.24), 0.3),
+					[0.08], Vector2(1.0, 1.7))
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.02, 0.4), [0.08],
+					Vector2(1.0, 1.7))
+			_add(ops, OP_CIRCLE, PAINT_BLACK, -0.3, _rotate(Vector2(0.32, 0.22), -0.3),
+					[0.08], Vector2(1.0, 1.7))
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.86), [1.3, 0.74, 0.0])
+		&"grapes":
+			# A bunch of six, a stem in black, a leaf in the second ink.
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.66), [0.05, 0.22, 0.03])
+			for berry: Vector2 in [Vector2(-0.42, -0.34), Vector2(0.0, -0.36),
+					Vector2(0.42, -0.34), Vector2(-0.22, 0.06), Vector2(0.22, 0.06),
+					Vector2(0.0, 0.46)]:
+				_add(ops, OP_CIRCLE, PAINT_INK, 0.0, berry, [0.27])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.6, _rotate(Vector2(0.3, -0.76), 0.6),
+					[0.22], Vector2(1.0, 2.2))
+		&"bar":
+			# A gold slab; the lettering is the press's, over it.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2.ZERO, [0.8, 0.3, 0.08])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2.ZERO, [0.7, 0.2, 0.05])
+		&"double_bar":
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.34), [0.8, 0.25, 0.07])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.34), [0.7, 0.16, 0.04])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.36), [0.8, 0.25, 0.07])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.36), [0.7, 0.16, 0.04])
+		&"bell":
+			# Domed body flaring to a foot, with a clapper below and a loop
+			# above, both in the darker second ink. The flare is the shear
+			# warp; its base is the original 0.1 plus this op's 0.06
+			# translation, because the warp now runs after the translate.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.14), [0.46])
+			_add(ops, OP_SHEAR_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.06),
+					[0.42, 0.42, 0.06], Vector2.ONE, 0.85, 0.16)
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.78, 0.11, 0.05])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.72), [0.15])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.66), [0.12])
 		&"diamond":
-			# A rhombus with a facet notched out of the top: cut stone.
-			_add(ops, OP_RHOMBUS, false, 0.0, Vector2.ZERO, [0.62, 0.86])
-			_add(ops, OP_BOX, true, 0.0, Vector2(0.0, -0.42),
-					[0.26, 0.035, 0.02])
+			# A cut stone: the rhombus, a pale table across the top, and a
+			# facet notched out of the crown.
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.0, Vector2.ZERO, [0.64, 0.88])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.34), [0.4, 0.05, 0.02])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.6),
+					[0.2, 0.03, 0.01])
+		&"horseshoe":
+			# An open ring, heels down, four nail holes in black.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.06), [0.82])
+			for hole: Vector2 in [Vector2(-0.6, -0.28), Vector2(-0.34, -0.62),
+					Vector2(0.34, -0.62), Vector2(0.6, -0.28)]:
+				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, hole, [0.075])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.46])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.76), [0.4, 0.42, 0.0])
+		&"bank":
+			# Steps, four columns, an entablature and a pediment: the building
+			# the game is named after, with the word under it. Sat high in the
+			# cell so the lettering has the bottom of the plate.
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.9, 0.09, 0.03])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.34), [0.78, 0.07, 0.02])
+			for column: float in [-0.56, -0.19, 0.19, 0.56]:
+				_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(column, -0.06),
+						[0.1, 0.34, 0.03])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.46), [0.84, 0.08, 0.02])
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.72),
+					[0.92, 0.2, 0.02], Vector2.ONE, 4.0, 0.06)
 		&"wild":
 			# Five tapered spokes around a small hub. The taper must narrow
 			# outward, or five blunt spokes merge with the hub into an asterisk.
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2.ZERO, [0.22])
 			for i: int in 5:
-				_add(ops, OP_TAPER_BOX, false, TAU * float(i) / 5.0,
+				_add(ops, OP_TAPER_BOX, PAINT_INK, TAU * float(i) / 5.0,
 						Vector2(0.0, -0.5), [0.3, 0.5, 0.02], Vector2.ONE,
 						0.95, 0.12)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.24])
 		&"skull":
 			# Cranium, jaw, then sockets, nose and teeth carved out.
-			_add(ops, OP_CIRCLE, false, 0.0, Vector2(0.0, -0.18), [0.62],
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.18), [0.62],
 					Vector2(1.0, 1.12))
-			_add(ops, OP_BOX, false, 0.0, Vector2(0.0, 0.5), [0.34, 0.26, 0.12])
-			_add(ops, OP_CIRCLE, true, 0.0, Vector2(-0.24, -0.16), [0.2],
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.34, 0.26, 0.12])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(-0.24, -0.16), [0.2],
 					Vector2(1.0, 1.25))
-			_add(ops, OP_CIRCLE, true, 0.0, Vector2(0.24, -0.16), [0.2],
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.24, -0.16), [0.2],
 					Vector2(1.0, 1.25))
-			_add(ops, OP_RHOMBUS, true, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
-			_add(ops, OP_BOX, true, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
+			_add(ops, OP_RHOMBUS, PAINT_CARVE, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
 		_:
 			pass
 	return ops
 
 
-static func _add(ops: PackedFloat32Array, kind: float, carve: bool, rot: float,
+static func _add(ops: PackedFloat32Array, kind: float, paint: float, rot: float,
 		pos: Vector2, params: Array, scale: Vector2 = Vector2.ONE,
 		warp_amount: float = 0.0, warp_base: float = 0.0) -> void:
 	ops.append(kind)
-	ops.append(1.0 if carve else 0.0)
+	ops.append(paint)
 	ops.append(rot)
 	ops.append(warp_amount)
 	ops.append(pos.x)

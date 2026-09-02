@@ -38,6 +38,7 @@ static func floor_def(index: int, ante: int, spins: int) -> FloorDef:
 	def.spins = spins
 	def.debt_interest_percent = 0.0
 	def.shop_slots = 0
+	def.chips = 3
 	return def
 
 
@@ -60,7 +61,14 @@ static func config() -> BalanceConfig:
 	cfg.curse_penalty = 2
 	cfg.synergy_bonus = 0.5
 	cfg.synergy_threshold = 3
-	cfg.shop_inflation_percent = 0.0
+	cfg.starting_chips = 0
+	cfg.chips_per_spin_left = 1
+	cfg.chips_spin_left_cap = 5
+	cfg.chip_interest_per = 5
+	cfg.chip_interest_cap = 3
+	cfg.chip_credit_rate_percent = 3.0
+	cfg.reroll_base_cost = 2
+	cfg.sellback_percent = 50.0
 	cfg.max_stake = 5
 	cfg.max_nudges = 3
 	cfg.gamble_odds = PackedFloat32Array([0.5, 0.4])

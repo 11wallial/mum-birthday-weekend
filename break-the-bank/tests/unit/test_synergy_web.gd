@@ -265,7 +265,7 @@ func test_the_buyer_leans_towards_the_build_it_has_started() -> void:
 	var offers: Array[ArtifactDef] = []
 	offers.assign([mine, other])
 	var prices: Array[int] = [5, 6]
-	_state.economy.cash = 100
+	_state.economy.chips = 100
 	# Nothing started: the dearer thing, as always.
 	assert_int(AutoPlayer.shop(_state, offers, prices)).is_equal(1)
 	var started: ArtifactDef = TestFixtures.artifact(&"started", ArtifactDef.Effect.EXTRA_SPINS, 1.0)

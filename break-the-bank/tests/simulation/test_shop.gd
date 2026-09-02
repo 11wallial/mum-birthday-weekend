@@ -31,18 +31,28 @@ func test_clearing_a_floor_opens_a_stocked_shop() -> void:
 	assert_int(_state.shop_prices.size()).is_equal(_state.shop_offers.size())
 
 
-func test_buying_takes_the_credits_and_the_artifact() -> void:
+func test_buying_takes_the_chips_and_the_artifact_and_leaves_the_cash() -> void:
 	var index: int = _affordable_index()
 	assert_int(index).is_greater_equal(0)
 	var price: int = _state.shop_prices[index]
 	var cash: int = _state.economy.cash
+	var chips: int = _state.economy.chips
 	var artifact_id: StringName = _state.shop_offers[index].id
 	var offers: int = _state.shop_offers.size()
 
 	assert_bool(_engine.buy_offer(_state, index)).is_true()
-	assert_int(_state.economy.cash).is_equal(cash - price)
+	assert_int(_state.economy.chips).is_equal(chips - price)
+	# The ante's money is never the draft's money.
+	assert_int(_state.economy.cash).is_equal(cash)
 	assert_bool(_state.owns(artifact_id)).is_true()
 	assert_int(_state.shop_offers.size()).is_equal(offers - 1)
+
+
+func test_clearing_a_floor_pays_the_stipend_in_chips() -> void:
+	# The fixture floor pays three; a run that has cleared one holds at least
+	# that, plus whatever spins it did not need.
+	assert_int(_state.economy.chips).is_greater_equal(3)
+	assert_int(_state.economy.chips_from_floors).is_equal(3)
 
 
 func test_an_unaffordable_offer_cannot_be_bought() -> void:

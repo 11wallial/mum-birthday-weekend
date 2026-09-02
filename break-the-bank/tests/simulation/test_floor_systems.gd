@@ -43,11 +43,11 @@ func _reach_shop() -> void:
 
 func test_a_reroll_costs_more_every_time_it_is_bought() -> void:
 	_reach_shop()
-	_state.economy.cash = 5000
+	_state.economy.chips = 50
 	var first: int = _state.reroll_price()
 	assert_bool(_engine.reroll_shop(_state)).is_true()
 	assert_int(_state.reroll_price()).is_greater(first)
-	assert_int(_state.economy.cash).is_equal(5000 - first)
+	assert_int(_state.economy.chips).is_equal(50 - first)
 
 
 func test_selling_back_undoes_what_the_artifact_changed() -> void:

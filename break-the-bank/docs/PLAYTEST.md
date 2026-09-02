@@ -29,14 +29,18 @@ builds are self-contained and fetch nothing.
 
 Known gaps a tester will hit, so nobody logs them twice:
 
-- No pause menu and no settings. Audio is placeholder synthesis at a fixed
-  level; tell testers to set the system volume before they start.
+- The door (Esc) is the pause: resume, settings (volume per bus, the reels'
+  pace), skip the Clerk's lesson, abandon the run. A profile's first run is
+  walked through the basement by the Clerk; watch whether the tester reads
+  it or skips it, and whether they hold a pair unprompted on run two.
 - No tooltips. An artifact says what it does on the draft card and nowhere
   else once bought; the machine's hardware is the only reminder.
 - No run summary on death. The HUD log (bottom left) is the record.
 - Every sound is a placeholder. Ask about the *timing* of the spin ritual,
   not the sounds.
-- Escape does not abandon a run; F5 starts a new one.
+- Two currencies: credits for the ante, chips for the draft. Ask whether the
+  tester understood that the draft could not be paid from the purse, and
+  whether they ever settled a floor early on purpose.
 
 ## The cohort
 

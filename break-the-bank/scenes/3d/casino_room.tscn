@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -8,11 +8,12 @@
 [ext_resource type="Script" path="res://scripts/presentation/audio/audio_director.gd" id="6_audio"]
 [ext_resource type="Script" path="res://scripts/presentation/room_dressing.gd" id="7_dressing"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
-[ext_resource type="PackedScene" path="res://scenes/ui/run_setup.tscn" id="9_setup"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_bar.tscn" id="10_touch"]
 [ext_resource type="PackedScene" path="res://scenes/ui/film_overlay.tscn" id="11_film"]
 [ext_resource type="PackedScene" path="res://scenes/ui/control_deck.tscn" id="12_deck"]
 [ext_resource type="PackedScene" path="res://scenes/ui/contract_panel.tscn" id="13_contracts"]
+[ext_resource type="Script" path="res://scripts/presentation/title_screen.gd" id="14_title"]
+[ext_resource type="Script" path="res://scripts/presentation/tutorial_director.gd" id="15_clerk"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -71,12 +72,19 @@ layer = 2
 [node name="ShopPanel" parent="." instance=ExtResource("8_shop")]
 layer = 3
 
-[node name="RunSetup" parent="." instance=ExtResource("9_setup")]
-layer = 4
-
 [node name="TouchBar" parent="." instance=ExtResource("10_touch")]
 layer = 5
 
 [node name="ControlDeck" parent="." instance=ExtResource("12_deck")]
 
 [node name="ContractPanel" parent="." instance=ExtResource("13_contracts")]
+
+; The door: the title before a run and the pause during one. Built in code
+; like the deck, so the scene keeps only the node the room talks to.
+[node name="TitleScreen" type="CanvasLayer" parent="."]
+layer = 6
+script = ExtResource("14_title")
+
+; The Clerk on the tannoy: the guided first run. Presentation only.
+[node name="TutorialDirector" type="Node" parent="."]
+script = ExtResource("15_clerk")

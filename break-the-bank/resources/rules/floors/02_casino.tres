@@ -11,6 +11,7 @@ ante = 105
 spins = 10
 debt_interest_percent = 80.0
 shop_slots = 3
+chips = 6
 payout_scale = 1.05
 environment_id = &"casino"
 grants = Array[StringName]([&"market"])

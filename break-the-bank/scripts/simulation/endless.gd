@@ -38,6 +38,7 @@ static func floor_for(content: ContentDB, index: int) -> FloorDef:
 	floor_def.spins = last.spins + content.balance.endless_spins_bonus
 	floor_def.debt_interest_percent = last.debt_interest_percent
 	floor_def.shop_slots = last.shop_slots
+	floor_def.chips = last.chips
 	floor_def.payout_scale = last.payout_scale
 	floor_def.environment_id = last.environment_id
 	floor_def.grants = []

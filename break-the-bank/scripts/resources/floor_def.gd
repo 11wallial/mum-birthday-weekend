@@ -13,6 +13,10 @@ extends Resource
 @export var debt_interest_percent: float = 10.0
 ## Artifacts offered in the shop after the floor is cleared.
 @export var shop_slots: int = 3
+## Chips the House pays for clearing the floor: the stipend that funds the
+## draft. Credits settle the ante and chips buy the hardware, so this is the
+## number that decides how much of a build a floor can afford.
+@export var chips: int = 3
 ## Multiplier applied to every payout earned on this floor.
 @export var payout_scale: float = 1.0
 ## Environment preset used by the 3D presentation layer.

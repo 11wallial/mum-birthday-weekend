@@ -33,6 +33,9 @@ var pattern: Probability.Pattern = Probability.Pattern.NONE
 var payout: int = 0
 ## Multiplier the payout was reached through. Presentation reads it.
 var multiplier: float = 1.0
+## Chips the scoring rows pay, from the bank symbols standing on them. Never
+## multiplied: the scrip is the House's, not the wager's.
+var chips: int = 0
 ## The scoring breakdown behind [member payout], for telemetry and the readout.
 var breakdown: Dictionary = {}
 ## Rungs climbed on the gamble ladder for this board.

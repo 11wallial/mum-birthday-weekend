@@ -18,9 +18,10 @@
 class_name ReelPrint
 extends RefCounted
 
-## Cells around the drum. Ten divides TAU into the band pitch the window
-## geometry is built on; MachineFrame.BAND_ANGLE is TAU over this.
-const CELLS: int = 10
+## Cells around the drum: one per symbol in the set, so every symbol has its
+## own printed plate. MachineFrame.BAND_ANGLE is TAU over this, and the drum
+## radius grew with the count so a cell stays readable in the window.
+const CELLS: int = 14
 ## One cell in texels: x along the drum's axis, y around its circumference.
 ## 1072 texels per metre on both axes, so print density is isotropic.
 const CELL_PX: Vector2i = Vector2i(416, 256)
@@ -29,11 +30,11 @@ const PLATE_SHADER: String = "res://assets/shaders/reel_plate.gdshader"
 
 ## The printed order around the drum. Cosmetic — the simulation draws symbols
 ## by weight, not by strip position — so it is chosen for looks: values spread
-## out, the skull deep in the run of fruit, and the classic repeated cherry
-## filling the tenth cell. Cell 0 is the seven, so a machine at rest shows its
-## best face on the payline.
-const PREFERRED: Array = [&"seven", &"cherry", &"bar", &"bell", &"lemon",
-		&"skull", &"wild", &"cherry", &"double_bar", &"diamond"]
+## out, the skull deep in the run of fruit, the bank opposite the seven. Cell
+## 0 is the seven, so a machine at rest shows its best face on the payline.
+const PREFERRED: Array = [&"seven", &"cherry", &"bar", &"orange", &"bell",
+		&"lemon", &"skull", &"watermelon", &"wild", &"grapes", &"double_bar",
+		&"horseshoe", &"bank", &"diamond"]
 
 static var _strip: ImageTexture = null
 static var _order: Array[StringName] = []
@@ -121,12 +122,15 @@ static func _cell(index: int, def: SymbolDef, shader: Shader) -> Control:
 	material.shader = shader
 	var ops: PackedFloat32Array = PackedFloat32Array()
 	var tint: Color = Color.WHITE
+	var tint2: Color = Color.WHITE
 	if def != null:
 		ops = SymbolArt.ops_for(def.id)
 		tint = def.color
+		tint2 = def.second_color()
 	material.set_shader_parameter(&"op_count", ops.size() / SymbolArt.FLOATS_PER_OP)
 	material.set_shader_parameter(&"ops", _pack_ops(ops))
 	material.set_shader_parameter(&"ink", SymbolArt.plate_ink(tint))
+	material.set_shader_parameter(&"ink2", SymbolArt.plate_ink(tint2))
 	material.set_shader_parameter(&"line_ink", SymbolArt.INK)
 	material.set_shader_parameter(&"cell_px", Vector2(CELL_PX))
 	material.set_shader_parameter(&"seed", float(index) * 7.31)
@@ -140,6 +144,23 @@ static func _cell(index: int, def: SymbolDef, shader: Shader) -> Control:
 		label.add_theme_color_override(&"font_color", SymbolArt.plate_ink(tint))
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		rect.add_child(label)
+	elif def != null:
+		# The press's lettering over the drawing: BAR on the bar, the word
+		# under the bank. Positioned in the symbol's own -1..1 space.
+		var half_span: float = float(mini(CELL_PX.x, CELL_PX.y)) * 0.5 * 0.9
+		for caption: Array in SymbolArt.captions_for(def.id):
+			var label: Label = Label.new()
+			label.text = String(caption[0])
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			label.add_theme_font_size_override(&"font_size", 56)
+			label.add_theme_color_override(&"font_color", SymbolArt.INK)
+			label.add_theme_color_override(&"font_outline_color", tint.lightened(0.5))
+			label.add_theme_constant_override(&"outline_size", 4)
+			var centre_y: float = float(CELL_PX.y) * 0.5 + float(caption[1]) * half_span
+			label.position = Vector2(0.0, centre_y - 34.0)
+			label.size = Vector2(float(CELL_PX.x), 68.0)
+			rect.add_child(label)
 	return rect
 
 

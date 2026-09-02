@@ -74,7 +74,7 @@ func _proof(verb: StringName) -> bool:
 			return _seen(EffectBus.Event.HEAT_CHANGED, func(p: Dictionary) -> bool:
 				return p.has("paid"))
 		&"buy_offer":
-			return _seen(EffectBus.Event.CASH_CHANGED, func(p: Dictionary) -> bool:
+			return _seen(EffectBus.Event.CHIPS_CHANGED, func(p: Dictionary) -> bool:
 				return StringName(p.get("reason", &"")) == &"artifact")
 		&"reroll_shop":
 			return _seen(EffectBus.Event.SHOP_REROLLED)
@@ -86,6 +86,8 @@ func _proof(verb: StringName) -> bool:
 			return _seen(EffectBus.Event.CONTRACT_SIGNED)
 		&"stay_at_table":
 			return _seen(EffectBus.Event.TABLE_KEPT)
+		&"settle_floor":
+			return _seen(EffectBus.Event.FLOOR_SETTLED_EARLY)
 		_:
 			return false
 
@@ -119,7 +121,7 @@ func test_this_suite_knows_how_to_prove_every_verb() -> void:
 		var known: bool = verb in [
 			&"toggle_hold", &"nudge", &"gamble", &"set_stake", &"deposit", &"withdraw",
 			&"buy_reel", &"buy_row", &"launder", &"buy_offer", &"reroll_shop", &"sell",
-			&"buy_on_slate", &"sign_contract", &"stay_at_table",
+			&"buy_on_slate", &"sign_contract", &"stay_at_table", &"settle_floor",
 		]
 		assert_bool(known).override_failure_message(
 				"add a proof for %s to test_autoplayer_parity.gd" % verb).is_true()

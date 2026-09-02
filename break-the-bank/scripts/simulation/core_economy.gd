@@ -8,6 +8,19 @@ extends RefCounted
 
 var cash: int = 0
 var debt: int = 0
+## The House's scrip. Chips buy hardware in the draft and settle nothing: the
+## ante cannot be paid in them and the reels cannot pay them, except the bank
+## symbol, which is where the two currencies meet. Kept apart from cash on
+## purpose — priced against the ante, the draft was free from floor three,
+## because a purse that had just covered the ante could always afford every
+## offer on the table.
+var chips: int = 0
+## Chips ever earned, and where they came from. Telemetry only.
+var lifetime_chips: int = 0
+var chips_from_floors: int = 0
+var chips_from_settling: int = 0
+var chips_from_symbols: int = 0
+var chips_from_interest: int = 0
 ## Credits locked in the vault. Earns interest and cannot settle an ante: this
 ## is the only money in the game that is not the same as the rest of the money.
 var vault: int = 0
@@ -28,6 +41,7 @@ var _bus: EffectBus
 func _init(config: BalanceConfig, bus: EffectBus) -> void:
 	cash = config.starting_cash
 	debt = config.starting_debt
+	chips = config.starting_chips
 	_bus = bus
 
 
@@ -52,6 +66,58 @@ func debit(amount: int, reason: StringName) -> void:
 
 func can_afford(amount: int) -> bool:
 	return cash >= amount
+
+
+## Adds chips. [param reason] says where they came from, for the ledger.
+func credit_chips(amount: int, reason: StringName) -> void:
+	if amount <= 0:
+		return
+	chips += amount
+	lifetime_chips += amount
+	match reason:
+		&"floor":
+			chips_from_floors += amount
+		&"settle":
+			chips_from_settling += amount
+		&"symbols":
+			chips_from_symbols += amount
+		&"interest":
+			chips_from_interest += amount
+		_:
+			pass
+	_bus.emit_event(EffectBus.Event.CHIPS_CHANGED,
+			{"delta": amount, "chips": chips, "reason": reason})
+
+
+## Spends chips. Never past zero: chips are not a debt, they are a purse.
+func debit_chips(amount: int, reason: StringName) -> void:
+	if amount <= 0:
+		return
+	chips = maxi(0, chips - amount)
+	_bus.emit_event(EffectBus.Event.CHIPS_CHANGED,
+			{"delta": -amount, "chips": chips, "reason": reason})
+
+
+func can_afford_chips(amount: int) -> bool:
+	return chips >= amount
+
+
+## Pays interest on the chips held over at a floor's close: one more per
+## [param per] held, up to [param cap]. Returns the chips paid.
+func accrue_chip_interest(per: int, cap: int) -> int:
+	if chips <= 0 or per <= 0 or cap <= 0:
+		return 0
+	var earned: int = mini(chips / per, cap)
+	if earned <= 0:
+		return 0
+	credit_chips(earned, &"interest")
+	return earned
+
+
+## Credits one chip is worth to the House on a floor whose ante is
+## [param ante]: the rate the slate converts a chip price into debt at.
+static func chip_value(config: BalanceConfig, ante: int) -> int:
+	return maxi(1, int(round(float(ante) * config.chip_credit_rate_percent / 100.0)))
 
 
 ## Settles a floor's ante. Returns true when the player survives.
@@ -162,23 +228,6 @@ func pay_interest(percent: float, cap: float) -> int:
 	return payout
 
 
-## Shop price for [param artifact] on a floor whose ante is [param ante].
-##
-## The authored cost, inflated for the floors already cleared, is the floor the
-## price never drops below; past that the price tracks the ante, so a draft on
-## floor six costs a share of floor six's problem rather than a share of floor
-## one's.
-func price_of(artifact: ArtifactDef, config: BalanceConfig, floors_cleared: int,
-		ante: int = 0) -> int:
-	var inflation: float = 1.0 + (config.shop_inflation_percent / 100.0) * float(floors_cleared)
-	var authored: int = maxi(1, int(round(float(artifact.cost) * inflation)))
-	if ante <= 0 or config.shop_ante_divisor <= 0.0:
-		return authored
-	var against_ante: int = int(round(float(ante) * float(artifact.cost)
-			/ config.shop_ante_divisor))
-	return maxi(authored, against_ante)
-
-
 func snapshot() -> Dictionary:
 	return {
 		"cash": cash,
@@ -190,4 +239,10 @@ func snapshot() -> Dictionary:
 		"interest_earned": interest_earned,
 		"debt_serviced": debt_serviced,
 		"defaults": defaults,
+		"chips": chips,
+		"lifetime_chips": lifetime_chips,
+		"chips_from_floors": chips_from_floors,
+		"chips_from_settling": chips_from_settling,
+		"chips_from_symbols": chips_from_symbols,
+		"chips_from_interest": chips_from_interest,
 	}

@@ -36,6 +36,12 @@ var selected_difficulty: StringName = &"standard"
 var selected_challenge: StringName = &""
 ## Best score per ruleset key, keyed by "<ruleset>|<seed>" for daily comparison.
 var records: Dictionary = {}
+## Volume per bus in dB and the pace of the reels, as the title's settings
+## panel keeps them. Presentation reads these; the simulation never does.
+var settings: Dictionary = {}
+## Whether the guided first run has been played through or skipped, so the
+## Clerk only walks a debtor through the basement once unless asked.
+var tutorial_seen: bool = false
 
 
 func stats() -> Dictionary:
@@ -156,6 +162,8 @@ func to_dict() -> Dictionary:
 		"selected_difficulty": String(selected_difficulty),
 		"selected_challenge": String(selected_challenge),
 		"records": records,
+		"settings": settings,
+		"tutorial_seen": tutorial_seen,
 	}
 
 
@@ -173,10 +181,12 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.selected_starter = StringName(data.get("selected_starter", "standard"))
 	profile.selected_difficulty = StringName(data.get("selected_difficulty", "standard"))
 	profile.selected_challenge = StringName(data.get("selected_challenge", ""))
-	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks", "records"]:
+	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks",
+			"records", "settings"]:
 		var table: Variant = data.get(key, {})
 		if table is Dictionary:
 			profile.set(key, table)
+	profile.tutorial_seen = bool(data.get("tutorial_seen", false))
 	for entry: Variant in data.get("unlocked", []):
 		profile.unlocked.append(StringName(entry))
 	return profile
