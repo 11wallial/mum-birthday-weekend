@@ -14,9 +14,17 @@ extends Resource
 ## Share of runs that die on the first floor. Past this the opening ante is the
 ## game rather than the run.
 @export var floor_one_deaths_max: float = 0.15
-## Share of the floor deaths any one floor may hold. A wall is one floor doing
-## most of the killing, and a wall is what the floor 5 spike was.
-@export var single_floor_share_max: float = 0.45
+## Share of the floor deaths any one floor may hold. The last floor takes two
+## fifths by design — everyone who reaches it faces the hardest ante — so this
+## sits well above that, with room for a 400-run batch's noise, and catches
+## only a floor doing most of the killing outright.
+@export var single_floor_share_max: float = 0.55
+## A floor before the last may not kill more than every floor after it put
+## together, times this. At 1.0 it is exactly that rule. This is the shape the
+## floor 5 spike had — 1,891 deaths against 1,113 on the two floors above it —
+## and the shape a share band cannot see, because a spike is a bump in the
+## middle of a climb, not a majority.
+@export var spike_ratio_max: float = 1.0
 ## Share of runs that clear every floor and lose to the debt. The debt has to
 ## be a live threat, and it must not be the only one.
 @export var debt_loss_min: float = 0.05

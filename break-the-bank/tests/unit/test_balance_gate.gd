@@ -37,7 +37,7 @@ func test_the_shipping_shape_passes_every_band() -> void:
 	var checks: Array[Dictionary] = BalanceGate.check(_healthy(), _bands, 7)
 	assert_bool(BalanceGate.passed(checks)).override_failure_message(
 			"\n".join(BalanceGate.describe(checks))).is_true()
-	assert_int(checks.size()).is_equal(9)
+	assert_int(checks.size()).is_equal(10)
 
 
 func test_a_win_rate_outside_the_band_fails_on_the_right_side() -> void:
@@ -51,7 +51,7 @@ func test_a_win_rate_outside_the_band_fails_on_the_right_side() -> void:
 
 func test_an_opening_ante_that_ends_runs_is_a_wall() -> void:
 	var report: Dictionary = _healthy()
-	report["deaths_by_floor"] = {1: 400, 2: 100, 3: 100, 4: 50, 5: 50, 6: 50, 7: 50, 8: 30}
+	report["deaths_by_floor"] = {1: 600, 2: 100, 3: 100, 4: 50, 5: 50, 6: 50, 7: 50, 8: 30}
 	assert_array(_failed_ids(report)).contains(["floor_one_deaths", "single_floor_share"])
 
 
@@ -64,6 +64,26 @@ func test_a_death_past_the_last_floor_is_a_debt_problem_not_a_wall() -> void:
 	var failed: Array[String] = _failed_ids(report)
 	assert_bool(failed.has("single_floor_share")).is_false()
 	assert_array(failed).contains(["debt_loss_max"])
+
+
+func test_a_bump_in_the_middle_of_the_climb_is_a_spike() -> void:
+	# The shape the floor 5 spike had, scaled: a floor that kills more than the
+	# whole rest of the run after it, while holding well under half of all
+	# floor deaths — which is why the share band alone never saw it.
+	var report: Dictionary = _healthy()
+	report["deaths_by_floor"] = {1: 10, 2: 20, 3: 40, 4: 300, 5: 60, 6: 80, 7: 120, 8: 170}
+	var failed: Array[Dictionary] = BalanceGate.failures(BalanceGate.check(report, _bands, 7))
+	assert_int(failed.size()).is_equal(1)
+	assert_str(String(failed[0]["id"])).is_equal("mid_run_spike")
+	assert_str(String(failed[0]["note"])).contains("floor 4")
+
+
+func test_the_last_floor_may_be_the_biggest_killer() -> void:
+	# Everyone who reaches the House faces the hardest ante, so the last floor
+	# holding two fifths of the floor deaths is the design, not a wall.
+	var report: Dictionary = _healthy()
+	report["deaths_by_floor"] = {1: 10, 2: 20, 3: 40, 4: 60, 5: 90, 6: 120, 7: 260, 8: 200}
+	assert_bool(BalanceGate.passed(BalanceGate.check(report, _bands, 7))).is_true()
 
 
 func test_a_debt_nobody_loses_to_is_not_a_threat() -> void:
@@ -106,7 +126,7 @@ func test_the_shipped_bands_load_and_are_ordered() -> void:
 
 func test_every_verdict_names_what_it_judged() -> void:
 	var lines: PackedStringArray = BalanceGate.describe(BalanceGate.check(_healthy(), _bands, 7))
-	assert_int(lines.size()).is_equal(9)
+	assert_int(lines.size()).is_equal(10)
 	for line: String in lines:
 		assert_str(line).starts_with("PASS")
 		assert_str(line).contains("within")

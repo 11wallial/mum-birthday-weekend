@@ -46,6 +46,21 @@ static func check(report: Dictionary, bands: BalanceBands, floors: int = 7) -> A
 	out.append(_verdict(&"single_floor_share", share <= bands.single_floor_share_max,
 			share, bands.single_floor_share_max,
 			"floor %d is a wall" % worst_floor if worst_floor > 0 else "no floor deaths"))
+	# A spike is a floor that kills more than the whole rest of the run after
+	# it. The last floor cannot be one: there is nothing after it to compare.
+	var spike_ratio: float = 0.0
+	var spike_floor: int = 0
+	for floor_index: int in range(1, floors):
+		var after: int = 0
+		for later: int in range(floor_index + 1, floors + 1):
+			after += int(by_floor.get(later, 0))
+		var ratio: float = float(by_floor.get(floor_index, 0)) / float(maxi(after, 1))
+		if ratio > spike_ratio:
+			spike_ratio = ratio
+			spike_floor = floor_index
+	out.append(_verdict(&"mid_run_spike", spike_ratio <= bands.spike_ratio_max,
+			spike_ratio, bands.spike_ratio_max,
+			"floor %d kills more than every floor after it" % spike_floor))
 
 	var reasons: Dictionary = report.get("end_reasons", {})
 	var debt_loss: float = float(int(reasons.get("debt_unpaid", 0))) / float(runs)
