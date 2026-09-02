@@ -982,8 +982,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		# spin request, so the camera kicked before the reels had turned. The
 		# view emits result_judged when they actually land.
 		EffectBus.Event.FLOOR_STARTED:
-			FloorMood.apply(StringName(payload.get("environment", &"")),
-					_room_parts, _environment, self)
+			var mood_id: StringName = StringName(payload.get("environment", &""))
+			FloorMood.apply(mood_id, _room_parts, _environment, self)
+			if _receipt != null and FloorMood.MOODS.has(mood_id):
+				_receipt.set_light((FloorMood.MOODS[mood_id] as Dictionary)["key"] as Color)
 			_announce_floor(payload)
 			_settle_surety()
 		EffectBus.Event.RUN_STARTED, EffectBus.Event.FLOOR_CLEARED, \

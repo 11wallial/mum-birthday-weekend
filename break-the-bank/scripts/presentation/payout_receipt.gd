@@ -36,6 +36,13 @@ const LINES_SHARE: float = 0.72
 
 var _panel: PanelContainer
 var _rows: VBoxContainer
+## The paper itself, drawn behind the rows by paper.gdshader.
+var _paper: ColorRect
+const PAPER_SHADER: String = "res://assets/shaders/paper.gdshader"
+## The paper hangs a hair off true, pivoting from where it leaves the printer.
+const TILT: float = -0.022
+## Fringe past the last line: the torn foot.
+const FOOT: float = 26.0
 var _bus: EffectBus
 var _scale: float = 1.0
 var _printing: Tween
@@ -47,21 +54,28 @@ func _ready() -> void:
 	layer = 2
 	_panel = PanelContainer.new()
 	_panel.name = "Paper"
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = PAPER
-	style.border_width_left = 0
-	style.border_width_right = 0
-	style.border_width_top = 6
-	style.border_width_bottom = 6
-	style.border_color = Color(0.78, 0.74, 0.66, 1.0)
+	var style: StyleBoxEmpty = StyleBoxEmpty.new()
 	style.content_margin_left = 18.0
 	style.content_margin_right = 18.0
-	style.content_margin_top = 10.0
-	style.content_margin_bottom = 12.0
+	style.content_margin_top = 14.0
+	style.content_margin_bottom = 12.0 + FOOT
 	_panel.add_theme_stylebox_override(&"panel", style)
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.visible = false
 	add_child(_panel)
+	# The paper is a shader behind the rows: grain, a perforated head, a torn
+	# foot, the curl, and the key light's fall. Not in the container's
+	# layout, so it can run past the rows into the fringe.
+	_paper = ColorRect.new()
+	_paper.name = "Sheet"
+	_paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material: ShaderMaterial = ShaderMaterial.new()
+	material.shader = load(PAPER_SHADER) as Shader
+	material.set_shader_parameter(&"paper", PAPER)
+	_paper.material = material
+	_paper.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(_paper)
+	_panel.resized.connect(_size_paper)
 	_rows = VBoxContainer.new()
 	_rows.add_theme_constant_override(&"separation", 1)
 	_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -93,8 +107,31 @@ func _fit() -> void:
 	_panel.anchor_bottom = 1.0
 	_panel.offset_left = -(300.0 + 22.0) * _scale
 	_panel.offset_right = -22.0 * _scale
-	_panel.offset_bottom = -44.0 * _scale
+	_panel.offset_bottom = -30.0 * _scale
 	_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# A hair off true, hung from its top-right corner where it left the
+	# printer: a receipt lying square to the screen is a panel.
+	_panel.pivot_offset = Vector2(300.0 * _scale, 0.0)
+	_panel.rotation = TILT
+	_size_paper()
+
+
+## Keeps the sheet the size of the rows plus the torn foot, and tells the
+## shader its pixel size so the grain and the tear stay in pixels.
+func _size_paper() -> void:
+	if _paper == null or _panel == null:
+		return
+	var material: ShaderMaterial = _paper.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter(&"size_px", _panel.size)
+
+
+## Warms the paper with the room's key light, so the sheet on the screen and
+## the room behind it are lit by the same bulb.
+func set_light(tint: Color) -> void:
+	var material: ShaderMaterial = _paper.material as ShaderMaterial if _paper != null else null
+	if material != null:
+		material.set_shader_parameter(&"key_tint", tint.lerp(Color.WHITE, 0.35))
 
 
 func _on_event(kind: EffectBus.Event, _payload: Dictionary) -> void:
@@ -241,6 +278,10 @@ func _line(left: String, right: String, size: float, tint: Color,
 		b.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
 		b.add_theme_color_override(&"font_color", tint)
 		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		b.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		# A figures column of one width, so every sum lines up under the
+		# last: "= 27" floating mid-panel was the handover's example.
+		b.custom_minimum_size = Vector2(64.0 * _scale, 0.0)
 		row.add_child(b)
 	if bold:
 		a.add_theme_color_override(&"font_color", tint)

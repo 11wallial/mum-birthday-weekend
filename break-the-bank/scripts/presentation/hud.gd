@@ -177,6 +177,10 @@ func show_gauges(shown: bool) -> void:
 	var line_row: Control = get_node_or_null(^"LineRow") as Control
 	if line_row != null:
 		line_row.visible = shown
+	# The event log goes with them: the handover asked for it out of the
+	# corner, and the ledger on the machine's own monitor carries the floor.
+	if _log != null:
+		_log.visible = shown
 
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
