@@ -102,6 +102,9 @@ listen. Three properties fall out of that, and all three are load-bearing:
   new die roll in the shop cannot shift the reels. A seed replays exactly.
 - **Severable.** Delete `scripts/presentation/` and the game still runs and
   still passes its tests.
+- **Replayable.** Every public verb on `SimEngine` is journaled when it comes
+  from outside the engine, so a run is its seed plus a list of verbs. That is
+  what a save file is, and what the input-replay tests assert on.
 
 ### Key types
 
@@ -207,6 +210,15 @@ without explaining what a seed is.
 
 The **daily challenge** derives its seed from the UTC date, so everyone plays the
 same run and the day turns over at the same instant everywhere.
+
+**The run in progress** survives the game closing. Nothing about `RunState` is
+serialised: the save (`user://run_in_progress.json`) is the seed, the options
+and a journal of every verb the player used, and on the next launch the room
+replays that journal headlessly — a few hundred moves take milliseconds — and
+lands on the exact board, draft or signature the player left. A save written
+against different content, or by a newer build, is set aside with a warning
+and the game starts fresh, the same rule as every other loader here. Starting a
+new run, or ending one, forgets it.
 
 **Meta-progression** persists in `user://profile.json` as plain JSON — readable,
 hand-editable, and unable to execute anything on load, which a `.tres` save

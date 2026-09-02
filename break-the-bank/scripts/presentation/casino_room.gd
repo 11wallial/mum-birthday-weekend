@@ -57,6 +57,9 @@ var _current_seed: int = 0
 var _ante_pending: bool = false
 ## Systems granted since the last floor opened, waiting to be announced with it.
 var _granted: Array[Dictionary] = []
+## True while a save is waiting for the end of the frame. Every move marks it;
+## one write happens.
+var _save_pending: bool = false
 
 
 func _ready() -> void:
@@ -113,19 +116,88 @@ func _ready() -> void:
 		_touch.camera_requested.connect(_on_touch_camera)
 		_touch.setup_requested.connect(_on_touch_setup)
 		_touch.new_run_requested.connect(_on_touch_new_run)
-	new_run(run_seed)
+	# A seed set in the inspector is a bug report being reproduced, and it wins
+	# over whatever was left on the table. Otherwise the run in progress comes
+	# back exactly where it was closed.
+	if run_seed != 0 or not _resume_saved_run():
+		new_run(run_seed)
 
 
 ## Starts a run. Pass 0 for a random seed.
 func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	var actual_seed: int = chosen_seed if chosen_seed != 0 else randi()
+	# A new run replaces the one on the table. Whatever was saved is gone the
+	# moment this is asked for, not when the new one first writes.
+	RunSave.clear()
 	_current_seed = actual_seed
 	_daily_key = daily_key
 	engine = SimEngine.new()
 	# A human is every policy here. An engine still holding its automated ones
 	# would answer the nudge trail and the ladder before the reels had stopped.
 	engine.clear_policies()
-	var bus: EffectBus = engine.get_bus()
+	_bind_viewers(engine.get_bus(), actual_seed)
+	var options: RunOptions = _catalogue.options_for(_profile, ContentDB.shared())
+	# The journal is the save: every verb from here on is written down, and the
+	# run is rebuilt from the seed and the log when the game next opens.
+	var journal: RunJournal = RunJournal.new()
+	journal.seed_value = actual_seed
+	journal.daily_key = daily_key
+	journal.options = options
+	engine.journal = journal
+	state = engine.start_run(actual_seed, options)
+	if _deck != null:
+		_deck.bind(state)
+	print("Break the Bank — seed %d (%s)%s" % [
+		actual_seed, SeedBook.to_code(actual_seed),
+		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
+
+
+## Rebuilds the run that was on the table when the game last closed, by
+## replaying its journal headlessly, then tells the room where it stands.
+## Returns false when there is nothing to resume — or nothing that still
+## replays to a live run, which is what a balance change since the save looks
+## like from inside it. That is said, and the game starts fresh.
+func _resume_saved_run() -> bool:
+	var journal: RunJournal = RunSave.read(ContentDB.shared())
+	if journal == null:
+		return false
+	var replayer: SimEngine = SimEngine.new()
+	replayer.clear_policies()
+	var bus: EffectBus = replayer.get_bus()
+	# Replayed in silence. Two hundred spins' worth of events is a light show
+	# nobody asked for; the viewers only need to know where it ended.
+	bus.muted = true
+	var replayed: RunState = replayer.start_run(journal.seed_value, journal.options)
+	var stopped: int = RunJournal.replay(replayer, replayed, journal.entries)
+	bus.muted = false
+	if stopped >= 0 or replayed.is_over():
+		push_warning("CasinoRoom: the saved run no longer replays past move %d; starting fresh"
+				% (stopped if stopped >= 0 else journal.entries.size()))
+		RunSave.clear()
+		return false
+	engine = replayer
+	state = replayed
+	engine.journal = journal
+	_current_seed = journal.seed_value
+	_daily_key = journal.daily_key
+	_bind_viewers(bus, journal.seed_value)
+	engine.announce(state)
+	if _slot_view != null:
+		_slot_view.show_standing()
+		_slot_view.set_holds(state.board.held)
+	if _deck != null:
+		_deck.bind(state)
+	_sync_deck()
+	_refresh_diegetic()
+	_prompt_decision()
+	print("Break the Bank — resumed seed %d (%s) on floor %d, %d moves in" % [
+		journal.seed_value, SeedBook.to_code(journal.seed_value),
+		state.floor_index, journal.entries.size()])
+	return true
+
+
+## Points every viewer at a run's bus and clears what the last run left up.
+func _bind_viewers(bus: EffectBus, run_seed: int) -> void:
 	bus.event_emitted.connect(_on_event)
 	if _slot_view != null:
 		_slot_view.bind(bus)
@@ -143,13 +215,10 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	if record_playtest:
 		_recorder = PlaytestRecorder.new()
 		add_child(_recorder)
-		_recorder.begin(actual_seed)
-	state = engine.start_run(actual_seed, _catalogue.options_for(_profile, ContentDB.shared()))
-	if _deck != null:
-		_deck.bind(state)
-	print("Break the Bank — seed %d (%s)%s" % [
-		actual_seed, SeedBook.to_code(actual_seed),
-		"  daily %s" % _daily_key if not _daily_key.is_empty() else ""])
+		# A resumed run's recording starts at the resume. The compare tool
+		# replays the seed with the policy from the top regardless, so a partial
+		# record still diffs; it just cannot say what the player did before.
+		_recorder.begin(run_seed)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -334,6 +403,7 @@ func debug_open_setup() -> void:
 func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 	if state == null or engine == null:
 		return
+	_forget_save()
 	if _shop != null:
 		_shop.close()
 	if _contracts != null:
@@ -359,6 +429,7 @@ func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 func debug_fit_works(reels: int, rows: int, vault: int) -> void:
 	if state == null:
 		return
+	_forget_save()
 	state.extra_reels = clampi(reels, 0, state.config.max_extra_reels)
 	state.extra_rows = clampi(rows, 0, state.config.max_extra_rows)
 	state.economy.vault = maxi(vault, 0)
@@ -375,6 +446,7 @@ func debug_fit_works(reels: int, rows: int, vault: int) -> void:
 func debug_open_contracts() -> void:
 	if state == null or engine == null:
 		return
+	_forget_save()
 	state.grant_system(Systems.CONTRACTS)
 	engine._offer_contracts(state)
 	if not state.contract_offers.is_empty():
@@ -382,6 +454,35 @@ func debug_open_contracts() -> void:
 		if _contracts != null:
 			_contracts.open(state)
 		_sync_deck()
+
+
+## Drops the journal and the save. A tool that has moved the run outside its
+## verbs has made a run the journal cannot describe, and a save of it would
+## resume somewhere else.
+func _forget_save() -> void:
+	if engine != null:
+		engine.journal = null
+	RunSave.clear()
+
+
+## Writes the run to disk once per frame that changed it, so closing the game
+## at any moment loses nothing that was decided. Every move marks it; the
+## write is deferred so a spin's dozen events cost one file, not twelve.
+func _mark_save() -> void:
+	if _save_pending or engine == null or engine.journal == null:
+		return
+	_save_pending = true
+	_flush_save.call_deferred()
+
+
+func _flush_save() -> void:
+	_save_pending = false
+	if state == null or engine == null or engine.journal == null:
+		return
+	if state.is_over():
+		RunSave.clear()
+		return
+	RunSave.write(engine.journal, ContentDB.shared())
 
 
 ## Forces a camera framing by [enum CameraController.View] index.
@@ -472,6 +573,7 @@ func _after_input() -> void:
 	if _slot_view != null and state != null:
 		_slot_view.set_holds(state.board.held)
 	_prompt_decision()
+	_mark_save()
 
 
 func _prompt_ante() -> void:
@@ -572,6 +674,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	_sync_deck()
 	if _deck != null:
 		_deck.refresh()
+	_mark_save()
 
 
 ## Writes the run's state onto the two surfaces in the world that carry it: the
@@ -615,6 +718,8 @@ func _finish_run(reason: String) -> void:
 	# on the machine worth looking past it at.
 	_set_prompt("\n".join(lines), true)
 	_end_recording(StringName(reason))
+	# Nothing to come back to.
+	RunSave.clear()
 
 
 func _end_recording(reason: StringName) -> void:
@@ -700,6 +805,7 @@ func _on_deck_action(action: StringName, index: int) -> void:
 	if _deck != null:
 		_deck.refresh()
 	_prompt_decision()
+	_mark_save()
 
 
 ## How much the BANK button puts away.

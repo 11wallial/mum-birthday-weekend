@@ -153,6 +153,20 @@ jobs:
             exit 1
           fi
 
+      # The save is written by the room and read back by the room; the unit
+      # suites cannot see either. This plays the real scene, closes it, opens
+      # it again, and fails if the run did not come back where it was left.
+      - name: Resume a saved run
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/playtest/resume_check.gd -- \
+            --moves=24 --settle=0.9 2>&1 | tee resume.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" resume.log; then
+            echo "::error::script errors while resuming a saved run"
+            exit 1
+          fi
+          grep -q "resume_check: PASS" resume.log
+
   package:
     name: Package playable builds
     runs-on: ubuntu-latest

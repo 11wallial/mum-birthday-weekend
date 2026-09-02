@@ -269,6 +269,12 @@ func _claim_positional(def: SoundDef) -> AudioStreamPlayer3D:
 
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
+	# A resumed run announces what it owns and where it stands as the events
+	# a fresh run would have fired. They are facts, not moments: a dozen
+	# purchase chimes at once is not what walking back to the machine sounds
+	# like. The room hum still starts, because the room is still there.
+	if bool(payload.get("resumed", false)) and kind != EffectBus.Event.RUN_STARTED:
+		return
 	match kind:
 		# SPIN_STARTED, SYMBOL_LANDED and PAYOUT_CALCULATED are deliberately not
 		# handled here. The simulation resolves an entire spin inside one frame,

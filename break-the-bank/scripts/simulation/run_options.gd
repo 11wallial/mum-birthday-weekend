@@ -38,6 +38,38 @@ func ruleset_key() -> String:
 		bonus_cash, bonus_debt, bonus_spins]
 
 
+## Everything a save needs to start the same run again. Plain data, so the
+## journal that carries it round-trips through JSON.
+func to_dict() -> Dictionary:
+	var ids: Array[String] = []
+	for id: StringName in allowed_artifacts:
+		ids.append(String(id))
+	return {
+		"allowed_artifacts": ids,
+		"bonus_cash": bonus_cash,
+		"bonus_debt": bonus_debt,
+		"ante_scale": ante_scale,
+		"bonus_spins": bonus_spins,
+		"starter_id": String(starter_id),
+		"difficulty_id": String(difficulty_id),
+	}
+
+
+static func from_dict(data: Dictionary) -> RunOptions:
+	var options: RunOptions = RunOptions.new()
+	var ids: Variant = data.get("allowed_artifacts", [])
+	if ids is Array:
+		for id: Variant in ids:
+			options.allowed_artifacts.append(StringName(String(id)))
+	options.bonus_cash = int(data.get("bonus_cash", 0))
+	options.bonus_debt = int(data.get("bonus_debt", 0))
+	options.ante_scale = float(data.get("ante_scale", 1.0))
+	options.bonus_spins = int(data.get("bonus_spins", 0))
+	options.starter_id = StringName(String(data.get("starter_id", "standard")))
+	options.difficulty_id = StringName(String(data.get("difficulty_id", "standard")))
+	return options
+
+
 func duplicate_options() -> RunOptions:
 	var copy: RunOptions = RunOptions.new()
 	copy.allowed_artifacts = allowed_artifacts.duplicate()

@@ -167,7 +167,8 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 					payload.get("column", {}) as Dictionary,
 					int(payload.get("nudges", 0)))
 		EffectBus.Event.WORKS_FITTED:
-			_fit_works(int(payload.get("reels", 3)), int(payload.get("rows", 1)))
+			_fit_works(int(payload.get("reels", 3)), int(payload.get("rows", 1)),
+					not bool(payload.get("resumed", false)))
 		EffectBus.Event.PAYOUT_CALCULATED:
 			_banked = int(payload.get("payout", 0))
 			# The spin is over however it ended — nudges spent, declined, or
@@ -551,6 +552,14 @@ func _lamp_energy(lamp: Node3D, energy: float) -> void:
 	material.emission_energy_multiplier = energy
 
 
+## Puts whatever the simulation says is standing onto the drums, without a
+## spin. A resumed run has already had its spin; what it needs is its board.
+func show_standing() -> void:
+	for i: int in mini(_pending.size(), _reels.size()):
+		_show_symbol(_reels[i], _pending[i])
+	_busy = false
+
+
 ## Lights the hold lamp under every locked reel.
 func set_holds(held: Array) -> void:
 	_held = []
@@ -600,7 +609,7 @@ func _drop_reel(index: int, column: Dictionary, nudges_left: int) -> void:
 
 ## Widens the window when the works are fitted, and dims the rows that still do
 ## not pay so the ones the player has bought are the ones that read as live.
-func _fit_works(reels: int, rows: int) -> void:
+func _fit_works(reels: int, rows: int, aloud: bool = true) -> void:
 	if reels != _reels.size():
 		_reels.assign(MachineFrame.new().rebuild_window(self, reels))
 		# The drums were rebuilt, so whatever was standing on them is gone; the
@@ -609,7 +618,8 @@ func _fit_works(reels: int, rows: int) -> void:
 			var index: int = int(landed.get("reel", -1))
 			if index >= 0 and index < _reels.size():
 				_show_symbol(_reels[index], landed)
-	if _audio != null:
+	# Hardware refitted to a resumed run was fitted long ago; it makes no noise.
+	if _audio != null and aloud:
 		_audio.play(&"works_fitted")
 	_light_rows(rows)
 

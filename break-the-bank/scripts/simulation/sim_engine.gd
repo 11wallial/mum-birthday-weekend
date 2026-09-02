@@ -40,6 +40,12 @@ var works_policy: Callable = Callable()
 ## rerolls. Signature: [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var market_policy: Callable = Callable()
 
+## Where the verbs go when a run is being kept: null in a batch, a [RunJournal]
+## when a person is playing and the run has to survive the app closing. Only
+## the outermost public call is written down — see [method _enter].
+var journal: RunJournal = null
+var _depth: int = 0
+
 ## Every verb a player's hands can reach that needs an opinion behind it, named
 ## by the public method that is the verb. [constant AutoPlayer.COVERAGE] has to
 ## name an opinion for each, and a batch has to be seen using each, or the lab
@@ -100,6 +106,113 @@ func get_bus() -> EffectBus:
 	return _bus
 
 
+## Marks the start of a public verb, and writes it to the journal when it came
+## from outside. Only the outermost call counts: a spin that banks itself calls
+## collect, step calls half the engine, and the shop policy buys through
+## buy_offer — none of that is the player's doing, and a log that recorded it
+## would replay every inner call twice.
+func _enter(verb: StringName, args: Array) -> void:
+	if _depth == 0 and journal != null:
+		journal.record(verb, args)
+	_depth += 1
+
+
+func _leave() -> void:
+	_depth -= 1
+
+
+## Tells everyone watching where a resumed run stands, as the events they would
+## have seen had they been watching all along — the facts, not the ceremonies.
+## A system being granted and a spin landing are moments, and a resumed run has
+## already had them: hardware is refitted, cleared floors are recorded, the
+## board is shown standing rather than spun, and whatever the machine was
+## waiting on — a nudge, the ladder, the draft, a signature — is put back on
+## the table. Every payload carries "resumed" so a listener can tell the two
+## apart, which is how the audio stays quiet through it.
+func announce(state: RunState) -> void:
+	if not _bus.is_live():
+		return
+	_bus.emit_event(EffectBus.Event.RUN_STARTED, {
+		"seed": state.seed_value, "cash": state.economy.cash,
+		"debt": state.economy.debt, "resumed": true,
+	})
+	for artifact: ArtifactDef in state.owned:
+		_bus.emit_event(EffectBus.Event.ARTIFACT_ACQUIRED, {
+			"artifact": artifact.id, "floor": state.floor_index, "resumed": true,
+		})
+	if state.extra_reels > 0 or state.extra_rows > 0:
+		_bus.emit_event(EffectBus.Event.WORKS_FITTED, {
+			"kind": "reel", "paid": 0, "reels": state.machine_reels(),
+			"rows": state.scoring_rows(), "resumed": true,
+		})
+	for cleared: int in range(1, state.floors_cleared + 1):
+		_bus.emit_event(EffectBus.Event.FLOOR_CLEARED, {
+			"floor": cleared, "cash": state.economy.cash,
+			"debt": state.economy.debt, "serviced": 0, "resumed": true,
+		})
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def != null:
+		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, {
+			"floor": floor_def.index, "name": floor_def.display_name,
+			"ante": _ante_for(state, floor_def), "spins": state.spins_remaining,
+			"environment": floor_def.environment_id,
+			"description": floor_def.description, "resumed": true,
+		})
+	_bus.emit_event(EffectBus.Event.CASH_CHANGED, {
+		"delta": 0, "cash": state.economy.cash, "reason": &"resumed", "resumed": true,
+	})
+	if state.economy.vault > 0:
+		_bus.emit_event(EffectBus.Event.VAULT_CHANGED, {
+			"vault": state.economy.vault, "cash": state.economy.cash,
+			"delta": 0, "interest": 0, "resumed": true,
+		})
+	if state.has_system(Systems.HEAT):
+		var measure: HeatEngine.Measure = HeatEngine.current(state)
+		_bus.emit_event(EffectBus.Event.HEAT_CHANGED, {
+			"heat": state.heat, "measure": int(measure),
+			"name": HeatEngine.measure_name(measure), "changed": false,
+			"launder_price": HeatEngine.launder_price(state),
+			"ante": ante_for(state), "resumed": true,
+		})
+	if not Probability.drawn(state.board.line).is_empty():
+		for i: int in state.board.reel_count():
+			var landed: Dictionary = reel_payload(state.board, i)
+			landed["resumed"] = true
+			_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, landed)
+	match state.decision:
+		RunState.Decision.NUDGE:
+			_bus.emit_event(EffectBus.Event.NUDGES_AWARDED, {
+				"nudges": state.board.nudges, "free": state.board.free_nudges,
+				"pattern": Probability.pattern_name(state.board.pattern), "resumed": true,
+			})
+		RunState.Decision.GAMBLE:
+			var odds: PackedFloat32Array = state.config.gamble_odds
+			_bus.emit_event(EffectBus.Event.GAMBLE_OFFERED, {
+				"payout": state.board.payout, "rung": state.board.gamble_rung,
+				"odds": odds[clampi(state.board.gamble_rung, 0, odds.size() - 1)],
+				"resumed": true,
+			})
+		_:
+			pass
+	match state.phase:
+		RunState.Phase.SHOPPING:
+			_bus.emit_event(EffectBus.Event.SHOP_OPENED, {
+				"floor": state.floor_index, "offers": _offer_ids(state),
+				"prices": state.shop_prices.duplicate(),
+				"reroll_price": state.reroll_price(),
+				"market": state.has_system(Systems.MARKET), "resumed": true,
+			})
+		RunState.Phase.SIGNING:
+			var offered: Array[String] = []
+			for contract: ContractDef in state.contract_offers:
+				offered.append(String(contract.id))
+			_bus.emit_event(EffectBus.Event.CONTRACTS_OFFERED, {
+				"floor": state.floor_index + 1, "contracts": offered, "resumed": true,
+			})
+		_:
+			pass
+
+
 ## Builds a fresh run without playing it. Use this when the presentation layer
 ## drives spins interactively.
 func start_run(run_seed: int, options: RunOptions = null) -> RunState:
@@ -128,6 +241,12 @@ func simulate_run(run_seed: int, options: RunOptions = null) -> RunState:
 
 ## Advances the run by one unit of play: one spin, or one floor transition.
 func step(state: RunState) -> void:
+	_enter(&"step", [])
+	_do_step(state)
+	_leave()
+
+
+func _do_step(state: RunState) -> void:
 	if state.is_over():
 		return
 	if state.phase == RunState.Phase.SHOPPING:
@@ -219,6 +338,13 @@ func begin_floor(state: RunState) -> void:
 ## the machine has taught anyone anything — the two happen in the same call and
 ## a spin behaves exactly as it always did.
 func spin(state: RunState) -> SpinBoard:
+	_enter(&"spin", [])
+	var out: SpinBoard = _do_spin(state)
+	_leave()
+	return out
+
+
+func _do_spin(state: RunState) -> SpinBoard:
 	state.economy.debit(state.spin_price(), &"spin_cost")
 	if ArtifactEngine.refunds_spin(state):
 		_bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {
@@ -318,7 +444,7 @@ func _announce_board(state: RunState) -> void:
 		return
 	var board: SpinBoard = state.board
 	for i: int in board.reel_count():
-		_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, _reel_payload(board, i))
+		_bus.emit_event(EffectBus.Event.SYMBOL_LANDED, reel_payload(board, i))
 	_bus.emit_event(EffectBus.Event.PATTERN_MATCHED,
 			{"pattern": Probability.pattern_name(board.pattern)})
 	_bus.emit_event(EffectBus.Event.SPIN_RESOLVED, {
@@ -330,8 +456,9 @@ func _announce_board(state: RunState) -> void:
 
 
 ## One reel's whole column, with the glyphs and tints riding along so the view
-## never has to look a symbol back up.
-func _reel_payload(board: SpinBoard, index: int) -> Dictionary:
+## never has to look a symbol back up. Public: a resumed run announces its
+## standing board through it.
+func reel_payload(board: SpinBoard, index: int) -> Dictionary:
 	var middle: SymbolDef = board.line[index]
 	var top: SymbolDef = board.above[index]
 	var bottom: SymbolDef = board.below[index]
@@ -409,6 +536,13 @@ static func _award_nudges(state: RunState, board: SpinBoard) -> void:
 ## Never every reel: a machine you can freeze whole is a machine that pays the
 ## same line forever, and the one thing a hold must cost is a spin off the clock.
 func toggle_hold(state: RunState, reel: int) -> bool:
+	_enter(&"toggle_hold", [reel])
+	var out: bool = _do_toggle_hold(state, reel)
+	_leave()
+	return out
+
+
+func _do_toggle_hold(state: RunState, reel: int) -> bool:
 	if not state.has_system(Systems.HOLD) or state.phase != RunState.Phase.SPINNING:
 		return false
 	if state.is_deciding() or reel < 0 or reel >= state.board.reel_count():
@@ -427,6 +561,13 @@ func toggle_hold(state: RunState, reel: int) -> bool:
 ## a player who nudges away their final spin to chase a jackpot has made a real
 ## decision, and the machine should let them make it.
 func nudge(state: RunState, reel: int) -> bool:
+	_enter(&"nudge", [reel])
+	var out: bool = _do_nudge(state, reel)
+	_leave()
+	return out
+
+
+func _do_nudge(state: RunState, reel: int) -> bool:
 	if state.decision != RunState.Decision.NUDGE:
 		return false
 	var board: SpinBoard = state.board
@@ -445,7 +586,7 @@ func nudge(state: RunState, reel: int) -> bool:
 		"free": free,
 		"spins_remaining": state.spins_remaining,
 		"gained": board.payout - before,
-		"column": _reel_payload(board, reel),
+		"column": reel_payload(board, reel),
 		"payout": board.payout,
 		"pattern": Probability.pattern_name(board.pattern),
 	})
@@ -458,6 +599,12 @@ func nudge(state: RunState, reel: int) -> bool:
 
 ## Walks away from the nudges still owed and moves the spin along.
 func decline_nudges(state: RunState) -> void:
+	_enter(&"decline_nudges", [])
+	_do_decline_nudges(state)
+	_leave()
+
+
+func _do_decline_nudges(state: RunState) -> void:
 	if state.decision != RunState.Decision.NUDGE:
 		return
 	state.board.nudges = 0
@@ -468,6 +615,13 @@ func decline_nudges(state: RunState) -> void:
 
 ## Climbs one rung of the ladder: the board doubles, or it is lost outright.
 func gamble(state: RunState) -> bool:
+	_enter(&"gamble", [])
+	var out: bool = _do_gamble(state)
+	_leave()
+	return out
+
+
+func _do_gamble(state: RunState) -> bool:
 	if state.decision != RunState.Decision.GAMBLE:
 		return false
 	var board: SpinBoard = state.board
@@ -497,6 +651,12 @@ func gamble(state: RunState) -> bool:
 
 ## Banks whatever the board is worth and ends the spin.
 func collect(state: RunState) -> void:
+	_enter(&"collect", [])
+	_do_collect(state)
+	_leave()
+
+
+func _do_collect(state: RunState) -> void:
 	var board: SpinBoard = state.board
 	state.last_line = board.line.duplicate()
 	state.last_pattern = board.pattern
@@ -539,6 +699,13 @@ func _observe_heat(state: RunState, payout: int) -> void:
 ## The floor's only lever that is not "win less": a player who has built a
 ## machine that cannot help winning big can still pay to keep the room calm.
 func launder(state: RunState) -> bool:
+	_enter(&"launder", [])
+	var out: bool = _do_launder(state)
+	_leave()
+	return out
+
+
+func _do_launder(state: RunState) -> bool:
 	if not state.has_system(Systems.HEAT) or state.is_deciding():
 		return false
 	if state.heat <= 0.0:
@@ -571,11 +738,25 @@ func launder(state: RunState) -> bool:
 ## made of. Confined to the draft it would have been a mechanic the player got
 ## to use exactly once.
 func buy_reel(state: RunState) -> bool:
+	_enter(&"buy_reel", [])
+	var out: bool = _do_buy_reel(state)
+	_leave()
+	return out
+
+
+func _do_buy_reel(state: RunState) -> bool:
 	return _buy_works(state, true)
 
 
 ## Widens the window so another row of the band pays.
 func buy_row(state: RunState) -> bool:
+	_enter(&"buy_row", [])
+	var out: bool = _do_buy_row(state)
+	_leave()
+	return out
+
+
+func _do_buy_row(state: RunState) -> bool:
 	return _buy_works(state, false)
 
 
@@ -620,6 +801,13 @@ func works_price(state: RunState, is_reel: bool) -> int:
 
 ## Sets the wager for the next spin, clamped to what the machine allows.
 func set_stake(state: RunState, level: int) -> bool:
+	_enter(&"set_stake", [level])
+	var out: bool = _do_set_stake(state, level)
+	_leave()
+	return out
+
+
+func _do_set_stake(state: RunState, level: int) -> bool:
 	if not state.has_system(Systems.STAKE) or state.is_deciding():
 		return false
 	var wanted: int = clampi(level, 1, maxi(1, state.config.max_stake))
@@ -757,6 +945,13 @@ func _ante_for(state: RunState, floor_def: FloorDef) -> int:
 ## shop policy calls it too, so an automated batch and a human play the same
 ## code path rather than two implementations that drift apart.
 func buy_offer(state: RunState, index: int) -> bool:
+	_enter(&"buy_offer", [index])
+	var out: bool = _do_buy_offer(state, index)
+	_leave()
+	return out
+
+
+func _do_buy_offer(state: RunState, index: int) -> bool:
 	if not state.can_buy(index):
 		return false
 	state.economy.debit(state.shop_prices[index], &"artifact")
@@ -768,6 +963,12 @@ func buy_offer(state: RunState, index: int) -> bool:
 
 ## Closes the shop and moves to the next floor.
 func leave_shop(state: RunState) -> void:
+	_enter(&"leave_shop", [])
+	_do_leave_shop(state)
+	_leave()
+
+
+func _do_leave_shop(state: RunState) -> void:
 	if state.phase != RunState.Phase.SHOPPING:
 		return
 	state.shop_offers.clear()
@@ -821,6 +1022,13 @@ func _offer_contracts(state: RunState) -> void:
 
 ## Signs offer [param index] and opens the floor it was signed for.
 func sign_contract(state: RunState, index: int) -> bool:
+	_enter(&"sign_contract", [index])
+	var out: bool = _do_sign_contract(state, index)
+	_leave()
+	return out
+
+
+func _do_sign_contract(state: RunState, index: int) -> bool:
 	if state.phase != RunState.Phase.SIGNING:
 		return false
 	if index < 0 or index >= state.contract_offers.size():
@@ -916,6 +1124,13 @@ func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
 ## Buys a fresh set of offers. Each reroll in the same draft costs more than the
 ## last, so rerolling is a budget you spend rather than a button you hold.
 func reroll_shop(state: RunState) -> bool:
+	_enter(&"reroll_shop", [])
+	var out: bool = _do_reroll_shop(state)
+	_leave()
+	return out
+
+
+func _do_reroll_shop(state: RunState) -> bool:
 	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
 		return false
 	var price: int = state.reroll_price()
@@ -942,6 +1157,13 @@ func reroll_shop(state: RunState) -> bool:
 ## able to change its mind, but not for free, and a permanent reel change must
 ## not be launderable through the market for cash.
 func sell(state: RunState, index: int) -> int:
+	_enter(&"sell", [index])
+	var out: int = _do_sell(state, index)
+	_leave()
+	return out
+
+
+func _do_sell(state: RunState, index: int) -> int:
 	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
 		return 0
 	if index < 0 or index >= state.owned.size():
@@ -967,6 +1189,13 @@ func sell(state: RunState, index: int) -> int:
 ## cannot cover the ante that is about to fall due, and it competes with buying
 ## hardware and with paying down a debt compounding faster than the vault pays.
 func deposit(state: RunState, amount: int) -> int:
+	_enter(&"deposit", [amount])
+	var out: int = _do_deposit(state, amount)
+	_leave()
+	return out
+
+
+func _do_deposit(state: RunState, amount: int) -> int:
 	if not state.has_system(Systems.VAULT) or state.is_deciding():
 		return 0
 	var moved: int = state.economy.deposit(amount)
@@ -978,6 +1207,13 @@ func deposit(state: RunState, amount: int) -> int:
 ## Takes cash back out. Between floors it comes out whole; mid-floor the house
 ## keeps a share, which is the price of having changed your mind in a panic.
 func withdraw(state: RunState, amount: int) -> int:
+	_enter(&"withdraw", [amount])
+	var out: int = _do_withdraw(state, amount)
+	_leave()
+	return out
+
+
+func _do_withdraw(state: RunState, amount: int) -> int:
 	if not state.has_system(Systems.VAULT) or state.is_deciding():
 		return 0
 	var fee: float = (0.0 if state.phase == RunState.Phase.SHOPPING
@@ -1000,6 +1236,13 @@ func _announce_vault(state: RunState, delta: int, interest: int) -> void:
 ## Takes an offer without paying for it and puts the bill on the debt with a
 ## markup: the one way in the game to turn future trouble into present power.
 func buy_on_slate(state: RunState, index: int) -> bool:
+	_enter(&"buy_on_slate", [index])
+	var out: bool = _do_buy_on_slate(state, index)
+	_leave()
+	return out
+
+
+func _do_buy_on_slate(state: RunState, index: int) -> bool:
 	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
 		return false
 	if index < 0 or index >= state.shop_offers.size():

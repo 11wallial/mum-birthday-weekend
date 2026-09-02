@@ -124,6 +124,17 @@ worth knowing before touching the simulation:
   `tests/simulation/test_autoplayer_parity.gd` fails the build until a batch
   is actually seen using it. The market went unplayed by every batch for a
   milestone because nothing checked.
+- Every player-facing verb on `SimEngine` is a thin public wrapper around a
+  `_do_<verb>` body: the wrapper calls `_enter`/`_leave`, which writes the verb
+  to the run's [RunJournal] only when it came from outside the engine. A save
+  is that journal plus the seed (`RunSave`), replayed headlessly on load. Add a
+  verb the same way, and add it to `RunJournal._apply`, or a save that used it
+  stops replaying at that move. Nothing in `RunState` is ever serialised.
+- `SimEngine.announce()` tells the viewers where a resumed run stands by
+  emitting the facts as events, each payload carrying `"resumed": true`. A
+  listener that treats an event as a moment — a chime, a fanfare, a scale-in —
+  must check that flag; the audio director ignores everything resumed except
+  the run starting.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.
@@ -156,7 +167,12 @@ Anything persistent lives in `scripts/meta/` and reaches a run only as
 options so its numbers keep describing the full content set.
 
 Saves are plain JSON, and every loader treats a corrupt or newer-version file as
-"start fresh" rather than failing. Keep it that way.
+"start fresh" rather than failing. Keep it that way. The run in progress is
+saved the same way (`RunSave`, `user://run_in_progress.json`) with a fingerprint
+of the content it was played against; a fingerprint mismatch is also "start
+fresh", because a journal replayed against different content is a different
+run. `CasinoRoom` marks a save on every move and writes once per frame; the
+`debug_*` tools drop the journal, because they move the run outside its verbs.
 
 ## Visual QA
 
