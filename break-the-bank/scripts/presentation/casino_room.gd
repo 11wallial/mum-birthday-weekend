@@ -130,6 +130,7 @@ func _ready() -> void:
 		_shop.buy_requested.connect(_on_buy_requested)
 		_shop.leave_requested.connect(_on_leave_requested)
 		_shop.market_requested.connect(_on_market_requested)
+		_shop.press_requested.connect(_on_press_requested)
 	if _deck != null:
 		_deck.action_requested.connect(_on_deck_action)
 		# The machine's physical buttons render the deck's model and their
@@ -557,6 +558,28 @@ func debug_buy_what_it_can() -> void:
 ## Leaves the draft without buying. For tools and tests.
 func debug_leave_shop() -> void:
 	_on_leave_requested()
+
+
+## Closes the floor now, with the ante covered, so the draft opens. Visual QA
+## only: a run driven blind rarely covers the first ante, and a storyboard
+## that could not reach the draft was checking the game without its shop.
+func debug_open_draft() -> bool:
+	if state == null or engine == null or state.phase != RunState.Phase.SPINNING:
+		return _shop != null and _shop.is_open()
+	_forget_save()
+	if _tutorial != null and _tutorial.is_active():
+		_tutorial.skip()
+	if _slot_view != null and _slot_view.is_busy():
+		return false
+	state.economy.cash = maxi(state.economy.cash, engine.ante_for(state) * 2)
+	state.economy.chips = maxi(state.economy.chips, 12)
+	state.spins_remaining = 0
+	state.decision = RunState.Decision.NONE
+	_ante_pending = false
+	_clear_prompt()
+	engine.step(state)
+	_after_input()
+	return _shop != null and _shop.is_open()
 
 
 ## Fits the named artifacts' hardware to the machine without buying any of it.
@@ -1184,6 +1207,20 @@ func _on_sign_requested(index: int) -> void:
 		_contracts.close()
 		if _camera != null:
 			_camera.set_view(CameraController.View.MACHINE)
+
+
+func _on_press_requested(index: int) -> void:
+	if state == null or state.phase != RunState.Phase.SHOPPING:
+		return
+	var job: Dictionary = state.press_offers[index] if index >= 0 \
+			and index < state.press_offers.size() else {}
+	if engine.press(state, index):
+		_record(&"press", {"kind": String(job.get("kind", "")),
+				"symbol": String(job.get("symbol", "")), "price": int(job.get("price", 0))})
+		if _audio != null:
+			_audio.play_at(&"works_fitted")
+	if _shop != null:
+		_shop.refresh()
 
 
 func _on_market_requested(action: StringName, index: int) -> void:

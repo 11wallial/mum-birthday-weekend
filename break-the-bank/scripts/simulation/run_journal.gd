@@ -102,6 +102,8 @@ static func _apply(engine: SimEngine, state: RunState, entry: Array) -> bool:
 			engine.stay_at_table(state)
 		"settle_floor":
 			engine.settle_floor(state)
+		"press":
+			engine.press(state, arg)
 		_:
 			return false
 	return true

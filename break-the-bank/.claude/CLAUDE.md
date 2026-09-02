@@ -172,6 +172,21 @@ worth knowing before touching the simulation:
   `chips` sweep runs 1.7% → 24% across ×1 → ×2). Sweep knobs `chips`,
   `chip_prices`, `spin_left_chips`, `late_antes` and `settle_reserve`
   exist, and `--also=knob:value` holds a second one under a sweep.
+- `press` is the verb that edits the reel: `RunState.press_offers` are
+  stocked with the draft in `_stock_shop` (`_roll_press`), a strike or
+  print goes through `add_weight_shift`, a gilding into
+  `symbol_value_shifts`, which `evaluate_spin` reads through
+  `RunState.symbol_bonus` and nowhere else. Paid in chips, permanent for
+  the run, journaled as `press <index>`. `AutoPlayer.press_jobs` takes one
+  job a draft. There is one reel for every drum; per-reel editing is a
+  bigger change and is on the roadmap, not in the sim.
+- Machines are `MachineDef` data under `resources/meta/machines/` and reach
+  a run only through `RunOptions` (`bonus_chips`, `starting_artifacts`,
+  `weight_shifts`, plus the scales and `early_systems` the audits already
+  used). `SimEngine.start_run` fits the hardware through `acquire` and leans
+  the reel before the first floor opens. The ruleset key carries all of it,
+  so a machine's daily is its own board. `unlock_def`'s `STARTER` kind now
+  opens a machine; the enum value stays, it is written into profiles.
 - The stake is priced off the ante, not the spin: every level above the first
   costs `BalanceConfig.stake_ante_percent` of the floor's ante per spin
   (`RunState.stake_premium`). A spin cost one credit against payouts in the

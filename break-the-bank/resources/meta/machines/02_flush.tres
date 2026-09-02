@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MachineDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/machine_def.gd" id="1_machinedef"]
+
+[resource]
+script = ExtResource("1_machinedef")
+id = &"flush"
+display_name = "The Overdraft"
+brief = "More in the purse, more on the account. The House lends; it always has."
+bonus_cash = 25
+bonus_debt = 60
+bonus_spins = 0
+bonus_chips = 0
+starting_artifacts = Array[StringName]([])
+weight_shifts = {}
+payout_scale = 1.0
+ante_scale = 1.0
+curse_pays = 0.0
+early_systems = Array[StringName]([])

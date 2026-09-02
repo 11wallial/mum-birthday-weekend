@@ -48,6 +48,9 @@ enum Event {
 	## The player settled the floor with spins still on the clock, trading
 	## the rest of the allowance for chips. Fired before FLOOR_CLEARED.
 	FLOOR_SETTLED_EARLY,
+	## The press did a job on the reel: a symbol struck, printed or gilded.
+	## Carries the job and what the reel is now.
+	PRESS_RUN,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

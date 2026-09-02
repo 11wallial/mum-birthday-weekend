@@ -98,6 +98,16 @@ var shop_offers: Array[ArtifactDef] = []
 var shop_prices: Array[int] = []
 ## Rerolls already bought in the draft currently open. Reset when it opens.
 var shop_rerolls: int = 0
+## The press's jobs on offer while the draft is open: each a dictionary with
+## "kind" (strike, print, gild), "symbol", "magnitude" and "price" in chips.
+## The reel is the player's to edit — CloverPit's lesson, the review's ask —
+## and the press is where the editing is bought. Cleared with the draft.
+var press_offers: Array[Dictionary] = []
+## Credits added to what each symbol pays this run, keyed by symbol id or
+## family: the gilding the press has done. Kept for the run, like the works.
+var symbol_value_shifts: Dictionary = {}
+## Jobs the press has run this run. Telemetry.
+var press_jobs: int = 0
 ## The contract signed for the floor being played, or null on a floor played
 ## under house rules. Torn up when the floor ends.
 var contract: ContractDef = null
@@ -149,6 +159,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	options = p_options if p_options != null else RunOptions.new()
 	economy = CoreEconomy.new(config, p_bus)
 	economy.cash += options.bonus_cash
+	economy.chips = maxi(0, economy.chips + options.bonus_chips)
 	economy.debt = maxi(0, int(round(float(economy.debt) * maxf(options.debt_scale, 0.0)))
 			+ options.bonus_debt)
 	reel_rng = RngStream.new(p_seed, &"reels")
@@ -360,6 +371,24 @@ func mark_reel_dirty() -> void:
 	_reel_cache_dirty = true
 
 
+## Credits the press has added to what [param symbol] pays: its own gilding
+## plus its family's. Read where a symbol's value is read, and nowhere else.
+func symbol_bonus(symbol: SymbolDef) -> int:
+	if symbol == null:
+		return 0
+	var total: int = int(symbol_value_shifts.get(symbol.id, 0))
+	if symbol.family != &"":
+		total += int(symbol_value_shifts.get(symbol.family, 0))
+	return total
+
+
+## True when the press job at [param index] can be bought now.
+func can_press(index: int) -> bool:
+	if phase != Phase.SHOPPING or index < 0 or index >= press_offers.size():
+		return false
+	return economy.can_afford_chips(int(press_offers[index].get("price", 0)))
+
+
 ## The counter [param artifact_id] has built up this run.
 func tally(artifact_id: StringName) -> float:
 	return float(tallies.get(artifact_id, 0.0))
@@ -464,6 +493,7 @@ func snapshot() -> Dictionary:
 		"bosses_faced": bosses_faced.map(func(id: StringName) -> String: return String(id)),
 		"floors_settled_early": floors_settled_early,
 		"artifacts_owned": owned.size(),
+		"press_jobs": press_jobs,
 	}
 	data.merge(economy.snapshot())
 	return data

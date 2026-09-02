@@ -25,6 +25,10 @@ func _initialize() -> void:
 	var out_path: String = String(args.get("out", "user://balance_report.json"))
 	var lift: float = float(args.get("lift", 0.25))
 	var options: RunOptions = null
+	if args.has("machine"):
+		var catalogue: MetaCatalogue = MetaCatalogue.new()
+		catalogue.load_all()
+		options = catalogue.options_for_machine(StringName(String(args["machine"])))
 	if args.has("difficulty") or args.has("challenge"):
 		var catalogue: MetaCatalogue = MetaCatalogue.new()
 		catalogue.load_all()

@@ -9,15 +9,11 @@ extends RefCounted
 const UNLOCK_DIR: String = "res://resources/meta/unlocks"
 const DIFFICULTY_DIR: String = "res://resources/meta/difficulties"
 const CHALLENGE_DIR: String = "res://resources/meta/challenges"
-
-## Starter variants. The standard one is always available.
-const STARTERS: Dictionary = {
-	&"standard": {"name": "Standard", "cash": 0, "debt": 0, "spins": 0},
-	&"flush": {"name": "Flush Start", "cash": 25, "debt": 60, "spins": 0},
-	&"lean": {"name": "Lean Start", "cash": -6, "debt": -60, "spins": 1},
-}
+const MACHINE_DIR: String = "res://resources/meta/machines"
 
 var unlocks: Array[UnlockDef] = []
+## The House's machines, standard first. What a run starts on.
+var machines: Array[MachineDef] = []
 ## The ladder, bottom rung first.
 var difficulties: Array[DifficultyDef] = []
 var challenges: Array[ChallengeDef] = []
@@ -29,6 +25,14 @@ func load_all() -> void:
 	difficulties.sort_custom(func(a: DifficultyDef, b: DifficultyDef) -> bool: return a.tier < b.tier)
 	challenges.assign(_load_dir(CHALLENGE_DIR))
 	challenges.sort_custom(func(a: ChallengeDef, b: ChallengeDef) -> bool: return String(a.id) < String(b.id))
+	machines.assign(_load_dir(MACHINE_DIR))
+
+
+func machine_by_id(id: StringName) -> MachineDef:
+	for machine: MachineDef in machines:
+		if machine.id == id:
+			return machine
+	return null
 
 
 func difficulty_by_id(id: StringName) -> DifficultyDef:
@@ -58,11 +62,11 @@ func options_for(profile: PlayerProfile, content: ContentDB) -> RunOptions:
 			return challenge.options_for(allowed)
 	var options: RunOptions = RunOptions.new()
 	options.allowed_artifacts = allowed
-	var starter: Dictionary = STARTERS.get(profile.selected_starter, STARTERS[&"standard"])
-	options.bonus_cash = int(starter["cash"])
-	options.bonus_debt = int(starter["debt"])
-	options.bonus_spins = int(starter["spins"])
-	options.starter_id = profile.selected_starter
+	var machine: MachineDef = machine_by_id(profile.selected_starter)
+	if machine == null:
+		machine = machine_by_id(&"standard")
+	if machine != null:
+		options = machine.apply_to(options)
 	var difficulty: DifficultyDef = difficulty_by_id(profile.selected_difficulty)
 	if difficulty == null:
 		options.difficulty_id = &"standard"
@@ -79,6 +83,15 @@ func options_for_difficulty(id: StringName) -> RunOptions:
 	return difficulty.apply_to(RunOptions.new())
 
 
+## The options for one machine with nothing else changed, which is what the
+## lab measures a machine with.
+func options_for_machine(id: StringName) -> RunOptions:
+	var machine: MachineDef = machine_by_id(id)
+	if machine == null:
+		return RunOptions.new()
+	return machine.apply_to(RunOptions.new())
+
+
 ## The options for one challenge with the whole content set allowed.
 func options_for_challenge(id: StringName) -> RunOptions:
 	var challenge: ChallengeDef = challenge_by_id(id)
@@ -87,9 +100,16 @@ func options_for_challenge(id: StringName) -> RunOptions:
 	return challenge.options_for([])
 
 
-## Starter ids the profile may choose: standard, plus any it has unlocked.
+## Machine ids the profile may choose: the standard, plus any an unlock has
+## opened, in the catalogue's order.
 func available_starters(profile: PlayerProfile) -> Array[StringName]:
-	return _available(profile, UnlockDef.Kind.STARTER, STARTERS.keys())
+	var out: Array[StringName] = []
+	for machine: MachineDef in machines:
+		if machine.id == &"standard" or _unlocked_target(profile, UnlockDef.Kind.STARTER, machine.id):
+			out.append(machine.id)
+	if out.is_empty():
+		out.append(&"standard")
+	return out
 
 
 ## Rungs of the ladder the profile may choose, bottom first: the first rung,

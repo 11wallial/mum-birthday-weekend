@@ -93,6 +93,8 @@ The tone of the ending recolours the whole run. Neither ending is a joke.
 | **settling early** | Leaving a floor with spins on the clock, once the ante is covered, for chips. |
 | **the door** | The title, and the pause. Where the machine and the audit are chosen. |
 | **the Clerk** | The voice on the tannoy that walks a new debtor through the basement. Not the House; the House's hands. |
+| **the press** | Where the reel is edited: a symbol struck, printed or gilded, for chips. |
+| **the machines** | What a run starts on. The House keeps seven; each opens through play. |
 
 ## Rules for anyone writing
 

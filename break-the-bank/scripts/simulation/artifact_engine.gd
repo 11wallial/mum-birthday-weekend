@@ -60,10 +60,12 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	var cursed: bool = Probability.has_curse(line) and not warded
 	for symbol: SymbolDef in Probability.drawn(line):
 		if not symbol.is_curse:
-			var worth: int = maxi(0,
-					symbol.base_value + ContractEngine.symbol_value(state, symbol.id))
+			var gilt: int = state.symbol_bonus(symbol)
+			var worth: int = maxi(0, symbol.base_value
+					+ ContractEngine.symbol_value(state, symbol.id) + gilt)
 			ctx.base_payout += worth
-			ctx.step(&"symbol", symbol.display_name, "%d" % worth)
+			ctx.step(&"symbol", symbol.display_name + (", gilt" if gilt > 0 else ""),
+					"%d" % worth)
 		elif warded:
 			ctx.base_payout += int(ward)
 			ctx.step(&"symbol", "%s, on the payroll" % symbol.display_name, "%d" % int(ward))

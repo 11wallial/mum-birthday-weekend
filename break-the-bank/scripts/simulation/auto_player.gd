@@ -77,6 +77,7 @@ const COVERAGE: Dictionary = {
 	&"sign_contract": &"contract",
 	&"stay_at_table": &"stay",
 	&"settle_floor": &"settle",
+	&"press": &"press_jobs",
 }
 
 
@@ -464,6 +465,37 @@ static func settle(state: RunState) -> bool:
 	var house_pays: float = float(CoreEconomy.chip_value(state.config, floor_def.ante)) \
 			* float(bonus) / float(maxi(1, state.spins_remaining))
 	return house_pays > per_spin
+
+
+## Works the press with the chips the draft left: a strike on the skull
+## first, then a print of the dearest symbol on the table, then a gilding of
+## whatever this machine already leans on. One job a draft at most — the
+## draft is the build, the press is its edge, and a player who spent every
+## chip on the reel would own no hardware to spin it with.
+static func press_jobs(engine: SimEngine, state: RunState) -> void:
+	if state.phase != RunState.Phase.SHOPPING or state.press_offers.is_empty():
+		return
+	var best: int = -1
+	var best_score: float = 0.0
+	for i: int in state.press_offers.size():
+		if not state.can_press(i):
+			continue
+		var job: Dictionary = state.press_offers[i]
+		var symbol: SymbolDef = state.content.symbol_by_id(StringName(String(job["symbol"])))
+		var score: float = 0.0
+		match String(job["kind"]):
+			"strike":
+				score = 3.0 if symbol != null and symbol.is_curse else 0.0
+			"print":
+				score = float(symbol.base_value) / 10.0 if symbol != null else 0.0
+			"gild":
+				score = 1.0 if state.count_tag(&"fruit") > 0 \
+						or String(job["symbol"]) == "fruit" else 0.6
+		if score > best_score:
+			best_score = score
+			best = i
+	if best >= 0:
+		engine.press(state, best)
 
 
 ## Stays at the table when the batch has been told to. There is no judgement

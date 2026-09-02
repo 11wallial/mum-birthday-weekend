@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MachineDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/machine_def.gd" id="1_machinedef"]
+
+[resource]
+script = ExtResource("1_machinedef")
+id = &"strongbox"
+display_name = "The Strongbox"
+brief = "The vault fitted from the basement, forty in the purse and three chips in hand. It pays a tenth less."
+bonus_cash = 40
+bonus_debt = 0
+bonus_spins = 0
+bonus_chips = 3
+starting_artifacts = Array[StringName]([])
+weight_shifts = {}
+payout_scale = 0.9
+ante_scale = 1.0
+curse_pays = 0.0
+early_systems = Array[StringName]([&"vault"])

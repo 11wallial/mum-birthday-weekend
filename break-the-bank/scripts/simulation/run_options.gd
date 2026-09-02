@@ -10,10 +10,17 @@ extends RefCounted
 ## Artifact ids the shop may offer. Empty means no restriction, which is what
 ## the balance lab uses so its numbers describe the full content set.
 var allowed_artifacts: Array[StringName] = []
-## Added to starting cash, from a starter variant.
+## Added to starting cash, from the machine.
 var bonus_cash: int = 0
 ## Added to (or removed from) starting debt.
 var bonus_debt: int = 0
+## Chips in hand before the first draft, from the machine.
+var bonus_chips: int = 0
+## Hardware fitted before the first spin, by artifact id, from the machine.
+var starting_artifacts: Array[StringName] = []
+## The reel as the machine ships it: draw-weight deltas by symbol id or
+## family, applied once at the start and kept for the run.
+var weight_shifts: Dictionary = {}
 ## Every floor's ante is scaled by this. Difficulty modifiers move it.
 var ante_scale: float = 1.0
 ## Extra spins on every floor.
@@ -77,12 +84,20 @@ func ruleset_key() -> String:
 	for system: StringName in early_systems:
 		early.append(String(system))
 	early.sort()
-	return "%s/%s/%s/%.2f/%d/%d/%d/%.2f/%.1f/%.2f/%.2f/%.2f/%.2f/%.1f/%s/%s/%s/%s" % [
+	var fitted: Array[String] = []
+	for artifact: StringName in starting_artifacts:
+		fitted.append(String(artifact))
+	fitted.sort()
+	var leaned: Array[String] = []
+	for key: Variant in weight_shifts:
+		leaned.append("%s%+d" % [String(key), int(weight_shifts[key])])
+	leaned.sort()
+	return "%s/%s/%s/%.2f/%d/%d/%d/%d/%.2f/%.1f/%.2f/%.2f/%.2f/%.2f/%.1f/%s/%s/%s/%s/%s/%s" % [
 		String(starter_id), String(difficulty_id), String(challenge_id), ante_scale,
-		bonus_cash, bonus_debt, bonus_spins, debt_service_scale, interest_delta,
+		bonus_cash, bonus_debt, bonus_spins, bonus_chips, debt_service_scale, interest_delta,
 		debt_scale, price_scale, heat_carry, payout_scale, curse_pays,
 		"+".join(locked), "+".join(early), "nograce" if no_grace else "grace",
-		"nobosses" if no_bosses else "bosses"]
+		"nobosses" if no_bosses else "bosses", "+".join(fitted), "+".join(leaned)]
 
 
 ## Everything a save needs to start the same run again. Plain data, so the
@@ -91,10 +106,19 @@ func to_dict() -> Dictionary:
 	var ids: Array[String] = []
 	for id: StringName in allowed_artifacts:
 		ids.append(String(id))
+	var fitted: Array[String] = []
+	for artifact: StringName in starting_artifacts:
+		fitted.append(String(artifact))
+	var leaned: Dictionary = {}
+	for key: Variant in weight_shifts:
+		leaned[String(key)] = int(weight_shifts[key])
 	return {
 		"allowed_artifacts": ids,
 		"bonus_cash": bonus_cash,
 		"bonus_debt": bonus_debt,
+		"bonus_chips": bonus_chips,
+		"starting_artifacts": fitted,
+		"weight_shifts": leaned,
 		"ante_scale": ante_scale,
 		"bonus_spins": bonus_spins,
 		"starter_id": String(starter_id),
@@ -123,6 +147,15 @@ static func from_dict(data: Dictionary) -> RunOptions:
 			options.allowed_artifacts.append(StringName(String(id)))
 	options.bonus_cash = int(data.get("bonus_cash", 0))
 	options.bonus_debt = int(data.get("bonus_debt", 0))
+	options.bonus_chips = int(data.get("bonus_chips", 0))
+	var fitted: Variant = data.get("starting_artifacts", [])
+	if fitted is Array:
+		for artifact: Variant in fitted:
+			options.starting_artifacts.append(StringName(String(artifact)))
+	var leaned: Variant = data.get("weight_shifts", {})
+	if leaned is Dictionary:
+		for key: Variant in leaned:
+			options.weight_shifts[StringName(String(key))] = int(leaned[key])
 	options.ante_scale = float(data.get("ante_scale", 1.0))
 	options.bonus_spins = int(data.get("bonus_spins", 0))
 	options.starter_id = StringName(String(data.get("starter_id", "standard")))
@@ -154,6 +187,9 @@ func duplicate_options() -> RunOptions:
 	copy.allowed_artifacts = allowed_artifacts.duplicate()
 	copy.bonus_cash = bonus_cash
 	copy.bonus_debt = bonus_debt
+	copy.bonus_chips = bonus_chips
+	copy.starting_artifacts = starting_artifacts.duplicate()
+	copy.weight_shifts = weight_shifts.duplicate()
 	copy.ante_scale = ante_scale
 	copy.bonus_spins = bonus_spins
 	copy.starter_id = starter_id

@@ -198,6 +198,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				_push("+%d chips (%s)" % [delta, String(reason)])
 		EffectBus.Event.FLOOR_SETTLED_EARLY:
 			_push("Settled with %d spins left" % int(payload.get("spins_left", 0)))
+		EffectBus.Event.PRESS_RUN:
+			var verb: String = {"strike": "Struck", "print": "Printed",
+					"gild": "Gilded"}.get(String(payload.get("kind", "")), "Pressed")
+			_push("%s the %s" % [verb, String(payload.get("symbol", ""))])
 		EffectBus.Event.FLOOR_STARTED:
 			_set_text(_ante, str(int(payload.get("ante", 0))))
 			_spins_left = int(payload.get("spins", 0))

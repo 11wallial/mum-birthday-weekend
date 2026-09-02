@@ -61,6 +61,14 @@ floor three, and a draft that can be bought whole is a list, not a decision.
 Stock is weighted towards what the floor has just unlocked. A flat draw from
 everything meant that by floor six the shop was mostly floor-one trinkets.
 
+**The press**, from the first draft: two jobs on the reel — a strike, a
+print, a gilding — priced in chips and kept for the run. The reel is the
+player's to edit, which is CloverPit's core verb and the thing the first
+playtest asked after by name; the works widen the window, the press changes
+what turns in it. A strike never offers to take off what the reel barely
+carries, the wild is never printed more, and gilding names a family where
+there is one, so the fruit is gilded together.
+
 ## 3 — The High Roller Room · **THE STAKE AND THE LADDER**
 
 **Stake.** Wager one to five credits a spin. It pays that multiple back on the

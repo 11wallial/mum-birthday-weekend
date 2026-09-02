@@ -39,6 +39,9 @@ var works_policy: Callable = Callable()
 ## Works the market once the draft has been shopped — sells, signs the slate,
 ## rerolls. Signature: [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var market_policy: Callable = Callable()
+## Works the press once the draft has been shopped. Signature:
+## [code]func(engine: SimEngine, state: RunState) -> void[/code].
+var press_policy: Callable = Callable()
 ## Decides whether a won run takes the House's offer and stays at the table.
 ## Signature: [code]func(state: RunState) -> bool[/code].
 var stay_policy: Callable = Callable()
@@ -62,8 +65,20 @@ const PLAYER_VERBS: Array[StringName] = [
 	&"toggle_hold", &"nudge", &"gamble", &"set_stake",
 	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
 	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
-	&"stay_at_table", &"settle_floor",
+	&"stay_at_table", &"settle_floor", &"press",
 ]
+
+## Jobs the press puts on the table with every draft, and what they do to the
+## reel. A strike takes weight off a symbol, a print adds it, gilding adds to
+## what a symbol pays. Weight per job and credits per gilding are the
+## magnitudes; the prices are chips.
+const PRESS_JOBS: int = 2
+const PRESS_STRIKE_WEIGHT: int = 4
+const PRESS_PRINT_WEIGHT: int = 4
+const PRESS_GILD_CREDITS: int = 2
+const PRESS_STRIKE_PRICE: int = 3
+const PRESS_PRINT_PRICE: int = 3
+const PRESS_GILD_PRICE: int = 4
 
 ## Contracts put on the table before a floor once the back office is open.
 const CONTRACT_SLOTS: int = 3
@@ -92,6 +107,7 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	market_policy = Callable(AutoPlayer, "market")
 	stay_policy = Callable(AutoPlayer, "stay")
 	settle_policy = Callable(AutoPlayer, "settle")
+	press_policy = Callable(AutoPlayer, "press_jobs")
 
 
 ## Hands every decision back to whoever is calling.
@@ -112,6 +128,7 @@ func clear_policies() -> void:
 	market_policy = Callable()
 	stay_policy = Callable()
 	settle_policy = Callable()
+	press_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -238,6 +255,15 @@ func start_run(run_seed: int, options: RunOptions = null) -> RunState:
 	_bus.emit_event(EffectBus.Event.RUN_STARTED, {
 		"seed": run_seed, "cash": state.economy.cash, "debt": state.economy.debt,
 	})
+	# The machine as it ships: hardware already bolted on, the reel already
+	# leaned. Through acquire, so the room fits the modules and the tallies
+	# start, and before the floor opens so the first draw is on this reel.
+	for fitted: StringName in state.options.starting_artifacts:
+		var artifact: ArtifactDef = _content.artifact_by_id(fitted)
+		if artifact != null and not state.owns(fitted):
+			state.acquire(artifact)
+	for key: Variant in state.options.weight_shifts:
+		state.add_weight_shift(StringName(String(key)), int(state.options.weight_shifts[key]))
 	# A challenge can hand a verb over before any floor does. Announced the
 	# way a floor would, so the interface puts it on screen the same way.
 	for early: StringName in state.options.early_systems:
@@ -1183,6 +1209,7 @@ func _do_leave_shop(state: RunState) -> void:
 		return
 	state.shop_offers.clear()
 	state.shop_prices.clear()
+	state.press_offers.clear()
 	# The back office sits between the draft and the stairs. Nobody goes up to
 	# the next floor without signing for it.
 	if _office_is_open(state):
@@ -1284,17 +1311,97 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 	# measuring floor two with its verb switched off.
 	if market_policy.is_valid():
 		market_policy.call(self, state)
+	if press_policy.is_valid():
+		press_policy.call(self, state)
 	if works_policy.is_valid():
 		works_policy.call(self, state)
 
 
-## Fills the draft's slots and prices them.
+## Fills the draft's slots and prices them, and sets the press's jobs.
 func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
 	state.shop_offers = _roll_offers(state, floor_def)
 	state.shop_prices = []
 	for artifact: ArtifactDef in state.shop_offers:
 		state.shop_prices.append(price_for(state, artifact))
 		state.offers_seen[artifact.id] = int(state.offers_seen.get(artifact.id, 0)) + 1
+	state.press_offers = _roll_press(state)
+
+
+## Two jobs for the press, from the shop's own stream: a strike, a print or
+## a gilding, each naming a symbol. The skull is only ever struck; the wild
+## is never printed more; gilding names a family where there is one, so the
+## fruit is gilded together.
+func _roll_press(state: RunState) -> Array[Dictionary]:
+	var jobs: Array[Dictionary] = []
+	var symbols: Array[SymbolDef] = _content.symbols
+	if symbols.is_empty():
+		return jobs
+	var guard: int = 0
+	while jobs.size() < PRESS_JOBS and guard < 12:
+		guard += 1
+		var symbol: SymbolDef = symbols[state.shop_rng.next_int(0, symbols.size() - 1)]
+		var roll: int = state.shop_rng.next_int(0, 2)
+		var job: Dictionary = {}
+		if symbol.is_curse or roll == 0:
+			# Striking a symbol the reel barely carries is a job with nothing
+			# in it; the press only offers to strike what is there.
+			if Probability.symbol_chance(state.reel(), symbol.id) < 0.03:
+				continue
+			job = {"kind": "strike", "symbol": String(symbol.id),
+					"magnitude": PRESS_STRIKE_WEIGHT, "price": PRESS_STRIKE_PRICE}
+		elif roll == 1 and not symbol.is_wild:
+			job = {"kind": "print", "symbol": String(symbol.id),
+					"magnitude": PRESS_PRINT_WEIGHT, "price": PRESS_PRINT_PRICE}
+		else:
+			var target: StringName = symbol.family if symbol.family != &"" else symbol.id
+			job = {"kind": "gild", "symbol": String(target),
+					"magnitude": PRESS_GILD_CREDITS, "price": PRESS_GILD_PRICE}
+		var repeat: bool = false
+		for other: Dictionary in jobs:
+			if other["kind"] == job["kind"] and other["symbol"] == job["symbol"]:
+				repeat = true
+		if not repeat:
+			jobs.append(job)
+	return jobs
+
+
+## Runs the press job at [param index]: strikes a symbol off the reel a
+## little, prints more of one, or gilds what one pays. Permanent for the run,
+## like the works, and paid in chips, like the draft. The reel is the
+## player's to edit; this is the verb that edits it.
+func press(state: RunState, index: int) -> bool:
+	_enter(&"press", [index])
+	var out: bool = _do_press(state, index)
+	_leave()
+	return out
+
+
+func _do_press(state: RunState, index: int) -> bool:
+	if not state.can_press(index):
+		return false
+	var job: Dictionary = state.press_offers[index]
+	var symbol: StringName = StringName(String(job.get("symbol", "")))
+	var magnitude: int = int(job.get("magnitude", 0))
+	var kind: String = String(job.get("kind", ""))
+	match kind:
+		"strike":
+			state.add_weight_shift(symbol, -magnitude)
+		"print":
+			state.add_weight_shift(symbol, magnitude)
+		"gild":
+			state.symbol_value_shifts[symbol] = int(state.symbol_value_shifts.get(symbol, 0)) \
+					+ magnitude
+		_:
+			return false
+	state.economy.debit_chips(int(job.get("price", 0)), &"press")
+	state.press_offers.remove_at(index)
+	state.press_jobs += 1
+	_bus.emit_event(EffectBus.Event.PRESS_RUN, {
+		"kind": kind, "symbol": String(symbol), "magnitude": magnitude,
+		"chance": Probability.symbol_chance(state.reel(), symbol),
+		"floor": state.floor_index,
+	})
+	return true
 
 
 ## What [param artifact] costs this run today, in chips. Public so the

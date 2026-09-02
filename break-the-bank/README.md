@@ -146,6 +146,13 @@ turns a chip price into debt at the House's rate, with the markup on top.
 Priced in credits the draft was free from floor three; priced in chips it is
 never quite affordable, which is what a draft is for.
 
+Beside the draft sits **the press**: two jobs on the reel every floor, paid
+in chips and permanent for the run. *Strike* takes weight off a symbol (the
+skull, usually), *print* adds weight to one, *gild* adds to what a symbol —
+or a whole family, the fruit together — pays. The reel is yours to edit;
+this is where the editing is bought. Per-reel editing is not in the sim
+(one reel serves every drum), and that is the next step on the roadmap.
+
 Clear the debt and the House offers it back, with a chair: a run that stays at
 the table plays on past the last floor, each ante compounding on the one
 before, until an ante is missed. The win is recorded either way. Staying is the
@@ -279,6 +286,16 @@ What remains worth knowing, recorded in `.claude/skills/balance-loop`:
    of its floors — and a person will find the same trade on the numbers.
 
 ## Seeds, dailies and meta-progression
+
+**The machines.** What a run starts on, chosen at the door: the Standard;
+the Overdraft (more cash, more debt); the Lean (less of both, a spin more a
+floor); the High Roller (the stake from the basement, every ante up a
+third); the Strongbox (the vault from the basement, cash and chips in hand,
+payouts down a tenth); the Bone Press (skulls on the payroll and six more of
+them); the Orchard (fruit heavy on the reel, a ledger of it fitted). Each is
+a `MachineDef` under `resources/meta/machines/`, reaches the run only as
+`RunOptions`, opens through an unlock, and can be measured with
+`run_lab.gd --machine=<id>`.
 
 A seed is a run, so a shared seed is a shared run. Seeds are shown and entered as
 five spoken words — `SOLAR-MIRTH-CANDLE-OX-DRIFT` — which survive being read

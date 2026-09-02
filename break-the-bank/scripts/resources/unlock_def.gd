@@ -27,7 +27,8 @@ enum Condition {
 enum Kind {
 	## Adds an artifact to the pool the shop may offer.
 	ARTIFACT,
-	## Makes a starter variant selectable.
+	## Makes a machine selectable. Named for the starter variants it used to
+	## open; the value is written into profiles, so the name stays.
 	STARTER,
 	## Makes a difficulty modifier selectable.
 	DIFFICULTY,

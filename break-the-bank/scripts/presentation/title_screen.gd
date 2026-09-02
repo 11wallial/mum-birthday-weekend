@@ -143,7 +143,7 @@ func _build() -> void:
 	_column = VBoxContainer.new()
 	_column.name = "Column"
 	_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_column.add_theme_constant_override(&"separation", 14)
+	_column.add_theme_constant_override(&"separation", 8)
 	_root.add_child(_column)
 
 	_wordmark = Label.new()
@@ -162,12 +162,12 @@ func _build() -> void:
 
 	_menu = VBoxContainer.new()
 	_menu.name = "Menu"
-	_menu.add_theme_constant_override(&"separation", 8)
+	_menu.add_theme_constant_override(&"separation", 6)
 	_column.add_child(_menu)
 
 	_pickers = VBoxContainer.new()
 	_pickers.name = "Pickers"
-	_pickers.add_theme_constant_override(&"separation", 8)
+	_pickers.add_theme_constant_override(&"separation", 4)
 	_column.add_child(_pickers)
 
 	_settings_box = VBoxContainer.new()
@@ -197,9 +197,9 @@ func _fit() -> void:
 	_column.anchor_bottom = 1.0
 	_column.offset_left = 64.0 * _scale
 	_column.offset_right = 64.0 * _scale + 620.0 * _scale
-	_column.offset_top = 54.0 * _scale
-	_column.offset_bottom = -40.0 * _scale
-	_wordmark.add_theme_font_size_override(&"font_size", int(roundf(54.0 * _scale)))
+	_column.offset_top = 36.0 * _scale
+	_column.offset_bottom = -24.0 * _scale
+	_wordmark.add_theme_font_size_override(&"font_size", int(roundf(46.0 * _scale)))
 	_line.add_theme_font_size_override(&"font_size", int(roundf(16.0 * _scale)))
 	_stats.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
 	if _open:
@@ -282,8 +282,10 @@ func _redraw() -> void:
 ## rungs a win has not opened shown barred and priced in the win it takes.
 func _draw_pickers() -> void:
 	var machines: Array[StringName] = _catalogue.available_starters(_profile)
+	if not machines.has(_profile.selected_starter):
+		_profile.selected_starter = &"standard"
 	_pickers.add_child(_picker_row("MACHINE",
-			_name_of(MetaCatalogue.STARTERS, _profile.selected_starter),
+			_machine_name(_profile.selected_starter),
 			_machine_note(_profile.selected_starter),
 			func(direction: int) -> void:
 				_profile.selected_starter = _cycle(machines, _profile.selected_starter, direction)
@@ -422,7 +424,7 @@ func _button(title: String, note: String, pressed: Callable, primary: bool = tru
 	var button: Button = Button.new()
 	UiSkin.dress_button(button)
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(0.0, 50.0 * _scale)
+	button.custom_minimum_size = Vector2(0.0, 44.0 * _scale)
 	button.pressed.connect(pressed)
 	if primary:
 		button.add_theme_stylebox_override(&"normal", UiSkin.button(&"pressed"))
@@ -451,7 +453,7 @@ func _small(title: String, pressed: Callable) -> Button:
 	button.text = title
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
-	button.custom_minimum_size = Vector2(0.0, 36.0 * _scale)
+	button.custom_minimum_size = Vector2(0.0, 32.0 * _scale)
 	button.pressed.connect(pressed)
 	return button
 
@@ -506,20 +508,33 @@ func _stats_text() -> String:
 		_profile.unlocked.size(), _catalogue.unlocks.size()]
 
 
+func _machine_name(id: StringName) -> String:
+	var machine: MachineDef = _catalogue.machine_by_id(id)
+	return machine.display_name if machine != null else String(id).capitalize()
+
+
+## The machine's own line, and how many more there are to open.
 func _machine_note(id: StringName) -> String:
-	var starter: Dictionary = MetaCatalogue.STARTERS.get(id, {})
-	if starter.is_empty():
-		return ""
-	var parts: PackedStringArray = PackedStringArray()
-	if int(starter.get("cash", 0)) != 0:
-		parts.append("%+d cash" % int(starter["cash"]))
-	if int(starter.get("debt", 0)) != 0:
-		parts.append("%+d debt" % int(starter["debt"]))
-	if int(starter.get("spins", 0)) != 0:
-		parts.append("%+d spins a floor" % int(starter["spins"]))
-	if parts.is_empty():
-		return "The machine as the House keeps it."
-	return ", ".join(parts).capitalize() + "."
+	var machine: MachineDef = _catalogue.machine_by_id(id)
+	var note: String = machine.brief if machine != null else ""
+	var opened: int = _catalogue.available_starters(_profile).size()
+	var total: int = _catalogue.machines.size()
+	if opened < total:
+		var next_locked: String = ""
+		for candidate: MachineDef in _catalogue.machines:
+			if _catalogue.available_starters(_profile).has(candidate.id):
+				continue
+			for unlock: UnlockDef in _catalogue.unlocks:
+				if unlock.kind == UnlockDef.Kind.STARTER and unlock.target_id == candidate.id:
+					next_locked = "%s: %s" % [candidate.display_name,
+							unlock.requirement_text().to_lower()]
+					break
+			if not next_locked.is_empty():
+				break
+		note += "   %d of %d machines open." % [opened, total]
+		if not next_locked.is_empty():
+			note += " Next, %s." % next_locked
+	return note
 
 
 func _challenge_name(id: StringName) -> String:

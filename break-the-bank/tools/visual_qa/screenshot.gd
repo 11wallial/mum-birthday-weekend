@@ -64,6 +64,10 @@ func _initialize() -> void:
 	# frame. "spin" drives through it; this one stops on it.
 	for i: int in 14:
 		_shots.append({"name": "04b_to_draft_%d" % i, "action": "until_draft"})
+	# And the draft on purpose, ante covered: the frames above reach it only
+	# when the blind run happens to cover the first ante, which it rarely does.
+	for i: int in 4:
+		_shots.append({"name": "04c_draft_%d" % i, "action": "draft"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
 	_shots.append({"name": "06_run_setup", "action": "setup"})
 	# Six of the seven systems live on floors a real run takes minutes to reach.
@@ -89,12 +93,17 @@ func _process(delta: float) -> bool:
 
 	var shot: Dictionary = _shots[_index]
 	var wanted: bool = _only.is_empty() or _only.has(String(shot["name"])) \
-			or (String(shot["name"]).begins_with("04b_") and _only.has("04b_draft"))
+			or (String(shot["name"]).begins_with("04b_") and _only.has("04b_draft")) \
+			or (String(shot["name"]).begins_with("04c_") and _only.has("04c_draft"))
 	if not _applied:
-		_apply(String(shot["action"]))
+		var action: String = String(shot["action"])
+		_apply(action)
 		_applied = true
-		# Tweens and particles need time to reach the state worth looking at.
-		_wait = _settle if wanted else 0.05
+		# Tweens and particles need time to reach the state worth looking at —
+		# and a frame that drives the run has to wait for the reels whether
+		# or not it is captured, or the run never gets past the first spin.
+		var drives: bool = action == "spin" or action == "until_draft" or action == "draft"
+		_wait = _settle if wanted or drives else 0.05
 		return false
 	if not wanted:
 		_index += 1
@@ -105,7 +114,10 @@ func _process(delta: float) -> bool:
 	var draft_open: bool = _root_node != null \
 			and _root_node.has_method("debug_shop_open") \
 			and bool(_root_node.call("debug_shop_open"))
-	if not name.begins_with("04b_") or draft_open:
+	if name.begins_with("04c_"):
+		if draft_open:
+			_capture("04c_draft")
+	elif not name.begins_with("04b_") or draft_open:
 		_capture("04b_draft" if name.begins_with("04b_") else name)
 	_index += 1
 	_applied = false
@@ -120,6 +132,13 @@ func _apply(action: String) -> void:
 			_root_node.call("debug_jump_to_floor", int(action.split(":")[1]), 4000)
 		return
 	match action:
+		"draft":
+			# Asked again each frame until the reels have stopped and it opens.
+			if _root_node.has_method("debug_shop_open") \
+					and bool(_root_node.call("debug_shop_open")):
+				return
+			if _root_node.has_method("debug_open_draft"):
+				_root_node.call("debug_open_draft")
 		"until_draft":
 			# Advance only while the draft is closed; once it opens, hold.
 			if _root_node.has_method("debug_shop_open") \

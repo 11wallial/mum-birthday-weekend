@@ -10,6 +10,8 @@ signal buy_requested(index: int)
 signal leave_requested()
 ## Emitted for the market's own moves, once the floor that opens it is past.
 signal market_requested(action: StringName, index: int)
+## A press job was asked for, by index into the state's press offers.
+signal press_requested(index: int)
 
 const REROLL: StringName = &"reroll"
 const SLATE: StringName = &"slate"
@@ -108,12 +110,66 @@ func _redraw() -> void:
 		_title.add_theme_color_override(&"font_color", UiSkin.AMBER)
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
+	_draw_press()
 	_draw_market()
 	if _footer != null:
 		var offers: int = maxi(_state.shop_offers.size(), 1)
 		_footer.text = TouchBar.hint(
 				"1-%d or click to buy     SPACE / Q to leave" % offers,
 				"Tap an offer to buy")
+
+
+## The press: the two jobs on the reel this draft offers, each named for
+## what it does and what it costs, with the symbol it does it to. The reel
+## is the player's to edit, and this is where the editing is bought.
+func _draw_press() -> void:
+	# Its own row under the offers, never among them: the offers container is
+	# one row per artifact, and the number keys index it.
+	var parent: Control = _rows.get_parent() as Control
+	if parent == null:
+		return
+	var old: Node = parent.get_node_or_null(^"Press")
+	if old != null:
+		parent.remove_child(old)
+		old.queue_free()
+	if _state.press_offers.is_empty():
+		return
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Press"
+	row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+	var head: Label = _cell("THE PRESS", 13.0, UiSkin.INK_MUTED)
+	head.custom_minimum_size = Vector2(96.0 * _scale, 0.0)
+	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(head)
+	for i: int in _state.press_offers.size():
+		var job: Dictionary = _state.press_offers[i]
+		var symbol: SymbolDef = ContentDB.shared().symbol_by_id(
+				StringName(String(job.get("symbol", ""))))
+		var name: String = symbol.display_name if symbol != null \
+				else String(job.get("symbol", "")).capitalize()
+		var text: String = ""
+		match String(job.get("kind", "")):
+			"strike":
+				text = "STRIKE the %s  −%d weight" % [name.to_lower(), int(job.get("magnitude", 0))]
+			"print":
+				text = "PRINT more %s  +%d weight" % [name.to_lower(), int(job.get("magnitude", 0))]
+			"gild":
+				text = "GILD the %s  +%d a symbol" % [name.to_lower(), int(job.get("magnitude", 0))]
+		var index: int = i
+		var badge: TextureRect = _symbol_badge(symbol.id if symbol != null else &"",
+				_state.can_press(i))
+		# Room for the badge at the left of the caption: a Button lays out its
+		# own text, so the icon sits in a margin of spaces.
+		var caption: String = "%s%s   %d chips" % [
+			"       " if badge != null else "", text, int(job.get("price", 0))]
+		var chip: Button = _chip(caption, _state.can_press(i), UiSkin.INK,
+				func() -> void: press_requested.emit(index))
+		if badge != null:
+			chip.add_child(badge)
+			badge.position = Vector2(12.0, 8.0) * _scale
+		row.add_child(chip)
+	parent.add_child(row)
+	parent.move_child(row, _rows.get_index() + 1)
 
 
 ## The market's own row: a reroll, and everything the player already owns,
