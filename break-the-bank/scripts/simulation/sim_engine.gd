@@ -1539,17 +1539,33 @@ func _roll_offers(state: RunState, floor_def: FloorDef) -> Array[ArtifactDef]:
 			started[owned.archetype] = int(started.get(owned.archetype, 0)) + 1
 	var pool: Array[ArtifactDef] = []
 	var weights: PackedInt32Array = PackedInt32Array()
+	var candidates: Array[ArtifactDef] = []
+	var members: Dictionary = {}
 	for artifact: ArtifactDef in _content.artifacts:
 		if artifact.min_floor > floor_def.index or state.owns(artifact.id) \
 				or not state.options.allows(artifact):
 			continue
 		if _offer_is_dead(state, artifact):
 			continue
+		candidates.append(artifact)
+		if artifact.archetype != &"":
+			members[artifact.archetype] = int(members.get(artifact.archetype, 0)) + 1
+	var mean_members: float = 1.0
+	if not members.is_empty():
+		var total: int = 0
+		for key: Variant in members:
+			total += int(members[key])
+		mean_members = float(total) / float(members.size())
+	for artifact: ArtifactDef in candidates:
 		pool.append(artifact)
-		var weight: float = float(maxi(1, FRESH_WEIGHT
+		# Weights are kept in tenths so the build balance below has room to
+		# divide without collapsing every artifact to one.
+		var weight: float = 10.0 * float(maxi(1, FRESH_WEIGHT
 				- (floor_def.index - artifact.min_floor) * STALE_STEP))
 		if artifact.archetype != &"" and started.has(artifact.archetype):
 			weight *= maxf(config.offer_build_weight, 0.0)
+		if config.offer_build_balance and artifact.archetype != &"":
+			weight *= mean_members / float(maxi(1, int(members[artifact.archetype])))
 		weights.append(maxi(1, int(round(weight))))
 	var offers: Array[ArtifactDef] = []
 	var dealt: Dictionary = {}

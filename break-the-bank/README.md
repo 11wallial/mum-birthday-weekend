@@ -313,9 +313,14 @@ Lean, the High Roller, the Bone Press and the Orchard are in git at
 no dead offers (an artifact keyed to a symbol the reel cannot land is not
 put out; a draft the purse can buy nothing from is re-dealt one affordable
 slot), a light lean toward the builds the run has started, no more than two
-of one build in a draft, and staleness. The lab reports `top_build_share`
-— the share of winning runs on the most common build — as the
-solved-metagame tell.
+of one build in a draft, staleness, and builds dealt evenly — an artifact's
+weight divided by how many of its build are in the pool. The lab reports
+`top_build_share` — the share of winning runs whose primary build is the
+most common one — as the solved-metagame tell. Measured on 2 September
+2026: before the even deal the Exchange, with thirteen members to the
+others' five or six, was the primary build of 69% of wins at its own
+baseline win rate — availability, not strength; after it, 26%, and the
+batch rose from 15.0% to 17.2% on the variety alone.
 
 **The notice.** The House acts against success, not only on a schedule: a
 single spin paying sixteen pars — most of an ante in one — is loud enough

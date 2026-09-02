@@ -113,3 +113,23 @@ func test_a_draft_is_the_seeds_own() -> void:
 	assert_int(first.size()).is_equal(again.size())
 	for i: int in first.size():
 		assert_str(String(first[i].id)).is_equal(String(again[i].id))
+
+
+func test_a_big_build_is_not_dealt_more_often_than_a_small_one() -> void:
+	# Alpha has eight members, beta two; dealt evenly they show up alike.
+	_content.artifacts.assign([
+		_artifact(&"a1", 2, &"alpha"), _artifact(&"a2", 2, &"alpha"), _artifact(&"a3", 2, &"alpha"),
+		_artifact(&"a4", 2, &"alpha"), _artifact(&"a5", 2, &"alpha"), _artifact(&"a6", 2, &"alpha"),
+		_artifact(&"a7", 2, &"alpha"), _artifact(&"a8", 2, &"alpha"),
+		_artifact(&"b1", 2, &"beta"), _artifact(&"b2", 2, &"beta"),
+	])
+	var alphas: int = 0
+	var betas: int = 0
+	for seed: int in 300:
+		_state = _engine.start_run(seed)
+		for offer: ArtifactDef in _draft():
+			if offer.archetype == &"alpha":
+				alphas += 1
+			else:
+				betas += 1
+	assert_float(float(alphas) / float(maxi(betas, 1))).is_between(0.6, 1.7)

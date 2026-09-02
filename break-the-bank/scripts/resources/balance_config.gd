@@ -120,6 +120,12 @@ extends Resource
 @export var offer_build_weight: float = 1.5
 ## Most offers of one build in a single draft: anti-flood.
 @export var offer_build_cap: int = 2
+## Whether the draft deals builds evenly: an artifact's weight is divided
+## by how many of its build are in the pool against the average, so a
+## build with thirteen members is offered no more often than one with five.
+## Without it the biggest build was the primary build of two winning runs
+## in three — availability, not strength, and it read as a solved game.
+@export var offer_build_balance: bool = true
 ## A symbol an offer is keyed to has to land at least this often for the
 ## offer to be usable; below it the offer is dead and is not put out.
 @export var offer_symbol_floor: float = 0.01

@@ -235,8 +235,11 @@ worth knowing before touching the simulation:
   symbol the reel cannot land, `_offer_is_dead`) is not dealt; a draft the
   purse can buy nothing from is re-dealt one affordable slot; a started
   build is leaned toward by `offer_build_weight` (light, on purpose); no
-  more than `offer_build_cap` of one build in a draft. All off the shop
-  stream. `tests/unit/test_offer_generation.gd` holds each; the lab's
+  more than `offer_build_cap` of one build in a draft; and with
+  `offer_build_balance` an artifact's weight is divided by its build's
+  share of the pool, so a build with thirteen members is dealt no more
+  than one with five — the Exchange was the primary build of 69% of wins
+  on availability alone until it was. All off the shop stream. `tests/unit/test_offer_generation.gd` holds each; the lab's
   `top_build_share` is the solved-metagame tell (the guide wants it under
   a quarter of wins).
 - The House notices: `SimEngine._observe_notice` on every banked spin, at
