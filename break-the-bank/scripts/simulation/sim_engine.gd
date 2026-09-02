@@ -36,6 +36,20 @@ var launder_policy: Callable = Callable()
 ## Fits reels and rows when the machine can be paid for. Signature:
 ## [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var works_policy: Callable = Callable()
+## Works the market once the draft has been shopped — sells, signs the slate,
+## rerolls. Signature: [code]func(engine: SimEngine, state: RunState) -> void[/code].
+var market_policy: Callable = Callable()
+
+## Every verb a player's hands can reach that needs an opinion behind it, named
+## by the public method that is the verb. [constant AutoPlayer.COVERAGE] has to
+## name an opinion for each, and a batch has to be seen using each, or the lab
+## is measuring a game with that verb switched off. The parity suite holds the
+## two lists together.
+const PLAYER_VERBS: Array[StringName] = [
+	&"toggle_hold", &"nudge", &"gamble", &"set_stake",
+	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
+	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
+]
 
 ## Contracts put on the table before a floor once the back office is open.
 const CONTRACT_SLOTS: int = 3
@@ -61,6 +75,7 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	vault_policy = Callable(AutoPlayer, "vault")
 	launder_policy = Callable(AutoPlayer, "launder")
 	works_policy = Callable(AutoPlayer, "works")
+	market_policy = Callable(AutoPlayer, "market")
 
 
 ## Hands every decision back to whoever is calling.
@@ -78,6 +93,7 @@ func clear_policies() -> void:
 	vault_policy = Callable()
 	works_policy = Callable()
 	launder_policy = Callable()
+	market_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -844,6 +860,12 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 		var choice: int = int(shop_policy.call(state, state.shop_offers, state.shop_prices))
 		if not buy_offer(state, choice):
 			break
+	# The market is a second pass over the same draft: a stale trinket sold to
+	# afford what is on the table, the slate when the purse cannot, one reroll
+	# when nothing was worth having. A batch that never did any of those was
+	# measuring floor two with its verb switched off.
+	if market_policy.is_valid():
+		market_policy.call(self, state)
 	if works_policy.is_valid():
 		works_policy.call(self, state)
 

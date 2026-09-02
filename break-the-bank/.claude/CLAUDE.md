@@ -119,7 +119,11 @@ worth knowing before touching the simulation:
 - `AutoPlayer` is that policy — a competent player's habits, kept out of the
   engine so "what the game allows" and "what a player does" stay separable. Add
   a verb and give `AutoPlayer` an opinion about it, or the lab measures a game
-  with that system switched off.
+  with that system switched off. This is enforced: list the verb in
+  `SimEngine.PLAYER_VERBS`, name its opinion in `AutoPlayer.COVERAGE`, and
+  `tests/simulation/test_autoplayer_parity.gd` fails the build until a batch
+  is actually seen using it. The market went unplayed by every batch for a
+  milestone because nothing checked.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.

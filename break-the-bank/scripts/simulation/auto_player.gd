@@ -30,6 +30,40 @@ const VAULT_PANIC_SPINS: int = 3
 ## whole thing: the machine is expected to earn the rest of it, which is the bet
 ## the engine room is asking the player to make.
 const WORKS_RESERVE: float = 0.55
+## Floors an artifact has to be behind the run before this player will sell it
+## to afford something on the table. Three: the machine has outgrown it.
+const STALE_FLOORS: int = 3
+## Most of the purse a reroll may cost before the draft is simply left as it is.
+const REROLL_SHARE: float = 0.1
+## What the slate may put on the debt, as a share of the coming ante, and how
+## far the whole debt may stand above that ante before this player stops
+## signing. Modest, because the slate is the one move in the game that turns
+## future trouble into present power, and a policy that leaned on it would
+## report the win rate of a run that ends on the final bill every time.
+const SLATE_SHARE: float = 0.5
+const SLATE_DEBT_ANTES: float = 2.0
+
+## Which opinion covers which verb, by the static method that holds it. The
+## parity suite holds this to [constant SimEngine.PLAYER_VERBS]: a verb added
+## to the engine without a row here fails the build, because a batch would
+## otherwise measure a game with that verb switched off — which is exactly how
+## the vault and the works went unplayed for every batch before Milestone 2.
+const COVERAGE: Dictionary = {
+	&"toggle_hold": &"hold",
+	&"nudge": &"nudge",
+	&"gamble": &"gamble",
+	&"set_stake": &"stake",
+	&"deposit": &"vault",
+	&"withdraw": &"vault",
+	&"buy_reel": &"works",
+	&"buy_row": &"works",
+	&"launder": &"launder",
+	&"buy_offer": &"shop",
+	&"reroll_shop": &"market",
+	&"sell": &"market",
+	&"buy_on_slate": &"market",
+	&"sign_contract": &"contract",
+}
 
 
 ## Buys the most expensive artifact it can afford while keeping a share of the
@@ -226,6 +260,93 @@ static func works(engine: SimEngine, state: RunState) -> void:
 				and engine.buy_reel(state):
 			continue
 		break
+
+
+## Works the market after the draft has been shopped: sells a trinket the run
+## has outgrown to afford the thing on the table, signs the slate when the purse
+## cannot, and buys one reroll when nothing on offer was worth having.
+##
+## Three habits a person actually has, each kept modest. The point is not to
+## play the market well — it is that a batch which never rerolls, never sells
+## and never signs the slate is measuring floor two with its verb switched off,
+## and the lab had done exactly that since the market was built.
+static func market(engine: SimEngine, state: RunState) -> void:
+	if not state.has_system(Systems.MARKET) or state.phase != RunState.Phase.SHOPPING:
+		return
+	var floor_def: FloorDef = state.current_floor()
+	if floor_def == null:
+		return
+	var reserve: int = maxi(state.config.spin_cost,
+			int(round(float(_next_ante(state)) * SHOP_RESERVE)))
+	# Nothing bought and nothing affordable: one cheap reroll, then shop again.
+	if (state.shop_offers.size() >= floor_def.shop_slots and state.shop_rerolls == 0
+			and state.reroll_price() <= int(float(state.economy.cash) * REROLL_SHARE)
+			and _dearest_affordable(state, reserve) < 0):
+		if engine.reroll_shop(state):
+			var choice: int = shop(state, state.shop_offers, state.shop_prices)
+			while choice >= 0 and engine.buy_offer(state, choice):
+				choice = shop(state, state.shop_offers, state.shop_prices)
+	var wanted: int = _dearest_offer(state)
+	if wanted < 0:
+		return
+	var short: int = state.shop_prices[wanted] - (state.economy.cash - reserve)
+	# Only for the thing the purse nearly covers. Nobody signs for what they
+	# could not have afforded half of.
+	if short <= 0 or short * 2 > state.shop_prices[wanted]:
+		return
+	# A trinket from floors ago, sold to close the gap.
+	var stale: int = _stalest_owned(state)
+	if stale >= 0 and _sellback(state, state.owned[stale]) >= short:
+		if engine.sell(state, stale) > 0 and engine.buy_offer(state, wanted):
+			return
+	# Or the slate, once, when the bill it adds stays small next to the ante.
+	var owed: int = int(ceil(float(state.shop_prices[wanted])
+			* (1.0 + state.config.slate_markup_percent / 100.0)))
+	var next_ante: int = _next_ante(state)
+	if (owed <= int(float(next_ante) * SLATE_SHARE)
+			and state.economy.debt + owed <= int(float(next_ante) * SLATE_DEBT_ANTES)):
+		engine.buy_on_slate(state, wanted)
+
+
+## Index of the dearest offer on the table, or -1 with nothing on it.
+static func _dearest_offer(state: RunState) -> int:
+	var best: int = -1
+	for i: int in state.shop_offers.size():
+		if best < 0 or state.shop_prices[i] > state.shop_prices[best]:
+			best = i
+	return best
+
+
+## Index of the dearest offer the purse can cover past [param reserve], or -1.
+static func _dearest_affordable(state: RunState, reserve: int) -> int:
+	var best: int = -1
+	for i: int in state.shop_offers.size():
+		if state.shop_prices[i] > state.economy.cash - reserve:
+			continue
+		if best < 0 or state.shop_prices[i] > state.shop_prices[best]:
+			best = i
+	return best
+
+
+## Index into the owned artifacts of the cheapest one the run has outgrown by
+## [constant STALE_FLOORS] floors, or -1 when nothing is that old.
+static func _stalest_owned(state: RunState) -> int:
+	var best: int = -1
+	for i: int in state.owned.size():
+		var artifact: ArtifactDef = state.owned[i]
+		if artifact.min_floor > state.floors_cleared - STALE_FLOORS:
+			continue
+		if best < 0 or artifact.cost < state.owned[best].cost:
+			best = i
+	return best
+
+
+## What the market would hand back for [param artifact] today.
+static func _sellback(state: RunState, artifact: ArtifactDef) -> int:
+	var floor_def: FloorDef = state.current_floor()
+	var worth: int = state.economy.price_of(artifact, state.config,
+			state.floors_cleared, floor_def.ante if floor_def != null else 0)
+	return maxi(1, int(floor(float(worth) * state.config.sellback_percent / 100.0)))
 
 
 ## Has a word once the House has started taking the good symbols off the reel.

@@ -130,10 +130,13 @@ Every dial is in `resources/rules/balance_config.tres`; nothing above is a
 constant in the simulation.
 
 `AutoPlayer` drives the same public calls a player's hands do — `toggle_hold`,
-`nudge`, `gamble`, `deposit`, `buy_row`, `launder`, `sign_contract` — so the lab
-measures the game people play rather than a stripped-down version of it.
+`nudge`, `gamble`, `deposit`, `buy_row`, `launder`, `sign_contract`, and the
+market's `reroll_shop`, `sell` and `buy_on_slate` — so the lab measures the
+game people play rather than a stripped-down version of it.
 `SimEngine.clear_policies()` hands all of them back when a human is at the
-machine.
+machine. `SimEngine.PLAYER_VERBS` is the list, `AutoPlayer.COVERAGE` names the
+opinion behind each, and the parity suite fails the build when either falls
+behind the other or a batch is never seen using a verb.
 
 At the time of writing the batch lands around a 19% win rate with deaths
 climbing floor by floor, plus a further fifth of runs that clear the House and
