@@ -39,10 +39,12 @@ func record(verb: StringName, args: Array = []) -> void:
 ## that is no longer the one the player was playing.
 static func replay(engine: SimEngine, state: RunState, entries: Array) -> int:
 	for i: int in entries.size():
-		if state.is_over():
-			return i
 		var entry: Variant = entries[i]
 		if not (entry is Array) or (entry as Array).is_empty():
+			return i
+		# A won run can still take the House's offer; every other verb needs a
+		# live one.
+		if state.is_over() and String((entry as Array)[0]) != "stay_at_table":
 			return i
 		if not _apply(engine, state, entry as Array):
 			return i
@@ -96,6 +98,8 @@ static func _apply(engine: SimEngine, state: RunState, entry: Array) -> bool:
 			engine.buy_on_slate(state, arg)
 		"sign_contract":
 			engine.sign_contract(state, arg)
+		"stay_at_table":
+			engine.stay_at_table(state)
 		_:
 			return false
 	return true

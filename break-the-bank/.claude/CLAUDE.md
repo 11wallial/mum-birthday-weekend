@@ -110,6 +110,10 @@ system stays for the rest of the run. `docs/FLOORS.md` is the design; the rules
 worth knowing before touching the simulation:
 
 - Gate on `RunState.has_system()`, never on a floor index.
+- The floors past the last authored one exist only for a run that has stayed
+  at the table, made by `Endless` from the last floor. Ask `state.floor_at()`
+  for the floor after this one, never `content.floor_at()`: the content says
+  the run is over, the state knows whether the House has kept it.
 - A spin does not end when the reels stop. `SimEngine.spin` leaves the run at a
   decision (`RunState.Decision`); `collect` is what moves the credits. The view
   animates on `SPIN_RESOLVED` and celebrates on `PAYOUT_CALCULATED`.

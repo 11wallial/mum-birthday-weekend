@@ -127,6 +127,11 @@ pattern bonus. Clear the ante, shop for artifacts, take the next floor. Clear al
 seven and you still have to repay the debt that has been compounding since the
 first spin.
 
+Clear the debt and the House offers it back, with a chair: a run that stays at
+the table plays on past the last floor, each ante compounding on the one
+before, until an ante is missed. The win is recorded either way. Staying is the
+leaderboard's mode — how many floors after hours a build lasted.
+
 Debt is a running cost, not a closing bill. From floor 2 it charges a vig — a
 percentage of the principal, in cash, due *before* the ante, so every floor it
 competes with survival. Paying the vig is interest only and never reduces what

@@ -122,6 +122,28 @@ attention.
 The count resets with the floor. It is a floor's worth of attention, not a
 run's.
 
+## After hours · **STAYING AT THE TABLE**
+
+Clearing the seventh floor and repaying the debt is the win, and it is
+recorded as one. Then the House makes its counter-offer: the debt back, and a
+chair. A run that stays gets its repaid debt lent again — so the vig resumes
+and the clock keeps running — and the floors go on past the last. There is no
+floor eight in the content; the floors after hours are made by `Endless` from
+the last authored one, each ante `endless_ante_growth` times the one before,
+the draft still open, the back office still signing, until an ante is missed.
+Then the House keeps you. Or until dawn: after `endless_floors_max` floors the
+House closes, and a run still standing walks out with the win the table could
+not take back — because a build that has outgrown the ante would never miss
+one, and a run that cannot end is not a run.
+
+What the leaderboard measures for a run that stayed is how many floors it
+lasted at a table that gets dearer every time. The default lab batch does not
+stay — it measures the game that ends — and a batch told to
+(`RunOptions.stay_at_table`) measures the curve after it.
+
+The offer is answered with the spin key, at the moment it is made, and never
+by a lost run.
+
 ---
 
 ## Balance

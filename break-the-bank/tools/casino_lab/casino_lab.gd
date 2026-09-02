@@ -10,7 +10,10 @@ extends RefCounted
 const PERCENTILES: Array = [50.0, 95.0, 99.0]
 
 ## Simulates [param count] runs from consecutive seeds and returns the report.
-static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
+## [param options] is what every run starts with: the default measures the
+## whole content set and the game that ends; one told to stay at the table
+## measures the floors after hours.
+static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null) -> Dictionary:
 	var content: ContentDB = ContentDB.shared()
 	var bus: EffectBus = EffectBus.new()
 	bus.muted = true
@@ -51,8 +54,11 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 
 	var started: int = Time.get_ticks_msec()
 	for i: int in count:
-		var state: RunState = engine.simulate_run(base_seed + i)
-		var won: bool = state.phase == RunState.Phase.WON
+		var state: RunState = engine.simulate_run(base_seed + i,
+				options.duplicate_options() if options != null else null)
+		# A run that stayed at the table had already won; how it ended after
+		# hours is the floors-cleared figure's business, not the win rate's.
+		var won: bool = state.phase == RunState.Phase.WON or state.endless
 		earnings.append(state.economy.lifetime_earned)
 		spins.append(state.spins_taken)
 		floors.append(state.floors_cleared)
@@ -102,6 +108,7 @@ static func run_batch(count: int, base_seed: int = 1) -> Dictionary:
 	return {
 		"runs": count,
 		"base_seed": base_seed,
+		"stay_at_table": options != null and options.stay_at_table,
 		"elapsed_ms": Time.get_ticks_msec() - started,
 		"win_rate": win_rate,
 		"death_rate": 1.0 - win_rate,

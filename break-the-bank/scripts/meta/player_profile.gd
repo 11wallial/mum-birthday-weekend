@@ -14,6 +14,8 @@ var wins: int = 0
 var best_floor: int = 0
 var lifetime_earned: int = 0
 var debt_cleared: int = 0
+## Floors cleared past the last, on the run that stayed at the table longest.
+var deepest_after_hours: int = 0
 ## Ids of unlocks already earned, so a message is only shown once.
 var unlocked: Array[StringName] = []
 var selected_starter: StringName = &"standard"
@@ -42,6 +44,16 @@ func record_run(state: RunState, catalogue: Array[UnlockDef]) -> Array[UnlockDef
 	debt_cleared += maxi(0, state.config.starting_debt - state.economy.debt)
 	_remember_score(state)
 	return evaluate(catalogue)
+
+
+## Folds in what a run earned after it won and stayed at the table. The win
+## was recorded when it happened; this is only what came after, so nothing is
+## counted twice.
+func record_stayed(state: RunState, content_floors: int) -> void:
+	lifetime_earned += maxi(0, state.economy.lifetime_earned - state.earned_at_win)
+	best_floor = maxi(best_floor, state.floors_cleared)
+	deepest_after_hours = maxi(deepest_after_hours, state.floors_cleared - content_floors)
+	_remember_score(state)
 
 
 ## Grants every unlock whose condition is now met, and returns the new ones.
@@ -92,6 +104,7 @@ func to_dict() -> Dictionary:
 		"best_floor": best_floor,
 		"lifetime_earned": lifetime_earned,
 		"debt_cleared": debt_cleared,
+		"deepest_after_hours": deepest_after_hours,
 		"unlocked": ids,
 		"selected_starter": String(selected_starter),
 		"selected_difficulty": String(selected_difficulty),
@@ -106,6 +119,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.best_floor = int(data.get("best_floor", 0))
 	profile.lifetime_earned = int(data.get("lifetime_earned", 0))
 	profile.debt_cleared = int(data.get("debt_cleared", 0))
+	profile.deepest_after_hours = int(data.get("deepest_after_hours", 0))
 	profile.selected_starter = StringName(data.get("selected_starter", "standard"))
 	profile.selected_difficulty = StringName(data.get("selected_difficulty", "standard"))
 	var records: Variant = data.get("records", {})

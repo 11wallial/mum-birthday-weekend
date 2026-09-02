@@ -63,6 +63,7 @@ const COVERAGE: Dictionary = {
 	&"sell": &"market",
 	&"buy_on_slate": &"market",
 	&"sign_contract": &"contract",
+	&"stay_at_table": &"stay",
 }
 
 
@@ -207,7 +208,7 @@ static func vault(engine: SimEngine, state: RunState) -> void:
 		return
 	# Only while there are floors left to be paid a dividend on. On the last one
 	# a deposit is just cash that cannot be spent.
-	var next_floor: FloorDef = state.content.floor_at(state.floor_index + 1)
+	var next_floor: FloorDef = state.floor_at(state.floor_index + 1)
 	if next_floor == null:
 		return
 	# Never past the point the collateral caps out, and never below what it
@@ -360,9 +361,17 @@ static func launder(state: RunState) -> bool:
 	return state.economy.cash - price >= reserve
 
 
+## Stays at the table when the batch has been told to. There is no judgement
+## in it: a person weighs the offer at the machine, the lab measures what
+## happens to a run that takes it, and the default batch keeps measuring the
+## game that ends.
+static func stay(state: RunState) -> bool:
+	return state.options.stay_at_table
+
+
 ## The ante waiting on the next floor, or this one when there is no next.
 static func _next_ante(state: RunState) -> int:
-	var next_floor: FloorDef = state.content.floor_at(state.floor_index + 1)
+	var next_floor: FloorDef = state.floor_at(state.floor_index + 1)
 	if next_floor == null:
 		next_floor = state.current_floor()
 	return next_floor.ante if next_floor != null else 0

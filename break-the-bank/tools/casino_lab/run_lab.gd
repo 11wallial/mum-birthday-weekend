@@ -2,7 +2,10 @@
 ##
 ## Usage:
 ##   godot --headless --script res://tools/casino_lab/run_lab.gd -- \
-##       --runs=10000 --seed=1 --out=user://balance_report.json
+##       --runs=10000 --seed=1 --out=user://balance_report.json [--stay]
+##
+## --stay tells every run to take the House's offer and play on past the last
+## floor, which measures the endless curve rather than the game that ends.
 ##
 ## Writes a JSON report and prints a short summary. The agent balance loop reads
 ## the JSON, edits resources/rules/*.tres, and runs it again.
@@ -18,8 +21,12 @@ func _initialize() -> void:
 	var base_seed: int = int(args.get("seed", DEFAULT_SEED))
 	var out_path: String = String(args.get("out", "user://balance_report.json"))
 	var lift: float = float(args.get("lift", 0.25))
+	var options: RunOptions = null
+	if args.has("stay"):
+		options = RunOptions.new()
+		options.stay_at_table = true
 
-	var report: Dictionary = CasinoLab.run_batch(runs, base_seed)
+	var report: Dictionary = CasinoLab.run_batch(runs, base_seed, options)
 	report["anomalies"] = CasinoLab.find_anomalies(report, lift)
 	_write(out_path, report)
 	_summarise(report, out_path)

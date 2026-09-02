@@ -21,6 +21,11 @@ var bonus_spins: int = 0
 ## Labels for telemetry, so a leaderboard row says which ruleset produced it.
 var starter_id: StringName = &"standard"
 var difficulty_id: StringName = &"standard"
+## Whether an automated run takes the House's offer and stays at the table
+## after clearing the debt. A person decides this at the machine; the lab has
+## to be told, so a batch can measure the endless floors on purpose and the
+## default batch keeps measuring the game that ends.
+var stay_at_table: bool = false
 
 
 ## True when the shop may offer [param artifact].
@@ -52,6 +57,7 @@ func to_dict() -> Dictionary:
 		"bonus_spins": bonus_spins,
 		"starter_id": String(starter_id),
 		"difficulty_id": String(difficulty_id),
+		"stay_at_table": stay_at_table,
 	}
 
 
@@ -67,6 +73,7 @@ static func from_dict(data: Dictionary) -> RunOptions:
 	options.bonus_spins = int(data.get("bonus_spins", 0))
 	options.starter_id = StringName(String(data.get("starter_id", "standard")))
 	options.difficulty_id = StringName(String(data.get("difficulty_id", "standard")))
+	options.stay_at_table = bool(data.get("stay_at_table", false))
 	return options
 
 
@@ -79,4 +86,5 @@ func duplicate_options() -> RunOptions:
 	copy.bonus_spins = bonus_spins
 	copy.starter_id = starter_id
 	copy.difficulty_id = difficulty_id
+	copy.stay_at_table = stay_at_table
 	return copy

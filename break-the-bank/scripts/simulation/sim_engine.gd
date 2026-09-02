@@ -39,6 +39,9 @@ var works_policy: Callable = Callable()
 ## Works the market once the draft has been shopped — sells, signs the slate,
 ## rerolls. Signature: [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var market_policy: Callable = Callable()
+## Decides whether a won run takes the House's offer and stays at the table.
+## Signature: [code]func(state: RunState) -> bool[/code].
+var stay_policy: Callable = Callable()
 
 ## Where the verbs go when a run is being kept: null in a batch, a [RunJournal]
 ## when a person is playing and the run has to survive the app closing. Only
@@ -55,6 +58,7 @@ const PLAYER_VERBS: Array[StringName] = [
 	&"toggle_hold", &"nudge", &"gamble", &"set_stake",
 	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
 	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
+	&"stay_at_table",
 ]
 
 ## Contracts put on the table before a floor once the back office is open.
@@ -82,6 +86,7 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	launder_policy = Callable(AutoPlayer, "launder")
 	works_policy = Callable(AutoPlayer, "works")
 	market_policy = Callable(AutoPlayer, "market")
+	stay_policy = Callable(AutoPlayer, "stay")
 
 
 ## Hands every decision back to whoever is calling.
@@ -100,6 +105,7 @@ func clear_policies() -> void:
 	works_policy = Callable()
 	launder_policy = Callable()
 	market_policy = Callable()
+	stay_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -226,16 +232,24 @@ func start_run(run_seed: int, options: RunOptions = null) -> RunState:
 
 
 ## Plays a run to its end and returns the final state.
+##
+## A won run is put the House's offer, through [member stay_policy]; a batch
+## told to stay plays on past the last floor until an ante is missed.
 func simulate_run(run_seed: int, options: RunOptions = null) -> RunState:
 	var state: RunState = start_run(run_seed, options)
 	var guard: int = 0
-	while not state.is_over():
-		step(state)
-		guard += 1
-		if guard > 100000:
-			push_error("SimEngine: run %d failed to terminate" % run_seed)
-			_end_run(state, RunState.Phase.LOST, &"nonterminating")
-			break
+	while true:
+		while not state.is_over():
+			step(state)
+			guard += 1
+			if guard > 100000:
+				push_error("SimEngine: run %d failed to terminate" % run_seed)
+				_end_run(state, RunState.Phase.LOST, &"nonterminating")
+				return state
+		if (state.phase == RunState.Phase.WON and stay_policy.is_valid()
+				and bool(stay_policy.call(state)) and stay_at_table(state)):
+			continue
+		break
 	return state
 
 
@@ -885,6 +899,12 @@ func _close_floor(state: RunState) -> void:
 		"debt": state.economy.debt,
 		"serviced": serviced,
 	})
+	# Dawn. The House closes after so many floors after hours, and a run still
+	# standing walks out: the win the table could not take back.
+	if state.endless and state.floors_cleared - _content.floors.size() \
+			>= state.config.endless_floors_max:
+		_end_run(state, RunState.Phase.WON, &"dawn")
+		return
 	state.phase = RunState.Phase.SHOPPING
 	_run_shop(state, floor_def)
 
@@ -908,9 +928,43 @@ func _finish_run(state: RunState) -> void:
 		if state.economy.cash < state.economy.debt:
 			_end_run(state, RunState.Phase.LOST, &"debt_unpaid")
 			return
+		state.debt_repaid = state.economy.debt
 		state.economy.debit(state.economy.debt, &"debt_repaid")
 		state.economy.debt = 0
 	_end_run(state, RunState.Phase.WON, &"cleared_all_floors")
+
+
+## Takes the House's offer: the debt back, and the floors past the last.
+##
+## Only a run that has won can stay — the offer is the counter-offer to
+## clearing the debt — and only once. What was just repaid is lent again, so
+## the vig resumes and the clock keeps running, and the floors from here are
+## made by [Endless], each ante compounding on the last, until one is missed.
+## What the leaderboard then measures is how long a run lasted at a table
+## that gets dearer every floor.
+func stay_at_table(state: RunState) -> bool:
+	_enter(&"stay_at_table", [])
+	var out: bool = _do_stay_at_table(state)
+	_leave()
+	return out
+
+
+func _do_stay_at_table(state: RunState) -> bool:
+	if state.phase != RunState.Phase.WON or state.endless:
+		return false
+	if state.end_reason != &"cleared_all_floors":
+		return false
+	state.endless = true
+	state.end_reason = &""
+	state.earned_at_win = state.economy.lifetime_earned
+	state.economy.debt = state.debt_repaid
+	_bus.emit_event(EffectBus.Event.TABLE_KEPT, {
+		"debt": state.economy.debt,
+		"floor": state.floor_index,
+		"floors_cleared": state.floors_cleared,
+	})
+	begin_floor(state)
+	return true
 
 
 func _end_run(state: RunState, phase: RunState.Phase, reason: StringName) -> void:
@@ -991,7 +1045,7 @@ func _do_leave_shop(state: RunState) -> void:
 ## gets to exist for — the back office is that floor's whole idea, and it was
 ## being used twice.
 func _office_is_open(state: RunState) -> bool:
-	var next_floor: FloorDef = _content.floor_at(state.floor_index + 1)
+	var next_floor: FloorDef = state.floor_at(state.floor_index + 1)
 	if next_floor == null:
 		return false
 	return (state.has_system(Systems.CONTRACTS)

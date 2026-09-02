@@ -69,6 +69,17 @@ var last_line: Array[SymbolDef] = []
 var last_pattern: Probability.Pattern = Probability.Pattern.NONE
 ## Reason the run ended, e.g. &"ante_unpaid" or &"cleared_all_floors".
 var end_reason: StringName = &""
+## True once the run has taken the House's offer and stayed past the last
+## authored floor. The floors from there are made by [Endless].
+var endless: bool = false
+## The debt repaid at the win, which is what the House lends back to a run
+## that stays. Zero until then.
+var debt_repaid: int = 0
+## Lifetime earnings at the moment the run won, so the profile can count what
+## an endless run earned after that without counting the win twice.
+var earned_at_win: int = 0
+## Floors made for an endless run, kept so each is built once.
+var _endless_floors: Dictionary = {}
 ## Artifacts on offer while [member phase] is SHOPPING, and what each costs.
 ## Both are cleared when the shop closes.
 var shop_offers: Array[ArtifactDef] = []
@@ -168,7 +179,19 @@ func is_deciding() -> bool:
 
 
 func current_floor() -> FloorDef:
-	return content.floor_at(floor_index)
+	return floor_at(floor_index)
+
+
+## The floor at [param index]: authored while there is one, made by [Endless]
+## past the last once the run has stayed at the table, and null otherwise —
+## which is how a run that has not stayed knows it is over.
+func floor_at(index: int) -> FloorDef:
+	var authored: FloorDef = content.floor_at(index)
+	if authored != null or not endless:
+		return authored
+	if not _endless_floors.has(index):
+		_endless_floors[index] = Endless.floor_for(content, index)
+	return _endless_floors[index]
 
 
 func is_over() -> bool:
@@ -296,6 +319,7 @@ func snapshot() -> Dictionary:
 		"contract": String(contract.id) if contract != null else "",
 		"extra_reels": extra_reels,
 		"extra_rows": extra_rows,
+		"endless": endless,
 	}
 	data.merge(economy.snapshot())
 	return data

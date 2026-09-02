@@ -21,6 +21,16 @@ func before() -> void:
 		bus.recording = true
 		engine.simulate_run(51000 + run)
 		_log.append_array(bus.event_log)
+	# The House's offer is only taken when a batch is told to, so a handful of
+	# runs with the option on is the only way to see it happen.
+	var stayer: RunOptions = RunOptions.new()
+	stayer.stay_at_table = true
+	for run: int in 40:
+		var engine: SimEngine = SimEngine.new()
+		var bus: EffectBus = engine.get_bus()
+		bus.recording = true
+		engine.simulate_run(52000 + run, stayer)
+		_log.append_array(bus.event_log)
 
 
 ## True when some recorded event of [param kind] satisfies [param test].
@@ -74,6 +84,8 @@ func _proof(verb: StringName) -> bool:
 			return _seen(EffectBus.Event.SLATE_SIGNED)
 		&"sign_contract":
 			return _seen(EffectBus.Event.CONTRACT_SIGNED)
+		&"stay_at_table":
+			return _seen(EffectBus.Event.TABLE_KEPT)
 		_:
 			return false
 
@@ -107,7 +119,7 @@ func test_this_suite_knows_how_to_prove_every_verb() -> void:
 		var known: bool = verb in [
 			&"toggle_hold", &"nudge", &"gamble", &"set_stake", &"deposit", &"withdraw",
 			&"buy_reel", &"buy_row", &"launder", &"buy_offer", &"reroll_shop", &"sell",
-			&"buy_on_slate", &"sign_contract",
+			&"buy_on_slate", &"sign_contract", &"stay_at_table",
 		]
 		assert_bool(known).override_failure_message(
 				"add a proof for %s to test_autoplayer_parity.gd" % verb).is_true()

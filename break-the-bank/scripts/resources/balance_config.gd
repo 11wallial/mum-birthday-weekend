@@ -109,3 +109,16 @@ extends Resource
 ## Floors cleared before the vig starts. The first floor is the tutorial; a
 ## debt payment on top of the opening ante just ends runs before they begin.
 @export var debt_grace_floors: int = 1
+
+## How much each floor past the last authored one raises the ante on the one
+## before it, for a run that stays at the table. The floors are made, not
+## authored — see [Endless] — so this is the whole difficulty curve of the
+## endless game, and the number the leaderboard is really measuring.
+@export var endless_ante_growth: float = 1.35
+## Spins added to every endless floor's allowance. Zero keeps the last floor's.
+@export var endless_spins_bonus: int = 0
+## Floors after hours before the House closes. A build that outgrows the
+## ante's growth would otherwise never miss one, and a run that cannot end is
+## not a run; at dawn the doors open and the run is a win. This is also the
+## top of the leaderboard's scale.
+@export var endless_floors_max: int = 24

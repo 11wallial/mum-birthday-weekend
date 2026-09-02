@@ -60,6 +60,10 @@ var _granted: Array[Dictionary] = []
 ## True while a save is waiting for the end of the frame. Every move marks it;
 ## one write happens.
 var _save_pending: bool = false
+## True once this run's win has gone into the profile and the board. A run
+## that stays at the table ends a second time, and that ending is a record of
+## how far it got, not a second run.
+var _won_recorded: bool = false
 
 
 func _ready() -> void:
@@ -131,6 +135,7 @@ func new_run(chosen_seed: int, daily_key: String = "") -> void:
 	RunSave.clear()
 	_current_seed = actual_seed
 	_daily_key = daily_key
+	_won_recorded = false
 	engine = SimEngine.new()
 	# A human is every policy here. An engine still holding its automated ones
 	# would answer the nudge trail and the ladder before the reels had stopped.
@@ -170,7 +175,9 @@ func _resume_saved_run() -> bool:
 	var replayed: RunState = replayer.start_run(journal.seed_value, journal.options)
 	var stopped: int = RunJournal.replay(replayer, replayed, journal.entries)
 	bus.muted = false
-	if stopped >= 0 or replayed.is_over():
+	# A run closed at the win screen, offer unanswered, is still on the table.
+	var offered: bool = replayed.phase == RunState.Phase.WON and not replayed.endless
+	if stopped >= 0 or (replayed.is_over() and not offered):
 		push_warning("CasinoRoom: the saved run no longer replays past move %d; starting fresh"
 				% (stopped if stopped >= 0 else journal.entries.size()))
 		RunSave.clear()
@@ -180,6 +187,9 @@ func _resume_saved_run() -> bool:
 	engine.journal = journal
 	_current_seed = journal.seed_value
 	_daily_key = journal.daily_key
+	# A resumed run that has stayed at the table had its win recorded before
+	# the game closed.
+	_won_recorded = state.endless
 	_bind_viewers(bus, journal.seed_value)
 	engine.announce(state)
 	if _slot_view != null:
@@ -190,6 +200,15 @@ func _resume_saved_run() -> bool:
 	_sync_deck()
 	_refresh_diegetic()
 	_prompt_decision()
+	if offered:
+		# The win was recorded before the game closed. Put the offer back up.
+		_won_recorded = true
+		_set_prompt("\n".join([
+			"RUN OVER — cleared_all_floors",
+			Endless.OFFER,
+			TouchBar.hint("SPACE to stay at the table     F5 for a new run     F2 for setup",
+					"TAP to stay at the table — or New run / Setup, top right"),
+		]), true)
 	print("Break the Bank — resumed seed %d (%s) on floor %d, %d moves in" % [
 		journal.seed_value, SeedBook.to_code(journal.seed_value),
 		state.floor_index, journal.entries.size()])
@@ -479,7 +498,9 @@ func _flush_save() -> void:
 	_save_pending = false
 	if state == null or engine == null or engine.journal == null:
 		return
-	if state.is_over():
+	# A won run stays on the table while the House's offer is open; any other
+	# ending is nothing to come back to.
+	if state.is_over() and not (state.phase == RunState.Phase.WON and not state.endless):
 		RunSave.clear()
 		return
 	RunSave.write(engine.journal, ContentDB.shared())
@@ -492,7 +513,14 @@ func debug_set_view(view: int) -> void:
 
 
 func _advance() -> void:
-	if state == null or state.is_over():
+	if state == null:
+		return
+	if state.is_over():
+		# The House's offer is answered with the same key as everything else.
+		# Refused for a lost run, or a run that has already stayed, so the key
+		# that ends a run cannot start one by accident.
+		if engine.stay_at_table(state):
+			_after_input()
 		return
 	# The guard belongs here rather than only in _unhandled_input: a tool or a
 	# test calling debug_advance() must not be able to step past an open draft.
@@ -666,6 +694,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_granted.append(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
+		EffectBus.Event.TABLE_KEPT:
+			_clear_prompt()
+			if _camera != null:
+				_camera.set_view(CameraController.View.MACHINE)
 		_:
 			pass
 	# The sign and the machine's own monitor track the run on every event, so
@@ -698,12 +730,32 @@ func _refresh_diegetic() -> void:
 ## Folds the finished run into the profile and the local board, and tells the
 ## player what it earned them.
 func _finish_run(reason: String) -> void:
+	var lines: PackedStringArray = PackedStringArray()
+	if _won_recorded:
+		# The win already counted. This is how far the run stayed.
+		var floors: int = ContentDB.shared().floors.size()
+		_profile.record_stayed(state, floors)
+		_profile.save()
+		var stayed: Dictionary = _board.submit(state, _daily_key)
+		_board.save()
+		var after_hours: int = state.floors_cleared - floors
+		if reason == "dawn":
+			lines.append("DAWN — the House closes. After hours %d, and you walk out." % after_hours)
+		else:
+			lines.append("THE HOUSE KEPT YOU — after hours %d" % after_hours)
+		lines.append("%s     score %d     rank %d on this ruleset" % [
+			SeedBook.to_code(state.seed_value), int(stayed["score"]),
+			_board.rank_of(int(stayed["score"]), String(stayed["ruleset"]))])
+		lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
+				"New run / Setup — the buttons top right"))
+		_set_prompt("\n".join(lines), true)
+		_end_recording(StringName(reason))
+		return
 	var earned: Array[UnlockDef] = _profile.record_run(state, _catalogue.unlocks)
 	_profile.save()
 	var entry: Dictionary = _board.submit(state, _daily_key)
 	_board.save()
 	var rank: int = _board.rank_of(int(entry["score"]), String(entry["ruleset"]))
-	var lines: PackedStringArray = PackedStringArray()
 	lines.append("RUN OVER — %s" % reason)
 	lines.append("%s     score %d     rank %d on this ruleset" % [
 		SeedBook.to_code(state.seed_value), int(entry["score"]), rank])
@@ -712,14 +764,23 @@ func _finish_run(reason: String) -> void:
 		for unlock: UnlockDef in earned:
 			names.append(unlock.display_name)
 		lines.append("UNLOCKED: %s" % ", ".join(names))
-	lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
-			"New run / Setup — the buttons top right"))
+	if state.phase == RunState.Phase.WON and not state.endless:
+		# The counter-offer. Only to a run that has beaten the House, and the
+		# key that takes it is the key that spins.
+		_won_recorded = true
+		lines.append(Endless.OFFER)
+		lines.append(TouchBar.hint(
+				"SPACE to stay at the table     F5 for a new run     F2 for setup",
+				"TAP to stay at the table — or New run / Setup, top right"))
+	else:
+		lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
+				"New run / Setup — the buttons top right"))
 	# The one message that gets the middle of the screen. There is nothing left
 	# on the machine worth looking past it at.
 	_set_prompt("\n".join(lines), true)
 	_end_recording(StringName(reason))
-	# Nothing to come back to.
-	RunSave.clear()
+	# A lost run is nothing to come back to; a won one keeps its offer open.
+	_mark_save()
 
 
 func _end_recording(reason: StringName) -> void:
@@ -906,7 +967,7 @@ func _announce_floor(payload: Dictionary) -> void:
 		lines.append(String(granted.get("title", "")))
 		lines.append(String(granted.get("brief", "")))
 	_granted.clear()
-	if state != null and state.content.floor_at(state.floor_index + 1) == null \
+	if state != null and state.floor_at(state.floor_index + 1) == null \
 			and state.economy.debt > 0:
 		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [
 			int(payload.get("ante", 0)), state.economy.debt])

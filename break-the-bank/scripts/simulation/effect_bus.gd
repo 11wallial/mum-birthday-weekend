@@ -36,6 +36,9 @@ enum Event {
 	HEAT_CHANGED,
 	SYSTEM_GRANTED,
 	RUN_ENDED,
+	## A won run has taken the House's offer: the debt is back and the floors
+	## past the last are open. Appended, so recorded event indices hold.
+	TABLE_KEPT,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.
