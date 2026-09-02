@@ -51,6 +51,10 @@ enum Event {
 	## The press did a job on the reel: a symbol struck, printed or gilded.
 	## Carries the job and what the reel is now.
 	PRESS_RUN,
+	## The House noticed a loud spin and has decided who to send to the
+	## next floor. Carries the watcher, their tell, the floor they arrive
+	## on, and the payout that caused it.
+	HOUSE_NOTICED,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

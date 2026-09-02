@@ -230,6 +230,14 @@ worth knowing before touching the simulation:
   `--no-bosses`) measures what the staff costs; `boss_rates` in the report
   puts each against the floor's own death rate, which is how a variant that
   out-kills its siblings is found. The basement has nobody.
+- The House notices: `SimEngine._observe_notice` on every banked spin, at
+  `BalanceConfig.notice_par_multiple` pars, sets `RunState.notice_pending`
+  (a `BossDef` from the next floor's pool, off the `boss` stream) and emits
+  HOUSE_NOTICED; `begin_floor` seats it as `RunState.watcher` beside the
+  boss. Ask `BossEngine.people(state)` for everyone on the floor — never
+  `state.boss` alone — and put the ante's `notices` markup only in
+  `ante_due_for`. No verb, so no AutoPlayer opinion; the lab reports
+  `notices` and the win rate is tuned with it in.
 - The machine can be wider than the last line drawn on it — a reel bought
   mid-floor has no symbols until the next spin. `Probability.drawn()` exists for
   that; do not index a line assuming every reel is standing.

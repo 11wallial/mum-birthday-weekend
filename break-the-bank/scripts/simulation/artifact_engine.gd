@@ -151,8 +151,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	# The House's person on the floor taxes the pattern they were sent for.
 	var taxed: float = BossEngine.pattern_scale(state, pattern)
 	ctx.multiplier *= taxed
-	if not is_equal_approx(taxed, 1.0) and state.boss != null:
-		ctx.step(&"house", state.boss.display_name, "x%.2f" % taxed)
+	if not is_equal_approx(taxed, 1.0) and not BossEngine.people(state).is_empty():
+		ctx.step(&"house", _staff_names(state), "x%.2f" % taxed)
 	# The contract's cut comes off the end, after everything the player built.
 	# Signing away a quarter of the payout should cost a quarter of what the
 	# machine actually pays, not a quarter of its bare symbols.
@@ -168,8 +168,8 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 		ctx.step(&"house", "The skim", "x%.2f" % skim)
 	var staff_skim: float = maxf(0.0, 1.0 - BossEngine.skim(state))
 	ctx.multiplier *= staff_skim
-	if not is_equal_approx(staff_skim, 1.0) and state.boss != null:
-		ctx.step(&"house", "%s skims" % state.boss.display_name, "x%.2f" % staff_skim)
+	if not is_equal_approx(staff_skim, 1.0) and not BossEngine.people(state).is_empty():
+		ctx.step(&"house", "%s skims" % _staff_names(state), "x%.2f" % staff_skim)
 	# An audit's adjustment to the machine comes last of all.
 	ctx.multiplier *= maxf(0.0, state.options.payout_scale)
 	if not is_equal_approx(state.options.payout_scale, 1.0):
@@ -178,6 +178,14 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 
 
 ## The pattern, in the receipt's words.
+## The House's people on the floor, named on the receipt.
+static func _staff_names(state: RunState) -> String:
+	var names: PackedStringArray = PackedStringArray()
+	for person: BossDef in BossEngine.people(state):
+		names.append(person.display_name)
+	return " and ".join(names)
+
+
 static func _pattern_label(pattern: Probability.Pattern) -> String:
 	match pattern:
 		Probability.Pattern.PAIR:

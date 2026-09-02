@@ -189,6 +189,10 @@ func announce(state: RunState) -> void:
 		}
 		standing.merge(boss_payload(state))
 		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, standing)
+	if state.notice_pending != null:
+		var noticed: Dictionary = notice_payload(state)
+		noticed["resumed"] = true
+		_bus.emit_event(EffectBus.Event.HOUSE_NOTICED, noticed)
 	_bus.emit_event(EffectBus.Event.CASH_CHANGED, {
 		"delta": 0, "cash": state.economy.cash, "reason": &"resumed", "resumed": true,
 	})
@@ -374,8 +378,15 @@ func begin_floor(state: RunState) -> void:
 	state.decision = RunState.Decision.NONE
 	state.board.clear_holds()
 	# Who the House sends comes before the allowance is counted, because some
-	# of them come for the allowance.
+	# of them come for the allowance. The watcher it decided on last floor
+	# arrives first; the boss is drawn after, and never the same person.
+	state.watcher = state.notice_pending
+	state.notice_pending = null
 	state.boss = BossEngine.choose(state, floor_def)
+	if state.boss != null and state.watcher != null and state.boss.id == state.watcher.id:
+		state.boss = BossEngine.choose(state, floor_def)
+		if state.boss != null and state.boss.id == state.watcher.id:
+			state.boss = null
 	state.bosses_faced.append(state.boss.id if state.boss != null else &"")
 	state.floor_spins = 0
 	state.boss_collected = false
@@ -416,11 +427,16 @@ func begin_floor(state: RunState) -> void:
 ## nobody was sent, so a listener can read the keys without checking first.
 func boss_payload(state: RunState) -> Dictionary:
 	var boss: BossDef = state.boss
+	var watcher: BossDef = state.watcher
 	return {
 		"boss": String(boss.id) if boss != null else "",
 		"boss_name": boss.display_name if boss != null else "",
 		"boss_intro": boss.intro if boss != null else "",
 		"boss_tell": boss.tell if boss != null else "",
+		"watcher": String(watcher.id) if watcher != null else "",
+		"watcher_name": watcher.display_name if watcher != null else "",
+		"watcher_intro": watcher.intro if watcher != null else "",
+		"watcher_tell": watcher.tell if watcher != null else "",
 	}
 
 
@@ -478,8 +494,10 @@ func _collect_mid_floor(state: RunState) -> void:
 	var serviced: int = state.economy.service_debt(
 			state.config.debt_service_percent * maxf(state.options.debt_service_scale, 0.0),
 			state.config.debt_default_penalty_percent)
+	var collector: BossDef = BossEngine._who(state, BossDef.Rule.VIG_MID_FLOOR)
 	_bus.emit_event(EffectBus.Event.BOSS_ACTED, {
-		"boss": String(state.boss.id), "name": state.boss.display_name,
+		"boss": String(collector.id) if collector != null else "",
+		"name": collector.display_name if collector != null else "",
 		"serviced": serviced, "cash": state.economy.cash, "debt": state.economy.debt,
 	})
 
@@ -807,6 +825,7 @@ func _do_collect(state: RunState) -> void:
 	# and rescored a dozen times is still one spin to the hardware counting.
 	var lit: Array[ArtifactDef] = ArtifactEngine.record_spin(state, board)
 	_observe_heat(state, board.payout)
+	_observe_notice(state, board.payout)
 	if not _bus.is_live():
 		return
 	for artifact: ArtifactDef in lit:
@@ -820,6 +839,47 @@ func _do_collect(state: RunState) -> void:
 	payload["nudges_used"] = board.nudges_used
 	payload["gamble_rung"] = board.gamble_rung
 	_bus.emit_event(EffectBus.Event.PAYOUT_CALCULATED, payload)
+
+
+## The House notices a loud spin — [member BalanceConfig.notice_par_multiple]
+## pars in one — and answers by sending one more of its people to the next
+## floor, decided and announced now so the player can see it coming, and
+## can point at the spin that caused it. One notice at a time: a floor with
+## a watcher already promised is not promised another. The House acts
+## against success, not on a schedule; this is where "rigged" is mechanical.
+func _observe_notice(state: RunState, payout: int) -> void:
+	if state.options.no_bosses or state.notice_pending != null:
+		return
+	if float(payout) < par_for(state) * state.config.notice_par_multiple:
+		return
+	var next_floor: FloorDef = state.floor_at(state.floor_index + 1)
+	if next_floor == null:
+		return
+	var pool: Array[BossDef] = BossEngine.pool_for(_content, next_floor.index)
+	if pool.is_empty():
+		return
+	state.notice_pending = pool[state.boss_rng.next_int(0, pool.size() - 1)]
+	state.notices += 1
+	state.noticed_floor = state.floor_index
+	state.noticed_payout = payout
+	if not _bus.is_live():
+		return
+	_bus.emit_event(EffectBus.Event.HOUSE_NOTICED, notice_payload(state))
+
+
+## What the House has decided, for the event and for a resumed run.
+func notice_payload(state: RunState) -> Dictionary:
+	var who: BossDef = state.notice_pending
+	return {
+		"watcher": String(who.id) if who != null else "",
+		"name": who.display_name if who != null else "",
+		"intro": who.intro if who != null else "",
+		"tell": who.tell if who != null else "",
+		"floor": state.floor_index + 1,
+		"payout": state.noticed_payout,
+		"notices": state.notices,
+		"ante": ante_for(state),
+	}
 
 
 ## Folds a settled spin into the House's count and announces what it changed.
@@ -1039,6 +1099,7 @@ func _close_floor(state: RunState) -> void:
 	state.floors_cleared += 1
 	state.set_contract(null)
 	state.boss = null
+	state.watcher = null
 	# The count is a floor's worth of attention. A new floor is a new room —
 	# unless the audit says the House remembers.
 	state.heat *= clampf(state.options.heat_carry, 0.0, 1.0)

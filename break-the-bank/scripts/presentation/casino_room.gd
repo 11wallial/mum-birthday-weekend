@@ -1095,6 +1095,15 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_granted.append(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
+		EffectBus.Event.HOUSE_NOTICED:
+			# Said the moment it is decided, naming the spin: the player
+			# should be able to point at it and say the House did that.
+			if not bool(payload.get("resumed", false)):
+				_set_prompt("THE HOUSE HAS NOTICED — %d in one spin.\n%s will be on floor %d: %s\nEvery ante from here is %d%% dearer." % [
+					int(payload.get("payout", 0)), String(payload.get("name", "")).to_upper(),
+					int(payload.get("floor", 0)), String(payload.get("tell", "")),
+					int(round(float(payload.get("notices", 1))
+							* state.config.notice_ante_percent))])
 		EffectBus.Event.TABLE_KEPT:
 			_clear_prompt()
 			if _camera != null:
@@ -1127,8 +1136,13 @@ func _refresh_diegetic() -> void:
 	if _slot_view != null:
 		# The boss's rule stays on the ledger for the whole floor; the House's
 		# memos wait for a floor with nobody on it.
-		var memo: String = state.boss.tell if state.boss != null \
-				else (_memos.memo_for(state) if _memos != null else "")
+		var memo: String = ""
+		for person: BossDef in BossEngine.people(state):
+			memo += ("  " if not memo.is_empty() else "") + person.tell
+		if memo.is_empty() and state.notice_pending != null:
+			memo = "Noticed. %s is coming." % state.notice_pending.display_name
+		if memo.is_empty():
+			memo = _memos.memo_for(state) if _memos != null else ""
 		_slot_view.set_readout(state.economy.debt, floor_name, memo)
 		# The counters across the chassis: the four numbers the overlay used
 		# to carry. The view holds a payout back until the drums land.
@@ -1477,6 +1491,11 @@ func _announce_floor(payload: Dictionary) -> void:
 	if boss_name != "":
 		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])
 		lines.append(String(payload.get("boss_tell", "")))
+	var watcher_name: String = String(payload.get("watcher_name", ""))
+	if watcher_name != "":
+		lines.append("%s, BECAUSE THE HOUSE NOTICED — %s" % [watcher_name.to_upper(),
+				String(payload.get("watcher_intro", ""))])
+		lines.append(String(payload.get("watcher_tell", "")))
 	if state != null and state.floor_at(state.floor_index + 1) == null \
 			and state.economy.debt > 0:
 		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [

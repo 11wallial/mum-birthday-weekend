@@ -5,6 +5,10 @@
 ## House imposed on one, and both are torn up when the floor closes. Every
 ## helper here answers "what does the boss do to this" and nothing else; the
 ## engine decides when to ask.
+##
+## Two of the House's people can be on a floor: the boss, sent on schedule,
+## and the watcher, sent because the House noticed a loud spin on the floor
+## before. The helpers fold both, so a rule is a rule whoever carries it.
 class_name BossEngine
 extends RefCounted
 
@@ -29,35 +33,59 @@ static func pool_for(content: ContentDB, index: int) -> Array[BossDef]:
 	return content.bosses_for(mini(index, last) if last > 0 else index)
 
 
+## Everyone the House has on the floor: the boss it sent on schedule and
+## the watcher it sent because it noticed. Every helper below folds both.
+static func people(state: RunState) -> Array[BossDef]:
+	var out: Array[BossDef] = []
+	if state.boss != null:
+		out.append(state.boss)
+	if state.watcher != null:
+		out.append(state.watcher)
+	return out
+
+
 static func _is(state: RunState, rule: BossDef.Rule) -> bool:
-	return state.boss != null and state.boss.rule == rule
+	for person: BossDef in people(state):
+		if person.rule == rule:
+			return true
+	return false
+
+
+## The first person on the floor with [param rule], or null.
+static func _who(state: RunState, rule: BossDef.Rule) -> BossDef:
+	for person: BossDef in people(state):
+		if person.rule == rule:
+			return person
+	return null
 
 
 ## Draw-weight deltas the boss imposes, keyed by symbol id.
 static func weight_shifts(state: RunState) -> Dictionary:
 	var out: Dictionary = {}
-	if state.boss == null:
-		return out
-	match state.boss.rule:
-		BossDef.Rule.SYMBOL_BANNED:
-			# Far below any weight a build could add back: banned is banned.
-			out[state.boss.symbol] = -1000000
-		BossDef.Rule.SYMBOL_HEAVY:
-			out[state.boss.symbol] = int(round(state.boss.magnitude))
-		BossDef.Rule.COLD_REELS:
-			for symbol: SymbolDef in state.content.symbols:
-				if HeatEngine.COLD_SYMBOLS.has(symbol.id):
-					out[symbol.id] = -int(floor(float(symbol.base_weight) * HeatEngine.COLD_SHARE))
-		_:
-			pass
+	for person: BossDef in people(state):
+		match person.rule:
+			BossDef.Rule.SYMBOL_BANNED:
+				# Far below any weight a build could add back: banned is banned.
+				out[person.symbol] = -1000000
+			BossDef.Rule.SYMBOL_HEAVY:
+				out[person.symbol] = int(out.get(person.symbol, 0)) + int(round(person.magnitude))
+			BossDef.Rule.COLD_REELS:
+				for symbol: SymbolDef in state.content.symbols:
+					if HeatEngine.COLD_SYMBOLS.has(symbol.id):
+						out[symbol.id] = int(out.get(symbol.id, 0)) \
+								- int(floor(float(symbol.base_weight) * HeatEngine.COLD_SHARE))
+			_:
+				pass
 	return out
 
 
 ## What a lock costs, as a multiple of the spin.
 static func lock_multiplier(state: RunState) -> float:
-	if _is(state, BossDef.Rule.HOLDS_COST_MORE):
-		return maxf(1.0, state.boss.magnitude)
-	return 1.0
+	var multiple: float = 1.0
+	for person: BossDef in people(state):
+		if person.rule == BossDef.Rule.HOLDS_COST_MORE:
+			multiple *= maxf(1.0, person.magnitude)
+	return multiple
 
 
 static func free_nudges_allowed(state: RunState) -> bool:
@@ -66,25 +94,32 @@ static func free_nudges_allowed(state: RunState) -> bool:
 
 ## Share of what a line of [param pattern] pays under this boss, 0.0..1.0.
 static func pattern_scale(state: RunState, pattern: Probability.Pattern) -> float:
-	if not _is(state, BossDef.Rule.PATTERN_TAXED):
-		return 1.0
-	if state.boss.pattern >= 0 and state.boss.pattern != int(pattern):
-		return 1.0
-	return clampf(state.boss.magnitude, 0.0, 1.0)
+	var scale: float = 1.0
+	for person: BossDef in people(state):
+		if person.rule != BossDef.Rule.PATTERN_TAXED:
+			continue
+		if person.pattern >= 0 and person.pattern != int(pattern):
+			continue
+		scale *= clampf(person.magnitude, 0.0, 1.0)
+	return scale
 
 
 ## Percentage the boss has added to the floor's ante so far.
 static func ante_percent(state: RunState) -> float:
-	if not _is(state, BossDef.Rule.ANTE_CREEPS):
-		return 0.0
-	return maxf(0.0, state.boss.magnitude) * float(state.floor_spins)
+	var percent: float = 0.0
+	for person: BossDef in people(state):
+		if person.rule == BossDef.Rule.ANTE_CREEPS:
+			percent += maxf(0.0, person.magnitude) * float(state.floor_spins)
+	return percent
 
 
 ## Spins the boss takes off the floor's allowance.
 static func spins_delta(state: RunState) -> int:
-	if _is(state, BossDef.Rule.SHORT_FLOOR):
-		return -int(round(state.boss.magnitude))
-	return 0
+	var delta: int = 0
+	for person: BossDef in people(state):
+		if person.rule == BossDef.Rule.SHORT_FLOOR:
+			delta -= int(round(person.magnitude))
+	return delta
 
 
 static func stake_frozen(state: RunState) -> bool:
@@ -93,9 +128,11 @@ static func stake_frozen(state: RunState) -> bool:
 
 ## Share taken off every payout, in 0.0..0.9.
 static func skim(state: RunState) -> float:
-	if _is(state, BossDef.Rule.SKIMMED):
-		return clampf(state.boss.magnitude / 100.0, 0.0, 0.9)
-	return 0.0
+	var kept: float = 1.0
+	for person: BossDef in people(state):
+		if person.rule == BossDef.Rule.SKIMMED:
+			kept *= 1.0 - clampf(person.magnitude / 100.0, 0.0, 0.9)
+	return clampf(1.0 - kept, 0.0, 0.9)
 
 
 ## True on the spin the collector arrives: halfway through the floor, once.

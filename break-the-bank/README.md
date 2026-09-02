@@ -182,9 +182,9 @@ principal with a penalty on top.
 | 2 | The Casino | 105 | 10 | 6 | The market: reroll, sell, the slate |
 | 3 | The High Roller Room | 255 | 10 | 7 | The stake and the gamble ladder |
 | 4 | The Vault | 810 | 11 | 10 | The vault: collateral and dividends |
-| 5 | The Back Office | 1,800 | 12 | 12 | Contracts |
-| 6 | The Engine Room | 4,250 | 13 | 14 | The works: reels and rows |
-| 7 | The House | 17,000 | 15 | 18 | The count |
+| 5 | The Back Office | 1,730 | 12 | 12 | Contracts |
+| 6 | The Engine Room | 4,080 | 13 | 14 | The works: reels and rows |
+| 7 | The House | 16,300 | 15 | 18 | The count |
 
 Fourteen symbols on the reel: five fruit (cherry, lemon, orange, grapes,
 watermelon — a family, so any two of them pair), the bar and the double bar,
@@ -308,6 +308,17 @@ Lean, the High Roller, the Bone Press and the Orchard are in git at
 `MachineDef` under `resources/meta/machines/`, reaches the run only as
 `RunOptions`, opens through an unlock, and can be measured with
 `run_lab.gd --machine=<id>`.
+
+**The notice.** The House acts against success, not only on a schedule: a
+single spin paying sixteen pars — most of an ante in one — is loud enough
+for it to notice, and it answers at once and out loud, naming the spin and
+the person it is sending to the next floor. That watcher arrives beside the
+floor's own boss and carries a rule the same way; every notice also puts two
+percent on every ante for the rest of the run. Measured on 2 September
+2026: the notice as first authored (ten pars, five percent) cost five
+points of win rate, so it sits at sixteen and two with floors 5–7 eased four
+percent (1,730 · 4,080 · 16,300) — 14.9% at 800 runs, the House noticing
+0.84 times a run.
 
 A seed is a run, so a shared seed is a shared run. Seeds are shown and entered as
 five spoken words — `SOLAR-MIRTH-CANDLE-OX-DRIFT` — which survive being read

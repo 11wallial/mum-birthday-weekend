@@ -113,6 +113,16 @@ extends Resource
 ## Count the House reaches before it starts skimming, before it cools the reels,
 ## and before it sends someone over. The count rises with what you win and falls
 ## with every spin you do not.
+@export_group("The notice")
+## A single spin paying this many pars — the ante over the spins allowed —
+## is loud enough for the House to notice. It answers by sending one more
+## of its people to the next floor, announced the moment it is decided.
+@export var notice_par_multiple: float = 10.0
+## Percent on every ante for every time the House has noticed: its
+## attention, once caught, is never quite lost.
+@export var notice_ante_percent: float = 5.0
+
+@export_group("The count")
 @export var heat_skim_at: float = 35.0
 @export var heat_cold_at: float = 65.0
 @export var heat_boss_at: float = 100.0

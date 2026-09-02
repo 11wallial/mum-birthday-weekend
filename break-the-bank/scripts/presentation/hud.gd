@@ -214,6 +214,9 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_push("Entered %s" % String(payload.get("name", "")) if boss_name == ""
 					else "Entered %s — %s is on the floor" % [
 							String(payload.get("name", "")), boss_name])
+		EffectBus.Event.HOUSE_NOTICED:
+			_push("The House noticed: %s on floor %d" % [
+					String(payload.get("name", "")), int(payload.get("floor", 0))])
 		EffectBus.Event.BOSS_ACTED:
 			# The collector's round: the vig, mid-floor. Said where the ante
 			# is said, because it comes out of the same purse.

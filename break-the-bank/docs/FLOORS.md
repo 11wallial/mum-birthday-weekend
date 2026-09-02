@@ -225,6 +225,26 @@ costs:
 | `STAKE_FROZEN` | the stake stays at one | the Cashier |
 | `SKIMMED` | a share off every payout, before the count's own | the Manager |
 
+### The notice
+
+The House also acts against success, not only on a schedule — the design
+guide's test for whether "rigged" is mechanical or flavour. A single spin
+that pays `notice_par_multiple` pars (ten: an ante in one spin) is loud
+enough for the House to notice. It answers at once, and out loud: it
+decides who to send to the *next* floor — a **watcher**, drawn from that
+floor's pool by the run's own `boss` stream — and says so, naming the spin.
+The watcher arrives with the floor's own boss (never the same person) and
+carries a rule exactly as a boss does; `BossEngine.people` folds both, so a
+rule is a rule whoever carries it, and both are torn up when the floor
+closes. Every notice also puts `notice_ante_percent` on every ante for the
+rest of the run: the House's attention, once caught, is never quite lost.
+One notice at a time — a floor with a watcher already promised is not
+promised another — and the last floor has nowhere to send anyone.
+
+The player should be able to point at the moment: the callout names the
+payout, the ledger carries "Noticed. The Bouncer is coming." until the
+floor turns, and the floor's opening says who came and why.
+
 Three per floor, so the same floor plays three ways. The lab reports each
 boss's death rate against the floor's own (`boss_rates`), which is how a
 variant that out-kills its siblings is found, and `--no-bosses` measures what

@@ -126,6 +126,18 @@ var contract_offers: Array[ContractDef] = []
 ## The House's person on this floor, or null on a floor nobody was sent to.
 ## Chosen as the floor opens, torn up as it closes, like a contract.
 var boss: BossDef = null
+## The second of the House's people on the floor: sent because the House
+## noticed a spin on the floor before, announced then, arrived now. Torn
+## up with the boss when the floor closes. The House acting against
+## success rather than on a schedule is what makes "rigged" mechanical.
+var watcher: BossDef = null
+## Who the House has decided to send to the next floor, once it noticed.
+var notice_pending: BossDef = null
+## How many times the House has noticed this run, and the last spin it
+## noticed: the floor and the payout, so the player can point at it.
+var notices: int = 0
+var noticed_floor: int = 0
+var noticed_payout: int = 0
 ## Who was sent to each floor so far, by floor order, empty where nobody
 ## was. Telemetry: the lab reads it to say which of them kills.
 var bosses_faced: Array[StringName] = []
@@ -239,6 +251,7 @@ func ante_due_for(floor_def: FloorDef) -> int:
 	ante *= maxf(0.0, 1.0 + ContractEngine.ante_percent(self) / 100.0)
 	ante *= 1.0 + heat_ante_percent / 100.0
 	ante *= 1.0 + BossEngine.ante_percent(self) / 100.0
+	ante *= 1.0 + float(notices) * config.notice_ante_percent / 100.0
 	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
 
 

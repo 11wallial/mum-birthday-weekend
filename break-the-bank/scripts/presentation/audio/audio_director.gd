@@ -345,6 +345,9 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.BOSS_ACTED:
 			play(&"alarm_pulse")
 			play(&"debt_sting")
+		EffectBus.Event.HOUSE_NOTICED:
+			play(&"heat_measure")
+			play(&"debt_sting")
 		EffectBus.Event.CONTRACTS_OFFERED:
 			play(&"ui_panel_open")
 		EffectBus.Event.CONTRACT_SIGNED:

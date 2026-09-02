@@ -44,6 +44,8 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	# wants mitigation scarce enough to be a decision).
 	var unspent: PackedInt32Array = PackedInt32Array()
 	var rerolls: PackedInt32Array = PackedInt32Array()
+	# How often the House noticed a run: the notice is tuned on this.
+	var notices: PackedInt32Array = PackedInt32Array()
 	var drafts_total: int = 0
 	# Offers put in front of every run, against what was taken: the share of
 	# the draft a run can afford is the number the chip supply is set by.
@@ -122,6 +124,7 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			unspent.append(left)
 		drafts_total += state.chips_left_at_drafts.size()
 		rerolls.append(state.rerolls_total)
+		notices.append(state.notices)
 		for seen: StringName in state.offers_seen:
 			offers_total += int(state.offers_seen[seen])
 		taken_total += state.owned.size()
@@ -222,6 +225,7 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"chips_unspent_at_draft": describe(unspent),
 		"rerolls_per_run": describe(rerolls),
 		"rerolls_per_draft": _ratio(_sum(rerolls), drafts_total),
+		"notices": describe(notices),
 		"end_reasons": end_reasons,
 		"debt": {
 			"serviced": describe(serviced),

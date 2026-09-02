@@ -100,6 +100,8 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 	print("unspent at draft  mean %.1f chips  p50 %d  p95 %d   rerolls %.2f a draft" % [
 		float(unspent.get("mean", 0.0)), int(unspent.get("p50", 0)), int(unspent.get("p95", 0)),
 		float(report.get("rerolls_per_draft", 0.0))])
+	var noticed: Dictionary = report.get("notices", {})
+	print("noticed        mean %.2f a run  p95 %d" % [float(noticed.get("mean", 0.0)), int(noticed.get("p95", 0))])
 	print("chips          mean %.1f  p50 %d  p95 %d   hardware mean %.1f  max %d   took %.0f%% of the draft   settled early mean %.2f floors" % [
 		float(chips.get("mean", 0.0)), int(chips.get("p50", 0)), int(chips.get("p95", 0)),
 		float(hardware.get("mean", 0.0)), int(hardware.get("max", 0)),

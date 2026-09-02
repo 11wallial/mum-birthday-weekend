@@ -53,7 +53,10 @@ tower that was a mill, then a counting-house, then this, and it kept the
 machinery from all three: steam, brass, the works. It does not cheat. It does
 not need to. The terms are printed, the count is kept, the ante rises, and
 the vig is charged before the ante because the House has never once let a
-debt wait.
+debt wait. It does *respond*: win loudly enough in one spin and the House
+notices, says so, and sends one more of its people to the next floor. The
+player should always be able to point at the spin and say the House did
+that because I was winning — and the House would agree.
 
 The House is never a person. It has staff — the croupier who marks a card,
 the pit boss who comes over, whoever it is that has a quiet word — but they
