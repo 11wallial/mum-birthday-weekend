@@ -21,7 +21,97 @@ const INK_MUTED: Color = Color(0.686, 0.647, 0.573)
 const AMBER: Color = Color(1.0, 0.796, 0.478)
 const DENIED: Color = Color(0.749, 0.435, 0.376)
 
+## The forms on the clipboard: paper, and the inks the House types and
+## stamps on it. Dark on cream, the reverse of the overlay's panels, because
+## a form is a lit object in the room and not a screen.
+const PAPER_GROUND: Color = Color(0.9, 0.87, 0.8, 1.0)
+const PAPER_ROW: Color = Color(0.86, 0.83, 0.75, 1.0)
+const PAPER_ROW_HOVER: Color = Color(0.95, 0.92, 0.84, 1.0)
+const PAPER_INK: Color = Color(0.12, 0.1, 0.08)
+const PAPER_INK_MUTED: Color = Color(0.38, 0.34, 0.29)
+## The stamp: the House's red, for prices, titles and anything it insists on.
+const PAPER_STAMP: Color = Color(0.6, 0.14, 0.1)
+const PAPER_DENIED: Color = Color(0.55, 0.5, 0.45)
+const PAPER_SHADER: String = "res://assets/shaders/paper.gdshader"
+
 static var _cache: Dictionary = {}
+
+
+## Turns a panel into a sheet: an empty stylebox with the form's margins, and
+## the paper shader drawn behind everything in it.
+static func sheet(panel: PanelContainer) -> void:
+	var style: StyleBoxEmpty = StyleBoxEmpty.new()
+	style.content_margin_left = 34.0
+	style.content_margin_right = 34.0
+	style.content_margin_top = 26.0
+	style.content_margin_bottom = 22.0
+	panel.add_theme_stylebox_override(&"panel", style)
+	var old: Node = panel.get_node_or_null(^"Sheet")
+	if old != null:
+		return
+	var paper: ColorRect = ColorRect.new()
+	paper.name = "Sheet"
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material: ShaderMaterial = ShaderMaterial.new()
+	material.shader = load(PAPER_SHADER) as Shader
+	material.set_shader_parameter(&"paper", PAPER_GROUND)
+	material.set_shader_parameter(&"tear_px", 0.0)
+	material.set_shader_parameter(&"perforation_px", 0.0)
+	material.set_shader_parameter(&"seed", 11.0)
+	paper.material = material
+	paper.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.add_child(paper)
+	panel.move_child(paper, 0)
+	var size_it: Callable = func() -> void:
+		material.set_shader_parameter(&"size_px", panel.size)
+	panel.resized.connect(size_it)
+	size_it.call()
+
+
+## One line of a form: a rule under it, the stamp's red down the left when
+## it can be taken, grey when it cannot.
+static func paper_row(affordable: bool, hovered: bool = false) -> StyleBoxFlat:
+	var key: String = "paper_row:%s:%s" % [affordable, hovered]
+	return _flat(key, func() -> StyleBoxFlat:
+		var style: StyleBoxFlat = StyleBoxFlat.new()
+		style.bg_color = PAPER_ROW_HOVER if hovered else PAPER_ROW
+		_radius(style, 1)
+		_padding(style, 14.0, 11.0)
+		style.border_width_left = 4
+		style.border_width_bottom = 1
+		style.border_color = PAPER_STAMP if affordable else PAPER_DENIED
+		return style)
+
+
+## A button on a form: a boxed line, typed.
+static func paper_button(state: StringName) -> StyleBoxFlat:
+	return _flat("paper_button:%s" % state, func() -> StyleBoxFlat:
+		var style: StyleBoxFlat = StyleBoxFlat.new()
+		match state:
+			&"hover", &"pressed":
+				style.bg_color = PAPER_ROW_HOVER
+				_border(style, 2, PAPER_INK)
+			&"disabled":
+				style.bg_color = PAPER_ROW
+				_border(style, 1, PAPER_DENIED)
+			_:
+				style.bg_color = PAPER_ROW
+				_border(style, 1, PAPER_INK_MUTED)
+		_radius(style, 1)
+		_padding(style, 16.0, 10.0)
+		return style)
+
+
+static func dress_paper_button(target: Button) -> void:
+	target.add_theme_stylebox_override(&"normal", paper_button(&"normal"))
+	target.add_theme_stylebox_override(&"hover", paper_button(&"hover"))
+	target.add_theme_stylebox_override(&"pressed", paper_button(&"pressed"))
+	target.add_theme_stylebox_override(&"disabled", paper_button(&"disabled"))
+	target.add_theme_stylebox_override(&"focus", paper_button(&"hover"))
+	target.add_theme_color_override(&"font_color", PAPER_INK)
+	target.add_theme_color_override(&"font_hover_color", PAPER_STAMP)
+	target.add_theme_color_override(&"font_pressed_color", PAPER_STAMP)
+	target.add_theme_color_override(&"font_disabled_color", PAPER_DENIED)
 
 
 ## The ground a panel sits on: near-black, one hairline edge, generous padding.

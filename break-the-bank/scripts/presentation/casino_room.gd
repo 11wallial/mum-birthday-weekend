@@ -46,6 +46,11 @@ var _tutorial: TutorialDirector
 var _receipt: PayoutReceipt
 ## The grade over the world, and the render's degradation with the surety.
 var _film: Node
+## The clipboard's viewport: the draft and the back office are drawn into it
+## and the paper in the room wears it.
+var _board_viewport: SubViewport
+var _clipboard: MeshInstance3D
+const BOARD_PX: Vector2i = Vector2i(920, 500)
 ## The wall sign naming the current floor. Diegetic: the player reads where they
 ## are off the room, not off an overlay.
 var _floor_sign: Label3D
@@ -103,6 +108,7 @@ func _ready() -> void:
 	if room_root != null:
 		_room_parts = RoomSet.new().build(room_root)
 		_floor_sign = _room_parts.get("sign", null) as Label3D
+		_mount_board()
 	var world: WorldEnvironment = get_node_or_null(^"WorldEnvironment") as WorldEnvironment
 	if world != null:
 		# Duplicated, because the mood pass tweens it: without this the run would
@@ -456,6 +462,71 @@ func _flicker_room(seconds: float) -> void:
 		flicker.tween_property(light, "light_energy", resting, 0.15)
 
 
+## Puts the clipboard's viewport on the paper in the room and moves the two
+## forms into it. The texture is bound here, after the set is in the tree —
+## fetched at construction it never resolves.
+func _mount_board() -> void:
+	_clipboard = _room_parts.get("board", null) as MeshInstance3D
+	if _clipboard == null:
+		return
+	_board_viewport = SubViewport.new()
+	_board_viewport.name = "BoardViewport"
+	_board_viewport.disable_3d = true
+	_board_viewport.transparent_bg = false
+	_board_viewport.size = BOARD_PX
+	_board_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	# The pointer is pushed in by hand from the board's pick area, so the
+	# viewport must not also try to read it from the window.
+	_board_viewport.handle_input_locally = true
+	_board_viewport.gui_disable_input = false
+	add_child(_board_viewport)
+	# The paper wears the form: the viewport's texture as the albedo of a
+	# shaded material, so the desk lamp and the floor's mood light the page.
+	var paper: StandardMaterial3D = StandardMaterial3D.new()
+	paper.albedo_texture = _board_viewport.get_texture()
+	# Cream, not white: with the desk lamp and the key on it a white page
+	# crosses the bloom threshold and the type on it vanishes.
+	paper.albedo_color = Color(0.8, 0.78, 0.74)
+	paper.roughness = 0.92
+	paper.metallic = 0.0
+	paper.metallic_specular = 0.2
+	paper.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	_clipboard.material_override = paper
+	if _shop != null:
+		_shop.mount(_board_viewport)
+	if _contracts != null:
+		_contracts.mount(_board_viewport)
+	var pick: Area3D = _room_parts.get("board_pick", null) as Area3D
+	if pick != null:
+		pick.input_event.connect(_on_board_input)
+
+
+## The pointer, through the paper: a click on the clipboard in the room lands
+## on the form drawn into it, at the same place. Keys never come this way —
+## the forms read them on their own layers.
+func _on_board_input(_camera: Node, event: InputEvent, position: Vector3,
+		_normal: Vector3, _shape: int) -> void:
+	if _board_viewport == null or _clipboard == null:
+		return
+	var local: Vector3 = _clipboard.to_local(position)
+	var uv: Vector2 = Vector2(local.x / RoomSet.BOARD_SIZE.x + 0.5,
+			0.5 - local.y / RoomSet.BOARD_SIZE.y)
+	var pixel: Vector2 = uv * Vector2(_board_viewport.size)
+	var forwarded: InputEvent = null
+	if event is InputEventMouseButton:
+		var click: InputEventMouseButton = (event as InputEventMouseButton).duplicate()
+		click.position = pixel
+		click.global_position = pixel
+		forwarded = click
+	elif event is InputEventMouseMotion:
+		var move: InputEventMouseMotion = (event as InputEventMouseMotion).duplicate()
+		move.position = pixel
+		move.global_position = pixel
+		forwarded = move
+	if forwarded != null:
+		_board_viewport.push_input(forwarded)
+
+
 ## The surety — how much of the player the House holds — onto the column on
 ## the machine and into the render. The machine holds the value through a
 ## spin and moves it on the spin's beat; the render degrades with it, which
@@ -490,6 +561,7 @@ func _open_door(resumed: bool) -> void:
 	# the screen, and a ledger showing through it is two screens at once.
 	_show_overlay(false)
 	if _camera != null:
+		_camera.desk_board = _clipboard
 		_camera.set_view(CameraController.View.DOOR, true)
 	_sync_deck()
 
@@ -1001,18 +1073,21 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 						state.board.chips, false)
 		EffectBus.Event.SHOP_OPENED:
 			# A callout left over from the floor that just ended would sit on
-			# top of the panel the player is being asked to read.
+			# top of the form the player is being asked to read. The camera
+			# walks to the desk: the draft is a form on the clipboard.
 			_clear_prompt()
 			if _shop != null:
 				_shop.open(state)
 			if _camera != null:
-				_camera.set_view(CameraController.View.ROOM)
+				_camera.set_view(CameraController.View.DESK)
+			_settle_surety()
 		EffectBus.Event.CONTRACTS_OFFERED:
 			_clear_prompt()
 			if _contracts != null:
 				_contracts.open(state)
 			if _camera != null:
-				_camera.set_view(CameraController.View.ROOM)
+				_camera.set_view(CameraController.View.DESK)
+			_settle_surety()
 		EffectBus.Event.SYSTEM_GRANTED:
 			# Held rather than shown: SYSTEM_GRANTED arrives a moment before the
 			# floor it belongs to, and two callouts in two frames means the

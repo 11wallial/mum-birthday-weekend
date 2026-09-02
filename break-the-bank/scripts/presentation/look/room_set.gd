@@ -25,6 +25,11 @@ const CEILING: float = 2.95
 ## in its own shadow, which is the single thing that kept the machine unreadable.
 const LAMP: Vector3 = Vector3(1.16, 2.34, 1.9)
 const LAMP_TARGET: Vector3 = Vector3(-0.2, 0.85, 0.2)
+## The desk against the right wall, and the clipboard's paper in metres.
+## 920 by 500 texels of form on it: a texel a screen pixel, near enough,
+## when the camera stands over it.
+const DESK: Vector3 = Vector3(2.75, 0.86, 1.3)
+const BOARD_SIZE: Vector2 = Vector2(0.92, 0.5)
 
 var _root: Node3D
 
@@ -42,6 +47,7 @@ func build(root: Node3D) -> Dictionary:
 	_props()
 	_puddles()
 	var bulb: MeshInstance3D = _pendant()
+	var board: MeshInstance3D = _desk()
 	_cage_lamp()
 	_wall_wash()
 	_strip_light()
@@ -58,7 +64,94 @@ func build(root: Node3D) -> Dictionary:
 		"cold": _root.get_node_or_null(^"StripLight/Tube"),
 		"wash": _root.get_node_or_null(^"WallWash"),
 		"ceiling": _root.get_node_or_null(^"CeilingWash"),
+		"board": board,
+		"board_pick": board.get_node_or_null(^"Pick"),
 	}
+
+
+## Where the paperwork happens: a steel desk against the right wall with a
+## clipboard on it, under its own lamp. The draft and the back office are
+## forms on that clipboard — rendered into it, lit by the room, and read by
+## walking the camera over to the desk — rather than panels floating over
+## the scene. The horror is bureaucratic; this is where it is filed.
+##
+## Returns the board, whose material the room hands the form's texture, and
+## which carries the pick area the room forwards the pointer through.
+func _desk() -> MeshInstance3D:
+	var desk: Node3D = _group(&"Desk")
+	desk.position = DESK
+	var steel: StandardMaterial3D = Materials.painted(Color(0.2, 0.21, 0.19), 88)
+	# The top, the modesty panel, and four legs. Battered office issue.
+	_box(desk, Vector3(1.3, 0.05, 0.7), Vector3(0.0, 0.0, 0.0), steel)
+	_box(desk, Vector3(1.24, 0.6, 0.04), Vector3(0.0, -0.33, -0.3), steel)
+	for sx: float in [-1.0, 1.0]:
+		for sz: float in [-1.0, 1.0]:
+			_box(desk, Vector3(0.05, 0.84, 0.05), Vector3(sx * 0.6, -0.42, sz * 0.3),
+					Materials.machined(Color(0.3, 0.3, 0.29), 89))
+	# Paperwork the House has filed: a stack, a tray, a stamp.
+	_box(desk, Vector3(0.24, 0.05, 0.32), Vector3(-0.48, 0.05, 0.05),
+			Materials.enamel(Materials.PAPER, 90))
+	_box(desk, Vector3(0.26, 0.02, 0.34), Vector3(-0.48, 0.08, 0.05),
+			Materials.machined(Color(0.24, 0.24, 0.23), 91))
+	_cylinder(desk, 0.02, 0.07, Vector3(0.5, 0.06, -0.2), Vector3.ZERO,
+			Materials.rubber(Color(0.12, 0.1, 0.09), 92))
+	# The clipboard: a board propped on a block so it faces the reader, a
+	# clip at its head, and the form itself as a quad the room draws into.
+	var board: MeshInstance3D = Prims.quad(desk, Vector2(BOARD_SIZE.x, BOARD_SIZE.y),
+			Vector3(0.0, 0.2, 0.06), Materials.enamel(Materials.PAPER, 93))
+	board.name = "Board"
+	board.rotation.x = -0.55
+	var backing: MeshInstance3D = Prims.box(board, Vector3(BOARD_SIZE.x + 0.04, BOARD_SIZE.y + 0.06, 0.012),
+			Vector3(0.0, 0.0, -0.008), Materials.timber(94))
+	backing.name = "Backing"
+	_box(board, Vector3(0.14, 0.05, 0.03), Vector3(0.0, BOARD_SIZE.y * 0.5 + 0.005, 0.01),
+			Materials.machined(Color(0.55, 0.55, 0.53), 95))
+	_box(desk, Vector3(0.5, 0.12, 0.08), Vector3(0.0, 0.08, -0.12), steel)
+	var pick: Area3D = Area3D.new()
+	pick.name = "Pick"
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var box: BoxShape3D = BoxShape3D.new()
+	box.size = Vector3(BOARD_SIZE.x, BOARD_SIZE.y, 0.03)
+	shape.shape = box
+	pick.add_child(shape)
+	board.add_child(pick)
+	# The desk lamp: the one thing on the right of the room with its own
+	# light, so the form reads whatever the floor's mood is doing.
+	var arm: Node3D = _group(&"DeskLamp")
+	arm.position = DESK + Vector3(0.78, 0.03, -0.3)
+	_cylinder(arm, 0.06, 0.02, Vector3.ZERO, Vector3.ZERO, Materials.machined(Materials.STEEL, 96))
+	# Up and out of the reader's line: the hood used to hang in front of the
+	# page's top-right corner and blacked it out.
+	_segment(arm, Vector3(0.0, 0.0, 0.0), Vector3(-0.04, 0.5, 0.0), 0.012,
+			Materials.machined(Materials.STEEL, 96))
+	_segment(arm, Vector3(-0.04, 0.5, 0.0), Vector3(-0.2, 0.66, 0.14), 0.012,
+			Materials.machined(Materials.STEEL, 96))
+	var shade: CylinderMesh = CylinderMesh.new()
+	shade.top_radius = 0.03
+	shade.bottom_radius = 0.09
+	shade.height = 0.12
+	var hood: MeshInstance3D = MeshInstance3D.new()
+	hood.mesh = shade
+	hood.material_override = Materials.painted(Color(0.16, 0.15, 0.13), 97)
+	hood.position = Vector3(-0.22, 0.64, 0.16)
+	hood.rotation.x = 0.6
+	hood.rotation.z = -0.3
+	arm.add_child(hood)
+	Prims.sphere(arm, 0.025, Vector3(-0.26, 0.6, 0.2), Materials.glowing(Materials.LAMP, 3.0))
+	var light: OmniLight3D = OmniLight3D.new()
+	light.name = "Light"
+	light.light_color = Materials.LAMP
+	# Held well under the bloom threshold on cream paper: the form has to be
+	# read, and a page that glows is a page that cannot be.
+	light.light_energy = 0.9
+	light.light_specular = 0.1
+	light.omni_range = 1.6
+	light.omni_attenuation = 1.5
+	# No shadow: the hood's own shadow fell across the page's head.
+	light.shadow_enabled = false
+	light.position = Vector3(-0.3, 0.56, 0.24)
+	arm.add_child(light)
+	return board
 
 
 ## A dim, wide light aimed at the back wall. Everything past the lamp's throw had

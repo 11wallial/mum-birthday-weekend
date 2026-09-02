@@ -35,6 +35,10 @@ var _leave: Button
 var _market: HBoxContainer
 var _state: RunState
 var _open: bool = false
+## The form itself, when it has been mounted on the clipboard in the room:
+## the Panel, moved into the board's viewport. Visibility follows it.
+var _sheet: Control
+var _mounted: bool = false
 ## Type scale, matched to the window the same way the HUD's is.
 var _scale: float = 1.0
 
@@ -50,10 +54,11 @@ func _ready() -> void:
 	_market = get_node_or_null(market_path) as HBoxContainer
 	if _leave != null:
 		_leave.pressed.connect(_on_leave_pressed)
-		UiSkin.dress_button(_leave)
+		UiSkin.dress_paper_button(_leave)
 	var panel: PanelContainer = get_node_or_null(^"Panel") as PanelContainer
 	if panel != null:
-		panel.add_theme_stylebox_override(&"panel", UiSkin.panel())
+		UiSkin.sheet(panel)
+		_sheet = panel
 	_fit_type()
 	get_viewport().size_changed.connect(_fit_type)
 	visible = false
@@ -65,7 +70,9 @@ func _fit_type() -> void:
 	var window: Window = get_window()
 	if window == null or window.size.x <= 0:
 		return
-	_scale = clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	# On the clipboard the form is a fixed sheet of texels the camera reads
+	# at a texel a pixel; only the overlay copy scales with the window.
+	_scale = 1.0 if _mounted else clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
 	if _title != null:
 		_title.add_theme_font_size_override(&"font_size", int(roundf(18.0 * _scale)))
 	if _footer != null:
@@ -87,12 +94,29 @@ func open(state: RunState) -> void:
 	_state = state
 	_open = true
 	visible = true
+	if _sheet != null:
+		_sheet.visible = true
 	_redraw()
 
 
 func close() -> void:
 	_open = false
 	visible = false
+	if _sheet != null:
+		_sheet.visible = false
+
+
+## Moves the form onto the clipboard: its Panel into [param board], the
+## viewport the room draws onto the paper in the room. Keys still arrive
+## here, on the layer; the pointer arrives through the board's pick area.
+func mount(board: SubViewport) -> void:
+	if _sheet == null or _mounted:
+		return
+	_sheet.get_parent().remove_child(_sheet)
+	board.add_child(_sheet)
+	_sheet.visible = _open
+	_mounted = true
+	_fit_type()
 
 
 func _redraw() -> void:
@@ -107,7 +131,7 @@ func _redraw() -> void:
 		_title.text = "THE DRAFT — FLOOR %d CLEARED      CHIPS %d      CASH %d      DEBT %d" % [
 			_state.floors_cleared, _state.economy.chips, _state.economy.cash,
 			_state.economy.debt]
-		_title.add_theme_color_override(&"font_color", UiSkin.AMBER)
+		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	_draw_press()
@@ -137,7 +161,7 @@ func _draw_press() -> void:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.name = "Press"
 	row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
-	var head: Label = _cell("THE PRESS", 13.0, UiSkin.INK_MUTED)
+	var head: Label = _cell("THE PRESS", 13.0, UiSkin.PAPER_INK_MUTED)
 	head.custom_minimum_size = Vector2(96.0 * _scale, 0.0)
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(head)
@@ -162,7 +186,7 @@ func _draw_press() -> void:
 		# own text, so the icon sits in a margin of spaces.
 		var caption: String = "%s%s   %d chips" % [
 			"       " if badge != null else "", text, int(job.get("price", 0))]
-		var chip: Button = _chip(caption, _state.can_press(i), UiSkin.INK,
+		var chip: Button = _chip(caption, _state.can_press(i), UiSkin.PAPER_INK,
 				func() -> void: press_requested.emit(index))
 		if badge != null:
 			chip.add_child(badge)
@@ -189,25 +213,25 @@ func _draw_market() -> void:
 		return
 	var reroll_price: int = _state.reroll_price()
 	_market.add_child(_chip("REROLL  %d chips" % reroll_price,
-			_state.economy.can_afford_chips(reroll_price), UiSkin.AMBER,
+			_state.economy.can_afford_chips(reroll_price), UiSkin.PAPER_STAMP,
 			func() -> void: market_requested.emit(REROLL, 0)))
 	for i: int in _state.owned.size():
 		var artifact: ArtifactDef = _state.owned[i]
 		var refund: int = _state.sellback_of(artifact)
 		var index: int = i
 		_market.add_child(_chip("SELL %s  +%d" % [artifact.display_name, refund],
-				true, UiSkin.INK_MUTED,
+				true, UiSkin.PAPER_INK_MUTED,
 				func() -> void: market_requested.emit(SELL, index)))
 
 
 func _chip(text: String, enabled: bool, tint: Color, pressed: Callable) -> Button:
 	var button: Button = Button.new()
-	UiSkin.dress_button(button)
+	UiSkin.dress_paper_button(button)
 	button.text = text
 	button.disabled = not enabled
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override(&"font_size", int(roundf(13.0 * _scale)))
-	button.add_theme_color_override(&"font_color", tint if enabled else UiSkin.DENIED)
+	button.add_theme_color_override(&"font_color", tint if enabled else UiSkin.PAPER_DENIED)
 	button.custom_minimum_size = Vector2(0.0, 40.0 * _scale)
 	button.pressed.connect(pressed)
 	return button
@@ -229,11 +253,11 @@ func _build_row(index: int) -> Control:
 	button.focus_mode = Control.FOCUS_NONE
 	button.mouse_default_cursor_shape = (Control.CURSOR_POINTING_HAND if affordable
 			else Control.CURSOR_ARROW)
-	button.add_theme_stylebox_override(&"normal", UiSkin.row(affordable))
-	button.add_theme_stylebox_override(&"hover", UiSkin.row(affordable, true))
-	button.add_theme_stylebox_override(&"pressed", UiSkin.row(affordable, true))
-	button.add_theme_stylebox_override(&"disabled", UiSkin.row(affordable))
-	button.add_theme_stylebox_override(&"focus", UiSkin.row(affordable, true))
+	button.add_theme_stylebox_override(&"normal", UiSkin.paper_row(affordable))
+	button.add_theme_stylebox_override(&"hover", UiSkin.paper_row(affordable, true))
+	button.add_theme_stylebox_override(&"pressed", UiSkin.paper_row(affordable, true))
+	button.add_theme_stylebox_override(&"disabled", UiSkin.paper_row(affordable))
+	button.add_theme_stylebox_override(&"focus", UiSkin.paper_row(affordable, true))
 	button.pressed.connect(_on_row_pressed.bind(index))
 
 	# The label grid sits inside the button and ignores the pointer, so the whole
@@ -254,7 +278,7 @@ func _build_row(index: int) -> Control:
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
 	head.add_child(_cell("%d." % (index + 1), 17.0,
-			UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
+			UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
 	# An artifact that only affects one symbol shows that symbol. "+4 draw
 	# weight on Lucky Seven" is a sentence; the seven itself is the thing the
 	# player is about to go looking for on the reels.
@@ -262,7 +286,7 @@ func _build_row(index: int) -> Control:
 	if badge != null:
 		head.add_child(badge)
 	var name_cell: Label = _cell(artifact.display_name, 17.0,
-			UiSkin.INK if affordable else UiSkin.DENIED)
+			UiSkin.PAPER_INK if affordable else UiSkin.PAPER_DENIED)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_cell)
 	# The build it belongs to, as a small plate beside the name: a player
@@ -270,14 +294,14 @@ func _build_row(index: int) -> Control:
 	var build: ArchetypeDef = ContentDB.shared().archetype_by_id(artifact.archetype)
 	if build != null:
 		head.add_child(_cell(build.display_name.to_upper(), 11.0,
-				UiSkin.INK_MUTED if affordable else UiSkin.DENIED))
+				UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
 	var price_cell: Label = _cell("%d chips" % price, 17.0,
-			UiSkin.AMBER if affordable else UiSkin.DENIED)
+			UiSkin.PAPER_STAMP if affordable else UiSkin.PAPER_DENIED)
 	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	head.add_child(price_cell)
 	grid.add_child(head)
 
-	var body: Label = _cell(artifact.description, 14.0, UiSkin.INK_MUTED)
+	var body: Label = _cell(artifact.description, 14.0, UiSkin.PAPER_INK_MUTED)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_child(body)
@@ -297,7 +321,7 @@ func _build_row(index: int) -> Control:
 	pair.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
 	pair.add_child(button)
 	var owed: int = _state.slate_price(index)
-	var slate: Button = _chip("SLATE\n%d cr owed" % owed, true, UiSkin.DENIED,
+	var slate: Button = _chip("SLATE\n%d cr owed" % owed, true, UiSkin.PAPER_DENIED,
 			func() -> void: market_requested.emit(SLATE, index))
 	slate.custom_minimum_size = Vector2(112.0, 58.0) * _scale
 	pair.add_child(slate)

@@ -14,7 +14,16 @@ enum View {
 	## Behind the door: the machine idling under its lamp, framed to the right
 	## so the title has the left of the screen.
 	DOOR,
+	## Over the desk: the clipboard fills the frame. The draft and the back
+	## office are read here.
+	DESK,
 }
+
+## The clipboard, set by the room once the set is built. The desk view is
+## computed from it: straight down its normal, close enough to read.
+var desk_board: Node3D
+## How far the eye stands off the board, in metres.
+const DESK_DISTANCE: float = 0.78
 
 const TRANSITION_TIME: float = 0.7
 
@@ -152,7 +161,15 @@ func set_view(view: View, immediate: bool = false) -> void:
 	var eye: Vector3
 	var target: Vector3
 	var fov: float
-	if view == View.MACHINE:
+	if view == View.DESK and desk_board != null:
+		var normal: Vector3 = desk_board.global_transform.basis.z.normalized()
+		target = desk_board.global_position
+		eye = target + normal * DESK_DISTANCE
+		fov = machine_fov
+		# On a tall screen the board is read across the narrow axis; back off
+		# so its width still fits.
+		eye += normal * 0.45 * _portrait
+	elif view == View.MACHINE:
 		# Fit the frame box to the screen's shape. The fov's meaning follows
 		# keep_aspect — vertical on a wide screen, horizontal on a tall one —
 		# so both axes' required distances come from the same half-angle.
@@ -183,6 +200,10 @@ func set_view(view: View, immediate: bool = false) -> void:
 		eye += (eye - target).normalized() * portrait_dolly_out * _portrait
 		fov -= portrait_fov_narrowing * _portrait
 	_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target, Vector3.UP)
+	# The board's own up, so the form is not read on a tilt.
+	if view == View.DESK and desk_board != null:
+		_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target,
+				desk_board.global_transform.basis.y)
 	if immediate:
 		_camera.global_transform = _rest
 		_camera.fov = fov
