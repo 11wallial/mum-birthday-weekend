@@ -10,7 +10,10 @@
 ## prints it, so it can never disagree with the number.
 ##
 ## Presentation only. It reads the bus for the spin's start, to clear, and is
-## handed the settled board by the room once the reels have landed.
+## handed the settled board by the room once the reels have landed. On a
+## banked spin the lines print in time with the scoring chain — the receipt is
+## visibly the physical output of what is happening, not a summary that
+## appears afterwards — and the total prints as the total lands.
 class_name PayoutReceipt
 extends CanvasLayer
 
@@ -25,6 +28,11 @@ const PAPER: Color = Color(0.9, 0.87, 0.8, 0.97)
 const INK: Color = Color(0.12, 0.1, 0.08)
 const INK_FAINT: Color = Color(0.36, 0.32, 0.27)
 const INK_RED: Color = Color(0.62, 0.16, 0.12)
+## The total, in the accent: the one line on the paper that is a score.
+const INK_SCORE: Color = Color(0.62, 0.4, 0.06)
+## How much of the performance the lines above the total print across; the
+## total itself prints when the number lands.
+const LINES_SHARE: float = 0.72
 
 var _panel: PanelContainer
 var _rows: VBoxContainer
@@ -110,8 +118,12 @@ func clear() -> void:
 ## Prints [param breakdown] — a [member SpinBoard.breakdown] — for a board
 ## worth [param payout]. [param settled] false prints it as the board standing
 ## mid-decision, which is what a player deciding a nudge needs in front of them.
+## [param over_seconds] paces the print to a scoring performance of that
+## length; negative prints at the printer's own rate. [param tier] is the
+## spin's [enum ScoreDirector.Tier]: a dead spin gets a curt receipt, a heavy
+## one a printer running fast and loud.
 func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
-		title: String = "") -> void:
+		title: String = "", over_seconds: float = -1.0, tier: int = -1) -> void:
 	clear()
 	var steps: Array = breakdown.get("steps", [])
 	var lines: Array[Control] = []
@@ -119,6 +131,21 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 			else ("RECEIPT" if settled else "STANDING — not yet banked"), "", 12.0,
 			INK_FAINT, true))
 	lines.append(_rule())
+	if settled and tier == ScoreDirector.Tier.DEAD:
+		# Curt. The symbols, and what they came to. A loss is not an absence,
+		# but it is not an itemised account either.
+		var dead: Array[String] = []
+		for entry: Variant in steps:
+			var step: Dictionary = entry as Dictionary
+			if String(step.get("kind", "")) == "symbol":
+				dead.append("%s %s" % [step.get("label", ""), step.get("text", "")])
+		if not dead.is_empty():
+			lines.append(_line(" + ".join(dead), "", 12.0, INK_FAINT))
+		lines.append(_rule())
+		lines.append(_line("NOTHING PAID" if payout <= 0 else "PAYS",
+				"%d cr" % payout if payout > 0 else "", 16.0, INK_RED, true))
+		_print_lines(lines, over_seconds, tier)
+		return
 	var symbols: Array[String] = []
 	var symbol_total: int = 0
 	var device_lines: int = 0
@@ -153,22 +180,44 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 	var multiplier: float = float(breakdown.get("multiplier", 1.0))
 	lines.append(_line("MULTIPLIER", "x%.2f" % multiplier, 13.0, INK))
 	lines.append(_line("PAYS" if settled else "WOULD PAY", "%d cr" % payout, 18.0,
-			INK if payout > 0 else INK_RED, true))
+			(INK_SCORE if settled else INK) if payout > 0 else INK_RED, true))
 	if chips > 0:
 		lines.append(_line("THE BANK", "+%d chip%s" % [chips, "" if chips == 1 else "s"],
 				13.0, INK))
+	_print_lines(lines, over_seconds, tier)
+
+
+## Puts [param lines] on the paper one at a time. Paced to a performance when
+## [param over_seconds] is given: everything above the total across the first
+## part of it, the total on the beat the number lands.
+func _print_lines(lines: Array[Control], over_seconds: float, tier: int) -> void:
 	_panel.visible = true
-	# Line by line, the way a printer prints.
 	for line: Control in lines:
 		line.modulate.a = 0.0
 		_rows.add_child(line)
 	_printing = create_tween()
-	var gap: float = LINE_TIME * SlotView3D.pace
-	for i: int in lines.size():
-		var line: Control = lines[i]
-		_printing.tween_callback(func() -> void: line.modulate.a = 1.0).set_delay(gap)
+	var heavy: bool = tier >= ScoreDirector.Tier.HEAVY
+	if over_seconds > 0.0 and lines.size() > 1:
+		var total_index: int = lines.size() - 1
+		for i: int in lines.size():
+			var line: Control = lines[i]
+			var at: float = over_seconds if i == total_index \
+					else over_seconds * LINES_SHARE * float(i) / float(total_index)
+			_printing.parallel().tween_callback(func() -> void:
+				line.modulate.a = 1.0).set_delay(at)
+	else:
+		var gap: float = LINE_TIME * SlotView3D.pace * (0.5 if heavy else 1.0)
+		for i: int in lines.size():
+			var line: Control = lines[i]
+			_printing.tween_callback(func() -> void: line.modulate.a = 1.0).set_delay(gap)
 	if _audio != null:
-		_audio.play(&"receipt_print")
+		# Fast and loud on a heavy spin: the printer is straining with the rest
+		# of the machine.
+		_audio.play(&"receipt_print", 1.25 if heavy else 1.0)
+		if heavy:
+			var again: Tween = create_tween()
+			again.tween_callback(func() -> void:
+				_audio.play(&"receipt_print", 1.3)).set_delay(0.3)
 
 
 func _line(left: String, right: String, size: float, tint: Color,

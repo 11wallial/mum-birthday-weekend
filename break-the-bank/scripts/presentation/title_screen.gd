@@ -365,7 +365,11 @@ func _draw_settings() -> void:
 			["SOUND", &"sfx"], ["ROOM", &"ambience"]]:
 		_settings_box.add_child(_slider(String(bus[0]), StringName(bus[1]),
 				-30.0, 6.0, float(_settings.get(String(bus[1]), 0.0))))
-	_settings_box.add_child(_slider("PACE", &"pace", 0.5, 2.0,
+	# Three steps, not a dial: the handover asked for a persistent speed
+	# setting a veteran can set once, and for speeding up to scale the whole
+	# performance rather than cut beats out of it. Holding the lever does the
+	# rest, per spin.
+	_settings_box.add_child(_slider("PACE", &"pace", 0.0, 2.0,
 			float(_settings.get("pace", 1.0))))
 	var overlay_on: bool = float(_settings.get("overlay", 0.0)) > 0.5
 	var toggle_row: HBoxContainer = HBoxContainer.new()
@@ -380,7 +384,7 @@ func _draw_settings() -> void:
 				setting_changed.emit(&"overlay", now)
 				_redraw()))
 	_settings_box.add_child(toggle_row)
-	var about: Label = _label("Pace scales how long the reels take. The machine carries its controls and its counters; on screen repeats them. Louder than 0 dB is the House's own risk.",
+	var about: Label = _label("Pace is how long the reels and the count take; hold the lever, or Space, through a payout to hurry it. The machine carries its controls and its counters; on screen repeats them. Louder than 0 dB is the House's own risk.",
 			11.0, UiSkin.INK_MUTED)
 	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_settings_box.add_child(about)
@@ -396,17 +400,18 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 	var slider: HSlider = HSlider.new()
 	slider.min_value = low
 	slider.max_value = high
-	slider.step = 0.05 if key == &"pace" else 1.0
-	slider.value = value
+	slider.step = 1.0
+	slider.value = float(SlotView3D.pace_index(value)) if key == &"pace" else value
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.custom_minimum_size = Vector2(240.0 * _scale, 22.0 * _scale)
 	slider.focus_mode = Control.FOCUS_NONE
 	var readout: Label = _label(_setting_text(key, value), 12.0, UiSkin.INK_MUTED)
 	readout.custom_minimum_size = Vector2(64.0 * _scale, 0.0)
 	slider.value_changed.connect(func(changed: float) -> void:
-		_settings[String(key)] = changed
-		readout.text = _setting_text(key, changed)
-		setting_changed.emit(key, changed))
+		var stored: float = SlotView3D.PACES[int(changed)] if key == &"pace" else changed
+		_settings[String(key)] = stored
+		readout.text = _setting_text(key, stored)
+		setting_changed.emit(key, stored))
 	row.add_child(slider)
 	row.add_child(readout)
 	return row
@@ -414,7 +419,7 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 
 func _setting_text(key: StringName, value: float) -> String:
 	if key == &"pace":
-		return "%.2fx" % value
+		return SlotView3D.PACE_NAMES[SlotView3D.pace_index(value)]
 	return "%+.0f dB" % value
 
 

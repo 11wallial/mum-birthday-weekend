@@ -31,8 +31,12 @@ class SpinContext extends RefCounted:
 		var base: float = (float(base_payout) + flat_bonus) * maxf(multiplier, 0.0)
 		return maxi(0, int(floor(base * (1.0 + maxf(retriggers, 0.0)))))
 
-	func step(kind: StringName, label: String, text: String) -> void:
-		steps.append({"kind": String(kind), "label": label, "text": text})
+	## [param extra] rides along for whoever plays the receipt back: the reel
+	## a symbol stood on, the id of the device that fired.
+	func step(kind: StringName, label: String, text: String, extra: Dictionary = {}) -> void:
+		var entry: Dictionary = {"kind": String(kind), "label": label, "text": text}
+		entry.merge(extra)
+		steps.append(entry)
 
 
 ## Scores one line. Returns the context so callers (and tests) can inspect the
@@ -58,20 +62,25 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 			state.options.curse_pays)
 	var warded: bool = ward > 0.0
 	var cursed: bool = Probability.has_curse(line) and not warded
-	for symbol: SymbolDef in Probability.drawn(line):
+	for reel: int in line.size():
+		var symbol: SymbolDef = line[reel]
+		if symbol == null:
+			continue
 		if not symbol.is_curse:
 			var gilt: int = state.symbol_bonus(symbol)
 			var worth: int = maxi(0, symbol.base_value
 					+ ContractEngine.symbol_value(state, symbol.id) + gilt)
 			ctx.base_payout += worth
 			ctx.step(&"symbol", symbol.display_name + (", gilt" if gilt > 0 else ""),
-					"%d" % worth)
+					"%d" % worth, {"reel": reel})
 		elif warded:
 			ctx.base_payout += int(ward)
-			ctx.step(&"symbol", "%s, on the payroll" % symbol.display_name, "%d" % int(ward))
+			ctx.step(&"symbol", "%s, on the payroll" % symbol.display_name,
+					"%d" % int(ward), {"reel": reel})
 		else:
 			ctx.base_payout -= config.curse_penalty
-			ctx.step(&"symbol", symbol.display_name, "-%d" % config.curse_penalty)
+			ctx.step(&"symbol", symbol.display_name, "-%d" % config.curse_penalty,
+					{"reel": reel})
 
 	# A curse on the line costs the player the pattern bonus entirely, unless a
 	# ward has turned the skulls into payroll.
@@ -441,7 +450,7 @@ static func _apply(state: RunState, trigger: ArtifactDef.Trigger, ctx: SpinConte
 static func _note(state: RunState, artifact: ArtifactDef, ctx: SpinContext,
 		announce: bool, text: String = "") -> void:
 	ctx.triggered.append(artifact.id)
-	ctx.step(&"artifact", artifact.display_name, text)
+	ctx.step(&"artifact", artifact.display_name, text, {"id": String(artifact.id)})
 	if not announce:
 		return
 	state.bus.emit_event(EffectBus.Event.ARTIFACT_TRIGGERED, {

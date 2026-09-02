@@ -86,6 +86,9 @@ const ROOM_VIEWS: Array = [
 @export var portrait_dolly_out: float = 0.4
 ## Peak positional offset of a payout shake, in metres.
 @export var shake_strength: float = 0.06
+## How far the camera leans in on a strong spin, in metres along its own line
+## of sight. Tweened in and out by [method push_in].
+var _push: float = 0.0
 
 var current_view: View = View.MACHINE
 ## Where on the ring of room viewpoints the camera last stood.
@@ -138,6 +141,7 @@ func _process(delta: float) -> void:
 		_shake = maxf(0.0, _shake - delta * 3.0)
 		offset += Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) \
 				* shake_strength * _shake
+	offset.z -= _push
 	_camera.global_transform = _rest.translated_local(offset)
 
 
@@ -210,3 +214,13 @@ func cycle_room_view(direction: int) -> void:
 ## Kicks the camera. [param intensity] is normalised 0..1 by the caller.
 func shake(intensity: float) -> void:
 	_shake = maxf(_shake, clampf(intensity, 0.0, 1.0))
+
+
+## Leans the camera in by [param amount] metres and eases it back over
+## [param seconds]: the tell of a spin that is working.
+func push_in(amount: float, seconds: float) -> void:
+	var tween: Tween = create_tween()
+	tween.tween_property(self, "_push", amount, 0.12) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "_push", 0.0, maxf(seconds, 0.1)) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

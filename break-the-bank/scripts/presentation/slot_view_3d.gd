@@ -15,10 +15,17 @@ extends Node3D
 const SPIN_DURATION: float = 0.34
 const REEL_STAGGER: float = 0.1
 const SETTLE_DURATION: float = 0.16
-## Multiplies every one of those. A setting: a long session wants the reels
-## quicker, a first one wants them slower, and the view is the only place
-## that knows how long a spin takes.
+## Multiplies every one of those, and the scoring performance after them. A
+## setting: a long session wants the reels quicker, a first one wants them
+## slower, and the view is the only place that knows how long a spin takes.
 static var pace: float = 1.0
+## The three steps the setting offers, slow to quick, and their names.
+const PACES: Array[float] = [1.45, 1.0, 0.62]
+const PACE_NAMES: Array[String] = ["SLOW", "NORMAL", "QUICK"]
+## Holding the lever — or Space — through a performance runs the clock this
+## much faster. The whole sequence scales; nothing is cut out of it, and the
+## pause before the total still stands, shorter.
+const FAST_FORWARD: float = 2.2
 
 @export var module_anchor_path: NodePath = ^"ModuleAnchor"
 @export var payout_particles_path: NodePath = ^"PayoutParticles"
@@ -90,20 +97,22 @@ const GLOW_MAX: float = 1.02
 ## to clear the floor: the ante divided by the spins allowed. Judging against a
 ## fixed number made a 60-credit win read as huge on floor 7 and as nothing on
 ## floor 1; judged against par, "good" means the same thing all the way down.
+## The six values are [enum ScoreDirector.Tier], one to one: the director
+## judges, the machine performs.
 enum Result {
 	## Paid less than a quarter of par. The reels ate the spin.
 	DEAD,
-	## Paid something, but you are still behind where you need to be.
-	THIN,
-	## Paid its own way and then some.
-	GOOD,
-	## Three times par or better.
-	JACKPOT,
+	## Paid something, apologetically.
+	SCRAPING,
+	## Paid its own way: the full chain, a light shake.
+	PAID,
+	## Something is working: the camera leans in, the tubes brighten.
+	STRONG,
+	## The machine is straining: an ante in one spin.
+	HEAVY,
+	## The House is in trouble: three antes in one spin.
+	OVERLOAD,
 }
-
-const THIN_SHARE: float = 0.25
-const GOOD_SHARE: float = 1.0
-const JACKPOT_SHARE: float = 3.0
 
 ## True from the first frame of a spin until the last reel has settled. The room
 ## refuses to advance the run while this holds, so the simulation can never get
@@ -113,6 +122,22 @@ var _busy: bool = false
 var _redraw_booked: bool = false
 ## The last memo the ledger printed, so a beep marks a new one only.
 var _last_memo: String = ""
+## The receipt of the spin being performed: the breakdown's steps, from
+## PAYOUT_CALCULATED, which is what the scoring chain is made of.
+var _steps: Array = []
+## True from a spin's start until its total has landed. The cash counter is
+## held for the whole of it — a payout that appeared on the tubes before the
+## chain had counted it up would spoil the count.
+var _awaiting: bool = false
+## Whether this spin's last drum ran on: the near-miss hold on a loss.
+var _tense: bool = false
+## The last values put on each counter, by bank.
+var _counter_value: Dictionary = {}
+## When the count-up last tinked, so a rolling counter does not fire a tink
+## every frame.
+var _last_tink: float = 0.0
+## Where the machine's lamp rests between flares.
+const LAMP_REST: float = 1.0
 
 ## How the spin was judged. The HUD listens so its readout agrees with the
 ## machine rather than restating the number in its own words.
@@ -122,6 +147,12 @@ var _last_memo: String = ""
 ## the credits actually move. A verdict on an unsettled board would call a line
 ## dead while the player was still holding a nudge worth forty credits.
 signal result_judged(result: Result, payout: int, settled: bool)
+## The scoring performance is about to play: [param plan] is
+## [method ScoreDirector.plan]'s timetable, so the receipt can print in time
+## with it and the room can brace for its tier.
+signal scoring_started(plan: Dictionary)
+## The pause before the total lands: everything stops for [param seconds].
+signal pause_started(seconds: float)
 ## A physical reel button was clicked. Same shape as the deck's
 ## action_requested, and the room routes both through one handler.
 signal control_pressed(action: StringName, index: int)
@@ -173,6 +204,28 @@ func set_audio(audio: AudioDirector) -> void:
 	_audio = audio
 
 
+## Hold to fast-forward. The clock itself runs faster while the lever is held
+## through a spin, so every beat, the count and the pause all shorten
+## together and nothing is skipped. Released, the clock returns.
+func _process(_delta: float) -> void:
+	var wanted: float = FAST_FORWARD if _busy and Input.is_action_pressed(&"bb_advance") else 1.0
+	if not is_equal_approx(Engine.time_scale, wanted):
+		Engine.time_scale = wanted
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+
+
+## The step of the pace setting nearest [param value].
+static func pace_index(value: float) -> int:
+	var best: int = 1
+	for i: int in PACES.size():
+		if absf(PACES[i] - value) < absf(PACES[best] - value):
+			best = i
+	return best
+
+
 ## Subscribes to a simulation. Call once, after the engine is built.
 func bind(bus: EffectBus) -> void:
 	if _bus != null and _bus.event_emitted.is_connected(_on_event):
@@ -187,6 +240,8 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_pending.clear()
 			_banked = -1
 			_busy = true
+			_awaiting = true
+			_steps = []
 			_clear_lamps()
 		EffectBus.Event.SYMBOL_LANDED:
 			_pending.append(payload)
@@ -206,15 +261,16 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 					not bool(payload.get("resumed", false)))
 		EffectBus.Event.PAYOUT_CALCULATED:
 			_banked = int(payload.get("payout", 0))
+			_steps = payload.get("steps", [])
 			# The spin is over however it ended — nudges spent, declined, or
 			# never offered — so the chevrons come down here rather than only
 			# when the last one happens to be used.
 			_offer_nudges(0)
 			# Landed already: the decision was made after the drums stopped, so
-			# the celebration is owed now rather than at the end of an animation
+			# the performance is owed now rather than at the end of an animation
 			# that has already finished.
 			if not _busy:
-				_celebrate(_banked, float(payload.get("multiplier", 1.0)))
+				_perform(_banked, float(payload.get("multiplier", 1.0)))
 		EffectBus.Event.FLOOR_STARTED:
 			var spins: int = maxi(1, int(payload.get("spins", 1)))
 			_par = maxf(1.0, float(payload.get("ante", 0)) / float(spins))
@@ -258,6 +314,9 @@ func _play_spin(payout: int, multiplier: float) -> void:
 		_audio.start_loop(&"axle_whir_loop")
 	var last: int = _reels.size() - 1
 	var tense: bool = _tension_builds()
+	_tense = tense
+	if tense:
+		_tells((SPIN_DURATION + REEL_STAGGER * float(last - 1)) * pace, TENSION_EXTRA * pace)
 	for i: int in _reels.size():
 		var reel: Node3D = _reels[i]
 		var spin_time: float = (SPIN_DURATION + REEL_STAGGER * float(i)) * pace
@@ -404,16 +463,46 @@ func _set_glow(reel: Node3D, tint: Color, value: float) -> void:
 
 
 func _finish_spin(payout: int, multiplier: float) -> void:
+	if _banked >= 0:
+		# Banked already: the performance starts the moment the last drum
+		# lands, and the machine stays busy until the total has.
+		_perform(_banked, multiplier)
+		return
 	_busy = false
 	_set_odds(multiplier)
 	_flush_counters()
-	if _banked >= 0:
-		_celebrate(_banked, multiplier)
-		return
 	# The board is standing but not banked: the machine owes a decision. Say how
 	# the line reads so the controls can open, and hold the coins and the bells
 	# back until the player has actually taken the money.
 	result_judged.emit(_judge(payout), payout, false)
+
+
+## The machine knows before you do. While the last drum runs on, the tubes
+## flicker, the lamp dims a shade and the count's needle twitches — tells
+## that only ever play on a genuinely live line, because a tell that lies
+## is a tell this audience will stop believing.
+func _tells(after: float, seconds: float) -> void:
+	var tells: Tween = create_tween()
+	tells.tween_interval(after)
+	if _light != null:
+		tells.tween_property(_light, "light_energy", LAMP_REST * 0.7, 0.12)
+	var ticks: int = maxi(1, int(seconds / 0.07))
+	for i: int in ticks:
+		tells.tween_callback(_tell_tick).set_delay(0.07)
+	if _light != null:
+		tells.tween_property(_light, "light_energy", LAMP_REST, 0.2)
+	tells.tween_callback(func() -> void:
+		for digit: Label3D in _counters.get("cash", []):
+			digit.modulate = Color(1.0, 0.6, 0.18) * 2.6)
+
+
+func _tell_tick() -> void:
+	for digit: Label3D in _counters.get("cash", []):
+		digit.modulate = Color(1.0, 0.6, 0.18) * randf_range(1.2, 3.2)
+	if _gauge_count != null:
+		var twitch: Tween = create_tween()
+		twitch.tween_property(_gauge_count, "rotation:z",
+				_gauge_count.rotation.z + randf_range(-0.08, 0.08), 0.05)
 
 
 ## Snaps the arm down and lets it drift back up. The throw is deliberately
@@ -796,21 +885,14 @@ func set_readout(debt: int, floor_name: String, memo: String = "") -> void:
 
 ## How this spin went, relative to what the floor needs per spin.
 func _judge(payout: int) -> Result:
-	var share: float = float(payout) / _par
-	if share >= JACKPOT_SHARE:
-		return Result.JACKPOT
-	if share >= GOOD_SHARE:
-		return Result.GOOD
-	if share >= THIN_SHARE:
-		return Result.THIN
-	return Result.DEAD
+	return int(ScoreDirector.tier_of(payout, _par)) as Result
 
 
 ## Writes [param value] onto the [param bank] counter — cash, ante, spins or
 ## chips. While the drums are turning the value is held and shown as they
 ## land, so a payout never appears on the machine before the reels have.
 func set_counter(bank: String, value: int) -> void:
-	if _busy:
+	if _busy or (_awaiting and bank == "cash"):
 		_counter_pending[bank] = value
 		return
 	_show_counter(bank, value)
@@ -836,6 +918,7 @@ func _show_counter(bank: String, value: int) -> void:
 	text = text.lpad(digits.size())
 	var before: String = String(_counter_shown.get(bank, ""))
 	_counter_shown[bank] = text
+	_counter_value[bank] = value
 	var tinked: bool = false
 	for i: int in digits.size():
 		var digit: Label3D = digits[i] as Label3D
@@ -853,8 +936,11 @@ func _show_counter(bank: String, value: int) -> void:
 			var flash: Tween = create_tween()
 			digit.modulate = Color(1.0, 0.8, 0.42) * 2.8
 			flash.tween_property(digit, "modulate", Color(1.0, 0.6, 0.18) * 2.6, 0.35)
-			if not tinked and _audio != null and not before.is_empty():
+			var now: float = float(Time.get_ticks_msec()) / 1000.0
+			if not tinked and _audio != null and not before.is_empty() \
+					and now - _last_tink > 0.07:
 				_audio.play_at(&"nixie_tink")
+				_last_tink = now
 				tinked = true
 
 
@@ -914,7 +1000,7 @@ func _on_lever_input(_camera: Node, event: InputEvent, _at: Vector3,
 ## The win, on the window: every payline plate flares in turn and the payline
 ## bar flashes, so the eye is told which symbols paid before the number is.
 func _ripple(result: Result) -> void:
-	var strength: float = 1.0 if result == Result.JACKPOT else 0.6
+	var strength: float = 1.0 if result >= Result.HEAVY else 0.6
 	for i: int in _reels.size():
 		var plate: MeshInstance3D = _reels[i].get_node_or_null(^"Payline") as MeshInstance3D
 		if plate == null:
@@ -944,59 +1030,284 @@ func _ripple(result: Result) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
-## Everything that tells the player how the spin went, keyed to one judgement so
-## the coins, the light, the shake and the sound can never disagree.
+## The scoring performance. A spin is not an event that produces a number;
+## it is a beginning, a rising middle, a held pause and a payoff, and this is
+## where the machine plays it: every symbol and device on the receipt as its
+## own beat, the total rolling up on the tubes, everything stopping, then the
+## number. [ScoreDirector] writes the timetable; the machine keeps to it and
+## stays busy until the total has landed, so the run cannot advance through
+## its own payoff.
 ##
-## Coins used to fall on any payout above zero, which is nearly every spin, and
-## the flare scaled off the multiplier rather than the result. So a spin that
-## lost you the floor looked and sounded like a spin that won it.
-func _celebrate(payout: int, multiplier: float) -> void:
-	var result: Result = _judge(payout)
-	if _particles != null:
-		match result:
-			Result.JACKPOT:
-				_particles.amount = 260
-				_particles.restart()
-			Result.GOOD:
-				_particles.amount = 80
-				_particles.restart()
-			_:
-				# A thin or dead spin throws nothing. Silence and stillness are
-				# the feedback: you needed par and you did not get it.
-				pass
-	# Sparks off the works and smoke off the tube for the spins that earn it.
+## Keyed to one judgement so the coins, the light, the shake and the sound
+## can never disagree. Coins used to fall on any payout above zero, which is
+## nearly every spin, and a spin that lost you the floor looked and sounded
+## like a spin that won it.
+func _perform(payout: int, multiplier: float) -> void:
+	var plan: Dictionary = ScoreDirector.plan(_steps, payout, _par, pace)
+	var result: Result = int(plan["tier"]) as Result
+	_busy = true
+	scoring_started.emit(plan)
+	var seq: Tween = create_tween()
+	var clock: float = 0.0
+	for beat: Dictionary in plan["beats"]:
+		seq.tween_interval(maxf(float(beat["at"]) - clock, 0.001))
+		clock = float(beat["at"])
+		seq.tween_callback(_beat.bind(beat))
+	if result == Result.DEAD:
+		seq.tween_callback(_fail.bind(payout))
+		# On a near miss, the failed reel sits there for a moment before the
+		# machine moves on. Let it sit.
+		seq.tween_interval((0.6 if _tense else 0.14) * pace)
+		seq.tween_callback(_land.bind(result, payout, multiplier))
+		return
+	seq.tween_interval(maxf(float(plan["chain_end"]) - clock, 0.001))
+	seq.tween_callback(_count_up.bind(float(plan["count_seconds"])))
+	seq.tween_interval(float(plan["count_seconds"]))
+	seq.tween_callback(_hold.bind(float(plan["pause"])))
+	seq.tween_interval(float(plan["pause"]))
+	seq.tween_callback(_land.bind(result, payout, multiplier))
+
+
+## One beat of the chain: the thing that scored lights on the machine, the
+## drum jolts, one hit on the ladder, the running total steps up on the tubes.
+func _beat(beat: Dictionary) -> void:
+	var kind: String = String(beat["kind"])
+	var reel: int = int(beat["reel"])
+	var breaks: bool = bool(beat["break"])
+	match kind:
+		"symbol":
+			if reel >= 0 and reel < _reels.size():
+				_flare_plate(reel, Materials.SCORE, 1.0)
+				_jolt(reel)
+		"pattern":
+			_flash_payline(0.25 if String(beat["text"]) == "x0" else 0.7)
+		"soft":
+			pass
+		_:
+			_flash_odds()
+	_show_running(int(beat["running"]))
+	if _audio == null:
+		return
+	if kind == "soft":
+		_audio.play(&"payout_chime_small")
+	elif kind == "artifact" and not String(beat["id"]).is_empty():
+		# A device keeps its own voice: the rhythm break is a different
+		# instrument, and this is the instrument.
+		_audio.play(_audio.tier_cue(StringName(beat["id"])))
+	elif breaks:
+		_audio.play_at(&"score_break")
+	elif bool(beat["cap"]):
+		_audio.play(&"score_cap")
+	else:
+		_audio.play(&"score_beat", ScoreDirector.pitch_scale(int(beat["pitch"])))
+
+
+## The count-up: the cash tubes roll through the intermediate values rather
+## than swapping, most of the way to the total, and stop just short of it.
+func _count_up(seconds: float) -> void:
+	var from: int = int(_counter_value.get("cash", 0))
+	var target: int = int(_counter_pending.get("cash", from))
+	if target <= from or seconds <= 0.0:
+		return
+	var short: int = from + int(floor(float(target - from) * ScoreDirector.COUNT_SHORT))
+	var roll: Tween = create_tween()
+	roll.tween_method(func(value: float) -> void:
+		_show_counter("cash", int(value)), float(from), float(short), seconds) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## The pause. Everything stops: the lamp dims, the room drops to its own
+## tone, the reels are still. Held for slightly longer than is comfortable.
+func _hold(seconds: float) -> void:
+	pause_started.emit(seconds)
+	if _light != null:
+		var dim: Tween = create_tween()
+		dim.tween_property(_light, "light_energy", LAMP_REST * 0.3, 0.05)
+
+
+## Then the total. The final digits land, the tubes flare in the accent, and
+## the tier's package plays — the coins, the sparks, the sound, the light —
+## before the room is told how the spin went.
+func _land(result: Result, payout: int, multiplier: float) -> void:
+	_awaiting = false
+	_flush_counters()
+	_set_odds(multiplier)
+	if result > Result.DEAD:
+		_flare_bank("cash", 1.0 if result >= Result.STRONG else 0.6)
+	_package(result, multiplier)
+	_busy = false
+	result_judged.emit(result, payout, true)
+
+
+## A losing spin, given weight: the lamp flickers once and settles, one dry
+## mechanical sound with no musical content, and on a near miss the failed
+## reel held in the red for a moment.
+func _fail(_payout: int) -> void:
+	if _light != null:
+		var flicker: Tween = create_tween()
+		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.15, 0.05)
+		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.8, 0.06)
+		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.3, 0.05)
+		flicker.tween_property(_light, "light_energy", LAMP_REST, 0.25)
+	if _audio != null:
+		_audio.play_at(&"score_dead")
+	if _tense and not _reels.is_empty():
+		_flare_plate(_reels.size() - 1, Materials.JACKPOT, 0.5, 0.6)
+
+
+## The tier's package: what a spin of this size does to the machine.
+func _package(result: Result, multiplier: float) -> void:
+	if _particles != null and result >= Result.PAID:
+		_particles.amount = [0, 0, 40, 90, 180, 300][int(result)]
+		_particles.restart()
 	var sparks: CPUParticles3D = get_node_or_null(^"Sparks") as CPUParticles3D
 	var smoke: CPUParticles3D = get_node_or_null(^"Smoke") as CPUParticles3D
-	if result >= Result.GOOD:
+	if result >= Result.PAID:
 		_ripple(result)
-		if sparks != null:
-			sparks.amount = 140 if result == Result.JACKPOT else 50
-			sparks.restart()
-		if smoke != null and result == Result.JACKPOT:
-			smoke.restart()
+	if sparks != null and result >= Result.HEAVY:
+		sparks.amount = 160 if result == Result.OVERLOAD else 90
+		sparks.restart()
+	if smoke != null and result == Result.OVERLOAD:
+		smoke.restart()
 	if _light != null:
-		var flare: float = [0.35, 0.9, 2.6, 6.0][int(result)]
+		var flare: float = [0.35, 0.9, 1.6, 2.6, 4.5, 7.0][int(result)]
 		var tween: Tween = create_tween()
 		tween.tween_property(_light, "light_energy", flare, 0.08)
-		tween.tween_property(_light, "light_energy", 1.0, 0.55)
-	if _audio != null:
-		match result:
-			Result.JACKPOT:
-				_audio.play(&"jackpot_bells")
-				_audio.play_at(&"coin_cascade_large")
-				_audio.play_at(&"coin_clatter_concrete", Vector3(0.6, -1.0, 0.8))
-				_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.9, 1.7))
-			Result.GOOD:
-				_audio.play(&"payout_chime_big")
-				_audio.play_at(&"coin_cascade_small")
-				if multiplier >= 2.0:
-					_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.8, 1.4))
-			Result.THIN:
-				_audio.play(&"payout_chime_small")
-				_audio.play_at(&"coin_drop_single")
-			_:
-				pass
-	result_judged.emit(result, payout, true)
+		tween.tween_property(_light, "light_energy", LAMP_REST, 0.55)
+	if result == Result.OVERLOAD:
+		_overbright(0.9)
+	if _audio == null:
+		return
+	match result:
+		Result.OVERLOAD:
+			_audio.play(&"score_land")
+			_audio.play(&"jackpot_bells")
+			_audio.play_at(&"tube_overload")
+			_audio.play_at(&"coin_cascade_large")
+			_audio.play_at(&"coin_clatter_concrete", Vector3(0.6, -1.0, 0.8))
+			_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.9, 1.7))
+		Result.HEAVY:
+			_audio.play(&"score_land")
+			_audio.play_at(&"coin_cascade_large")
+			_audio.play_at(&"coin_clatter_concrete", Vector3(0.6, -1.0, 0.8))
+			_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.9, 1.5))
+		Result.STRONG:
+			_audio.play(&"score_land")
+			_audio.play_at(&"coin_cascade_small")
+			if multiplier >= 2.0:
+				_audio.play(&"mult_swell", clampf(multiplier / 3.0, 0.8, 1.4))
+		Result.PAID:
+			_audio.play(&"score_land", 1.12)
+			_audio.play_at(&"coin_cascade_small")
+		Result.SCRAPING:
+			_audio.play_at(&"coin_drop_single")
+		_:
+			pass
+
+
+## Lights one reel's payline plate in [param tint] and lets it fade back.
+func _flare_plate(reel: int, tint: Color, strength: float, seconds: float = 0.35) -> void:
+	var plate: MeshInstance3D = _reels[reel].get_node_or_null(^"Payline") as MeshInstance3D
+	if plate == null:
+		return
+	var material: StandardMaterial3D = plate.material_override as StandardMaterial3D
+	if material == null:
+		return
+	var resting: float = material.emission_energy_multiplier if material.emission_enabled else 0.0
+	var resting_tint: Color = material.emission
+	material.emission_enabled = true
+	material.emission = tint
+	material.emission_energy_multiplier = GLOW_MAX * strength
+	var fade: Tween = create_tween()
+	fade.tween_property(material, "emission_energy_multiplier", resting, seconds * pace) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	fade.tween_callback(func() -> void:
+		material.emission = resting_tint
+		material.emission_enabled = resting > 0.0)
+
+
+## The drum bay jolts a few millimetres: a symbol scoring is a thing that
+## happens to the machine, not to a number.
+func _jolt(reel: int) -> void:
+	var drum: Node3D = _reels[reel]
+	var rest: float = drum.position.y
+	var jolt: Tween = create_tween()
+	jolt.tween_property(drum, "position:y", rest + 0.007, 0.03)
+	jolt.tween_property(drum, "position:y", rest, 0.11) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _flash_payline(strength: float) -> void:
+	if _payline == null:
+		return
+	var bar: StandardMaterial3D = _payline.material_override as StandardMaterial3D
+	if bar == null:
+		return
+	var flash: Tween = create_tween()
+	bar.emission_energy_multiplier = 6.0 * strength
+	flash.tween_property(bar, "emission_energy_multiplier", 1.8, 0.45 * pace) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+## The odds tubes strike on a device's beat.
+func _flash_odds() -> void:
+	if _odds == null:
+		return
+	for i: int in 4:
+		var digit: Label3D = _odds.get_node_or_null("Digit%d" % i) as Label3D
+		if digit == null or not digit.visible:
+			continue
+		var flash: Tween = create_tween()
+		digit.modulate = Materials.SCORE * 2.6
+		flash.tween_property(digit, "modulate", Color(1.0, 0.55, 0.14) * 1.5, 0.3)
+
+
+## The running total, on the odds tubes while the chain plays. They go back
+## to the multiplier when the total lands.
+func _show_running(value: int) -> void:
+	if _odds == null:
+		return
+	var text: String = str(maxi(0, value))
+	if text.length() > 4:
+		text = "%dK" % (maxi(0, value) / 1000)
+	text = text.lpad(4)
+	for i: int in 4:
+		var digit: Label3D = _odds.get_node_or_null("Digit%d" % i) as Label3D
+		if digit == null:
+			continue
+		var glyph: String = text[i]
+		var lit: bool = glyph != " "
+		digit.text = glyph
+		digit.visible = lit
+		var halo: MeshInstance3D = _odds.get_node_or_null("Halo%d" % i) as MeshInstance3D
+		if halo != null:
+			halo.visible = lit
+
+
+## The bank's tubes flare in the accent as the total lands on them.
+func _flare_bank(bank: String, strength: float) -> void:
+	for digit: Label3D in _counters.get(bank, []):
+		if not digit.visible:
+			continue
+		var flash: Tween = create_tween()
+		digit.modulate = Materials.SCORE * (2.4 + 2.0 * strength)
+		flash.tween_property(digit, "modulate", Color(1.0, 0.6, 0.18) * 2.6, 0.6 * pace) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+## Tier five: the tubes overbright and buzzing for [param seconds], past what
+## they were built for.
+func _overbright(seconds: float) -> void:
+	for bank: String in _counters:
+		for digit: Label3D in _counters[bank]:
+			if not digit.visible:
+				continue
+			var burn: Tween = create_tween()
+			var ticks: int = int(seconds / 0.06)
+			for i: int in ticks:
+				burn.tween_callback(func() -> void:
+					digit.modulate = Color(1.0, 0.75, 0.4) * randf_range(3.5, 6.0)).set_delay(0.06)
+			burn.tween_property(digit, "modulate", Color(1.0, 0.6, 0.18) * 2.6, 0.4)
 
 
 ## Fits hardware without buying it. For visual QA only: a real run reaches a

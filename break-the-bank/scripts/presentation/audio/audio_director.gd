@@ -22,6 +22,10 @@ const BIG_PAYOUT: int = 60
 ## How quickly the music bus drops and recovers around a ducking cue.
 const DUCK_ATTACK: float = 0.06
 const DUCK_RELEASE: float = 0.45
+## How far the room drops for the pause before a total lands, and how fast.
+const HUSH_DB: float = 14.0
+const HUSH_ATTACK: float = 0.05
+const HUSH_RELEASE: float = 0.14
 
 @export var master_volume_db: float = 0.0
 ## Node positional cues are parented to — the machine, normally.
@@ -39,6 +43,9 @@ var _feeders: Dictionary = {}
 var _bus: EffectBus
 var _music_base_db: float = 0.0
 var _duck_tween: Tween
+var _hush_tween: Tween
+var _hush_resting: Dictionary = {}
+var _distortion: AudioEffectDistortion
 var _anchor: Node3D
 ## The room's own noises, on their own clocks: a drip, a groan, the sign
 ## popping. Seconds until each next fires.
@@ -307,14 +314,14 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	if bool(payload.get("resumed", false)) and kind != EffectBus.Event.RUN_STARTED:
 		return
 	match kind:
-		# SPIN_STARTED, SYMBOL_LANDED and PAYOUT_CALCULATED are deliberately not
-		# handled here. The simulation resolves an entire spin inside one frame,
-		# so reacting to those events fired the handle pull, all three reel stops
-		# and the payout chime simultaneously — at the instant of the tap, before
-		# a single reel had turned. Everything about a spin then happened in
-		# silence. [SlotView3D] owns the spin's clock and therefore its audio.
-		EffectBus.Event.ARTIFACT_TRIGGERED:
-			play(_tier_cue(StringName(payload.get("artifact", &""))))
+		# SPIN_STARTED, SYMBOL_LANDED, ARTIFACT_TRIGGERED and PAYOUT_CALCULATED
+		# are deliberately not handled here. The simulation resolves an entire
+		# spin inside one frame, so reacting to those events fired the handle
+		# pull, all three reel stops, every device and the payout chime
+		# simultaneously — at the instant of the tap, before a single reel had
+		# turned. Everything about a spin then happened in silence. [SlotView3D]
+		# owns the spin's clock and therefore its audio; a device's cue plays
+		# on its beat of the scoring chain, through [method tier_cue].
 		EffectBus.Event.ARTIFACT_ACQUIRED:
 			play_at(&"artifact_acquire")
 			play(&"ui_purchase_confirm")
@@ -397,9 +404,66 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			pass
 
 
+## Everything stops. The room and the machine drop to room tone for the pause
+## before a total lands, and come back as it does. Music is left where it is:
+## it is the one thing the pause is not about.
+func hush(seconds: float) -> void:
+	if _hush_tween != null and _hush_tween.is_valid():
+		_hush_tween.kill()
+		_unhush()
+	_hush_tween = create_tween().set_parallel(true)
+	for bus_name: String in ["SFX", "Ambience", "UI"]:
+		var index: int = AudioServer.get_bus_index(bus_name)
+		if index < 0:
+			continue
+		var resting: float = AudioServer.get_bus_volume_db(index)
+		_hush_resting[bus_name] = resting
+		_hush_tween.tween_method(func(value: float) -> void:
+			AudioServer.set_bus_volume_db(index, value),
+			resting, resting - HUSH_DB, HUSH_ATTACK)
+		_hush_tween.tween_method(func(value: float) -> void:
+			AudioServer.set_bus_volume_db(index, value),
+			resting - HUSH_DB, resting, HUSH_RELEASE).set_delay(maxf(seconds, HUSH_ATTACK))
+
+
+func _unhush() -> void:
+	for bus_name: String in _hush_resting:
+		var index: int = AudioServer.get_bus_index(bus_name)
+		if index >= 0:
+			AudioServer.set_bus_volume_db(index, float(_hush_resting[bus_name]))
+	_hush_resting.clear()
+
+
+## Tier five: the mix clips. A hard clip on the master for [param seconds],
+## the one moment the audio is allowed to distort — the House is in trouble
+## and the machine is past what it was built for.
+func overload(seconds: float) -> void:
+	var master: int = AudioServer.get_bus_index("Master")
+	if master < 0:
+		return
+	if _distortion == null:
+		_distortion = AudioEffectDistortion.new()
+		_distortion.mode = AudioEffectDistortion.MODE_CLIP
+		_distortion.drive = 0.55
+		_distortion.pre_gain = 7.0
+		_distortion.post_gain = -5.0
+		AudioServer.add_bus_effect(master, _distortion)
+	var slot: int = -1
+	for i: int in AudioServer.get_bus_effect_count(master):
+		if AudioServer.get_bus_effect(master, i) == _distortion:
+			slot = i
+	if slot < 0:
+		return
+	AudioServer.set_bus_effect_enabled(master, slot, true)
+	var off: Tween = create_tween()
+	off.tween_callback(func() -> void:
+		AudioServer.set_bus_effect_enabled(master, slot, false)).set_delay(seconds)
+
+
 ## Maps an artifact to its impact tier cue. Tier follows how deep the artifact
-## unlocks, so a floor 7 payoff never sounds like a floor 1 trinket.
-func _tier_cue(artifact_id: StringName) -> StringName:
+## unlocks, so a floor 7 payoff never sounds like a floor 1 trinket. Public:
+## the machine plays it on the device's beat of the scoring chain.
+func tier_cue(artifact_id: StringName) -> StringName:
 	var artifact: ArtifactDef = ContentDB.shared().artifact_by_id(artifact_id)
 	var tier: int = artifact.tier() if artifact != null else 1
 	return StringName("artifact_t%d_trigger" % tier)

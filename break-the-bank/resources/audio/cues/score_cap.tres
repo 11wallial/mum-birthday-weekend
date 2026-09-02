@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"score_cap"
+file_name = "mechanical/score_cap.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(220, 400)
+frequency_notes = "The ladder at its cap: the chain has run past the twelfth rung. A high double bell with a long shimmer, the one sound that means an enormous chain."
+pitch_jitter = Vector2(0.99, 1.01)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -9.0
+positional = true
+loops = false
+max_voices = 2
+priority = 8
+duck_music_db = 2.0
+fallback = 8
+fallback_hz = 2640.0

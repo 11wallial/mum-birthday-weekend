@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"score_land"
+file_name = "mechanical/score_land.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(600, 1200)
+frequency_notes = "The total landing after the pause: one deep bell with a long decay, the beat everything stopped for."
+pitch_jitter = Vector2(0.99, 1.01)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 1
+priority = 10
+duck_music_db = 6.0
+fallback = 8
+fallback_hz = 660.0

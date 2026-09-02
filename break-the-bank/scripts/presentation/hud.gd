@@ -326,15 +326,16 @@ func mark_result(result: SlotView3D.Result, _payout: int, settled: bool = true) 
 	# used to be called dead while the player was looking at a nudge worth forty
 	# credits, which is the readout arguing with the buttons underneath it.
 	var verdict: String = ("STANDING" if not settled
-			else ["DEAD", "THIN", "PAID", "JACKPOT"][int(result)])
+			else ["DEAD", "SCRAPING", "PAID", "STRONG", "HEAVY", "OVERLOAD"][int(result)])
 	var tint: Color = (UiSkin.INK_MUTED if not settled else [
 		Color(0.63, 0.42, 0.40), Color(0.76, 0.71, 0.60),
-		Color(1.0, 0.82, 0.44), Color(1.0, 0.62, 0.24),
+		Color(1.0, 0.82, 0.44), Color(1.0, 0.76, 0.34),
+		Color(1.0, 0.62, 0.24), Color(1.0, 0.5, 0.2),
 	][int(result)])
 	_line.text = "%s     %s" % [verdict, _line.text]
 	_line.add_theme_color_override(&"font_color", tint)
 	_line.modulate = Color(1, 1, 1, 1)
-	if settled and result >= SlotView3D.Result.GOOD:
+	if settled and result >= SlotView3D.Result.PAID:
 		# A win is worth a beat of movement; a dead spin is worth stillness.
 		var pulse: Tween = create_tween()
 		_line.pivot_offset = Vector2.ZERO

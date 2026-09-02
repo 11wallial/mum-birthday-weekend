@@ -126,6 +126,8 @@ func _ready() -> void:
 		_slot_view.set_audio(_audio)
 	if _slot_view != null:
 		_slot_view.result_judged.connect(_on_result_judged)
+		_slot_view.scoring_started.connect(_on_scoring_started)
+		_slot_view.pause_started.connect(_on_pause_started)
 	if _shop != null:
 		_shop.buy_requested.connect(_on_buy_requested)
 		_shop.leave_requested.connect(_on_leave_requested)
@@ -345,9 +347,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) -> void:
 	if _hud != null and _hud.has_method("mark_result"):
 		_hud.call("mark_result", result, payout, settled)
-	# The receipt prints once the reels have shown the line it describes.
-	if _receipt != null and state != null:
-		_receipt.print_board(state.board.breakdown, payout, state.board.chips, settled)
+	# A standing board prints its receipt once the reels have shown the line
+	# it describes. A banked one printed in time with the performance.
+	if _receipt != null and state != null and not settled:
+		_receipt.print_board(state.board.breakdown, payout, state.board.chips, false)
 	# Only now does the machine offer its decision. The simulation knew what the
 	# board owed before a single reel had stopped; offering it then would ask the
 	# player to nudge symbols they had not been shown.
@@ -355,15 +358,105 @@ func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) ->
 		_deck.set_busy(false)
 		_deck.refresh()
 	_prompt_decision()
-	if _camera == null:
+	if not settled:
 		return
-	match result:
-		SlotView3D.Result.JACKPOT:
-			_camera.shake(1.0)
-		SlotView3D.Result.GOOD:
-			_camera.shake(0.45)
-		_:
-			pass
+	_settle_surety()
+	# The tier's package, in the room: what a spin of this size does to
+	# everything around the machine. The machine's own part played already.
+	if _camera != null:
+		match result:
+			SlotView3D.Result.OVERLOAD:
+				_camera.shake(1.0)
+				_camera.push_in(0.14, 1.2)
+			SlotView3D.Result.HEAVY:
+				_camera.shake(1.0)
+				_camera.push_in(0.1, 0.9)
+			SlotView3D.Result.STRONG:
+				_camera.shake(0.45)
+				_camera.push_in(0.06, 0.6)
+			SlotView3D.Result.PAID:
+				_camera.shake(0.2)
+			_:
+				pass
+	if result >= SlotView3D.Result.HEAVY:
+		_swing_lamp()
+		# Sustained: a second kick as the first dies, so the shake reads as
+		# the machine straining rather than a single knock.
+		if _camera != null:
+			var again: Tween = create_tween()
+			again.tween_callback(func() -> void: _camera.shake(0.7)).set_delay(0.3)
+	if result == SlotView3D.Result.OVERLOAD:
+		_flicker_room(0.9)
+		if _audio != null:
+			_audio.overload(0.9)
+
+
+## The performance is starting: the receipt prints in time with it, and the
+## deck stays closed until the total has landed.
+func _on_scoring_started(plan: Dictionary) -> void:
+	if _deck != null:
+		_deck.set_busy(true)
+	if _receipt != null and state != null:
+		_receipt.print_board(state.board.breakdown, state.board.payout, state.board.chips,
+				true, "", float(plan.get("end", 0.0)), int(plan.get("tier", -1)))
+
+
+## The pause before the total: the room's own light dims and the room drops
+## to its own tone, for exactly as long as the machine holds.
+func _on_pause_started(seconds: float) -> void:
+	if _audio != null:
+		_audio.hush(seconds)
+	var key: Light3D = _room_parts.get("key", null) as Light3D
+	if key == null:
+		return
+	var resting: float = key.light_energy
+	var dim: Tween = create_tween()
+	dim.tween_property(key, "light_energy", resting * 0.35, 0.05)
+	dim.tween_property(key, "light_energy", resting, 0.16).set_delay(maxf(seconds - 0.05, 0.0))
+
+
+## The pendant swings on a heavy spin, and the key light — which lives at the
+## bulb — swings with it, so the shadows in the room move with the fixture.
+func _swing_lamp() -> void:
+	var bulb: Node3D = _room_parts.get("bulb", null) as Node3D
+	var key: Node3D = _room_parts.get("key", null) as Node3D
+	var pendant: Node3D = bulb.get_parent() as Node3D if bulb != null else null
+	for node: Node3D in [pendant, key]:
+		if node == null:
+			continue
+		var rest: float = node.rotation.z
+		var swing: Tween = create_tween()
+		var amplitude: float = 0.05
+		for i: int in 4:
+			swing.tween_property(node, "rotation:z", rest + amplitude, 0.28) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			swing.tween_property(node, "rotation:z", rest - amplitude, 0.28) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			amplitude *= 0.6
+		swing.tween_property(node, "rotation:z", rest, 0.2) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+## Tier five: the room's lights flicker for [param seconds]. The House is in
+## trouble and the building knows it.
+func _flicker_room(seconds: float) -> void:
+	for part: String in ["key", "cold", "wash"]:
+		var light: Light3D = _room_parts.get(part, null) as Light3D
+		if light == null:
+			continue
+		var resting: float = light.light_energy
+		var flicker: Tween = create_tween()
+		var ticks: int = int(seconds / 0.05)
+		for i: int in ticks:
+			flicker.tween_callback(func() -> void:
+				light.light_energy = resting * randf_range(0.2, 1.4)).set_delay(0.05)
+		flicker.tween_property(light, "light_energy", resting, 0.15)
+
+
+## The surety instrument on the machine: shown after a banked spin, not
+## during one, so it moves on the spin's own beat.
+func _settle_surety() -> void:
+	pass
 
 
 func _on_touch_camera() -> void:

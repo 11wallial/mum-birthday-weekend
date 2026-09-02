@@ -16,7 +16,10 @@ extends SceneTree
 ## Seconds to let tweens, particles and camera transitions finish before a shot.
 ## Frame counts are the wrong unit here: under a software driver a frame can be
 ## 30ms, and the camera transition alone is 0.7s.
-const DEFAULT_SETTLE: float = 1.1
+## Long enough for a spin's whole scoring performance — the chain, the count,
+## the pause and the total — to have landed before the next frame drives on;
+## the room refuses to advance through it.
+const DEFAULT_SETTLE: float = 2.6
 
 var _root_node: Node = null
 var _shots: Array[Dictionary] = []
