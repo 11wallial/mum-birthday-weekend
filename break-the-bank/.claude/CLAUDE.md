@@ -390,6 +390,11 @@ Rules that cost real time to learn:
 - Nothing lit on the reels goes past the environment's 1.1 bloom threshold:
   a plate that bloomed bleached its own print. The window lamp is nearly
   all diffuse for the same reason.
+- **The cabinet is recast around the box, never by moving it.** Every
+  counter, key, drum, mount and gauge is positioned against `CHASSIS`, so
+  the classic silhouette — the cheeks, the shoulders, the rail, the tray,
+  the step, in `MachineFrame._recast` — is cut around that box. Adding to
+  it is safe; changing `CHASSIS` is not.
 - **The value structure is one bulb.** The key in the pendant is the only
   bright thing; the wall and ceiling washes are under 1.0, the cold tube is
   the one fill, the ambient is 0.14, and `FloorMood` scales every floor's

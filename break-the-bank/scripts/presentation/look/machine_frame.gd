@@ -164,6 +164,7 @@ func _chassis() -> void:
 					Vector3(sx * (CHASSIS.x + 0.1), CHASSIS_Y - 0.4 + float(i) * 0.4, 0.2 - float(i) * 0.07),
 					Materials.machined(Materials.STEEL, 59))
 	_box(chassis, Vector3(CHASSIS.x * 2.2, 0.09, 0.5), Vector3(0.0, CHASSIS_Y + CHASSIS.y + 0.04, -0.06), iron)
+	_recast(chassis, iron)
 	# A recessed housing behind the reels, so the drums sit in shadow rather than
 	# on a flat panel. This is most of what sells the depth of the front face.
 	# Deep enough to swallow the whole drum: a reel poking through the back of
@@ -179,6 +180,55 @@ func _chassis() -> void:
 	_box(chassis, Vector3(0.3, 0.34, 0.02),
 			Vector3(-0.58, CHASSIS_Y - 0.16, CHASSIS.z + 0.012),
 			Materials.machined(Materials.STEEL, 57))
+
+
+## The classic cabinet, recast around the box.
+##
+## A fruit machine is not a crate: the head narrows into shoulders, the
+## glass sits under a brow, the hand rests on a rail, the money lands in a
+## tray you can reach, and the whole thing stands on a step. None of that
+## can move the box — every counter, key, drum and mount is positioned
+## against [constant CHASSIS] — so the recast is cut around it, the way the
+## cheeks are. First pass: the shoulders, the rail, the tray and the step.
+func _recast(chassis: Node3D, iron: StandardMaterial3D) -> void:
+	var steel: StandardMaterial3D = Materials.machined(Color(0.4, 0.39, 0.38), 60)
+	var top: float = CHASSIS_Y + CHASSIS.y
+	# Shoulders: the top corners cut back at forty-five degrees, so the head
+	# tapers into the crown instead of ending in a square edge.
+	for sx: float in [-1.0, 1.0]:
+		for sz: float in [-1.0, 1.0]:
+			var shoulder: MeshInstance3D = _box(chassis, Vector3(0.3, 0.3, 0.26),
+					Vector3(sx * (CHASSIS.x - 0.02), top - 0.02, sz * (CHASSIS.z - 0.1)),
+					iron)
+			shoulder.rotation.z = sx * PI * 0.25
+	# The rail: brass, across the front under the button shelf, where a hand
+	# goes while the other hauls the lever. Polished where it is held.
+	var rail: StandardMaterial3D = Materials.brass(61)
+	rail.roughness = 0.28
+	_cylinder(chassis, 0.028, CHASSIS.x * 1.7, Vector3(0.0, CHASSIS_Y - 0.62, CHASSIS.z + 0.3),
+			Vector3(0.0, 0.0, PI * 0.5), rail)
+	for sx: float in [-1.0, 1.0]:
+		_segment(chassis, Vector3(sx * CHASSIS.x * 0.85, CHASSIS_Y - 0.62, CHASSIS.z + 0.3),
+				Vector3(sx * CHASSIS.x * 0.9, CHASSIS_Y - 0.6, CHASSIS.z + 0.06), 0.022, steel)
+	# The tray: where the money lands, cut into the plinth under the console
+	# and open to the room. A machine that pays into nothing is a diagram.
+	var tray: Node3D = _group(&"Tray")
+	# On the plinth's face, clear of the console shelf above it: a tray set
+	# inside the concrete is a tray nobody can see coins land in.
+	tray.position = Vector3(0.0, PLINTH_TOP - 0.22, 0.78)
+	_box(tray, Vector3(0.86, 0.04, 0.3), Vector3(0.0, -0.07, 0.06), steel)
+	_box(tray, Vector3(0.86, 0.16, 0.03), Vector3(0.0, 0.0, 0.2), steel)
+	for sx: float in [-1.0, 1.0]:
+		_box(tray, Vector3(0.03, 0.16, 0.3), Vector3(sx * 0.43, 0.0, 0.06), steel)
+	# The mouth above it, dark, and a lip of brass over that: the coins come
+	# out here and the eye should know it before the first payout.
+	_box(tray, Vector3(0.8, 0.2, 0.14), Vector3(0.0, 0.06, -0.02), Materials.cavity())
+	_box(tray, Vector3(0.9, 0.03, 0.1), Vector3(0.0, 0.17, 0.02), rail)
+	# The step: the cabinet stands on the plinth, and the plinth stands on a
+	# course of its own. It is what makes the machine read as installed.
+	_box(_root, Vector3(2.6, 0.09, 1.36), Vector3(0.0, 0.045, 0.0),
+			Materials.weathered("concrete", Materials.CONCRETE, 0.5, 0.9, 0.5, 0.3,
+					Materials.concrete(62)))
 
 
 ## Three drums on a shared axle, in the node shape [SlotView3D] expects: each
