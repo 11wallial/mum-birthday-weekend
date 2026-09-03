@@ -457,6 +457,15 @@ renders in Forward+. `--settle=<s>` is how long each frame waits before the
 capture; the default covers a spin's whole scoring performance, and a shorter
 one (`--settle=1.3`) catches the chain mid-flight.
 
+## Type
+
+Three faces, all SIL Open Font License 1.1, shipped with their licences in
+`assets/fonts/` and credited in `assets/fonts/CREDITS.md`: **Bebas Neue**
+for anything stamped into metal, **IBM Plex Sans** for anything read at
+length (the project theme's default), **IBM Plex Mono** for what a machine
+printed — the receipt, the statement, the ledger's tube, the Nixie digits.
+`scripts/presentation/look/type.gd` is the only place a face is named.
+
 ## Audio
 
 Audio is manifest-driven: every cue is declared in `resources/audio/cues/*.tres`

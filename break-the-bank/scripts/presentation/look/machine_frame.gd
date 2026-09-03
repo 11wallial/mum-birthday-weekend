@@ -285,6 +285,7 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 		# needing art first, which is the whole reason the text path survives.
 		var symbol: Label3D = Label3D.new()
 		symbol.name = "Symbol"
+		Type.face(symbol, &"body")
 		symbol.text = "?"
 		symbol.font_size = 96
 		symbol.pixel_size = 0.0022
@@ -463,7 +464,8 @@ func _button_row(reel_count: int) -> void:
 		var caption: Label3D = Label3D.new()
 		caption.name = "Caption"
 		caption.text = ""
-		caption.font_size = 40
+		caption.font_size = 52
+		Type.face(caption, &"display")
 		caption.pixel_size = 0.0012
 		caption.modulate = Color(0.9, 0.86, 0.78)
 		caption.outline_size = 8
@@ -534,6 +536,7 @@ func _counter_bank() -> Dictionary:
 			halo.visible = false
 			var digit: Label3D = Label3D.new()
 			digit.name = "Digit_%s_%d" % [bank[0], i]
+			Type.face(digit, &"mono")
 			digit.text = ""
 			digit.font_size = 100
 			digit.pixel_size = 0.0013
@@ -546,7 +549,8 @@ func _counter_bank() -> Dictionary:
 		# The caption, engraved under the bank.
 		var caption: Label3D = Label3D.new()
 		caption.text = String(bank[1])
-		caption.font_size = 36
+		Type.face(caption, &"display")
+		caption.font_size = 48
 		caption.pixel_size = 0.0013
 		caption.modulate = Color(0.95, 0.82, 0.52)
 		caption.outline_size = 0
@@ -611,7 +615,8 @@ func _console() -> Array[Node3D]:
 		var caption: Label3D = Label3D.new()
 		caption.name = "Caption"
 		caption.text = ""
-		caption.font_size = 34
+		caption.font_size = 46
+		Type.face(caption, &"display")
 		caption.pixel_size = 0.0012
 		caption.modulate = Color(0.12, 0.1, 0.08)
 		caption.outline_size = 0
@@ -762,7 +767,10 @@ func _gearbox() -> Node3D:
 		mark.rotation.z = angle - PI * 0.5
 	var heat_label: Label3D = Label3D.new()
 	heat_label.text = "HEAT"
-	heat_label.font_size = 40
+	Type.face(heat_label, &"display")
+	# Bebas is narrow: a caption set in it needs more size than the same
+	# caption set in the engine's default did.
+	heat_label.font_size = 62
 	heat_label.pixel_size = 0.0011
 	heat_label.modulate = Color(0.2, 0.19, 0.18)
 	heat_label.shaded = false
@@ -878,6 +886,8 @@ func _monitor() -> MeshInstance3D:
 	# Eight lines fit at this size: the heading, the floor, the principal,
 	# two of memo and two of the run's log under a rule.
 	readout.add_theme_font_size_override(&"font_size", 18)
+	# The ledger is printed by the machine: the tube is set in the mono.
+	readout.add_theme_font_override(&"font", Type.mono())
 	readout.add_theme_color_override(&"font_color", Color(0.9, 1.0, 0.92))
 	# Inset well clear of the edges: the barrel distortion samples past the
 	# frame at the edge centres, and text placed there is text cut in half.
@@ -955,6 +965,7 @@ func _odds_display() -> Node3D:
 		halo.visible = false
 		var digit: Label3D = Label3D.new()
 		digit.name = "Digit%d" % i
+		Type.face(digit, &"mono")
 		digit.text = ""
 		digit.font_size = 100
 		digit.pixel_size = 0.0013
@@ -1161,7 +1172,8 @@ func _surety_column() -> Dictionary:
 	lamp.material_override = (lamp.material_override as StandardMaterial3D).duplicate()
 	var caption: Label3D = Label3D.new()
 	caption.text = "SURETY"
-	caption.font_size = 30
+	Type.face(caption, &"display")
+	caption.font_size = 42
 	caption.pixel_size = 0.0012
 	caption.modulate = Color(0.95, 0.82, 0.52)
 	caption.outline_size = 0
@@ -1354,6 +1366,7 @@ func _decals(parent: Node3D, front: float) -> void:
 				Vector3(PI * 0.5, 0.0, 0.0), Materials.machined(Materials.STEEL, 103), 8)
 	var serial: Label3D = Label3D.new()
 	serial.text = "No. 0447 · THE HOUSE"
+	Type.face(serial, &"mono")
 	serial.font_size = 26
 	serial.pixel_size = 0.0009
 	serial.modulate = Color(0.16, 0.13, 0.09)
@@ -1370,6 +1383,7 @@ func _decals(parent: Node3D, front: float) -> void:
 			Materials.enamel(Color(0.78, 0.74, 0.62), 104))
 	var inspected: Label3D = Label3D.new()
 	inspected.text = "INSPECTED\n— · —"
+	Type.face(inspected, &"display")
 	inspected.font_size = 18
 	inspected.pixel_size = 0.0009
 	inspected.modulate = Color(0.2, 0.18, 0.14)
@@ -1378,6 +1392,7 @@ func _decals(parent: Node3D, front: float) -> void:
 	sticker.add_child(inspected)
 	var voided: Label3D = Label3D.new()
 	voided.text = "VOID"
+	Type.face(voided, &"display")
 	voided.font_size = 34
 	voided.pixel_size = 0.0009
 	voided.modulate = Color(0.6, 0.14, 0.1, 0.85)
@@ -1403,6 +1418,7 @@ func _decals(parent: Node3D, front: float) -> void:
 			Materials.enamel(Color(0.72, 0.68, 0.55), 107))
 	var lettered: Label3D = Label3D.new()
 	lettered.text = "NO CREDIT.\nNO EXCEPTIONS.\n— MGMT"
+	Type.face(lettered, &"display")
 	lettered.font_size = 20
 	lettered.pixel_size = 0.0011
 	lettered.modulate = Color(0.14, 0.12, 0.1)

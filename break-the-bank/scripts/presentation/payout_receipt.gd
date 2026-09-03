@@ -267,6 +267,7 @@ func _line(left: String, right: String, size: float, tint: Color,
 	a.text = left
 	a.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	a.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
+	a.add_theme_font_override(&"font", Type.mono())
 	a.add_theme_color_override(&"font_color", tint)
 	a.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	a.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -277,6 +278,7 @@ func _line(left: String, right: String, size: float, tint: Color,
 		b.text = right
 		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
+		b.add_theme_font_override(&"font", Type.mono())
 		b.add_theme_color_override(&"font_color", tint)
 		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		b.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM

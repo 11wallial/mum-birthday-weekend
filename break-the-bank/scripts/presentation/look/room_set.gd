@@ -269,15 +269,23 @@ func _floor_sign() -> Label3D:
 	var housing: Node3D = _group(&"FloorSign")
 	# High enough to clear the crown, near enough to the centre to fit a narrow
 	# window: the sign ran off the right at 16:10 and behind the coil at 16:9.
-	housing.position = Vector3(2.85, 2.55, DEPTH_BACK + 0.12)
+	# Two lines of Bebas, hung clear of the conduit above and inside the
+	# crop of a 16:10 window: the sign is read from the machine, and both
+	# of those edges have cut it before.
+	housing.position = Vector3(2.72, 2.3, DEPTH_BACK + 0.12)
 	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
 	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
 			Materials.rusted(28))
 	var label: Label3D = Label3D.new()
 	label.name = "Text"
+	Type.face(label, &"display")
 	label.text = "FLOOR 1\nTHE BASEMENT"
-	label.font_size = 70
+	label.font_size = 88
+	# A long floor name wraps rather than running off the right of a
+	# narrow window: THE HIGH ROLLER ROOM did both before this.
+	label.width = 430.0
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	label.pixel_size = 0.0026
 	# Overdriven: past the environment's 1.1 glow threshold, so the letters
 	# bloom like lit tubes rather than reading as painted text.
@@ -295,9 +303,12 @@ func _floor_sign() -> Label3D:
 	for offset: Vector2 in [Vector2(0.014, 0.0), Vector2(-0.014, 0.0),
 			Vector2(0.0, 0.014), Vector2(0.0, -0.014)]:
 		var shell: Label3D = Label3D.new()
+		Type.face(shell, &"display")
 		shell.name = "Glow"
 		shell.text = label.text
-		shell.font_size = 70
+		shell.font_size = 88
+		shell.width = 430.0
+		shell.autowrap_mode = TextServer.AUTOWRAP_WORD
 		shell.pixel_size = 0.0026
 		shell.modulate = Color(Materials.SIGN.r, Materials.SIGN.g,
 				Materials.SIGN.b, 0.13)
@@ -421,6 +432,7 @@ func _intercom() -> void:
 	lamp.name = "Lamp"
 	var plate: Label3D = Label3D.new()
 	plate.text = "TANNOY"
+	Type.face(plate, &"display")
 	plate.font_size = 30
 	plate.pixel_size = 0.0009
 	plate.modulate = Color(0.7, 0.62, 0.45)
@@ -471,6 +483,7 @@ func _props() -> void:
 	# A sign over the manifold, the House's kind of joke.
 	var notice: Label3D = Label3D.new()
 	notice.text = "NO CREDIT"
+	Type.face(notice, &"display")
 	notice.font_size = 44
 	notice.pixel_size = 0.0018
 	notice.modulate = Color(0.75, 0.68, 0.5)

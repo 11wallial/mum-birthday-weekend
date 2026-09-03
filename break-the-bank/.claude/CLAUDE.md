@@ -429,6 +429,16 @@ Rules that cost real time to learn:
   the machine to the move it is teaching through `CasinoRoom._allowed`. The
   `debug_*` tools skip both. `screenshot.gd --shots=a,b` captures only the
   named frames, which is how a single frame is checked in seconds.
+- **Type is `Type`**: Bebas Neue for anything stamped into metal (the
+  wordmark, the sign, plates and captions), IBM Plex Sans for anything read
+  at length (the forms, the callouts — the project theme's default), IBM
+  Plex Mono for what a machine printed (the receipt, the statement, the
+  ledger's tube, the Nixie digits). `Type.face(label, &"display"|&"body"|
+  &"mono")` dresses a `Label3D`; Controls take the theme unless they
+  override. All three are OFL 1.1 with the licences in `assets/fonts/`.
+  Bebas is narrow: a caption moved to it needs roughly 1.3x the size the
+  engine default used, and the floor sign wraps at `width` 430 so a long
+  floor name does not run off a 16:10 crop.
 - A glow faked by scaling a crisp text copy doubles its ends and reads as a
   misprint. Nudge same-size copies in each direction instead.
 - Compatibility clamps highlights where Forward+ rolls them off. A light tuned
