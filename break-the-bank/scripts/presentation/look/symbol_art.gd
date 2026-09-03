@@ -356,6 +356,60 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 					Vector2(1.0, 1.25))
 			_add(ops, OP_RHOMBUS, PAINT_CARVE, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
 			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
+		&"coin":
+			# A struck gold disc: rim, an inset face, a bold stamped mark. No
+			# edge reeding — a first pass put ticks at the disc's own radius
+			# and the outline's stroke swallowed them; moving them inward
+			# still read as noise at this size, and the plain three-shape
+			# plate is the bolder, clearer read anyway.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2.ZERO, [0.82])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.6])
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2.ZERO, [0.26, 0.26])
+		&"clover":
+			# The classic luck symbol: four round lobes and a stem, nothing else.
+			for lobe: Vector2 in [Vector2(-0.34, -0.24), Vector2(0.34, -0.24),
+					Vector2(-0.34, 0.3), Vector2(0.34, 0.3)]:
+				_add(ops, OP_CIRCLE, PAINT_INK, 0.0, lobe, [0.36])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, 0.74), [0.055, 0.24, 0.02])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.02), [0.16])
+		&"dice":
+			# A single die: a bordered panel and five pips in the classic
+			# cross layout — the panel-in-panel is the bar's own technique,
+			# the pips are the horseshoe's nail holes at a bigger size.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2.ZERO, [0.72, 0.72, 0.16])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2.ZERO, [0.58, 0.58, 0.12])
+			for pip: Vector2 in [Vector2(-0.32, -0.32), Vector2(0.32, -0.32),
+					Vector2.ZERO, Vector2(-0.32, 0.32), Vector2(0.32, 0.32)]:
+				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, pip, [0.12])
+		&"crown":
+			# A banded base and three spikes — the centre spike tallest, using
+			# the bank pediment's own taper direction — each tipped with a
+			# jewel in the second ink.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.74, 0.2, 0.04])
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.08),
+					[0.26, 0.52, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.48, 0.1),
+					[0.22, 0.38, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.48, 0.1),
+					[0.22, 0.38, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.54), [0.1])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.44, -0.2), [0.08])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.44, -0.2), [0.08])
+		&"gold_bar":
+			# A plain stamped ingot — a block, an inset panel, a struck mark —
+			# the same flat-slab construction as the bar and double bar, so it
+			# reads as family with them rather than as a foreign object.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.68, 0.48, 0.1])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.06), [0.52, 0.32, 0.06])
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.18, 0.18])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.66), [0.32, 0.06, 0.02])
+		&"plum":
+			# A single deep fruit, bold and round, a thick stem and a leaf.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.68],
+					Vector2(1.0, 1.14))
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.56), [0.06, 0.18, 0.03])
+			_add(ops, OP_CIRCLE, PAINT_INK2, -0.5, _rotate(Vector2(-0.32, -0.72), -0.5),
+					[0.26], Vector2(1.0, 2.2))
 		_:
 			pass
 	return ops

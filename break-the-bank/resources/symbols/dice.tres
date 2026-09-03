@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1_symboldef")
-id = &"receipt"
-display_name = "Receipt"
-base_value = 6
+id = &"dice"
+display_name = "Dice"
+base_value = 4
 base_weight = 1
 family = &""
 is_wild = false
 is_curse = false
-glyph = "RC"
-color = Color(0.82, 0.74, 0.56, 1)
-color2 = Color(0.16, 0.16, 0.18, 1)
+glyph = "DI"
+color = Color(0.94, 0.9, 0.82, 1)
+color2 = Color(0.82, 0.1, 0.14, 1)

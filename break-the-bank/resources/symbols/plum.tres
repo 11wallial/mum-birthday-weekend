@@ -12,5 +12,5 @@ family = &"fruit"
 is_wild = false
 is_curse = false
 glyph = "PL"
-color = Color(0.42, 0.14, 0.38, 1)
-color2 = Color(0.36, 0.62, 0.27, 1)
+color = Color(0.65, 0.06, 0.52, 1)
+color2 = Color(0.15, 0.65, 0.2, 1)

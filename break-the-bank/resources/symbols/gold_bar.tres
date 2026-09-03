@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1_symboldef")
-id = &"watch"
-display_name = "Pocket Watch"
-base_value = 3
+id = &"gold_bar"
+display_name = "Gold Bar"
+base_value = 6
 base_weight = 1
 family = &""
 is_wild = false
 is_curse = false
-glyph = "PW"
-color = Color(0.7, 0.52, 0.22, 1)
-color2 = Color(0.92, 0.9, 0.82, 1)
+glyph = "GB"
+color = Color(0.92, 0.76, 0.18, 1)
+color2 = Color(0.62, 0.4, 0.08, 1)

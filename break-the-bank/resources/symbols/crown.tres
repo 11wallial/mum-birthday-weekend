@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1_symboldef")
-id = &"peach"
-display_name = "Peach"
-base_value = 4
+id = &"crown"
+display_name = "Crown"
+base_value = 3
 base_weight = 1
-family = &"fruit"
+family = &""
 is_wild = false
 is_curse = false
-glyph = "PE"
-color = Color(0.98, 0.62, 0.5, 1)
-color2 = Color(0.36, 0.62, 0.27, 1)
+glyph = "CR"
+color = Color(0.95, 0.74, 0.1, 1)
+color2 = Color(0.88, 0.08, 0.16, 1)
