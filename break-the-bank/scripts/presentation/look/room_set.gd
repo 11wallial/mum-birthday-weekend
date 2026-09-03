@@ -267,14 +267,14 @@ func _conduit() -> void:
 ## the first playtest read "FL OR 2: THE CAS NO" for a whole run.
 func _floor_sign() -> Label3D:
 	var housing: Node3D = _group(&"FloorSign")
-	housing.position = Vector3(3.35, 2.22, DEPTH_BACK + 0.12)
+	housing.position = Vector3(3.2, 2.28, DEPTH_BACK + 0.12)
 	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
 	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
 			Materials.rusted(28))
 	var label: Label3D = Label3D.new()
 	label.name = "Text"
-	label.text = "FLOOR 1: THE BASEMENT"
+	label.text = "FLOOR 1\nTHE BASEMENT"
 	label.font_size = 80
 	label.pixel_size = 0.0026
 	# Overdriven: past the environment's 1.1 glow threshold, so the letters

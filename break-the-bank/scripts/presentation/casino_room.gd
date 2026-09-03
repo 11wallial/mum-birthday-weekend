@@ -1220,7 +1220,9 @@ func _refresh_diegetic() -> void:
 	var floor_def: FloorDef = state.current_floor()
 	var floor_name: String = floor_def.display_name if floor_def != null else ""
 	if _floor_sign != null:
-		_floor_sign.text = "FLOOR %d: %s" % [state.floor_index, floor_name.to_upper()]
+		# Two lines: the long lens crops the right of the frame, and a floor
+		# name on one line ran off it from the third floor on.
+		_floor_sign.text = "FLOOR %d\n%s" % [state.floor_index, floor_name.to_upper()]
 		# The glow shells are the same text, softened; a sign whose halo spells
 		# the previous floor has broken the trick.
 		for child: Node in _floor_sign.get_children():
