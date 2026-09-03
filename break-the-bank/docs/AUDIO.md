@@ -419,6 +419,40 @@ half — the drums, the drive, the gearing, the steam and the arc — and all
 fourteen ambience beds. Those are the cues the room is made of, and a
 placeholder is audible as one.
 
+## 1f. The mix — measured 3 September 2026
+
+Ninety-six cues from three sources — a synthesiser, two CC0 packs and a
+score — were never going to sit at one loudness by accident, and nothing
+had ever measured any of them. `tools/audio/mix.py` does:
+
+```
+godot --headless --path . --script res://tools/audio/bake_placeholders.gd -- --out=/tmp/ph
+python3 tools/audio/mix.py --placeholders=/tmp/ph        # report
+python3 tools/audio/mix.py --placeholders=/tmp/ph --write # set the levels
+```
+
+It takes the sourced file where there is one and the baked placeholder
+where there is not, measures gated RMS in dBFS — 50 ms blocks, keeping
+only those within 25 dB of the loudest, so a long tail of silence cannot
+flatter a short hit — and sets each cue's `base_volume_db` so it lands on
+its category's target.
+
+**The targets are not invented.** For UI, mechanical, logic and ambience
+they are the median level the *synthesised* cues already played at, per
+category: someone tuned those by ear over months, and the newly sourced
+files are the ones out of place. The score is the exception — it has no
+synthesised siblings to take a median from and is meant to sit under
+everything, so it is given −30 dBFS outright. No cue moves more than nine
+decibels in a pass, and nothing is set above −6 dB, so a bad measurement
+cannot blow up the mix; run the tool twice and it converges.
+
+Cues on the Music bus now have a category of their own (`SoundDef.Category.MUSIC`)
+rather than being filed as stingers.
+
+**Not measured, and still by ear:** the duck curves. `duck_music_db` per
+cue is what it was; with a real bed underneath it, whether a payout ducks
+it far enough is a question for a person with headphones.
+
 ## 1c. The scoring performance — cues added 2 September 2026
 
 Six cues for the chain, the total and the loss. The chain's beat is pitched

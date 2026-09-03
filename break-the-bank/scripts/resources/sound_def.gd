@@ -13,6 +13,9 @@ enum Category {
 	MECHANICAL,
 	LOGIC,
 	AMBIENCE,
+	## The score. Appended, because the value is written into the manifest:
+	## a cue on the Music bus that is neither a sting nor a room.
+	MUSIC,
 }
 
 ## Shape used when synthesising a placeholder for a missing file.

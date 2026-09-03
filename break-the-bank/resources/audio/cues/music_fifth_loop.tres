@@ -6,13 +6,13 @@
 script = ExtResource("1_sounddef")
 id = &"music_fifth_loop"
 file_name = "music/music_fifth_loop.wav"
-category = 2
+category = 4
 bus = &"Music"
 duration_ms = Vector2i(16000, 16000)
 frequency_notes = "The score's second layer, a fifth above the bed: enters from the third floor, thickens as the run goes deeper. Seamless."
 pitch_jitter = Vector2(1.0, 1.0)
 volume_jitter_db = Vector2(0.0, 0.0)
-base_volume_db = -26.0
+base_volume_db = -11.5
 positional = false
 loops = true
 max_voices = 1
