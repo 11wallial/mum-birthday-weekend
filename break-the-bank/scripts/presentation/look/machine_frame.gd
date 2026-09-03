@@ -50,6 +50,9 @@ const CONSOLE_KEYS: int = 6
 const SURETY_HEIGHT: float = 0.46
 
 var _root: Node3D
+## Places on the machine that can be asked what they are. Handed back in
+## build() as "inspect"; [SlotView3D] wires them to the pointer.
+var _zones: Array[Area3D] = []
 var _nixie_halo_material: StandardMaterial3D = null
 
 
@@ -100,6 +103,7 @@ func build(root: Node3D, reel_count: int = 3) -> Dictionary:
 		"arc": arc,
 		"spool": spool,
 		"surety": surety,
+		"inspect": _zones,
 	}
 
 
@@ -203,6 +207,25 @@ func _chassis() -> void:
 			Materials.machined(Materials.STEEL, 57))
 
 
+## A place on the machine the pointer can ask about. Everything a player
+## can read off the machine — a counter, a dial, a drum, the column — gets
+## one, so "what is this number" is answered by the machine rather than by
+## a manual.
+func _inspect_zone(parent: Node3D, id: StringName, size: Vector3, at: Vector3) -> Area3D:
+	var zone: Area3D = Area3D.new()
+	zone.name = "Inspect_%s" % String(id).replace(":", "_")
+	zone.position = at
+	zone.set_meta(&"inspect", id)
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var box: BoxShape3D = BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	zone.add_child(shape)
+	parent.add_child(zone)
+	_zones.append(zone)
+	return zone
+
+
 ## The cabinet's profile: height, half width, and how far forward the face
 ## stands at that height. Four rings, read as a section through the machine
 ## from the floor up — the base kicks out, the glass band is plumb, the brow
@@ -302,29 +325,11 @@ func _recast(chassis: Node3D, iron: StandardMaterial3D) -> void:
 					Vector3(sx * (CHASSIS.x - 0.02), top - 0.02, sz * (CHASSIS.z - 0.1)),
 					iron)
 			shoulder.rotation.z = sx * PI * 0.25
-	# The rail: brass, across the front under the button shelf, where a hand
-	# goes while the other hauls the lever. Polished where it is held.
-	var rail: StandardMaterial3D = Materials.brass(61)
-	rail.roughness = 0.28
-	_cylinder(chassis, 0.028, CHASSIS.x * 1.7, Vector3(0.0, CHASSIS_Y - 0.62, CHASSIS.z + 0.3),
-			Vector3(0.0, 0.0, PI * 0.5), rail)
-	for sx: float in [-1.0, 1.0]:
-		_segment(chassis, Vector3(sx * CHASSIS.x * 0.85, CHASSIS_Y - 0.62, CHASSIS.z + 0.3),
-				Vector3(sx * CHASSIS.x * 0.9, CHASSIS_Y - 0.6, CHASSIS.z + 0.06), 0.022, steel)
-	# The tray: where the money lands, cut into the plinth under the console
-	# and open to the room. A machine that pays into nothing is a diagram.
-	var tray: Node3D = _group(&"Tray")
-	# On the plinth's face, clear of the console shelf above it: a tray set
-	# inside the concrete is a tray nobody can see coins land in.
-	tray.position = Vector3(0.0, PLINTH_TOP - 0.22, 0.78)
-	_box(tray, Vector3(0.86, 0.04, 0.3), Vector3(0.0, -0.07, 0.06), steel)
-	_box(tray, Vector3(0.86, 0.16, 0.03), Vector3(0.0, 0.0, 0.2), steel)
-	for sx: float in [-1.0, 1.0]:
-		_box(tray, Vector3(0.03, 0.16, 0.3), Vector3(sx * 0.43, 0.0, 0.06), steel)
-	# The mouth above it, dark, and a lip of brass over that: the coins come
-	# out here and the eye should know it before the first payout.
-	_box(tray, Vector3(0.8, 0.2, 0.14), Vector3(0.0, 0.06, -0.02), Materials.cavity())
-	_box(tray, Vector3(0.9, 0.03, 0.1), Vector3(0.0, 0.17, 0.02), rail)
+	# No hand rail and no coin tray across the front: the console's keys
+	# live there, and both crossed straight through them.
+	# No coin tray: it sat under the console shelf's overhang where nothing
+	# could see it, and the bottom of a machine a player reads every spin is
+	# the last place to put furniture. The printer is where the House pays.
 	# The step: the cabinet stands on the plinth, and the plinth stands on a
 	# course of its own. It is what makes the machine read as installed.
 	_box(_root, Vector3(2.6, 0.09, 1.36), Vector3(0.0, 0.045, 0.0),
@@ -450,6 +455,9 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 		# Just clear of the plates, so the fallback is never inside the print.
 		symbol.position = Vector3(0.0, 0.0, REEL_RADIUS + 0.009)
 		reel.add_child(symbol)
+		_inspect_zone(reel, StringName("reel:%d" % i),
+				Vector3(DRUM_WIDTH, 0.2, 0.08),
+				Vector3(0.0, 0.0, REEL_RADIUS + 0.02))
 		_reel_lamps(reel)
 		reels.append(reel)
 	# The axle the drums turn on, visible in the gaps between them.
@@ -626,8 +634,8 @@ func _button_row(reel_count: int) -> void:
 		# A placard hung off the apron's lip, backed dark so the word reads
 		# whatever the key light is doing to the shelf.
 		Prims.box(button, Vector3(0.19, 0.058, 0.012),
-				Vector3(0.0, -0.05, 0.135), Materials.cavity())
-		caption.position = Vector3(0.0, -0.05, 0.143)
+				Vector3(0.0, -0.036, 0.142), Materials.cavity())
+		caption.position = Vector3(0.0, -0.036, 0.15)
 		caption.rotation.x = 0.0
 		button.add_child(caption)
 		# The pick body. SlotView3D wires input_event and reads the action
@@ -709,6 +717,9 @@ func _counter_bank() -> Dictionary:
 		caption.position = Vector3(centre, y - 0.104, z + 0.034)
 		housing.add_child(caption)
 		out[String(bank[0])] = digits
+		_inspect_zone(housing, StringName("counter:%s" % bank[0]),
+				Vector3(float(count) * spacing + 0.06, 0.2, 0.1),
+				Vector3(centre, y, z + 0.06))
 	# What the bank gives the chassis: a warm wash under the tubes.
 	var wash: OmniLight3D = OmniLight3D.new()
 	wash.light_color = Color(1.0, 0.5, 0.15)
@@ -729,7 +740,9 @@ func _counter_bank() -> Dictionary:
 func _console() -> Array[Node3D]:
 	var rail: Node3D = _group(&"Console")
 	var shelf: Node3D = Node3D.new()
-	shelf.position = Vector3(0.0, CHASSIS_Y - 0.66, CHASSIS.z + 0.24)
+	# Low enough to clear the button row's placards above it: the two rows
+	# of captions were touching, and a word cut in half is not a control.
+	shelf.position = Vector3(0.0, CHASSIS_Y - 0.74, CHASSIS.z + 0.24)
 	shelf.rotation.x = 0.52
 	rail.add_child(shelf)
 	var width: float = 1.94
@@ -927,6 +940,7 @@ func _gearbox() -> Node3D:
 	heat_label.shaded = false
 	heat_label.position = Vector3(0.0, -0.1, 0.335)
 	dial.add_child(heat_label)
+	_inspect_zone(dial, &"heat", Vector3(0.42, 0.42, 0.08), Vector3(0.0, 0.0, 0.33))
 	var heat_needle: Node3D = Node3D.new()
 	heat_needle.name = "HeatNeedle"
 	dial.add_child(heat_needle)
@@ -1127,6 +1141,7 @@ func _odds_display() -> Node3D:
 		digit.position = Vector3(x, 0.02, 0.045)
 		digit.visible = false
 		housing.add_child(digit)
+	_inspect_zone(housing, &"odds", Vector3(0.74, 0.26, 0.1), Vector3(0.0, 0.02, 0.06))
 	# What the bank gives the room: the warm orange wash under a lit Nixie.
 	var wash: OmniLight3D = OmniLight3D.new()
 	wash.name = "Wash"
@@ -1331,6 +1346,8 @@ func _surety_column() -> Dictionary:
 	caption.shaded = false
 	caption.position = Vector3(0.0, -0.04, 0.075)
 	column.add_child(caption)
+	_inspect_zone(column, &"surety", Vector3(0.16, SURETY_HEIGHT + 0.2, 0.16),
+			Vector3(0.0, 0.06 + SURETY_HEIGHT * 0.5, 0.0))
 	return {"fluid": pivot, "lamp": lamp}
 
 
