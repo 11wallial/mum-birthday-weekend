@@ -118,6 +118,17 @@ func _plinth() -> void:
 			Vector3(0.0, PLINTH_TOP + 0.02, 0.0),
 			Materials.weathered("concrete", Materials.CONCRETE, 0.6, 0.9,
 					0.5, 0.22, Materials.concrete(84)))
+	# Hex bolts along the bottom rim, the way a machine this heavy is
+	# actually held to a floor: the handover asked for them by name.
+	var bolt: StandardMaterial3D = Materials.machined(Color(0.34, 0.33, 0.31), 85)
+	for i: int in 7:
+		var x: float = lerpf(-1.02, 1.02, float(i) / 6.0)
+		for sz: float in [-1.0, 1.0]:
+			var head: MeshInstance3D = Prims.cylinder(plinth, 0.032, 0.026,
+					Vector3(x, 0.07, sz * 0.6), Vector3(PI * 0.5, 0.0, 0.0), bolt, 6)
+			head.rotation.z = 0.4
+			Prims.cylinder(plinth, 0.042, 0.012, Vector3(x, 0.07, sz * 0.585),
+					Vector3(PI * 0.5, 0.0, 0.0), Materials.rusted(86), 6)
 	# Rusted steel straps clamping the chassis down at each corner.
 	for sx: float in [-1.0, 1.0]:
 		for sz: float in [-1.0, 1.0]:
@@ -130,40 +141,49 @@ func _plinth() -> void:
 ## fabricated rather than moulded.
 func _chassis() -> void:
 	var chassis: Node3D = _group(&"Chassis")
-	_box(chassis, CHASSIS * 2.0, Vector3(0.0, CHASSIS_Y, 0.0),
-			Materials.weathered("painted_metal", Materials.PAINT, 0.9, 1.0,
-					0.38, 0.3, Materials.painted(Materials.PAINT, 11)))
-	# Angle iron down all four vertical corners, and along the top edges.
-	var post: Vector3 = Vector3(0.1, CHASSIS.y * 2.06, 0.1)
+	# The body is a loft through PROFILE rather than a box: the base kicks
+	# forward, the glass band stands straight, the brow leans back over it,
+	# and the whole thing narrows as it rises. A cabinet, not a crate.
+	var body: MeshInstance3D = MeshInstance3D.new()
+	body.name = "Body"
+	body.mesh = _cabinet_mesh()
+	body.material_override = Materials.weathered("painted_metal", Materials.PAINT,
+			0.9, 1.0, 0.38, 0.3, Materials.painted(Materials.PAINT, 11))
+	chassis.add_child(body)
+	var steel_post: StandardMaterial3D = Materials.machined(Materials.STEEL, 54)
+	# Angle iron down the four corners, following the taper rather than
+	# standing plumb beside it.
+	var base_y: float = PROFILE[0][0]
+	var top_y: float = PROFILE[PROFILE.size() - 1][0]
 	for sx: float in [-1.0, 1.0]:
 		for sz: float in [-1.0, 1.0]:
-			_box(chassis, post,
-					Vector3(sx * CHASSIS.x, CHASSIS_Y, sz * CHASSIS.z),
-					Materials.machined(Materials.STEEL, 54))
+			var from: Vector3 = Vector3(sx * _half_width(base_y), base_y,
+					_face_z(base_y) if sz > 0.0 else _back_z(base_y))
+			var to: Vector3 = Vector3(sx * _half_width(top_y), top_y,
+					_face_z(top_y) if sz > 0.0 else _back_z(top_y))
+			_segment(chassis, from, to, 0.05, steel_post)
+	# And along the top edges, at the head's own width.
 	for sz: float in [-1.0, 1.0]:
-		_box(chassis, Vector3(CHASSIS.x * 2.06, 0.1, 0.1),
-				Vector3(0.0, CHASSIS_Y + CHASSIS.y, sz * CHASSIS.z),
+		_box(chassis, Vector3(_half_width(top_y) * 2.06, 0.09, 0.09),
+				Vector3(0.0, top_y, (_face_z(top_y) if sz > 0.0 else _back_z(top_y))),
 				Materials.machined(Materials.STEEL, 55))
 	# The A-frame: cast-iron cheeks on both flanks, slanting back from the
-	# base to the crown, and a heavier lintel across the top. The handover
-	# asked for a forward-canted trapezoidal frame; every positioned part on
-	# the machine is built to the box, so the cant is carried by the frame
-	# around the box rather than by tilting the box — the silhouette leans
-	# without a single counter, key or drum moving.
+	# base to the crown, and a heavier lintel across the top.
 	var iron: StandardMaterial3D = Materials.rusted(58)
 	for sx: float in [-1.0, 1.0]:
 		var cheek: MeshInstance3D = _box(chassis, Vector3(0.09, CHASSIS.y * 2.3, 0.52),
 				Vector3(sx * (CHASSIS.x + 0.05), CHASSIS_Y + 0.02, -0.02), iron)
 		cheek.rotation.x = -0.16
 		cheek.rotation.z = sx * 0.04
-		# A foot at the base and a strap up the face, so the cheek is bolted
-		# rather than leaning.
-		_box(chassis, Vector3(0.16, 0.06, 0.6), Vector3(sx * (CHASSIS.x + 0.05), CHASSIS_Y - CHASSIS.y + 0.03, 0.04), iron)
+		_box(chassis, Vector3(0.16, 0.06, 0.6),
+				Vector3(sx * (CHASSIS.x + 0.05), base_y + 0.03, 0.04), iron)
 		for i: int in 3:
 			Prims.sphere(chassis, 0.016,
-					Vector3(sx * (CHASSIS.x + 0.1), CHASSIS_Y - 0.4 + float(i) * 0.4, 0.2 - float(i) * 0.07),
+					Vector3(sx * (CHASSIS.x + 0.1), CHASSIS_Y - 0.4 + float(i) * 0.4,
+							0.2 - float(i) * 0.07),
 					Materials.machined(Materials.STEEL, 59))
-	_box(chassis, Vector3(CHASSIS.x * 2.2, 0.09, 0.5), Vector3(0.0, CHASSIS_Y + CHASSIS.y + 0.04, -0.06), iron)
+	_box(chassis, Vector3(_half_width(top_y) * 2.2, 0.09, 0.5),
+			Vector3(0.0, top_y + 0.04, _back_z(top_y) + 0.28), iron)
 	_recast(chassis, iron)
 	# A recessed housing behind the reels, so the drums sit in shadow rather than
 	# on a flat panel. This is most of what sells the depth of the front face.
@@ -174,12 +194,93 @@ func _chassis() -> void:
 			Materials.cavity())
 	# Ventilation louvres on the lower front, an inspection hatch on the left.
 	for i: int in 5:
+		var louvre_y: float = CHASSIS_Y - 0.3 + float(i) * 0.045
 		_box(chassis, Vector3(0.72, 0.022, 0.03),
-				Vector3(0.0, CHASSIS_Y - 0.3 + float(i) * 0.045, CHASSIS.z + 0.005),
+				Vector3(0.0, louvre_y, _face_z(louvre_y) + 0.005),
 				Materials.machined(Color(0.18, 0.17, 0.16), 56))
 	_box(chassis, Vector3(0.3, 0.34, 0.02),
-			Vector3(-0.58, CHASSIS_Y - 0.16, CHASSIS.z + 0.012),
+			Vector3(-0.58, CHASSIS_Y - 0.16, _face_z(CHASSIS_Y - 0.16) + 0.012),
 			Materials.machined(Materials.STEEL, 57))
+
+
+## The cabinet's profile: height, half width, and how far forward the face
+## stands at that height. Four rings, read as a section through the machine
+## from the floor up — the base kicks out, the glass band is plumb, the brow
+## leans back over it, and the head is narrower than the foot.
+##
+## Everything bolted to the front asks [method _face_z] where the face is at
+## its own height rather than assuming [constant CHASSIS]'s flat one.
+const PROFILE: Array = [
+	[0.42, 1.03, 0.52],
+	[0.90, 1.00, 0.44],
+	[1.45, 0.98, 0.42],
+	[1.66, 0.88, 0.28],
+]
+
+
+static func _face_z(y: float) -> float:
+	return _profile_at(y, 2)
+
+
+static func _half_width(y: float) -> float:
+	return _profile_at(y, 1)
+
+
+## The back is nearly plumb: it faces a wall nobody sees, and a taper there
+## would only cost the cabinet its depth.
+static func _back_z(y: float) -> float:
+	return -CHASSIS.z + 0.04 * clampf((y - 1.45) / 0.21, 0.0, 1.0)
+
+
+static func _profile_at(y: float, column: int) -> float:
+	var rings: Array = PROFILE
+	if y <= float(rings[0][0]):
+		return float(rings[0][column])
+	for i: int in rings.size() - 1:
+		var low: Array = rings[i]
+		var high: Array = rings[i + 1]
+		if y <= float(high[0]):
+			var t: float = (y - float(low[0])) / maxf(float(high[0]) - float(low[0]), 0.001)
+			return lerpf(float(low[column]), float(high[column]), t)
+	return float(rings[rings.size() - 1][column])
+
+
+## The body itself: the profile lofted round four corners and capped. Built
+## by hand because a box cannot cant and a CSG tree cannot ship.
+func _cabinet_mesh() -> ArrayMesh:
+	var surface: SurfaceTool = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rings: Array[PackedVector3Array] = []
+	for ring: Array in PROFILE:
+		var y: float = float(ring[0])
+		var half: float = float(ring[1])
+		var front: float = float(ring[2])
+		var back: float = _back_z(y)
+		rings.append(PackedVector3Array([
+			Vector3(-half, y, front), Vector3(half, y, front),
+			Vector3(half, y, back), Vector3(-half, y, back),
+		]))
+	for i: int in rings.size() - 1:
+		var low: PackedVector3Array = rings[i]
+		var high: PackedVector3Array = rings[i + 1]
+		for corner: int in 4:
+			var next: int = (corner + 1) % 4
+			_quad(surface, low[corner], low[next], high[next], high[corner])
+	var bottom: PackedVector3Array = rings[0]
+	_quad(surface, bottom[3], bottom[2], bottom[1], bottom[0])
+	var top: PackedVector3Array = rings[rings.size() - 1]
+	_quad(surface, top[0], top[1], top[2], top[3])
+	surface.generate_normals()
+	surface.generate_tangents()
+	return surface.commit()
+
+
+func _quad(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	for point: Vector3 in [a, b, c, a, c, d]:
+		# Planar UVs off the point's own X and Y: every material on the body
+		# is triplanar, so these are only here to keep the format complete.
+		surface.set_uv(Vector2(point.x, point.y))
+		surface.add_vertex(point)
 
 
 ## The classic cabinet, recast around the box.

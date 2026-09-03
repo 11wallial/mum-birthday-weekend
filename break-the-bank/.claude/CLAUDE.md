@@ -390,7 +390,13 @@ Rules that cost real time to learn:
 - Nothing lit on the reels goes past the environment's 1.1 bloom threshold:
   a plate that bloomed bleached its own print. The window lamp is nearly
   all diffuse for the same reason.
-- **The cabinet is recast around the box, never by moving it.** Every
+- **The cabinet's body is a loft through `PROFILE`**, not a box: four
+  rings of (height, half width, face z) — the base kicks forward, the glass
+  band is plumb, the brow leans back, the head narrows. Anything bolted to
+  the front asks `_face_z(y)` where the face is at its own height;
+  `CHASSIS` is still the reference box every counter, key, drum and mount
+  is placed against, and it does not move.
+- **The rest of the cabinet is recast around that box, never by moving it.** Every
   counter, key, drum, mount and gauge is positioned against `CHASSIS`, so
   the classic silhouette — the cheeks, the shoulders, the rail, the tray,
   the step, in `MachineFrame._recast` — is cut around that box. Adding to
