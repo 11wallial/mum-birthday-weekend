@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"floor_5_deep"
+text = "You may sign for more.
+Most debtors do."
+floor_min = 5
+floor_max = 5
+debt_ratio_min = 1.25

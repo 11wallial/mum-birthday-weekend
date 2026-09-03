@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"after_hours_late_heat"
+text = "You have outlasted
+the building. Not us."
+floor_min = 12
+heat_min = 1
+after_hours = true

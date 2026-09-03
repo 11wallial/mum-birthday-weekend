@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"count_cold_owing"
+text = "The reel is thinner
+and the debt is not."
+debt_ratio_min = 0.45
+heat_min = 2
