@@ -482,6 +482,12 @@ godot --headless --path . --script res://tools/audio/bake_placeholders.gd -- \
     --out=res://placeholder_preview
 ```
 
+Thirty of the ninety-six cues are sourced as of 3 September 2026: twenty-seven
+CC0 effects from Kenney's *Interface Sounds* and *Casino Audio* packs, and
+the three layers of the score, written for this project and rendered by
+`tools/audio/compose.py`. The mechanical cues and the ambience beds are
+still synthesised.
+
 The full asset manifest, sourcing strategy and bus architecture are in
 [docs/AUDIO.md](docs/AUDIO.md). Every sourced file must have a row in
 `assets/audio/CREDITS.md`; `audit.gd --strict` fails the build otherwise, and CI

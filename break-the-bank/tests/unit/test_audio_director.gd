@@ -24,13 +24,29 @@ func test_an_unknown_cue_is_ignored_rather_than_fatal() -> void:
 
 func test_playing_a_cue_with_no_sourced_file_still_makes_sound() -> void:
 	# The whole point of the placeholder path: a full manifest and an empty
-	# asset folder still produces a playing voice.
-	var def: SoundDef = _director.definition(&"ui_click")
-	assert_bool(def.is_sourced()).is_false()
-	var player: AudioStreamPlayer = _director.play(&"ui_click")
+	# asset folder still produces a playing voice. The cue is found rather
+	# than named, so sourcing one more asset never breaks this.
+	var placeholder: StringName = &""
+	for id: Variant in _director.cue_ids():
+		var candidate: SoundDef = _director.definition(StringName(id))
+		if candidate != null and not candidate.loops and not candidate.is_sourced():
+			placeholder = StringName(id)
+			break
+	assert_str(String(placeholder)).override_failure_message(
+			"every one-shot is sourced now; this test has nothing to prove").is_not_empty()
+	var player: AudioStreamPlayer = _director.play(placeholder)
 	assert_object(player).is_not_null()
 	assert_object(player.stream).is_not_null()
 	assert_bool(player.playing).is_true()
+
+
+func test_a_sourced_cue_plays_the_file_rather_than_the_placeholder() -> void:
+	var def: SoundDef = _director.definition(&"ui_click")
+	assert_bool(def.is_sourced()).override_failure_message(
+			"ui_click lost its sourced asset").is_true()
+	var player: AudioStreamPlayer = _director.play(&"ui_click")
+	assert_object(player).is_not_null()
+	assert_object(player.stream).is_same(load(def.absolute_path()))
 
 
 func test_pitch_and_volume_land_inside_the_declared_ranges() -> void:

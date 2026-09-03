@@ -392,6 +392,33 @@ The SFX bus carries the vault's reverb now (`Reverb_vault` in
 `default_bus_layout.tres`): predelay 38 ms, a large room, damped, 22% wet.
 Positional cues are placed in the room by `AudioDirector.FOLEY_AT`.
 
+## 1e. What is sourced — 3 September 2026
+
+Thirty of the ninety-six cues are real files now; the rest are still
+synthesised, and `tools/audio/audit.gd` is the register of which is which.
+
+**Sound effects (27), Kenney, CC0 1.0.** Two packs — *Interface Sounds* and
+*Casino Audio* — decoded from OGG to 44.1 kHz mono PCM at the manifest's
+own paths. They cover the interface and the money: every `ui_*` cue, the
+switch, the CRT's click and beep, the Nixie tink, the chips and the coins,
+the stingers for a gamble won and lost and an ante missed, and the
+contract's signature. Every file has a row in `assets/audio/CREDITS.md`
+naming the pack, the original file and the licence, which `audit.gd
+--strict` enforces in CI.
+
+**The score (3), written for this project.** `tools/audio/compose.py`
+renders the three layers offline with numpy — sixteen seconds each, A
+natural minor, seamless (every partial is a whole number of cycles per
+loop and the reverb is circular). The bed is the chord the room is tuned
+to, the fifth is a counting figure that adds up and starts again, the
+pulse is the machine ticking over. Nothing is sampled; re-render with
+`python3 tools/audio/compose.py`.
+
+**What is still synthesised**, and wants a sound designer: the mechanical
+half — the drums, the drive, the gearing, the steam and the arc — and all
+fourteen ambience beds. Those are the cues the room is made of, and a
+placeholder is audible as one.
+
 ## 1c. The scoring performance — cues added 2 September 2026
 
 Six cues for the chain, the total and the loss. The chain's beat is pitched
