@@ -246,6 +246,10 @@ worth knowing before touching the simulation:
   on availability alone until it was. All off the shop stream. `tests/unit/test_offer_generation.gd` holds each; the lab's
   `top_build_share` is the solved-metagame tell (the guide wants it under
   a quarter of wins).
+- The quick clear is `RunState.is_quick_clear` — a settle with at least
+  `quick_clear_share` of the floor's spins left doubles `settle_bonus`.
+  Tests that assert a settle bonus set `floor_spins_total` long enough that
+  the spins left are not a quick clear, or they assert the doubled number.
 - Chits are `ChitDef` data under `resources/chits/`, five kinds resolved in
   `SimEngine._do_use_chit` and nowhere else; `RunState.can_use_chit` is the
   one place a kind's moment is defined. A marker is honoured in
@@ -403,6 +407,14 @@ Rules that cost real time to learn:
   released on the beat the total lands. `FilmOverlay.set_strain` takes the
   same number for the render's tearing and grain; the room hands both out
   in `_settle_surety`, so the column and the picture can never disagree.
+- Three headless drives exist and CI runs two: `resume_check.gd` (save and
+  resume), `room_run_check.gd` (a whole run to the statement — add any
+  new end-of-run surface to its summary), and `record.gd` (a spin as
+  frames; `--paid` waits for one that pays par). `RoomDressing` furnishes
+  the room a floor at a time on FLOOR_STARTED, additive, keyed by
+  environment id; a new floor needs a `_dress_floor` arm or it leaves
+  nothing. `PlayerProfile.seen` is the collection; `note_seen` returns
+  true on a first sighting, which is the only time the log says so.
 - The run ends on the clipboard: `RunRecap.build` (pure, tested) makes the
   statement from the state and the journal's entries, `RecapPanel` prints it
   on the board's viewport, and `CasinoRoom._show_statement` walks the camera
