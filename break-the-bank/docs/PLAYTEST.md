@@ -62,6 +62,13 @@ Known gaps a tester will hit, so nobody logs them twice:
 - THE COLLECTION on the door lists what the profile has met, with dashes
   for what it has not. Watch whether a tester opens it between runs, and
   whether a dash makes them curious or makes them shrug.
+- Chits: from the second floor the draft may deal a slip for the pocket —
+  a respin, a vent, a deferral, a marker, a peek — spent from a key on the
+  console at its moment. Ask whether the tester bought one, and whether
+  they understood when it could be used; the key is barred until then.
+- The quick clear: settling with half the spins left pays double scrip.
+  The bot loses a point on it; watch whether a person reads it as a goal
+  or a trap.
 - Three machines at the door, not seven. The Lean, the High Roller, the
   Bone Press and the Orchard are in git and return one at a time.
 
