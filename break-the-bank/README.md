@@ -52,7 +52,7 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
 | Hurry a payout (the whole performance, scaled; the pause stays) | hold Space or the lever | hold A | hold |
 | Hold a reel, or nudge it | 1–5, or the machine's buttons | — | tap the button |
 | Settle the floor early, once the ante is covered | click **SETTLE NOW** | — | tap it |
-| Buy artifact 1–5 in the draft | 1–5, or click the row | — | tap the row |
+| Buy artifact 1–5 in the draft | 1–5, or click the row | D-pad / arrows to mark, A to buy | tap the row |
 | Leave the draft | Space or Q | B / Circle | **Leave the shop** |
 | Swap machine ↔ room view | Tab | Y / Triangle | **View** |
 | New run | F5 | — | **New run** |

@@ -24,6 +24,8 @@ var _title: Label
 var _footer: Label
 var _state: RunState
 var _open: bool = false
+## The row a pad or the arrows have picked, for a hand with no number keys.
+var _cursor: int = 0
 ## The form, when mounted on the clipboard. See [method ShopPanel.mount].
 var _sheet: Control
 var _mounted: bool = false
@@ -97,6 +99,7 @@ func _redraw() -> void:
 		_title.text = "THE BACK OFFICE — SIGN FOR %s" % (
 				next_floor.display_name.to_upper() if next_floor != null else "THE NEXT FLOOR")
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
+	_cursor = clampi(_cursor, 0, maxi(_state.contract_offers.size() - 1, 0))
 	for i: int in _state.contract_offers.size():
 		_rows.add_child(_build_row(i))
 	if _footer != null:
@@ -113,7 +116,8 @@ func _build_row(index: int) -> Control:
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for state_name: StringName in [&"normal", &"hover", &"pressed", &"disabled", &"focus"]:
 		button.add_theme_stylebox_override(state_name,
-				UiSkin.paper_row(true, state_name == &"hover" or state_name == &"pressed"))
+				UiSkin.paper_row(true, state_name == &"hover" or state_name == &"pressed"
+				or index == _cursor))
 	button.pressed.connect(func() -> void: sign_requested.emit(index))
 
 	var grid: VBoxContainer = VBoxContainer.new()
@@ -169,6 +173,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	for slot: int in MAX_SLOTS:
 		if event.is_action_pressed(StringName("bb_slot_%d" % (slot + 1))):
 			sign_requested.emit(slot)
+			get_viewport().set_input_as_handled()
+			return
+	if _state != null and not _state.contract_offers.is_empty():
+		var count: int = _state.contract_offers.size()
+		if event.is_action_pressed(&"bb_view_prev") or event.is_action_pressed(&"ui_up"):
+			_cursor = posmod(_cursor - 1, count)
+			_redraw()
+			get_viewport().set_input_as_handled()
+			return
+		if event.is_action_pressed(&"bb_view_next") or event.is_action_pressed(&"ui_down"):
+			_cursor = posmod(_cursor + 1, count)
+			_redraw()
+			get_viewport().set_input_as_handled()
+			return
+		if event.is_action_pressed(&"bb_confirm"):
+			sign_requested.emit(clampi(_cursor, 0, count - 1))
 			get_viewport().set_input_as_handled()
 			return
 	# Nothing else gets through. Signing is not optional, and a key meant for a

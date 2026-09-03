@@ -39,6 +39,8 @@ var _leave: Button
 var _market: HBoxContainer
 var _state: RunState
 var _open: bool = false
+## The row a pad or the arrows have picked, for a hand with no number keys.
+var _cursor: int = 0
 ## The form itself, when it has been mounted on the clipboard in the room:
 ## the Panel, moved into the board's viewport. Visibility follows it.
 var _sheet: Control
@@ -136,6 +138,7 @@ func _redraw() -> void:
 			_state.floors_cleared, _state.economy.chips, _state.economy.cash,
 			_state.economy.debt]
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
+	_cursor = clampi(_cursor, 0, maxi(_state.shop_offers.size() - 1, 0))
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	_draw_press()
@@ -145,7 +148,7 @@ func _redraw() -> void:
 	if _footer != null:
 		var offers: int = maxi(_state.shop_offers.size(), 1)
 		_footer.text = TouchBar.hint(
-				"1-%d or click to buy     SPACE / Q to leave" % offers,
+				"1-%d or click to buy     arrows and ENTER on a pad     SPACE / Q to leave" % offers,
 				"Tap an offer to buy")
 
 
@@ -329,7 +332,8 @@ func _build_row(index: int) -> Control:
 	button.focus_mode = Control.FOCUS_NONE
 	button.mouse_default_cursor_shape = (Control.CURSOR_POINTING_HAND if affordable
 			else Control.CURSOR_ARROW)
-	button.add_theme_stylebox_override(&"normal", UiSkin.paper_row(affordable))
+	# The mark: the row a pad has picked wears the hover face.
+	button.add_theme_stylebox_override(&"normal", UiSkin.paper_row(affordable, index == _cursor))
 	button.add_theme_stylebox_override(&"hover", UiSkin.paper_row(affordable, true))
 	button.add_theme_stylebox_override(&"pressed", UiSkin.paper_row(affordable, true))
 	button.add_theme_stylebox_override(&"disabled", UiSkin.paper_row(affordable))
@@ -456,6 +460,29 @@ func _unhandled_input(event: InputEvent) -> void:
 			buy_requested.emit(slot)
 			get_viewport().set_input_as_handled()
 			return
+	# A pad, or the arrows: walk the offers and take the one under the mark.
+	if _move_cursor(event):
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"bb_confirm") and _state != null \
+			and _cursor >= 0 and _cursor < _state.shop_offers.size():
+		buy_requested.emit(_cursor)
+		get_viewport().set_input_as_handled()
+
+
+## Moves the mark with the arrows or the pad. Returns true when it moved.
+func _move_cursor(event: InputEvent) -> bool:
+	if _state == null or _state.shop_offers.is_empty():
+		return false
+	var count: int = _state.shop_offers.size()
+	if event.is_action_pressed(&"bb_view_prev") or event.is_action_pressed(&"ui_up"):
+		_cursor = posmod(_cursor - 1, count)
+	elif event.is_action_pressed(&"bb_view_next") or event.is_action_pressed(&"ui_down"):
+		_cursor = posmod(_cursor + 1, count)
+	else:
+		return false
+	_redraw()
+	return true
 
 
 ## Redraws after the room has applied a purchase.
