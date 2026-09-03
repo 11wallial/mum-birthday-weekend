@@ -35,6 +35,9 @@ Known gaps a tester will hit, so nobody logs them twice:
   who asks about flashing before they play. A profile's first run is
   walked through the basement by the Clerk; watch whether the tester reads
   it or skips it, and whether they hold a pair unprompted on run two.
+- Anything on the machine can be asked what it is: hover a counter, the
+  dial, the column, the multiplier or a drum. Watch whether testers find
+  it, and whether the cards answer what they actually asked.
 - Hardware on the machine carries a paper tag: its name and what it does,
   shown as it is fitted and whenever the pointer rests on it (a tap, on a
   phone). Watch whether testers find the hover on their own.

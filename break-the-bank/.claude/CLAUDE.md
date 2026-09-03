@@ -426,6 +426,12 @@ Rules that cost real time to learn:
   environment id; a new floor needs a `_dress_floor` arm or it leaves
   nothing. `PlayerProfile.seen` is the collection; `note_seen` returns
   true on a first sighting, which is the only time the log says so.
+- The inspection layer: `MachineFrame._inspect_zone` puts an `Area3D` on
+  anything readable (each counter bank, the dial, the column, the odds
+  tubes, each drum), `SlotView3D` emits `inspect_hovered(id)`, and
+  `CasinoRoom._on_inspect` is the only place an id becomes words. Add a
+  zone and give it an arm there, or it says nothing. `debug_inspect(id)`
+  drives it for the storyboard (frame 11c).
 - The run ends on the clipboard: `RunRecap.build` (pure, tested) makes the
   statement from the state and the journal's entries, `RecapPanel` prints it
   on the board's viewport, and `CasinoRoom._show_statement` walks the camera

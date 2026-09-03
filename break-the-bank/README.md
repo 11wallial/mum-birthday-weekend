@@ -322,6 +322,12 @@ all in: 15.2% at 10k, the Exchange the primary build of 27% of wins, the
 House noticing 0.99 times a run, 1.08 chits bought and 0.73 spent a run —
 inside every band.
 
+**Asking the machine.** Rest the pointer on any number the cabinet
+carries — a Nixie bank, the count's dial, the surety column, the
+multiplier, a drum — and the House prints a card for it: what it is, what
+it is worth now, and where the number comes from. A tap does the same on a
+phone.
+
 **The collection.** The profile keeps what it has met — every piece of
 hardware offered or owned, every one of the House's people faced, every
 contract signed — and the door has a page for it: names and their lines
