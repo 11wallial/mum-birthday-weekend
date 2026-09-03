@@ -22,6 +22,11 @@ enum Condition {
 	## Floors cleared past the last, on the run that stayed at the table
 	## longest.
 	AFTER_HOURS,
+	## Spins pulled across every run. The one number that only goes up at the
+	## rate the player actually plays, which is what a long arc is paced on.
+	TOTAL_SPINS,
+	## Interest handed to the House across every run.
+	VIG_PAID,
 }
 
 enum Kind {
@@ -73,6 +78,10 @@ func _stat_key() -> String:
 			return "wins_at:%s" % condition_id
 		Condition.AFTER_HOURS:
 			return "deepest_after_hours"
+		Condition.TOTAL_SPINS:
+			return "total_spins"
+		Condition.VIG_PAID:
+			return "vig_paid"
 		_:
 			return "runs_played"
 
@@ -92,12 +101,28 @@ func requirement_text() -> String:
 		Condition.BEST_FLOOR:
 			return "Reach floor %d" % threshold
 		Condition.LIFETIME_EARNED:
-			return "Earn %d credits in total" % threshold
+			return "Earn %s credits in total" % _grouped(threshold)
 		Condition.DEBT_CLEARED:
-			return "Clear %d of debt principal" % threshold
+			return "Clear %s of debt principal" % _grouped(threshold)
 		Condition.WINS_AT:
 			return "Win %d at %s" % [threshold, String(condition_id).capitalize()]
 		Condition.AFTER_HOURS:
 			return "Last %d floors after hours" % threshold
+		Condition.TOTAL_SPINS:
+			return "Take %s spins" % _grouped(threshold)
+		Condition.VIG_PAID:
+			return "Pay %s in interest" % _grouped(threshold)
 		_:
 			return ""
+
+
+## A long number with thousands separators, because a requirement is read at a
+## glance and 250000 is not read at a glance.
+func _grouped(value: int) -> String:
+	var digits: String = str(absi(value))
+	var out: String = ""
+	for i: int in digits.length():
+		if i > 0 and (digits.length() - i) % 3 == 0:
+			out += ","
+		out += digits[i]
+	return ("-" if value < 0 else "") + out

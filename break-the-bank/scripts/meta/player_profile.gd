@@ -56,6 +56,8 @@ func stats() -> Dictionary:
 		"lifetime_earned": lifetime_earned,
 		"debt_cleared": debt_cleared,
 		"deepest_after_hours": deepest_after_hours,
+		"total_spins": total_spins,
+		"vig_paid": vig_paid,
 	}
 	for id: Variant in wins_by_difficulty:
 		out["wins_at:%s" % String(id)] = int(wins_by_difficulty[id])
