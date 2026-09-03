@@ -345,7 +345,7 @@ func mark_result(result: SlotView3D.Result, _payout: int, settled: bool = true) 
 	# used to be called dead while the player was looking at a nudge worth forty
 	# credits, which is the readout arguing with the buttons underneath it.
 	var verdict: String = ("STANDING" if not settled
-			else ["DEAD", "SCRAPING", "PAID", "STRONG", "HEAVY", "OVERLOAD"][int(result)])
+			else tr(["DEAD", "SCRAPING", "PAID", "STRONG", "HEAVY", "OVERLOAD"][int(result)]))
 	var tint: Color = (UiSkin.INK_MUTED if not settled else [
 		Color(0.63, 0.42, 0.40), Color(0.76, 0.71, 0.60),
 		Color(1.0, 0.82, 0.44), Color(1.0, 0.76, 0.34),
