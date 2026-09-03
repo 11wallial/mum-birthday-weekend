@@ -2,8 +2,15 @@ extends GdUnitTestSuite
 
 ## Guardrails, not a balance spec. These catch a change that makes the game
 ## unplayable or unlosable; the exact numbers are the Casino Lab's business.
-
-const RUNS: int = 400
+##
+## 400 stopped being enough once the true win rate settled near 13%, close to
+## the gate's 12% floor: a fixed seed at 400 runs has real sampling variance
+## at that margin, and this suite hit it — the same seed read 10.7-10.8%
+## against a population rate the nightly 10k batch confirmed at 13.2%, and
+## no amount of retuning the content moved that one draw, because the draw
+## was never wrong, the sample was just too small to trust this close to a
+## band edge. 1,500 halves the standard error and costs under a minute.
+const RUNS: int = 1500
 
 var _report: Dictionary = {}
 
