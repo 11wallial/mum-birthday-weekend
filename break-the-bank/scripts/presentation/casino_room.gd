@@ -883,6 +883,25 @@ func debug_fit_works(reels: int, rows: int, vault: int) -> void:
 
 
 ## Puts the back office on the table without clearing a floor. Visual QA only.
+## Signs the contract at [param index] from a tool, as the panel would.
+func debug_sign(index: int) -> void:
+	if state == null or state.phase != RunState.Phase.SIGNING:
+		return
+	_on_sign_requested(index)
+
+
+## Where the run stands, for the headless full-run check: over or not, and
+## whether the statement is on the clipboard.
+func debug_run_summary() -> Dictionary:
+	return {
+		"over": state != null and state.is_over(),
+		"phase": String(RunState.Phase.keys()[state.phase]) if state != null else "",
+		"floor": state.floor_index if state != null else 0,
+		"recap_open": _recap != null and _recap.is_open(),
+		"view": _camera.current_view if _camera != null else -1,
+	}
+
+
 ## Ends the run on the spot, unpaid: for the storyboard's statement frame.
 func debug_lose() -> void:
 	if state == null or engine == null or state.is_over():

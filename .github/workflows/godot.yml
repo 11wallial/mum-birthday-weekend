@@ -167,6 +167,20 @@ jobs:
           fi
           grep -q "resume_check: PASS" resume.log
 
+      # Then a whole run through the room, to the statement on the clipboard:
+      # the end of every run was once skipped by a shadowed event arm and
+      # nothing headless noticed, because nothing headless played to the end.
+      - name: Play a run through the room
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/playtest/room_run_check.gd -- \
+            --moves=600 --settle=0.6 2>&1 | tee room_run.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" room_run.log; then
+            echo "::error::script errors while playing a run through the room"
+            exit 1
+          fi
+          grep -q "room_run_check: PASS" room_run.log
+
   package:
     name: Package playable builds
     runs-on: ubuntu-latest
