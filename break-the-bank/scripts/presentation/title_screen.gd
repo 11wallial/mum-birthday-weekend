@@ -472,6 +472,7 @@ func _draw_settings() -> void:
 
 func _slider(caption: String, key: StringName, low: float, high: float,
 		value: float) -> Control:
+	caption = tr(caption)
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
 	var name_label: Label = _label(caption, 12.0, UiSkin.INK)
@@ -508,6 +509,10 @@ func _setting_text(key: StringName, value: float) -> String:
 # --- pieces ----------------------------------------------------------------
 
 func _button(title: String, note: String, pressed: Callable, primary: bool = true) -> Button:
+	# Every caption goes through tr(): the keys are the English, in
+	# resources/locale/strings.csv, and a string with no row comes back as
+	# itself — so a number or a seed is safe here too.
+	title = tr(title)
 	var button: Button = Button.new()
 	UiSkin.dress_button(button)
 	button.focus_mode = Control.FOCUS_NONE
@@ -535,6 +540,7 @@ func _button(title: String, note: String, pressed: Callable, primary: bool = tru
 
 
 func _small(title: String, pressed: Callable) -> Button:
+	title = tr(title)
 	var button: Button = Button.new()
 	UiSkin.dress_button(button)
 	button.text = title
@@ -570,6 +576,7 @@ func _picker_row(caption: String, value: String, note: String, cycle: Callable) 
 
 
 func _label(text: String, size: float, tint: Color) -> Label:
+	text = tr(text)
 	var label: Label = Label.new()
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
