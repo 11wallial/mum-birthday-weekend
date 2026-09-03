@@ -259,6 +259,7 @@ func _print_lines(lines: Array[Control], over_seconds: float, tier: int) -> void
 
 func _line(left: String, right: String, size: float, tint: Color,
 		bold: bool = false) -> Control:
+	left = tr(left)
 	var row: HBoxContainer = HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))

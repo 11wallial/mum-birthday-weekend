@@ -402,6 +402,7 @@ func _reel_button(action: StringName, index: int, label: String,
 
 func _action(action: StringName, label: String, note: String,
 		enabled: bool, primary: bool) -> void:
+	label = tr(label)
 	# The spin is the lever on the machine, so it takes no key of its own
 	# there; everything else gets one.
 	if action != SPIN:
@@ -473,6 +474,7 @@ func _build_pocket() -> void:
 
 func _extra_indexed(action: StringName, index: int, label: String, note: String,
 		enabled: bool) -> void:
+	label = tr(label)
 	_action_models.append({"action": action, "index": index, "label": label, "note": note,
 			"enabled": enabled, "lit": false})
 	var button: Button = _new_button(enabled)
@@ -487,6 +489,7 @@ func _extra_indexed(action: StringName, index: int, label: String, note: String,
 
 
 func _extra(action: StringName, label: String, note: String, enabled: bool) -> void:
+	label = tr(label)
 	_action_models.append({"action": action, "label": label, "note": note,
 			"enabled": enabled, "lit": false})
 	var button: Button = _new_button(enabled)

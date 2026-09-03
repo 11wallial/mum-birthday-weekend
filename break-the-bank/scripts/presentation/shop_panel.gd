@@ -306,7 +306,7 @@ func _draw_market() -> void:
 func _chip(text: String, enabled: bool, tint: Color, pressed: Callable) -> Button:
 	var button: Button = Button.new()
 	UiSkin.dress_paper_button(button)
-	button.text = text
+	button.text = tr(text)
 	button.disabled = not enabled
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override(&"font_size", int(roundf(13.0 * _scale)))
@@ -433,7 +433,7 @@ func _symbol_badge(symbol_id: StringName, affordable: bool) -> TextureRect:
 
 func _cell(text: String, size: float, tint: Color) -> Label:
 	var label: Label = Label.new()
-	label.text = text
+	label.text = tr(text)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
 	label.add_theme_color_override(&"font_color", tint)
