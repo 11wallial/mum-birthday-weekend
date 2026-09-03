@@ -1144,6 +1144,11 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_granted.append(payload)
 		EffectBus.Event.RUN_ENDED:
 			_finish_run(String(payload.get("end_reason", "")))
+		EffectBus.Event.CHIT_BOUGHT:
+			if _profile != null and _profile.note_seen("chits", StringName(payload.get("chit", ""))):
+				_profile.save()
+				if _hud != null and _hud.has_method("push_line"):
+					_hud.call("push_line", "First seen: %s" % String(payload.get("name", "")))
 		EffectBus.Event.ARTIFACT_ACQUIRED, EffectBus.Event.SHOP_OPENED:
 			# First sightings go in the collection as they happen, and the
 			# log says so once: the discovery is the run's, not the

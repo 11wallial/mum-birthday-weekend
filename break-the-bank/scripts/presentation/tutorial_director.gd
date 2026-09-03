@@ -218,7 +218,8 @@ func _say(at: Step) -> void:
 					+ "What you cannot afford, you may sign for — on the slate, against the "
 					+ "debt, at the House's rate. Win loudly and the House notices: it sends "
 					+ "one more of its people to the next floor, and says so. The doorman on "
-					+ "this form takes chips to send nobody. Everything else the House will "
+					+ "this form takes chips to send nobody. From the next floor the draft "
+					+ "may deal a chit — paper, spent once, at its moment. Everything else the House will "
 					+ "explain when it charges you for it.",
 					TouchBar.hint("SPACE leaves the draft", "Leave the draft"))
 		_:

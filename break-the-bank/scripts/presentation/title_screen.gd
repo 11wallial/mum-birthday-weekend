@@ -400,6 +400,7 @@ func _draw_collection() -> void:
 		["HARDWARE", "artifacts", content.artifacts],
 		["THE HOUSE'S PEOPLE", "bosses", content.bosses],
 		["CONTRACTS", "contracts", content.contracts],
+		["CHITS", "chits", content.chits],
 	]
 	for section: Array in sections:
 		var kind: String = String(section[1])

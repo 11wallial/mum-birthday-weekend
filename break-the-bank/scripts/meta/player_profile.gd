@@ -45,7 +45,7 @@ var tutorial_seen: bool = false
 ## The collection: everything this profile has met, by kind then id —
 ## hardware offered or owned, the House's people faced, contracts signed.
 ## A codex of silhouettes fills in from this; nothing else reads it.
-var seen: Dictionary = {"artifacts": {}, "bosses": {}, "contracts": {}}
+var seen: Dictionary = {"artifacts": {}, "bosses": {}, "contracts": {}, "chits": {}}
 
 
 func stats() -> Dictionary:
@@ -109,6 +109,8 @@ func note_seen_run(state: RunState) -> void:
 			note_seen("bosses", boss_id)
 	for contract_id: StringName in state.contracts_signed:
 		note_seen("contracts", contract_id)
+	for chit: ChitDef in state.pocket:
+		note_seen("chits", chit.id)
 
 
 ## Records one sighting. Returns true the first time, so the room can say so.
