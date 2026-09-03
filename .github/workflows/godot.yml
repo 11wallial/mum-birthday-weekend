@@ -170,6 +170,19 @@ jobs:
       # Then a whole run through the room, to the statement on the clipboard:
       # the end of every run was once skipped by a shadowed event arm and
       # nothing headless noticed, because nothing headless played to the end.
+      # The House has one voice, and every string written since the last
+      # pass was written alone. This reads them all and fails on a line
+      # that shouts, apologises, names the interface or calls hardware an
+      # upgrade — see tools/text/voice.py and the bible.
+      - name: One voice
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          python3 tools/text/voice.py | tee voice.log
+          if ! grep -q "^0 of" voice.log; then
+            echo "::error::strings out of register — see the report above"
+            exit 1
+          fi
+
       - name: Play a run through the room
         working-directory: ${{ env.PROJECT_DIR }}
         run: |

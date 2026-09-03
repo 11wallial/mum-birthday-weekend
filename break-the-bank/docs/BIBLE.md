@@ -134,6 +134,20 @@ The tone of the ending recolours the whole run. Neither ending is a joke.
 | **the press** | Where the reel is edited: a symbol struck, printed or gilded, for chips. |
 | **the machines** | What a run starts on. The House keeps seven; each opens through play. |
 
+## Reading the voice back
+
+`python3 tools/text/voice.py` reads every string the player can see — 466
+in content, 132 written in code — and flags the ones out of register: a
+line that shouts, apologises, congratulates, names a menu or a screen, or
+calls hardware an upgrade. CI runs it and fails the build on a single
+flag, because the strings that drift are always the ones written alone,
+months after this page was agreed.
+
+What it will not do is rewrite anything. The register is a judgement, and
+a script that fixed prose by rule would flatten the thing that makes it a
+voice. It also knows the House's own words: it has a pit boss, it talks
+about money, and its machine has buttons and a lever.
+
 ## Rules for anyone writing
 
 1. The House informs. It does not threaten, mock, or console.

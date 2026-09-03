@@ -465,7 +465,7 @@ func _draw_settings() -> void:
 				setting_changed.emit(&"steady", now)
 				_redraw()))
 	_settings_box.add_child(steady_row)
-	var about: Label = _label("Pace is how long the reels and the count take; hold the lever, or Space, through a payout to hurry it. The machine carries its controls and its counters; on screen repeats them. Louder than 0 dB is the House's own risk.",
+	var about: Label = _label("Pace is how long the reels and the count take; hold the lever, or Space, through a payout to hurry it. The machine carries its controls and its counters; the overlay repeats them. Louder than 0 dB is the House's own risk.",
 			11.0, UiSkin.INK_MUTED)
 	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_settings_box.add_child(about)
