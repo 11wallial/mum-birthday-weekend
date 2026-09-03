@@ -1062,6 +1062,12 @@ func _lever() -> Node3D:
 	for band: int in 5:
 		_cylinder(arm, 0.079, 0.012, Vector3(0.17, 0.79 + float(band) * 0.024, 0.0),
 				Vector3.ZERO, Materials.rubber(Color(0.16, 0.13, 0.1), 81 + band))
+	# Where the hand goes, the tape is polished: darker, smoother, catching
+	# the light the matte bands do not. Wear concentrates where the machine
+	# is touched, and this is the one place it is touched every spin.
+	var polish: StandardMaterial3D = Materials.rubber(Color(0.1, 0.085, 0.07), 86)
+	polish.roughness = 0.25
+	_cylinder(arm, 0.08, 0.05, Vector3(0.17, 0.9, 0.0), Vector3.ZERO, polish)
 	# Clickable along the whole arm: the lever is the machine's one big verb,
 	# and the first thing a new player reaches for.
 	var pick: Area3D = Area3D.new()
@@ -1279,6 +1285,35 @@ func _wear() -> void:
 			_wear_material(ProcTextures.stain(86, Color(0.08, 0.06, 0.05))))
 	damp.rotation.x = -PI * 0.5
 	_decals(wear_root, front)
+	_concentrated_wear(wear_root)
+
+
+## Wear where the machine is worked, not everywhere: grease at the joints
+## the gearbox drives, tarnish under the crown's rail brackets, and dust on
+## the horizontals nobody wipes. The handover's note that rust tiled alike
+## across every surface reads as wallpaper; this is the other half of the
+## answer to it.
+func _concentrated_wear(parent: Node3D) -> void:
+	# Grease, weeping from the gearbox's collar down the flank.
+	var grease: MeshInstance3D = Prims.quad(parent, Vector2(0.18, 0.3),
+			Vector3(-CHASSIS.x - 0.002, CHASSIS_Y - 0.12, 0.3),
+			_wear_material(ProcTextures.stain(108, Color(0.06, 0.05, 0.04))))
+	grease.rotation.y = -PI * 0.5
+	# Tarnish under each crown bracket, where the pipe sweats.
+	var top: float = CHASSIS_Y + CHASSIS.y
+	for i: int in 5:
+		var x: float = lerpf(-CHASSIS.x + 0.2, CHASSIS.x - 0.2, float(i) / 4.0)
+		_wear_card(parent, Vector2(0.1, 0.12), Vector3(x, top - 0.07, CHASSIS.z + 0.004),
+				ProcTextures.weep(109 + i, Color(0.2, 0.16, 0.1)))
+	# Dust on the chassis top and the plinth's cap, out of the lamp's reach.
+	var dust: MeshInstance3D = Prims.quad(parent, Vector2(1.6, 0.6),
+			Vector3(-0.1, top + 0.052, -0.05),
+			_wear_material(ProcTextures.stain(115, Color(0.62, 0.58, 0.5))))
+	dust.rotation.x = -PI * 0.5
+	var sill: MeshInstance3D = Prims.quad(parent, Vector2(0.9, 0.36),
+			Vector3(-0.7, PLINTH_TOP + 0.057, 0.4),
+			_wear_material(ProcTextures.stain(116, Color(0.5, 0.47, 0.42))))
+	sill.rotation.x = -PI * 0.5
 
 
 ## Decals: the art handover's last note on materials. Detail density high
