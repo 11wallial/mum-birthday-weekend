@@ -178,7 +178,7 @@ func _draw_press() -> void:
 		var job: Dictionary = _state.press_offers[i]
 		var symbol: SymbolDef = ContentDB.shared().symbol_by_id(
 				StringName(String(job.get("symbol", ""))))
-		var name: String = symbol.display_name if symbol != null \
+		var name: String = Copy.of(symbol.display_name) if symbol != null \
 				else String(job.get("symbol", "")).capitalize()
 		var text: String = ""
 		match String(job.get("kind", "")):
@@ -226,12 +226,12 @@ func _draw_pocket() -> void:
 	row.add_child(head)
 	if _state.chit_offer != null:
 		var chit: ChitDef = _state.chit_offer
-		row.add_child(_chip("%s   %s   %d chips" % [chit.display_name.to_upper(),
-				chit.description, chit.cost], _state.can_buy_chit(), UiSkin.PAPER_INK,
+		row.add_child(_chip("%s   %s   %d chips" % [Copy.upper(chit.display_name),
+				Copy.of(chit.description), chit.cost], _state.can_buy_chit(), UiSkin.PAPER_INK,
 				func() -> void: chit_requested.emit()))
 	var carried: PackedStringArray = PackedStringArray()
 	for held: ChitDef in _state.pocket:
-		carried.append(held.display_name)
+		carried.append(Copy.of(held.display_name))
 	var note: Label = _cell("carrying: %s" % (", ".join(carried) if not carried.is_empty() else "nothing")
 			+ "   (%d of %d)" % [_state.pocket.size(), RunState.POCKET], 11.0, UiSkin.PAPER_INK_MUTED)
 	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -261,7 +261,7 @@ func _draw_doorman() -> void:
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(head)
 	var note: Label = _cell("The House noticed %d in one spin. %s is coming to floor %d: %s" % [
-			_state.noticed_payout, _state.notice_pending.display_name,
+			_state.noticed_payout, Copy.of(_state.notice_pending.display_name),
 			_state.floor_index + 1, _state.notice_pending.tell.to_lower()], 12.0, UiSkin.PAPER_INK)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -298,7 +298,7 @@ func _draw_market() -> void:
 		var artifact: ArtifactDef = _state.owned[i]
 		var refund: int = _state.sellback_of(artifact)
 		var index: int = i
-		_market.add_child(_chip("SELL %s  +%d" % [artifact.display_name, refund],
+		_market.add_child(_chip("SELL %s  +%d" % [Copy.of(artifact.display_name), refund],
 				true, UiSkin.PAPER_INK_MUTED,
 				func() -> void: market_requested.emit(SELL, index)))
 
@@ -365,7 +365,7 @@ func _build_row(index: int) -> Control:
 	var badge: TextureRect = _symbol_badge(artifact.symbol_filter, affordable)
 	if badge != null:
 		head.add_child(badge)
-	var name_cell: Label = _cell(artifact.display_name, 17.0,
+	var name_cell: Label = _cell(Copy.of(artifact.display_name), 17.0,
 			UiSkin.PAPER_INK if affordable else UiSkin.PAPER_DENIED)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_cell)
@@ -373,7 +373,7 @@ func _build_row(index: int) -> Control:
 	# chasing the clamp should be able to see the clamp coming.
 	var build: ArchetypeDef = ContentDB.shared().archetype_by_id(artifact.archetype)
 	if build != null:
-		head.add_child(_cell(build.display_name.to_upper(), 11.0,
+		head.add_child(_cell(Copy.upper(build.display_name), 11.0,
 				UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
 	var price_cell: Label = _cell("%d chips" % price, 17.0,
 			UiSkin.PAPER_STAMP if affordable else UiSkin.PAPER_DENIED)
@@ -381,7 +381,7 @@ func _build_row(index: int) -> Control:
 	head.add_child(price_cell)
 	grid.add_child(head)
 
-	var body: Label = _cell(artifact.description, 14.0, UiSkin.PAPER_INK_MUTED)
+	var body: Label = _cell(Copy.of(artifact.description), 14.0, UiSkin.PAPER_INK_MUTED)
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_child(body)
@@ -427,7 +427,7 @@ func _symbol_badge(symbol_id: StringName, affordable: bool) -> TextureRect:
 	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	badge.modulate = Color(1, 1, 1, 1) if affordable else Color(1, 1, 1, 0.5)
-	badge.tooltip_text = symbol.display_name
+	badge.tooltip_text = Copy.of(symbol.display_name)
 	return badge
 
 

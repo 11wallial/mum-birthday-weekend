@@ -97,7 +97,7 @@ func _redraw() -> void:
 	var next_floor: FloorDef = _state.content.floor_at(_state.floor_index + 1)
 	if _title != null:
 		_title.text = "THE BACK OFFICE — SIGN FOR %s" % (
-				next_floor.display_name.to_upper() if next_floor != null else "THE NEXT FLOOR")
+				Copy.upper(next_floor.display_name) if next_floor != null else "THE NEXT FLOOR")
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
 	_cursor = clampi(_cursor, 0, maxi(_state.contract_offers.size() - 1, 0))
 	for i: int in _state.contract_offers.size():
@@ -133,12 +133,12 @@ func _build_row(index: int) -> Control:
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
 	head.add_child(_cell("%d." % (index + 1), 17.0, UiSkin.PAPER_INK_MUTED))
-	var name_cell: Label = _cell(contract.display_name, 17.0, UiSkin.PAPER_INK)
+	var name_cell: Label = _cell(Copy.of(contract.display_name), 17.0, UiSkin.PAPER_INK)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_cell)
 	grid.add_child(head)
 
-	var flavour: Label = _cell(contract.description, 13.0, UiSkin.PAPER_INK_MUTED)
+	var flavour: Label = _cell(Copy.of(contract.description), 13.0, UiSkin.PAPER_INK_MUTED)
 	flavour.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	grid.add_child(flavour)
 

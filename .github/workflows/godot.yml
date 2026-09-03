@@ -94,6 +94,13 @@ jobs:
           godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
             --report=res://reports/opening_report.json
 
+      # A new artifact with no row in the string table ships in English in
+      # every language. The table is filled by tools/text/extract.py; this is
+      # the same script asking whether anyone forgot to run it.
+      - name: Every string in the table
+        working-directory: ${{ env.PROJECT_DIR }}/tools/text
+        run: python3 extract.py --check
+
       # An audio asset with no licence row is a release blocker, not a warning.
       - name: Audit audio licences
         working-directory: ${{ env.PROJECT_DIR }}

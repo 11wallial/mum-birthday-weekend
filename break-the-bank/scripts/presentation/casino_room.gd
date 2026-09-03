@@ -572,7 +572,7 @@ func _on_inspect(id: StringName) -> void:
 					lines.append("%d due when the spins run out." % state.ante_due())
 					if floor_def != null and state.ante_due() != floor_def.ante:
 						lines.append("%s asks %d; the rest is what the House has added since — its people, the count, the contract, and %d notice%s." % [
-								floor_def.display_name, floor_def.ante, state.notices,
+								Copy.of(floor_def.display_name), floor_def.ante, state.notices,
 								"" if state.notices == 1 else "s"])
 					lines.append("Miss it and the House keeps the table.")
 				"spins":
@@ -618,7 +618,7 @@ func _on_inspect(id: StringName) -> void:
 			var index: int = int(parts[1]) if parts.size() > 1 else 0
 			if index < state.board.line.size() and state.board.line[index] != null:
 				var symbol: SymbolDef = state.board.line[index]
-				title = symbol.display_name
+				title = Copy.of(symbol.display_name)
 				var gilt: int = state.symbol_bonus(symbol)
 				if symbol.is_curse:
 					lines.append("Costs %d, and voids the pattern unless something is warding it." % state.config.curse_penalty)
@@ -1332,7 +1332,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			if _profile != null and _profile.note_seen("chits", StringName(payload.get("chit", ""))):
 				_profile.save()
 				if _hud != null and _hud.has_method("push_line"):
-					_hud.call("push_line", "First seen: %s" % String(payload.get("name", "")))
+					_hud.call("push_line", "First seen: %s" % Copy.of(String(payload.get("name", ""))))
 		EffectBus.Event.ARTIFACT_ACQUIRED, EffectBus.Event.SHOP_OPENED:
 			# First sightings go in the collection as they happen, and the
 			# log says so once: the discovery is the run's, not the
@@ -1342,7 +1342,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				for offered: StringName in state.offers_seen:
 					if _profile.note_seen("artifacts", offered):
 						var seen_def: ArtifactDef = ContentDB.shared().artifact_by_id(offered)
-						fresh.append(seen_def.display_name if seen_def != null else String(offered))
+						fresh.append(Copy.of(seen_def.display_name) if seen_def != null else String(offered))
 				if not fresh.is_empty():
 					_profile.save()
 					if _hud != null and _hud.has_method("push_line"):
@@ -1352,7 +1352,7 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			# should be able to point at it and say the House did that.
 			if not bool(payload.get("resumed", false)):
 				_set_prompt("THE HOUSE HAS NOTICED — %d in one spin.\n%s will be on floor %d: %s\nEvery ante from here is %d%% dearer." % [
-					int(payload.get("payout", 0)), String(payload.get("name", "")).to_upper(),
+					int(payload.get("payout", 0)), Copy.of(String(payload.get("name", ""))).to_upper(),
 					int(payload.get("floor", 0)), String(payload.get("tell", "")),
 					int(round(float(payload.get("notices", 1))
 							* state.config.notice_ante_percent))])
@@ -1391,7 +1391,7 @@ func _refresh_diegetic() -> void:
 		if not floors.is_empty():
 			floor_def = floors[floors.size() - 1]
 			floor_index = floor_def.index
-	var floor_name: String = floor_def.display_name if floor_def != null else ""
+	var floor_name: String = Copy.of(floor_def.display_name) if floor_def != null else ""
 	if _floor_sign != null:
 		# Two lines: the long lens crops the right of the frame, and a floor
 		# name on one line ran off it from the third floor on.
@@ -1408,13 +1408,13 @@ func _refresh_diegetic() -> void:
 		for person: BossDef in BossEngine.people(state):
 			memo += ("  " if not memo.is_empty() else "") + person.tell
 		if memo.is_empty() and state.notice_pending != null:
-			memo = "Noticed. %s is coming." % state.notice_pending.display_name
+			memo = Copy.filled("Noticed. %s is coming.", [Copy.of(state.notice_pending.display_name)])
 		# The peek: the next line, on the ledger, until it is spun.
 		if not state.peeked_line.is_empty():
 			var names: PackedStringArray = PackedStringArray()
 			for symbol_id: StringName in state.peeked_line:
 				var symbol: SymbolDef = ContentDB.shared().symbol_by_id(symbol_id)
-				names.append(symbol.display_name.to_lower() if symbol != null else "?")
+				names.append(Copy.lower(symbol.display_name) if symbol != null else "?")
 			memo = "NEXT: %s" % " · ".join(names) + ("\n" + memo if not memo.is_empty() else "")
 		if memo.is_empty():
 			memo = _memos.memo_for(state) if _memos != null else ""
@@ -1496,7 +1496,7 @@ func _finish_run(reason: String) -> void:
 	if not earned.is_empty():
 		var names: PackedStringArray = PackedStringArray()
 		for unlock: UnlockDef in earned:
-			names.append(unlock.display_name)
+			names.append(Copy.of(unlock.display_name))
 		lines.append("UNLOCKED: %s" % ", ".join(names))
 	if state.phase == RunState.Phase.WON and not state.endless:
 		# The counter-offer. Only to a run that has beaten the House, and the
@@ -1835,10 +1835,10 @@ func _announce_floor(payload: Dictionary) -> void:
 	_granted.clear()
 	# Whoever the House has sent is announced with the floor, rule and all:
 	# a twist nobody was told about is not a boss, it is a bug report.
-	var skin_name: String = String(payload.get("skin_name", ""))
+	var skin_name: String = Copy.of(String(payload.get("skin_name", "")))
 	if skin_name != "":
 		lines.append("%s — %s" % [skin_name.to_upper(), String(payload.get("skin_line", ""))])
-	var boss_name: String = String(payload.get("boss_name", ""))
+	var boss_name: String = Copy.of(String(payload.get("boss_name", "")))
 	if boss_name != "":
 		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])
 		lines.append(String(payload.get("boss_tell", "")))
@@ -1847,7 +1847,7 @@ func _announce_floor(payload: Dictionary) -> void:
 		var light: SymbolDef = ContentDB.shared().symbol_by_id(state.ship_lean["light"])
 		if heavy != null and light != null:
 			lines.append("THE REEL TODAY — %s heavy, %s light." % [
-					heavy.display_name.to_lower(), light.display_name.to_lower()])
+					Copy.lower(heavy.display_name), Copy.lower(light.display_name)])
 	var watcher_name: String = String(payload.get("watcher_name", ""))
 	if watcher_name != "":
 		lines.append("%s, BECAUSE THE HOUSE NOTICED — %s" % [watcher_name.to_upper(),

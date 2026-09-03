@@ -1442,7 +1442,7 @@ func _tag_module(mount: Node3D, module: Node3D, artifact: ArtifactDef) -> void:
 	var tag: Label3D = Label3D.new()
 	tag.name = "Tag"
 	Type.face(tag, &"mono")
-	tag.text = "%s\n%s" % [artifact.display_name.to_upper(), artifact.description]
+	tag.text = "%s\n%s" % [Copy.upper(artifact.display_name), Copy.of(artifact.description)]
 	tag.font_size = 30
 	tag.pixel_size = 0.0011
 	tag.width = 520.0

@@ -171,7 +171,7 @@ func _build_status() -> void:
 		_chip("WORKS", "%d reels  %d rows" % [
 				_state.machine_reels(), _state.scoring_rows()], UiSkin.INK)
 	if _state.contract != null:
-		_chip("SIGNED", _state.contract.display_name, UiSkin.AMBER)
+		_chip("SIGNED", Copy.of(_state.contract.display_name), UiSkin.AMBER)
 	if _state.has_system(Systems.HEAT):
 		var measure: HeatEngine.Measure = HeatEngine.current(_state)
 		var label: String = HeatEngine.measure_name(measure)
@@ -242,7 +242,7 @@ static func nudge_note(board: SpinBoard, reel: int, preview: Array[SymbolDef],
 	elif now > was and now != Probability.Pattern.CLEAN_SWEEP:
 		why = ["", "a pair", "three", "jackpot", "sweep"][int(now)]
 	elif arriving != null:
-		why = "%s in" % arriving.display_name.to_lower()
+		why = Copy.filled("%s in", [Copy.lower(arriving.display_name)])
 	return "→ %d · %s" % [after, why] if not why.is_empty() else "→ %d" % after
 
 
@@ -469,7 +469,7 @@ func _width_of(text: String, size: float) -> float:
 func _build_pocket() -> void:
 	for i: int in _state.pocket.size():
 		var chit: ChitDef = _state.pocket[i]
-		_extra_indexed(USE_CHIT, i, chit.display_name.to_upper(), "", _state.can_use_chit(i))
+		_extra_indexed(USE_CHIT, i, Copy.upper(chit.display_name), "", _state.can_use_chit(i))
 
 
 func _extra_indexed(action: StringName, index: int, label: String, note: String,

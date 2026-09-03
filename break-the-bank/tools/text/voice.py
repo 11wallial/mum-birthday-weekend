@@ -46,12 +46,15 @@ BANNED_SYNONYMS = {"cash prize": "payout", "enemy": "the House's people",
 HINT = re.compile(r"\b(SPACE|ENTER|ESC|TAB|F2|F5|SHIFT|CTRL|arrows|D-pad|1-%d|Tap|tap)\b")
 
 
-def strings_from_content() -> list[tuple[str, str]]:
+def strings_from_content(shortest: int = 4) -> list[tuple[str, str]]:
+    """Every player-visible string in the content. The default skips the very
+    short ones, which carry no voice to judge; the extractor asks for all of
+    them, because "IOU" needs translating as much as a paragraph does."""
     out = []
     for tres in sorted((ROOT / "resources").rglob("*.tres")):
         for line in tres.read_text().splitlines():
             found = re.match(r'^(\w+) = "(.*)"$', line)
-            if found and found.group(1) in CONTENT_FIELDS and len(found.group(2)) > 3:
+            if found and found.group(1) in CONTENT_FIELDS and len(found.group(2)) >= shortest:
                 out.append(("%s:%s" % (tres.relative_to(ROOT), found.group(1)), found.group(2)))
     return out
 

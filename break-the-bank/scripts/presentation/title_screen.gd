@@ -339,8 +339,8 @@ func _ladder_row() -> Control:
 		var plate: Button = Button.new()
 		UiSkin.dress_button(plate)
 		plate.text = str(rung.tier)
-		plate.tooltip_text = rung.display_name if opened else "%s — %s" % [
-			rung.display_name, _rung_requirement(rung)]
+		plate.tooltip_text = Copy.of(rung.display_name) if opened else "%s — %s" % [
+			Copy.of(rung.display_name), _rung_requirement(rung)]
 		plate.disabled = not opened
 		plate.focus_mode = Control.FOCUS_NONE
 		plate.custom_minimum_size = Vector2(36.0, 34.0) * _scale
@@ -358,15 +358,15 @@ func _ladder_row() -> Control:
 	var current: DifficultyDef = _catalogue.difficulty_by_id(_profile.selected_difficulty)
 	var caption: String = "Standard — the game as shipped."
 	if current != null:
-		caption = "%s — %s" % [current.display_name, current.description]
+		caption = "%s — %s" % [Copy.of(current.display_name), Copy.of(current.description)]
 	var next_locked: DifficultyDef = null
 	for rung: DifficultyDef in _catalogue.difficulties:
 		if not open_ids.has(rung.id):
 			next_locked = rung
 			break
 	if next_locked != null:
-		caption += "   Next rung, %s: %s." % [next_locked.display_name,
-				_rung_requirement(next_locked)]
+		caption += Copy.filled("   Next rung, %s: %s.", [Copy.of(next_locked.display_name),
+				_rung_requirement(next_locked)])
 	var note: Label = _label(caption, 12.0, UiSkin.INK_MUTED)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(note)
@@ -418,7 +418,7 @@ func _draw_collection() -> void:
 					blurb = String(def.get("tell"))
 				else:
 					blurb = String(def.get("description"))
-				line = "%s — %s" % [String(def.get("display_name")), blurb]
+				line = "%s — %s" % [Copy.of(String(def.get("display_name"))), blurb]
 			var entry: Label = _label(line, 11.0, UiSkin.INK if met else UiSkin.INK_MUTED)
 			entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -605,7 +605,7 @@ func _stats_text() -> String:
 
 func _machine_name(id: StringName) -> String:
 	var machine: MachineDef = _catalogue.machine_by_id(id)
-	return machine.display_name if machine != null else String(id).capitalize()
+	return Copy.of(machine.display_name) if machine != null else String(id).capitalize()
 
 
 ## The machine's own line, and how many more there are to open.
@@ -621,7 +621,7 @@ func _machine_note(id: StringName) -> String:
 				continue
 			for unlock: UnlockDef in _catalogue.unlocks:
 				if unlock.kind == UnlockDef.Kind.STARTER and unlock.target_id == candidate.id:
-					next_locked = "%s: %s" % [candidate.display_name,
+					next_locked = "%s: %s" % [Copy.of(candidate.display_name),
 							unlock.requirement_text().to_lower()]
 					break
 			if not next_locked.is_empty():
@@ -636,14 +636,14 @@ func _challenge_name(id: StringName) -> String:
 	if id == &"":
 		return "None"
 	var challenge: ChallengeDef = _catalogue.challenge_by_id(id)
-	return challenge.display_name if challenge != null else String(id).capitalize()
+	return Copy.of(challenge.display_name) if challenge != null else String(id).capitalize()
 
 
 func _challenge_note(id: StringName) -> String:
 	if id == &"":
 		return "The ordinary game. Challenges open through play."
 	var challenge: ChallengeDef = _catalogue.challenge_by_id(id)
-	return challenge.description if challenge != null else ""
+	return Copy.of(challenge.description) if challenge != null else ""
 
 
 func _name_of(table: Dictionary, id: StringName) -> String:

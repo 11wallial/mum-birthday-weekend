@@ -215,26 +215,26 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_set_text(_ante, str(int(payload.get("ante", 0))))
 			_spins_left = int(payload.get("spins", 0))
 			_set_text(_spins, str(_spins_left))
-			var boss_name: String = String(payload.get("boss_name", ""))
-			_push("Entered %s" % String(payload.get("name", "")) if boss_name == ""
+			var boss_name: String = Copy.of(String(payload.get("boss_name", "")))
+			_push("Entered %s" % Copy.of(String(payload.get("name", ""))) if boss_name == ""
 					else "Entered %s — %s is on the floor" % [
-							String(payload.get("name", "")), boss_name])
+							Copy.of(String(payload.get("name", ""))), boss_name])
 		EffectBus.Event.CHIT_BOUGHT:
-			_push("Pocketed %s" % String(payload.get("name", "")))
+			_push("Pocketed %s" % Copy.of(String(payload.get("name", ""))))
 		EffectBus.Event.CHIT_USED:
-			_push("Spent %s" % String(payload.get("name", "")))
+			_push("Spent %s" % Copy.of(String(payload.get("name", ""))))
 		EffectBus.Event.DOORMAN_PAID:
 			_push("Paid the doorman %d chips; %s stays home" % [
-					int(payload.get("paid", 0)), String(payload.get("name", ""))])
+					int(payload.get("paid", 0)), Copy.of(String(payload.get("name", "")))])
 		EffectBus.Event.HOUSE_NOTICED:
 			_push("The House noticed: %s on floor %d" % [
-					String(payload.get("name", "")), int(payload.get("floor", 0))])
+					Copy.of(String(payload.get("name", ""))), int(payload.get("floor", 0))])
 		EffectBus.Event.BOSS_ACTED:
 			# The collector's round: the vig, mid-floor. Said where the ante
 			# is said, because it comes out of the same purse.
 			_set_text(_line, "%s: the vig, again — %d paid" % [
-					String(payload.get("name", "")).to_upper(), int(payload.get("serviced", 0))])
-			_push("%s took %d" % [String(payload.get("name", "")), int(payload.get("serviced", 0))])
+					Copy.of(String(payload.get("name", ""))).to_upper(), int(payload.get("serviced", 0))])
+			_push("%s took %d" % [Copy.of(String(payload.get("name", ""))), int(payload.get("serviced", 0))])
 		EffectBus.Event.FLOOR_CLEARED:
 			_push("Floor %d cleared" % int(payload.get("floor", 0)))
 		EffectBus.Event.SPIN_STARTED:
@@ -277,14 +277,14 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 		EffectBus.Event.SYSTEM_GRANTED:
 			_push("Unlocked %s" % String(payload.get("title", "")))
 		EffectBus.Event.CONTRACT_SIGNED:
-			_push("Signed %s" % String(payload.get("name", "")))
+			_push("Signed %s" % Copy.of(String(payload.get("name", ""))))
 		EffectBus.Event.HEAT_CHANGED:
 			# The pit boss raises the ante in the middle of a floor, so the
 			# gauge has to follow it rather than keep quoting the price the
 			# floor opened at.
 			_set_text(_ante, str(int(payload.get("ante", 0))))
 			if bool(payload.get("changed", false)):
-				var measure: String = String(payload.get("name", ""))
+				var measure: String = Copy.of(String(payload.get("name", "")))
 				if not measure.is_empty():
 					_push("The House: %s" % measure)
 		EffectBus.Event.PAYOUT_CALCULATED:

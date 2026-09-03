@@ -190,7 +190,9 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 	for entry: Variant in steps:
 		var step: Dictionary = entry as Dictionary
 		var kind: String = String(step.get("kind", ""))
-		var label: String = String(step.get("label", ""))
+		# A step's label is a symbol, a device or the House, named by the
+		# simulation, which never translates anything.
+		var label: String = Copy.of(String(step.get("label", "")))
 		var text: String = String(step.get("text", ""))
 		match kind:
 			"symbol":
