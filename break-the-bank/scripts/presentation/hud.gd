@@ -214,6 +214,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_push("Entered %s" % String(payload.get("name", "")) if boss_name == ""
 					else "Entered %s — %s is on the floor" % [
 							String(payload.get("name", "")), boss_name])
+		EffectBus.Event.CHIT_BOUGHT:
+			_push("Pocketed %s" % String(payload.get("name", "")))
+		EffectBus.Event.CHIT_USED:
+			_push("Spent %s" % String(payload.get("name", "")))
 		EffectBus.Event.DOORMAN_PAID:
 			_push("Paid the doorman %d chips; %s stays home" % [
 					int(payload.get("paid", 0)), String(payload.get("name", ""))])

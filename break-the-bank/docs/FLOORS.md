@@ -225,6 +225,20 @@ costs:
 | `STAKE_FROZEN` | the stake stays at one | the Cashier |
 | `SKIMMED` | a share off every payout, before the count's own | the Manager |
 
+### The chits
+
+The consumable class, in the House's paper: a **chit** is a slip bought at
+the draft for chips into a pocket of two and spent once, at its moment.
+Five kinds (`ChitDef.Kind`, resolved in `SimEngine._do_use_chit`): the
+Respin (the last drum again, with the decision still on the table), the
+Vent (forty off the count, from the sixth floor), the Deferral (this
+floor's vig added to the principal instead of charged), the Marker (the
+last drum lands a wild next spin), the Peek (the next line on the ledger
+before it is spun, off the reel stream without moving it). Two verbs,
+`buy_chit` and `use_chit`, both journaled; `RunState.can_use_chit` says
+when each kind's moment is. The bot buys paper before hardware with change
+kept, and spends each kind at the moment a person would.
+
 ### The notice
 
 The House also acts against success, not only on a schedule — the design

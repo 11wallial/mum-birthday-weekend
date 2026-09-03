@@ -36,6 +36,7 @@ const BUY_ROW: StringName = &"buy_row"
 const BUY_REEL: StringName = &"buy_reel"
 const LAUNDER: StringName = &"launder"
 const SETTLE: StringName = &"settle"
+const USE_CHIT: StringName = &"use_chit"
 
 ## Reel buttons sit above the action row so the two never compete for a thumb,
 ## and the standing controls — the stake, the vault, the works — sit in a row of
@@ -251,6 +252,7 @@ func _build_actions() -> void:
 			if _held_back:
 				return
 			_action(TAKE, "TAKE IT", "%d cr standing" % _state.board.payout, true, true)
+			_build_pocket()
 			return
 		RunState.Decision.GAMBLE:
 			if _held_back:
@@ -261,6 +263,7 @@ func _build_actions() -> void:
 					"%d → %d at %d%%" % [_state.board.payout,
 					_state.board.payout * 2, int(round(odds[rung] * 100.0))], true, true)
 			_action(COLLECT, "COLLECT", "%d cr" % _state.board.payout, true, false)
+			_build_pocket()
 			return
 		_:
 			pass
@@ -302,6 +305,7 @@ func _build_actions() -> void:
 	if _state.has_system(Systems.HEAT) and _state.heat > 0.0:
 		var price: int = HeatEngine.launder_price(_state)
 		_extra(LAUNDER, "A WORD", "%d cr" % price, _state.economy.can_afford(price))
+	_build_pocket()
 
 
 func _works_action(action: StringName, label: String, owned: int, ceiling: int) -> void:
@@ -457,6 +461,29 @@ func _width_of(text: String, size: float) -> float:
 
 ## A standing control: the stake, the vault, the works, a quiet word. Smaller
 ## than the spin, and always in the same row, so the eye learns where they live.
+## The pocket's chits, each a key while its moment is now: a chit that
+## cannot be spent yet is listed, barred, so the pocket is never a secret.
+func _build_pocket() -> void:
+	for i: int in _state.pocket.size():
+		var chit: ChitDef = _state.pocket[i]
+		_extra_indexed(USE_CHIT, i, chit.display_name.to_upper(), "", _state.can_use_chit(i))
+
+
+func _extra_indexed(action: StringName, index: int, label: String, note: String,
+		enabled: bool) -> void:
+	_action_models.append({"action": action, "index": index, "label": label, "note": note,
+			"enabled": enabled, "lit": false})
+	var button: Button = _new_button(enabled)
+	var caption: String = label if note.is_empty() else "%s   %s" % [label, note]
+	button.text = caption
+	button.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
+	button.custom_minimum_size = Vector2(
+			minf(_width_of(caption, 12.0) + 26.0 * _scale, _share_of_row(6, 8.0)),
+			EXTRA_HEIGHT * _scale)
+	button.pressed.connect(func() -> void: action_requested.emit(action, index))
+	_extras.add_child(button)
+
+
 func _extra(action: StringName, label: String, note: String, enabled: bool) -> void:
 	_action_models.append({"action": action, "label": label, "note": note,
 			"enabled": enabled, "lit": false})

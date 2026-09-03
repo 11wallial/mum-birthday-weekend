@@ -79,6 +79,8 @@ const COVERAGE: Dictionary = {
 	&"settle_floor": &"settle",
 	&"press": &"press_jobs",
 	&"pay_doorman": &"doorman",
+	&"buy_chit": &"chits",
+	&"use_chit": &"use_chits",
 }
 
 
@@ -484,6 +486,47 @@ static func doorman(engine: SimEngine, state: RunState) -> void:
 		return
 	if state.economy.chips >= state.doorman_price() * 3:
 		engine.pay_doorman(state)
+
+
+## Buys the draft's chit when the pocket has room and the purse is not
+## emptied by it: paper is bought with change, hardware with the draft.
+static func chits(engine: SimEngine, state: RunState) -> void:
+	if not state.can_buy_chit():
+		return
+	# Before the draft only when flush — at a smaller margin the paper
+	# starved the hardware and the batch lost eight points — and after it
+	# with whatever change the draft left.
+	var after_draft: bool = state.shop_offers.is_empty()
+	if state.economy.chips >= state.chit_offer.cost + (0 if after_draft else 14):
+		engine.buy_chit(state)
+
+
+## Spends chits at their moments: a respin on a board under par, a vent when
+## the count is near a measure, a deferral when the close would fall short,
+## a marker on the last spins of a short floor, a peek whenever it is held.
+static func use_chits(engine: SimEngine, state: RunState) -> void:
+	if state.phase != RunState.Phase.SPINNING:
+		return
+	for i: int in range(state.pocket.size() - 1, -1, -1):
+		if not state.can_use_chit(i):
+			continue
+		var chit: ChitDef = state.pocket[i]
+		var take: bool = false
+		match chit.kind:
+			ChitDef.Kind.RESPIN:
+				take = state.board.payout < SimEngine.par_for(state)
+			ChitDef.Kind.VENT:
+				take = state.heat >= state.config.heat_skim_at * 0.8
+			ChitDef.Kind.DEFERRAL:
+				take = state.spins_remaining <= 2 \
+						and state.economy.cash < state.vig_due() + state.ante_due()
+			ChitDef.Kind.MARKER:
+				take = state.spins_remaining <= 2 \
+						and state.economy.cash < state.vig_due() + state.ante_due()
+			ChitDef.Kind.PEEK:
+				take = true
+		if take:
+			engine.use_chit(state, i)
 
 
 static func press_jobs(engine: SimEngine, state: RunState) -> void:

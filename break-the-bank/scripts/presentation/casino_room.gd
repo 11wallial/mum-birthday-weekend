@@ -146,6 +146,7 @@ func _ready() -> void:
 		_shop.market_requested.connect(_on_market_requested)
 		_shop.press_requested.connect(_on_press_requested)
 		_shop.doorman_requested.connect(_on_doorman_requested)
+		_shop.chit_requested.connect(_on_chit_requested)
 	if _deck != null:
 		_deck.action_requested.connect(_on_deck_action)
 		# The machine's physical buttons render the deck's model and their
@@ -1209,6 +1210,13 @@ func _refresh_diegetic() -> void:
 			memo += ("  " if not memo.is_empty() else "") + person.tell
 		if memo.is_empty() and state.notice_pending != null:
 			memo = "Noticed. %s is coming." % state.notice_pending.display_name
+		# The peek: the next line, on the ledger, until it is spun.
+		if not state.peeked_line.is_empty():
+			var names: PackedStringArray = PackedStringArray()
+			for symbol_id: StringName in state.peeked_line:
+				var symbol: SymbolDef = ContentDB.shared().symbol_by_id(symbol_id)
+				names.append(symbol.display_name.to_lower() if symbol != null else "?")
+			memo = "NEXT: %s" % " · ".join(names) + ("\n" + memo if not memo.is_empty() else "")
 		if memo.is_empty():
 			memo = _memos.memo_for(state) if _memos != null else ""
 		var log: PackedStringArray = PackedStringArray()
@@ -1427,6 +1435,13 @@ func _on_deck_action(action: StringName, index: int) -> void:
 			var price: int = HeatEngine.launder_price(state)
 			if engine.launder(state):
 				_record(action, {"paid": price, "heat": state.heat})
+		ControlDeck.USE_CHIT:
+			if index >= 0 and index < state.pocket.size() and _allowed(&"use_chit", index):
+				var chit_id: StringName = state.pocket[index].id
+				if engine.use_chit(state, index):
+					_record(action, {"chit": String(chit_id)})
+					if _audio != null:
+						_audio.play_at(&"receipt_tear")
 		ControlDeck.SETTLE:
 			var left: int = state.spins_remaining
 			var bonus: int = state.settle_bonus(left)
@@ -1496,6 +1511,20 @@ func _on_sign_requested(index: int) -> void:
 		_contracts.close()
 		if _camera != null:
 			_camera.set_view(CameraController.View.MACHINE)
+
+
+## The draft's chit, from the form.
+func _on_chit_requested() -> void:
+	if state == null or not state.can_buy_chit():
+		return
+	var chit_id: StringName = state.chit_offer.id
+	if engine.buy_chit(state):
+		_record(&"buy_chit", {"chit": String(chit_id)})
+		if _shop != null and _shop.is_open():
+			_shop.refresh()
+		if _audio != null:
+			_audio.play(&"ui_chip_place")
+		_mark_save()
 
 
 ## A word with the doorman, from the form: the same call the policy makes.

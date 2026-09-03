@@ -14,6 +14,8 @@ signal market_requested(action: StringName, index: int)
 signal press_requested(index: int)
 ## The doorman: a word, and the House sends nobody after the notice.
 signal doorman_requested()
+## The pocket: the draft's chit, bought.
+signal chit_requested()
 
 const REROLL: StringName = &"reroll"
 const SLATE: StringName = &"slate"
@@ -137,6 +139,7 @@ func _redraw() -> void:
 	for i: int in _state.shop_offers.size():
 		_rows.add_child(_build_row(i))
 	_draw_press()
+	_draw_pocket()
 	_draw_doorman()
 	_draw_market()
 	if _footer != null:
@@ -197,6 +200,42 @@ func _draw_press() -> void:
 		row.add_child(chip)
 	parent.add_child(row)
 	parent.move_child(row, _rows.get_index() + 1)
+
+
+## The pocket's line on the form: the chit on the table and what is already
+## carried. Paper, not hardware — a decision bought in advance.
+func _draw_pocket() -> void:
+	var parent: Control = _rows.get_parent() as Control
+	if parent == null:
+		return
+	var old: Node = parent.get_node_or_null(^"Pocket")
+	if old != null:
+		parent.remove_child(old)
+		old.queue_free()
+	if _state.chit_offer == null and _state.pocket.is_empty():
+		return
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Pocket"
+	row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+	var head: Label = _cell("THE POCKET", 13.0, UiSkin.PAPER_INK_MUTED)
+	head.custom_minimum_size = Vector2(96.0 * _scale, 0.0)
+	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(head)
+	if _state.chit_offer != null:
+		var chit: ChitDef = _state.chit_offer
+		row.add_child(_chip("%s   %s   %d chips" % [chit.display_name.to_upper(),
+				chit.description, chit.cost], _state.can_buy_chit(), UiSkin.PAPER_INK,
+				func() -> void: chit_requested.emit()))
+	var carried: PackedStringArray = PackedStringArray()
+	for held: ChitDef in _state.pocket:
+		carried.append(held.display_name)
+	var note: Label = _cell("carrying: %s" % (", ".join(carried) if not carried.is_empty() else "nothing")
+			+ "   (%d of %d)" % [_state.pocket.size(), RunState.POCKET], 11.0, UiSkin.PAPER_INK_MUTED)
+	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(note)
+	parent.add_child(row)
+	var press: Node = parent.get_node_or_null(^"Press")
+	parent.move_child(row, (press.get_index() + 1) if press != null else (_rows.get_index() + 1))
 
 
 ## The doorman's line on the form, only while someone is on their way: who

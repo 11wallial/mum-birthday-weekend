@@ -11,6 +11,7 @@ const FLOOR_DIR: String = "res://resources/rules/floors"
 const CONTRACT_DIR: String = "res://resources/contracts"
 const ARCHETYPE_DIR: String = "res://resources/archetypes"
 const BOSS_DIR: String = "res://resources/bosses"
+const CHIT_DIR: String = "res://resources/chits"
 const BALANCE_PATH: String = "res://resources/rules/balance_config.tres"
 
 var symbols: Array[SymbolDef] = []
@@ -19,6 +20,8 @@ var floors: Array[FloorDef] = []
 var contracts: Array[ContractDef] = []
 var archetypes: Array[ArchetypeDef] = []
 var bosses: Array[BossDef] = []
+## The chits the draft may put in the pocket.
+var chits: Array[ChitDef] = []
 var balance: BalanceConfig = BalanceConfig.new()
 
 static var _shared: ContentDB = null
@@ -38,6 +41,7 @@ func load_all() -> void:
 	contracts.assign(_load_dir(CONTRACT_DIR))
 	archetypes.assign(_load_dir(ARCHETYPE_DIR))
 	bosses.assign(_load_dir(BOSS_DIR))
+	chits.assign(_load_dir(CHIT_DIR))
 	var loaded_floors: Array[FloorDef] = []
 	loaded_floors.assign(_load_dir(FLOOR_DIR))
 	loaded_floors.sort_custom(func(a: FloorDef, b: FloorDef) -> bool: return a.index < b.index)
@@ -62,6 +66,13 @@ func artifact_by_id(id: StringName) -> ArtifactDef:
 	for artifact: ArtifactDef in artifacts:
 		if artifact.id == id:
 			return artifact
+	return null
+
+
+func chit_by_id(id: StringName) -> ChitDef:
+	for chit: ChitDef in chits:
+		if chit.id == id:
+			return chit
 	return null
 
 

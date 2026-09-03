@@ -106,6 +106,10 @@ static func _apply(engine: SimEngine, state: RunState, entry: Array) -> bool:
 			engine.press(state, arg)
 		"pay_doorman":
 			engine.pay_doorman(state)
+		"buy_chit":
+			engine.buy_chit(state)
+		"use_chit":
+			engine.use_chit(state, arg)
 		_:
 			return false
 	return true

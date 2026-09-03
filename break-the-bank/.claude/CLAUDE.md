@@ -246,6 +246,13 @@ worth knowing before touching the simulation:
   on availability alone until it was. All off the shop stream. `tests/unit/test_offer_generation.gd` holds each; the lab's
   `top_build_share` is the solved-metagame tell (the guide wants it under
   a quarter of wins).
+- Chits are `ChitDef` data under `resources/chits/`, five kinds resolved in
+  `SimEngine._do_use_chit` and nowhere else; `RunState.can_use_chit` is the
+  one place a kind's moment is defined. A marker is honoured in
+  `_draw_board` after the stream has drawn (the seed's reels stay the
+  seed's); a peek reads the stream through `RngStream.peek`, which puts it
+  back; a deferral is settled in `_close_floor`. `_roll_chit` deals one a
+  draft off the shop stream, none when the pocket is full.
 - The House notices: `SimEngine._observe_notice` on every banked spin, at
   `BalanceConfig.notice_par_multiple` pars, sets `RunState.notice_pending`
   (a `BossDef` from the next floor's pool, off the `boss` stream) and emits

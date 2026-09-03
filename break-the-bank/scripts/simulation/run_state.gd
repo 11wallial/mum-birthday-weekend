@@ -125,6 +125,17 @@ var contract: ContractDef = null
 var contract_offers: Array[ContractDef] = []
 ## Every contract signed this run, by id, for the collection.
 var contracts_signed: Array[StringName] = []
+## The pocket: chits bought and not yet spent, at most [constant POCKET].
+var pocket: Array[ChitDef] = []
+## The chit on this draft's table, or null.
+var chit_offer: ChitDef = null
+## What spent chits have set up: a vig deferred to the principal, a symbol
+## the last drum lands next spin, and the line the ledger has been shown.
+var vig_deferred: bool = false
+var forced_symbol: StringName = &""
+var peeked_line: Array[StringName] = []
+var chits_used: int = 0
+const POCKET: int = 2
 ## The House's person on this floor, or null on a floor nobody was sent to.
 ## Chosen as the floor opens, torn up as it closes, like a contract.
 var boss: BossDef = null
@@ -448,6 +459,33 @@ func can_press(index: int) -> bool:
 	if phase != Phase.SHOPPING or index < 0 or index >= press_offers.size():
 		return false
 	return economy.can_afford_chips(int(press_offers[index].get("price", 0)))
+
+
+## True when the draft's chit can be bought: the draft open, room in the
+## pocket, the chips.
+func can_buy_chit() -> bool:
+	return phase == Phase.SHOPPING and chit_offer != null and pocket.size() < POCKET \
+			and economy.can_afford_chips(chit_offer.cost)
+
+
+## True when the chit at [param index] can be spent now. Each kind has its
+## moment: a respin needs a decision on the table, a marker and a peek a
+## machine ready to spin, a vent a count, a deferral a floor still open.
+func can_use_chit(index: int) -> bool:
+	if index < 0 or index >= pocket.size() or phase != Phase.SPINNING:
+		return false
+	match pocket[index].kind:
+		ChitDef.Kind.RESPIN:
+			return is_deciding()
+		ChitDef.Kind.VENT:
+			return has_system(Systems.HEAT) and heat > 0.0 and not is_deciding()
+		ChitDef.Kind.DEFERRAL:
+			return not vig_deferred and not is_deciding() and vig_due() > 0
+		ChitDef.Kind.MARKER:
+			return forced_symbol == &"" and not is_deciding() and spins_remaining > 0
+		ChitDef.Kind.PEEK:
+			return peeked_line.is_empty() and not is_deciding() and spins_remaining > 0
+	return false
 
 
 ## Chips the doorman wants to send nobody after the notice in hand.

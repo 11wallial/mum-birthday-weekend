@@ -59,6 +59,10 @@ enum Event {
 	## hand. Carries what it cost, what the next word costs, and who is not
 	## coming.
 	DOORMAN_PAID,
+	## A chit went into the pocket, or came out of it and was spent. Carries
+	## the chit, its kind, and what it did.
+	CHIT_BOUGHT,
+	CHIT_USED,
 }
 
 ## Emitted for every simulation event. [param payload] is read-only for listeners.

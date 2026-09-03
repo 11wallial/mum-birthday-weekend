@@ -43,6 +43,17 @@ func next_int(from: int, to: int) -> int:
 	return _rng.randi_range(from, to)
 
 
+## Runs [param draw] against this stream and puts the stream back exactly
+## where it was: a look at what is coming that moves nothing. The peek chit.
+func peek(draw: Callable) -> Variant:
+	var saved_state: int = _rng.state
+	var saved_draws: int = draws
+	var out: Variant = draw.call()
+	_rng.state = saved_state
+	draws = saved_draws
+	return out
+
+
 ## Returns a float in 0.0..1.0. Named to avoid the @GlobalScope [code]randf[/code],
 ## for the same reason as [method next_int].
 func next_float() -> float:

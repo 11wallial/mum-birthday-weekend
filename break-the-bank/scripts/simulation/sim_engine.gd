@@ -43,6 +43,8 @@ var market_policy: Callable = Callable()
 ## [code]func(engine: SimEngine, state: RunState) -> void[/code].
 var press_policy: Callable = Callable()
 var doorman_policy: Callable = Callable()
+var chit_policy: Callable = Callable()
+var use_chit_policy: Callable = Callable()
 ## Decides whether a won run takes the House's offer and stays at the table.
 ## Signature: [code]func(state: RunState) -> bool[/code].
 var stay_policy: Callable = Callable()
@@ -67,6 +69,7 @@ const PLAYER_VERBS: Array[StringName] = [
 	&"deposit", &"withdraw", &"buy_reel", &"buy_row", &"launder",
 	&"buy_offer", &"reroll_shop", &"sell", &"buy_on_slate", &"sign_contract",
 	&"stay_at_table", &"settle_floor", &"press", &"pay_doorman",
+	&"buy_chit", &"use_chit",
 ]
 
 ## Jobs the press puts on the table with every draft, and what they do to the
@@ -110,6 +113,8 @@ func _init(content: ContentDB = null, bus: EffectBus = null) -> void:
 	settle_policy = Callable(AutoPlayer, "settle")
 	press_policy = Callable(AutoPlayer, "press_jobs")
 	doorman_policy = Callable(AutoPlayer, "doorman")
+	chit_policy = Callable(AutoPlayer, "chits")
+	use_chit_policy = Callable(AutoPlayer, "use_chits")
 
 
 ## Hands every decision back to whoever is calling.
@@ -132,6 +137,8 @@ func clear_policies() -> void:
 	settle_policy = Callable()
 	press_policy = Callable()
 	doorman_policy = Callable()
+	chit_policy = Callable()
+	use_chit_policy = Callable()
 
 
 func get_bus() -> EffectBus:
@@ -353,6 +360,8 @@ func _do_step(state: RunState) -> void:
 	# A board mid-decision is the next unit of play, not the next spin: an
 	# automated run has to work the nudges and the ladder through the same
 	# public calls a player would, or the lab measures a game nobody plays.
+	if use_chit_policy.is_valid():
+		use_chit_policy.call(self, state)
 	if state.decision == RunState.Decision.NUDGE:
 		_run_nudges(state)
 		return
@@ -544,10 +553,18 @@ func _draw_board(state: RunState) -> void:
 		var middle: SymbolDef = Probability.draw_weighted(reel, weights, state.reel_rng)
 		if middle == null:
 			break
+		# The marker: the last drum lands what the chit said, the stream
+		# having drawn regardless so the seed's reels stay the seed's.
+		if i == board.reel_count() - 1 and state.forced_symbol != &"":
+			var marked: SymbolDef = _content.symbol_by_id(state.forced_symbol)
+			if marked != null:
+				middle = marked
+			state.forced_symbol = &""
 		board.set_column(i,
 				Probability.draw_weighted(reel, weights, state.band_rng),
 				middle,
 				Probability.draw_weighted(reel, weights, state.band_rng))
+	state.peeked_line.clear()
 	# Holds are spent by the spin they bought. Leaving them set would let one
 	# lucky pair be held for the rest of the floor for free. What they were is
 	# kept on the board, because hardware pays for them after the fact.
@@ -1101,7 +1118,12 @@ func _close_floor(state: RunState) -> void:
 	# which is what makes carrying it a real decision rather than a late bill.
 	var serviced: int = 0
 	var grace: int = 0 if state.options.no_grace else state.config.debt_grace_floors
-	if state.floors_cleared >= grace:
+	if state.vig_deferred:
+		# The deferral: the vig is not charged, it is added to the principal,
+		# where the floor's interest will find it.
+		state.economy.debt += state.vig_due()
+		state.vig_deferred = false
+	elif state.floors_cleared >= grace:
 		serviced = state.economy.service_debt(
 				state.config.debt_service_percent * maxf(state.options.debt_service_scale, 0.0),
 				state.config.debt_default_penalty_percent)
@@ -1395,6 +1417,10 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 	# hardware for the same chips, and that is the whole of the decision.
 	if doorman_policy.is_valid():
 		doorman_policy.call(self, state)
+	# Paper before hardware, with change kept: the shop policy spends every
+	# chip it has, so a chit bought after the draft is a chit never bought.
+	if chit_policy.is_valid():
+		chit_policy.call(self, state)
 	while not state.shop_offers.is_empty():
 		var choice: int = int(shop_policy.call(state, state.shop_offers, state.shop_prices))
 		if not buy_offer(state, choice):
@@ -1407,6 +1433,9 @@ func _run_shop(state: RunState, floor_def: FloorDef) -> void:
 		market_policy.call(self, state)
 	if press_policy.is_valid():
 		press_policy.call(self, state)
+	# And again with the change: a chit the draft left room for.
+	if chit_policy.is_valid():
+		chit_policy.call(self, state)
 	if works_policy.is_valid():
 		works_policy.call(self, state)
 
@@ -1419,6 +1448,126 @@ func _stock_shop(state: RunState, floor_def: FloorDef) -> void:
 		state.shop_prices.append(price_for(state, artifact))
 		state.offers_seen[artifact.id] = int(state.offers_seen.get(artifact.id, 0)) + 1
 	state.press_offers = _roll_press(state)
+	state.chit_offer = _roll_chit(state, floor_def)
+
+
+## One chit on the table, from the shop's own stream, of the kinds the
+## floor allows. None when the pocket is full: the House does not sell
+## paper to a hand that cannot hold it.
+func _roll_chit(state: RunState, floor_def: FloorDef) -> ChitDef:
+	if state.pocket.size() >= RunState.POCKET:
+		return null
+	var pool: Array[ChitDef] = []
+	for chit: ChitDef in _content.chits:
+		if chit.min_floor <= floor_def.index:
+			pool.append(chit)
+	if pool.is_empty():
+		return null
+	return pool[state.shop_rng.next_int(0, pool.size() - 1)]
+
+
+## Buys the draft's chit into the pocket.
+func buy_chit(state: RunState) -> bool:
+	_enter(&"buy_chit", [])
+	var out: bool = _do_buy_chit(state)
+	_leave()
+	return out
+
+
+func _do_buy_chit(state: RunState) -> bool:
+	if not state.can_buy_chit():
+		return false
+	var chit: ChitDef = state.chit_offer
+	state.economy.debit_chips(chit.cost, &"chit")
+	state.pocket.append(chit)
+	state.chit_offer = null
+	_bus.emit_event(EffectBus.Event.CHIT_BOUGHT, {
+		"chit": String(chit.id), "name": chit.display_name, "kind": int(chit.kind),
+		"paid": chit.cost, "pocket": state.pocket.size(), "chips": state.economy.chips,
+	})
+	return true
+
+
+## Spends the chit at [param index] of the pocket, at its moment. Each kind
+## is resolved here and nowhere else.
+func use_chit(state: RunState, index: int) -> bool:
+	_enter(&"use_chit", [index])
+	var out: bool = _do_use_chit(state, index)
+	_leave()
+	return out
+
+
+func _do_use_chit(state: RunState, index: int) -> bool:
+	if not state.can_use_chit(index):
+		return false
+	var chit: ChitDef = state.pocket[index]
+	var did: Dictionary = {}
+	match chit.kind:
+		ChitDef.Kind.RESPIN:
+			# The last drum again, off the reel stream, and the board rescored
+			# with the decision still standing: nudges are re-awarded, a
+			# ladder is offered afresh.
+			var board: SpinBoard = state.board
+			var last: int = board.reel_count() - 1
+			var reel: Array[Probability.ReelEntry] = state.reel()
+			var weights: PackedInt32Array = state.reel_weights()
+			board.set_column(last,
+					Probability.draw_weighted(reel, weights, state.band_rng),
+					Probability.draw_weighted(reel, weights, state.reel_rng),
+					Probability.draw_weighted(reel, weights, state.band_rng))
+			state.decision = RunState.Decision.NONE
+			_resolve_board(state, false)
+			did = {"reel": last, "payout": board.payout}
+			if _bus.is_live():
+				_bus.emit_event(EffectBus.Event.REEL_NUDGED, {
+					"reel": last, "column": reel_payload(board, last), "nudges": board.nudges,
+					"payout": board.payout,
+				})
+			_offer_decision(state)
+		ChitDef.Kind.VENT:
+			var before: float = state.heat
+			state.heat = maxf(0.0, state.heat - chit.magnitude)
+			state.mark_reel_dirty()
+			did = {"vented": before - state.heat, "heat": state.heat}
+		ChitDef.Kind.DEFERRAL:
+			state.vig_deferred = true
+			did = {"deferred": state.vig_due()}
+		ChitDef.Kind.MARKER:
+			state.forced_symbol = chit.symbol
+			did = {"symbol": String(chit.symbol)}
+		ChitDef.Kind.PEEK:
+			state.peeked_line = _peek_line(state)
+			did = {"line": state.peeked_line.duplicate()}
+	state.pocket.remove_at(index)
+	state.chits_used += 1
+	if _bus.is_live():
+		var payload: Dictionary = {"chit": String(chit.id), "name": chit.display_name,
+				"kind": int(chit.kind), "pocket": state.pocket.size()}
+		payload.merge(did)
+		_bus.emit_event(EffectBus.Event.CHIT_USED, payload)
+	return true
+
+
+## The payline the next spin will draw, read off the reel stream without
+## moving it. Held reels stay; a marked drum shows its mark.
+func _peek_line(state: RunState) -> Array[StringName]:
+	var board: SpinBoard = state.board
+	var reel: Array[Probability.ReelEntry] = state.reel()
+	var weights: PackedInt32Array = state.reel_weights()
+	var line: Array[StringName] = []
+	var drawn: Variant = state.reel_rng.peek(func() -> Array[StringName]:
+		var out: Array[StringName] = []
+		for i: int in board.reel_count():
+			if board.is_held(i) and board.line[i] != null:
+				out.append(board.line[i].id)
+				continue
+			var symbol: SymbolDef = Probability.draw_weighted(reel, weights, state.reel_rng)
+			out.append(symbol.id if symbol != null else &"")
+		return out)
+	line.assign(drawn as Array)
+	if state.forced_symbol != &"" and not line.is_empty():
+		line[line.size() - 1] = state.forced_symbol
+	return line
 
 
 ## Two jobs for the press, from the shop's own stream: a strike, a print or
