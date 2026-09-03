@@ -60,6 +60,25 @@ func _initialize() -> void:
 
 
 ## Floor first, then name, so the table reads top to bottom like the run.
+## The reel as it was actually seen, against the reel the content authored.
+func _reel(report: Dictionary) -> void:
+	var landings: Dictionary = report.get("symbol_landings", {})
+	if landings.is_empty():
+		return
+	var ids: Array = landings.keys()
+	ids.sort_custom(func(a: String, b: String) -> bool:
+		return float((landings[a] as Dictionary)["seen_share"]) \
+				> float((landings[b] as Dictionary)["seen_share"]))
+	print("\nthe reel, as seen        landed    seen  authored    drift")
+	for id: String in ids:
+		var row: Dictionary = landings[id]
+		var seen: float = float(row["seen_share"])
+		var authored: float = float(row["authored_share"])
+		print("  %-20s %8d  %5.1f%%    %5.1f%%  %+5.1f pts" % [
+			id, int(row["landed"]), seen * 100.0, authored * 100.0,
+			(seen - authored) * 100.0])
+
+
 ## The back office, sorted by how often a run signed it: a contract nobody
 ## takes is a line in a book, and one everybody takes is not a decision.
 func _contracts(report: Dictionary) -> void:
@@ -197,5 +216,6 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 				key, String(row["verdict"]), float(row["pick_rate"]) * 100.0,
 				int(row["offered"]), float(row["win_rate"]) * 100.0,
 				float(row["baseline"]) * 100.0, float(row["delta"]) * 100.0])
+	_reel(report)
 	_contracts(report)
 	print("report → %s" % out_path)

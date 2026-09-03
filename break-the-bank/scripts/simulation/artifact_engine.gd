@@ -286,6 +286,12 @@ static func _curse_count(line: Array[SymbolDef]) -> int:
 ## a boiler catching without the resolver knowing there is anyone to tell.
 static func record_spin(state: RunState, board: SpinBoard) -> Array[ArtifactDef]:
 	var lit: Array[ArtifactDef] = []
+	# The line that settled, counted for the lab. Once per spin, on the
+	# payline only: this is what the run saw, not what the drums held.
+	for symbol: SymbolDef in board.line:
+		if symbol != null:
+			var key: String = String(symbol.id)
+			state.symbols_landed[key] = int(state.symbols_landed.get(key, 0)) + 1
 	for artifact: ArtifactDef in state.owned:
 		match artifact.effect:
 			ArtifactDef.Effect.MULT_PER_SEEN:

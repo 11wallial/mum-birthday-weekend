@@ -62,6 +62,12 @@ var streak: int = 0
 ## How many times each artifact has been put on a draft this run, keyed by id.
 ## Telemetry only: the lab reads it to tell a trap pick from an auto-pick.
 var offers_seen: Dictionary = {}
+## How many times each symbol has landed on the payline this run, keyed by id,
+## counted once per settled spin. Telemetry only, like the offers above: the
+## lab reads it to compare the reel a run actually saw against the reel the
+## content authored, which is the only way to see how far the presses, the
+## skins, the contracts and the House's own weight shifts have bent it.
+var symbols_landed: Dictionary = {}
 ## The three rows currently standing on the machine, and what they pay.
 var board: SpinBoard = SpinBoard.new()
 ## Systems the run has been handed, keyed by [Systems] name. A floor grants one;

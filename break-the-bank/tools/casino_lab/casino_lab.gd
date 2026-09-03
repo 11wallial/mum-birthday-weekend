@@ -67,6 +67,11 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	# and until now the only thing measured about one was that it existed.
 	var contract_runs: Dictionary = {}
 	var contract_wins: Dictionary = {}
+	# What actually landed, summed over the batch: the reel a run sees is the
+	# authored one bent by presses, skins, contracts and the House's own
+	# weight shifts, and nothing has ever measured the difference.
+	var landings: Dictionary = {}
+	var lines_settled: int = 0
 	var synergy_runs: Dictionary = {}
 	var synergy_wins: Dictionary = {}
 	# The builds, as builds: a run that owned two or more of an archetype's
@@ -192,6 +197,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			if won:
 				artifact_wins[key] = int(artifact_wins.get(key, 0)) + 1
 			_bump(artifact_depths, key, market, runs_by_market.size())
+		for symbol_id: Variant in state.symbols_landed:
+			var landed: int = int(state.symbols_landed[symbol_id])
+			landings[String(symbol_id)] = int(landings.get(String(symbol_id), 0)) + landed
+			lines_settled += landed
 		for contract_id: StringName in state.contracts_signed:
 			var signed: String = String(contract_id)
 			contract_runs[signed] = int(contract_runs.get(signed, 0)) + 1
@@ -283,6 +292,7 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		# the honest comparison is against runs that reached the office at
 		# all, not against every run in the batch.
 		"contract_win_rates": _skin_rates(contract_runs, contract_wins),
+		"symbol_landings": _landings(landings, lines_settled, content),
 		"synergy_win_rates": _stratified_rates(synergy_runs, synergy_wins, synergy_depths,
 				runs_by_market, wins_by_market, _ratio(stocked_wins, stocked_runs)),
 		"archetype_win_rates": _stratified_rates(archetype_runs, archetype_wins,
@@ -310,6 +320,26 @@ static func _top_share(counts: Dictionary, total: int) -> Dictionary:
 ## How often a run that met a skin went on to win. Not stratified: a skin
 ## is met on a floor rather than bought at a depth, so the cohorts are
 ## already close to comparable.
+## What landed, against what the content said would land. The authored share
+## is the symbol's own draw weight over the whole reel's; the seen share is
+## what the batch actually put on the payline. A gap between them is every
+## weight shift in the game, added up.
+static func _landings(landings: Dictionary, total: int, content: ContentDB) -> Dictionary:
+	var weight_total: int = 0
+	for symbol: SymbolDef in content.symbols:
+		weight_total += symbol.base_weight
+	var out: Dictionary = {}
+	for symbol: SymbolDef in content.symbols:
+		var key: String = String(symbol.id)
+		var seen: int = int(landings.get(key, 0))
+		out[key] = {
+			"landed": seen,
+			"seen_share": _ratio(seen, maxi(total, 1)),
+			"authored_share": float(symbol.base_weight) / float(maxi(weight_total, 1)),
+		}
+	return out
+
+
 static func _skin_rates(runs: Dictionary, wins: Dictionary) -> Dictionary:
 	var out: Dictionary = {}
 	for key: Variant in runs:
