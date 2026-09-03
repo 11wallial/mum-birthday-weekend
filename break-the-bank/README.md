@@ -478,6 +478,22 @@ ruleset — a Marked Deck run is not comparable to a standard one — and per da
 key. There is no server: `Leaderboard.submit()` is the single seam a backend
 would replace, and it already records everything a remote board would need.
 
+**The thumbnail test.** A viewer meets this game as a 320-pixel-wide tile on
+a directory page. `tools/visual_qa/thumbnail.py` takes the storyboard's
+frames down to that size and back up at nearest-neighbour, so the question
+"does it read?" is asked at the size it matters:
+
+```bash
+python3 tools/visual_qa/thumbnail.py 04_spin_1 07_stake_floor 11_the_house
+```
+
+What reads at 320 wide today: the board and its symbols, the Nixie row, the
+floor's sign, the paper. What does not: which number is which — the banks'
+captions are gone by then — and, until the needle was widened, the count.
+The frames sit at 10-13% of pixels above half brightness, which is the one
+bulb doing its job and also what a tile of this game looks like in a grid of
+brighter ones.
+
 ## Playtesting
 
 Every played run is recorded to `user://playtests/` — each spin, purchase and

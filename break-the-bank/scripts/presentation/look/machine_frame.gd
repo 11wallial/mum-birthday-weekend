@@ -925,7 +925,7 @@ func _gearbox() -> Node3D:
 	# The red zone, where GAUGE_SWEEP's hot end parks the needle.
 	for i: int in 4:
 		var angle: float = -GAUGE_SWEEP + float(i) * 0.11 + PI * 0.5
-		var mark: MeshInstance3D = _box(dial, Vector3(0.016, 0.035, 0.046),
+		var mark: MeshInstance3D = _box(dial, Vector3(0.024, 0.038, 0.046),
 				Vector3(cos(angle) * 0.155, sin(angle) * 0.155, 0.327),
 				Materials.glowing(Materials.JACKPOT, 0.9))
 		mark.rotation.z = angle - PI * 0.5
@@ -945,8 +945,10 @@ func _gearbox() -> Node3D:
 	heat_needle.name = "HeatNeedle"
 	dial.add_child(heat_needle)
 	heat_needle.position = Vector3(0.0, 0.0, 0.34)
-	Prims.box(heat_needle, Vector3(0.014, 0.15, 0.006),
-			Vector3(0.0, 0.075, 0.0), Materials.glowing(Materials.JACKPOT, 1.2))
+	# Wide enough to survive a thumbnail: at 320 pixels the whole dial is
+	# forty across, and a needle two pixels wide is not a reading.
+	Prims.box(heat_needle, Vector3(0.022, 0.17, 0.006),
+			Vector3(0.0, 0.085, 0.0), Materials.glowing(Materials.JACKPOT, 1.2))
 	_cylinder(heat_needle, 0.024, 0.02, Vector3.ZERO,
 			Vector3(PI * 0.5, 0.0, 0.0), brass)
 	heat_needle.rotation.z = GAUGE_SWEEP
