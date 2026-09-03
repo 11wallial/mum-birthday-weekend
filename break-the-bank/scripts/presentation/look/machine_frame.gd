@@ -144,6 +144,26 @@ func _chassis() -> void:
 		_box(chassis, Vector3(CHASSIS.x * 2.06, 0.1, 0.1),
 				Vector3(0.0, CHASSIS_Y + CHASSIS.y, sz * CHASSIS.z),
 				Materials.machined(Materials.STEEL, 55))
+	# The A-frame: cast-iron cheeks on both flanks, slanting back from the
+	# base to the crown, and a heavier lintel across the top. The handover
+	# asked for a forward-canted trapezoidal frame; every positioned part on
+	# the machine is built to the box, so the cant is carried by the frame
+	# around the box rather than by tilting the box — the silhouette leans
+	# without a single counter, key or drum moving.
+	var iron: StandardMaterial3D = Materials.rusted(58)
+	for sx: float in [-1.0, 1.0]:
+		var cheek: MeshInstance3D = _box(chassis, Vector3(0.09, CHASSIS.y * 2.3, 0.52),
+				Vector3(sx * (CHASSIS.x + 0.05), CHASSIS_Y + 0.02, -0.02), iron)
+		cheek.rotation.x = -0.16
+		cheek.rotation.z = sx * 0.04
+		# A foot at the base and a strap up the face, so the cheek is bolted
+		# rather than leaning.
+		_box(chassis, Vector3(0.16, 0.06, 0.6), Vector3(sx * (CHASSIS.x + 0.05), CHASSIS_Y - CHASSIS.y + 0.03, 0.04), iron)
+		for i: int in 3:
+			Prims.sphere(chassis, 0.016,
+					Vector3(sx * (CHASSIS.x + 0.1), CHASSIS_Y - 0.4 + float(i) * 0.4, 0.2 - float(i) * 0.07),
+					Materials.machined(Materials.STEEL, 59))
+	_box(chassis, Vector3(CHASSIS.x * 2.2, 0.09, 0.5), Vector3(0.0, CHASSIS_Y + CHASSIS.y + 0.04, -0.06), iron)
 	# A recessed housing behind the reels, so the drums sit in shadow rather than
 	# on a flat panel. This is most of what sells the depth of the front face.
 	# Deep enough to swallow the whole drum: a reel poking through the back of
