@@ -116,6 +116,11 @@ vec2 symbol_sample(vec2 p) {
 		} else if (kind == 4) {
 			// Taper: x narrows toward the tip. The star's spokes.
 			q.x /= max(1.0 + q.y * o0.w, o2.w);
+		} else if (kind == 5) {
+			// Skew: x slides with y, which a taper cannot do. This is the
+			// only way to get a parallelogram, and a parallelogram is the
+			// only way to draw the top face of a box seen from above.
+			q.x -= q.y * o0.w;
 		}
 		q *= o1.zw;
 		float d;

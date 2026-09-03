@@ -48,6 +48,10 @@ const OP_RHOMBUS: float = 2.0
 const OP_SHEAR_BOX: float = 3.0
 ## A box whose x narrows toward the tip: the star's spokes, the bank's roof.
 const OP_TAPER_BOX: float = 4.0
+## Slides x with y: a parallelogram, and so the top face of a box drawn in
+## three-quarter view. A taper makes trapezoids and cannot do this, which is
+## why the valuables read flat until it existed.
+const OP_SKEW_BOX: float = 5.0
 const PAINT_INK: float = 0.0
 const PAINT_CARVE: float = 1.0
 const PAINT_INK2: float = 2.0
@@ -80,7 +84,7 @@ static func captions_for(symbol_id: StringName) -> Array:
 		&"bar":
 			return [["BAR", 0.02]]
 		&"double_bar":
-			return [["BAR", -0.4], ["BAR", 0.0], ["BAR", 0.4]]
+			return [["BAR", -0.44], ["BAR", 0.06], ["BAR", 0.56]]
 		&"bank":
 			return [["BANK", 0.8]]
 		_:
@@ -207,6 +211,8 @@ static func _sample(ops: PackedFloat32Array, p: Vector2) -> Vector2:
 			q.x /= 1.0 + maxf(q.y + ops[base + 11], 0.0) * ops[base + 3]
 		elif kind == OP_TAPER_BOX:
 			q.x /= maxf(1.0 + q.y * ops[base + 3], ops[base + 11])
+		elif kind == OP_SKEW_BOX:
+			q.x -= q.y * ops[base + 3]
 		q *= Vector2(ops[base + 6], ops[base + 7])
 		var d: float
 		if kind == OP_CIRCLE:
@@ -239,27 +245,25 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 	var ops: PackedFloat32Array = PackedFloat32Array()
 	match symbol_id:
 		&"seven":
-			# A thick slab seven with a pale inner keyline: the strongest genre
-			# signal in the set, so it is drawn heaviest. The lean has to be real
-			# — an almost-vertical stroke plus a crossbar reads as a capital F.
+			# A thick slab seven with a narrow warm keyline down its inside
+			# edge. A wide white highlight striped the glyph and read as candy
+			# cane; the light should catch the edge, not repaint the face.
 			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.66), [0.62, 0.22, 0.04])
 			_add(ops, OP_BOX, PAINT_INK, -0.34, _rotate(Vector2(0.1, 0.16), -0.34),
 					[0.21, 0.74, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.72), [0.5, 0.05, 0.02])
-			_add(ops, OP_BOX, PAINT_INK2, -0.34, _rotate(Vector2(0.04, 0.16), -0.34),
-					[0.06, 0.6, 0.02])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.54, -0.54), [0.09, 0.28, 0.03])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.04, -0.75), [0.42, 0.035, 0.01])
+			_add(ops, OP_BOX, PAINT_INK2, -0.34, _rotate(Vector2(-0.02, 0.14), -0.34),
+					[0.035, 0.54, 0.01])
 		&"cherry":
-			# Two fruit of different sizes on thick stems, the near one lower and
-			# larger, with a shadow where it crosses its neighbour so the pair
-			# sits in depth instead of lying flat, and a leaf clear of both.
+			# Two fruit on thick stems, told apart by value rather than by hue —
+			# two different reds read as a mistake, one red in two tones reads
+			# as depth. The far one is the darker ink, the near one sits over it.
 			_add(ops, OP_BOX, PAINT_BLACK, -0.42,
 					_rotate(Vector2(-0.24, -0.16), -0.42), [0.07, 0.46, 0.04])
 			_add(ops, OP_BOX, PAINT_BLACK, 0.34,
 					_rotate(Vector2(0.2, -0.1), 0.34), [0.07, 0.44, 0.04])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.3, 0.46), [0.34])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.4, 0.5), [0.29])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(-0.36, 0.42), [0.38])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.36, 0.48), [0.32])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(-0.34, 0.42), [0.4])
 			_add(ops, OP_CIRCLE, PAINT_INK2, 0.5, _rotate(Vector2(0.3, -0.66), 0.5),
 					[0.3], Vector2(1.0, 2.4))
 		&"lemon":
@@ -301,20 +305,30 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_CIRCLE, PAINT_INK2, 0.6, _rotate(Vector2(0.3, -0.76), 0.6),
 					[0.22], Vector2(1.0, 2.2))
 		&"bar":
-			# A gold slab; the lettering is the press's, over it.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2.ZERO, [0.8, 0.3, 0.08])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2.ZERO, [0.7, 0.2, 0.05])
+			# A slab in three-quarter: a pale top face skewed off a mid front
+			# face. Flat with a highlight band it read as a stick of butter, and
+			# sat flatter than the stacked bars three cells away, which the two
+			# of them being siblings will not survive. The lettering is the
+			# press's, over the front face.
+			# The top face is skewed about its own centre, so its lower edge
+			# has to be walked back by half the depth to land exactly on the
+			# front face's upper edge. Left un-nudged it overhangs on both
+			# sides and the slab reads as an open carton with its lid up.
+			_add(ops, OP_SKEW_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.22),
+					[0.56, 0.1, 0.02], Vector2.ONE, -0.8)
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(-0.08, 0.18), [0.56, 0.3, 0.04])
 		&"double_bar":
-			# Three slabs stepping wider toward the foot, with a gap between them
-			# you can still see at 32px. Two same-width bars made this and the
-			# single BAR one shape at reel speed; the gaps are what make it
-			# countable in the blur, so they are cut wide on purpose.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.5), [0.5, 0.15, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.5), [0.38, 0.05, 0.02])
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.0), [0.68, 0.15, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.0), [0.56, 0.05, 0.02])
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.86, 0.15, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.74, 0.05, 0.02])
+			# The same slab as the bar, three times, stepping wider toward
+			# the foot: same top face, same depth, same light. The single
+			# bar having volume and the stack not having it would leave two
+			# symbols that are meant to be one family looking unrelated.
+			for slab: Array in [[-0.44, 0.46], [0.06, 0.58], [0.56, 0.7]]:
+				var mid: float = float(slab[0])
+				var wide: float = float(slab[1])
+				_add(ops, OP_SKEW_BOX, PAINT_INK2, 0.0, Vector2(0.0, mid - 0.185),
+						[wide, 0.055, 0.015], Vector2.ONE, -0.7)
+				_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(-0.0385, mid),
+						[wide, 0.13, 0.03])
 		&"bell":
 			# Domed body flaring to a broad foot, a clapper under it, and the two
 			# diagonal shine stripes without which a dome is just a dome — they
@@ -350,18 +364,17 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.44])
 			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.82), [0.4, 0.44, 0.0])
 		&"bank":
-			# Steps, three columns, an entablature and a pediment. Five columns
-			# at 32px closed into one grey block — three with real air between
-			# them is the same building and survives the drum.
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.9, 0.09, 0.03])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.34), [0.78, 0.07, 0.02])
-			for column: float in [-0.42, 0.0, 0.42]:
-				_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(column, -0.06),
-						[0.13, 0.34, 0.03])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.46), [0.84, 0.08, 0.02])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.37), [0.8, 0.04, 0.01])
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.72),
-					[0.92, 0.2, 0.02], Vector2.ONE, 4.0, 0.06)
+			# Steps, three heavy columns, an entablature and a solid pediment.
+			# The old roof was a thin dark rule under a pointed finial, which
+			# read as a dome on a shed; a bank's front is a filled triangle.
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.66), [0.92, 0.1, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.8, 0.07, 0.02])
+			for column: float in [-0.44, 0.0, 0.44]:
+				_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(column, 0.12),
+						[0.18, 0.32, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.28), [0.88, 0.12, 0.02])
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.62),
+					[0.82, 0.24, 0.02], Vector2.ONE, 3.6, 0.07)
 		&"wild":
 			# Five spokes tapering to real points around a small hub. A fat hub
 			# and blunt tips read as a starfish; the star has to have corners.
@@ -371,35 +384,35 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 						1.35, 0.08)
 			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.15])
 		&"skull":
-			# A wide cranium, a heavy jaw, and sockets painted black rather
-			# than cut to paper — this is the bust symbol and it should be
-			# the loudest thing on the drum, not the quietest. Black sockets
-			# cost the outline its holes, so the teeth are cut up out of the
-			# jaw's bottom edge instead: the silhouette gets its bite back
-			# there, where a carve does not fight the black.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.2), [0.72],
-					Vector2(1.0, 1.04))
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.52), [0.46, 0.3, 0.1])
-			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(-0.3, -0.2), [0.25],
+			# The bust symbol, and it should be the loudest thing on the drum.
+			# Drawn larger than anything else in the set, with the sockets black
+			# rather than cut to paper. Black sockets cost the outline its holes,
+			# so the teeth are cut up out of the jaw's bottom edge instead —
+			# the bite goes where a carve does not fight the paint.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.22), [0.8],
+					Vector2(1.0, 1.02))
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.54), [0.5, 0.32, 0.1])
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(-0.33, -0.22), [0.28],
 					Vector2(1.0, 1.15))
-			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.3, -0.2), [0.25],
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.33, -0.22), [0.28],
 					Vector2(1.0, 1.15))
-			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.0, 0.16), [0.1, 0.15])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, 0.36), [0.46, 0.03, 0.0])
-			for gap: float in [-0.3, -0.1, 0.1, 0.3]:
-				_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(gap, 0.88), [0.045, 0.2, 0.0])
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(-0.58, 0.36), [0.26])
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.58, 0.36), [0.26])
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.0, 0.18), [0.11, 0.17])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, 0.36), [0.5, 0.03, 0.0])
+			for gap: float in [-0.32, -0.11, 0.11, 0.32]:
+				_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(gap, 0.92), [0.05, 0.2, 0.0])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(-0.64, 0.36), [0.26])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.64, 0.36), [0.26])
 		&"coin":
-			# A copper token tipped toward the reader so its edge shows. Face on
-			# it was a plain disc — the orange, the plum and the clover's outline
-			# all over again at 32px. The edge is the whole point: it is the only
-			# thing that says struck metal rather than fruit.
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.42), [0.7, 0.16, 0.1])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.0), [0.82], Vector2(1.0, 1.85))
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.0), [0.66], Vector2(1.0, 1.85))
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.03, 0.0), [0.06, 0.17, 0.01])
-			_add(ops, OP_BOX, PAINT_BLACK, -0.6, _rotate(Vector2(-0.07, -0.09), -0.6), [0.09, 0.035, 0.01])
+			# A struck copper token, face on and truly circular, with a raised
+			# rim ring and a denomination. Tipped to an ellipse it read as a
+			# bread roll; the hard circle is the thing that says minted metal,
+			# and the rim step is what the light catches.
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.86])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2.ZERO, [0.66])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.0), [0.07, 0.34, 0.01])
+			_add(ops, OP_BOX, PAINT_BLACK, -0.6, _rotate(Vector2(-0.11, -0.2), -0.6),
+					[0.16, 0.06, 0.01])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.38), [0.22, 0.07, 0.01])
 		&"clover":
 			# Four lobes, each bitten deep at its outer corner. Shallow notches
 			# read as a shrub at 32px — the bite has to take a real chunk or the
@@ -414,29 +427,31 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 					[0.05, 0.28, 0.02])
 			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.02), [0.12])
 		&"dice":
-			# Turned off square. Axis-aligned it was a plain rectangle at 32px and
-			# sat in the same slot as the bar and the bank's entablature; a tilt
-			# is the cheapest thing that makes a cube read as an object.
-			_add(ops, OP_BOX, PAINT_INK, 0.28, Vector2.ZERO, [0.6, 0.6, 0.12])
-			_add(ops, OP_BOX, PAINT_INK2, 0.28, Vector2.ZERO, [0.5, 0.5, 0.08])
-			for pip: Vector2 in [Vector2(-0.29, -0.29), Vector2(0.29, -0.29),
-					Vector2.ZERO, Vector2(-0.29, 0.29), Vector2(0.29, 0.29)]:
-				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.28, pip, [0.1])
+			# A real cube: a pale top face skewed off the front one. Turned but
+			# single-faced it was only a rotated square — the second plane is
+			# what makes it an object rather than an outline.
+			_add(ops, OP_SKEW_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.31),
+					[0.5, 0.13, 0.03], Vector2.ONE, -0.7)
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.09, 0.24), [0.5, 0.46, 0.06])
+			for pip: Vector2 in [Vector2(-0.35, 0.0), Vector2(0.17, 0.0),
+					Vector2(-0.09, 0.24), Vector2(-0.35, 0.48), Vector2(0.17, 0.48)]:
+				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, pip, [0.1])
 		&"crown":
-			# A banded base and three spikes, the centre tallest, each capped
-			# with a jewel that sits ON its point. Needle-sharp tapers left the
-			# jewels floating above the spikes like antennae.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.58), [0.66, 0.22, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.58), [0.54, 0.07, 0.02])
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.1),
-					[0.3, 0.6, 0.02], Vector2.ONE, 2.2, 0.16)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.44, 0.12),
-					[0.26, 0.42, 0.02], Vector2.ONE, 2.2, 0.16)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.44, 0.12),
-					[0.26, 0.42, 0.02], Vector2.ONE, 2.2, 0.16)
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.66), [0.12])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.44, -0.26), [0.1])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.44, -0.26), [0.1])
+			# A banded base and three solid triangles, the centre tallest, each
+			# carrying a jewel on its point. Thin tapers with balls above them
+			# read as antennae — the spikes have to have real width at the foot
+			# for the jewels to be sitting on anything.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.58), [0.7, 0.22, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.58), [0.58, 0.07, 0.02])
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.02),
+					[0.34, 0.5, 0.02], Vector2.ONE, 1.8, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.46, 0.16),
+					[0.3, 0.38, 0.02], Vector2.ONE, 1.8, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.46, 0.16),
+					[0.3, 0.38, 0.02], Vector2.ONE, 1.8, 0.06)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.54), [0.13])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.46, -0.24), [0.11])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.46, -0.24), [0.11])
 		&"plum":
 			# Drawn out tall with a cleft at the crown and a crease down the face:
 			# the crease is the thing that names a plum, and the cleft keeps its
