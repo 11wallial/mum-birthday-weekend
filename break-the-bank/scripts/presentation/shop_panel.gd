@@ -148,7 +148,7 @@ func _redraw() -> void:
 	if _footer != null:
 		var offers: int = maxi(_state.shop_offers.size(), 1)
 		_footer.text = TouchBar.hint(
-				"1-%d or click to buy     arrows and ENTER on a pad     SPACE / Q to leave" % offers,
+				Copy.filled("1-%d or click to buy     arrows and ENTER on a pad     SPACE / Q to leave", [offers]),
 				"Tap an offer to buy")
 
 
@@ -226,14 +226,14 @@ func _draw_pocket() -> void:
 	row.add_child(head)
 	if _state.chit_offer != null:
 		var chit: ChitDef = _state.chit_offer
-		row.add_child(_chip("%s   %s   %d chips" % [Copy.upper(chit.display_name),
-				Copy.of(chit.description), chit.cost], _state.can_buy_chit(), UiSkin.PAPER_INK,
+		row.add_child(_chip(Copy.filled("%s   %s   %d chips", [Copy.upper(chit.display_name),
+				Copy.of(chit.description), chit.cost]), _state.can_buy_chit(), UiSkin.PAPER_INK,
 				func() -> void: chit_requested.emit()))
 	var carried: PackedStringArray = PackedStringArray()
 	for held: ChitDef in _state.pocket:
 		carried.append(Copy.of(held.display_name))
-	var note: Label = _cell("carrying: %s" % (", ".join(carried) if not carried.is_empty() else "nothing")
-			+ "   (%d of %d)" % [_state.pocket.size(), RunState.POCKET], 11.0, UiSkin.PAPER_INK_MUTED)
+	var note: Label = _cell(Copy.filled("carrying: %s", [(", ".join(carried) if not carried.is_empty() else "nothing")
+			+ "   (%d of %d)" % [_state.pocket.size(), RunState.POCKET]]), 11.0, UiSkin.PAPER_INK_MUTED)
 	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(note)
 	parent.add_child(row)
@@ -260,14 +260,14 @@ func _draw_doorman() -> void:
 	head.custom_minimum_size = Vector2(96.0 * _scale, 0.0)
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(head)
-	var note: Label = _cell("The House noticed %d in one spin. %s is coming to floor %d: %s" % [
+	var note: Label = _cell(Copy.filled("The House noticed %d in one spin. %s is coming to floor %d: %s", [
 			_state.noticed_payout, Copy.of(_state.notice_pending.display_name),
-			_state.floor_index + 1, _state.notice_pending.tell.to_lower()], 12.0, UiSkin.PAPER_INK)
+			_state.floor_index + 1, _state.notice_pending.tell.to_lower()]), 12.0, UiSkin.PAPER_INK)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(note)
-	row.add_child(_chip("A WORD   %d chips, and nobody comes" % _state.doorman_price(),
+	row.add_child(_chip(Copy.filled("A WORD   %d chips, and nobody comes", [_state.doorman_price()]),
 			_state.can_pay_doorman(), UiSkin.PAPER_STAMP,
 			func() -> void: doorman_requested.emit()))
 	parent.add_child(row)
@@ -291,14 +291,14 @@ func _draw_market() -> void:
 	if not open_for_business:
 		return
 	var reroll_price: int = _state.reroll_price()
-	_market.add_child(_chip("REROLL  %d chips" % reroll_price,
+	_market.add_child(_chip(Copy.filled("REROLL  %d chips", [reroll_price]),
 			_state.economy.can_afford_chips(reroll_price), UiSkin.PAPER_STAMP,
 			func() -> void: market_requested.emit(REROLL, 0)))
 	for i: int in _state.owned.size():
 		var artifact: ArtifactDef = _state.owned[i]
 		var refund: int = _state.sellback_of(artifact)
 		var index: int = i
-		_market.add_child(_chip("SELL %s  +%d" % [Copy.of(artifact.display_name), refund],
+		_market.add_child(_chip(Copy.filled("SELL %s  +%d", [Copy.of(artifact.display_name), refund]),
 				true, UiSkin.PAPER_INK_MUTED,
 				func() -> void: market_requested.emit(SELL, index)))
 
@@ -357,7 +357,7 @@ func _build_row(index: int) -> Control:
 	var head: HBoxContainer = HBoxContainer.new()
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
-	head.add_child(_cell("%d." % (index + 1), 17.0,
+	head.add_child(_cell(Copy.filled("%d.", [(index + 1)]), 17.0,
 			UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
 	# An artifact that only affects one symbol shows that symbol. "+4 draw
 	# weight on Lucky Seven" is a sentence; the seven itself is the thing the
@@ -375,7 +375,7 @@ func _build_row(index: int) -> Control:
 	if build != null:
 		head.add_child(_cell(Copy.upper(build.display_name), 11.0,
 				UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
-	var price_cell: Label = _cell("%d chips" % price, 17.0,
+	var price_cell: Label = _cell(Copy.filled("%d chips", [price]), 17.0,
 			UiSkin.PAPER_STAMP if affordable else UiSkin.PAPER_DENIED)
 	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	head.add_child(price_cell)
@@ -401,7 +401,7 @@ func _build_row(index: int) -> Control:
 	pair.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
 	pair.add_child(button)
 	var owed: int = _state.slate_price(index)
-	var slate: Button = _chip("SLATE\n%d cr owed" % owed, true, UiSkin.PAPER_DENIED,
+	var slate: Button = _chip(Copy.filled("SLATE\n%d cr owed", [owed]), true, UiSkin.PAPER_DENIED,
 			func() -> void: market_requested.emit(SLATE, index))
 	slate.custom_minimum_size = Vector2(112.0, 58.0) * _scale
 	pair.add_child(slate)

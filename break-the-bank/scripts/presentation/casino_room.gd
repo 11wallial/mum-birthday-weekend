@@ -562,57 +562,57 @@ func _on_inspect(id: StringName) -> void:
 			match parts[1] if parts.size() > 1 else "":
 				"cash":
 					title = "Cash"
-					lines.append("%d credits in hand." % state.economy.cash)
-					lines.append("A spin costs %d. The close of this floor charges the vig of %d and then the ante of %d." % [
-							state.spin_price(), state.vig_due(), state.ante_due()])
+					lines.append(Copy.filled("%d credits in hand.", [state.economy.cash]))
+					lines.append(Copy.filled("A spin costs %d. The close of this floor charges the vig of %d and then the ante of %d.", [
+							state.spin_price(), state.vig_due(), state.ante_due()]))
 					lines.append("Credits never buy hardware — that is what the chips are for.")
 				"ante":
 					title = "Ante"
 					var floor_def: FloorDef = state.current_floor()
-					lines.append("%d due when the spins run out." % state.ante_due())
+					lines.append(Copy.filled("%d due when the spins run out.", [state.ante_due()]))
 					if floor_def != null and state.ante_due() != floor_def.ante:
-						lines.append("%s asks %d; the rest is what the House has added since — its people, the count, the contract, and %d notice%s." % [
+						lines.append(Copy.filled("%s asks %d; the rest is what the House has added since — its people, the count, the contract, and %d notice%s.", [
 								Copy.of(floor_def.display_name), floor_def.ante, state.notices,
-								"" if state.notices == 1 else "s"])
+								"" if state.notices == 1 else "s"]))
 					lines.append("Miss it and the House keeps the table.")
 				"spins":
 					title = "Spins"
-					lines.append("%d left of the %d this floor allows." % [
-							state.spins_remaining, state.floor_spins_total])
+					lines.append(Copy.filled("%d left of the %d this floor allows.", [
+							state.spins_remaining, state.floor_spins_total]))
 					lines.append("A paid nudge costs one of them.")
 					if state.config.quick_clear_share > 0.0:
-						lines.append("Settle with %d or more still on the clock and the scrip pays double." % int(
-								ceil(float(state.floor_spins_total) * state.config.quick_clear_share)))
+						lines.append(Copy.filled("Settle with %d or more still on the clock and the scrip pays double.", [int(
+								ceil(float(state.floor_spins_total) * state.config.quick_clear_share))]))
 				"chips":
 					title = "Chips"
-					lines.append("%d of the House's scrip." % state.economy.chips)
+					lines.append(Copy.filled("%d of the House's scrip.", [state.economy.chips]))
 					lines.append("It buys the draft, the reroll, the press and a word with the doorman. It settles nothing.")
 					if state.has_system(Systems.MARKET):
-						lines.append("A reroll costs %d." % state.reroll_price())
+						lines.append(Copy.filled("A reroll costs %d.", [state.reroll_price()]))
 		"heat":
 			title = "The count"
 			var measure: HeatEngine.Measure = HeatEngine.current(state)
-			lines.append("%d of 100." % int(round(HeatEngine.heat_of(state))))
+			lines.append(Copy.filled("%d of 100.", [int(round(HeatEngine.heat_of(state)))]))
 			if not state.has_system(Systems.HEAT):
 				lines.append("Nobody is counting yet. The House starts on its own floor.")
 			elif measure == HeatEngine.Measure.NONE:
-				lines.append("Nobody has looked up. The skim starts at %d." % int(state.config.heat_skim_at))
+				lines.append(Copy.filled("Nobody has looked up. The skim starts at %d.", [int(state.config.heat_skim_at)]))
 			else:
-				lines.append("%s. A word costs %d credits." % [
-						HeatEngine.measure_name(measure), HeatEngine.launder_price(state)])
+				lines.append(Copy.filled("%s. A word costs %d credits.", [
+						HeatEngine.measure_name(measure), HeatEngine.launder_price(state)]))
 			lines.append("It rises with what you win and falls with every spin you do not.")
 		"surety":
 			title = "Surety"
-			lines.append("The House holds %d%% of you." % int(round(state.surety() * 100.0)))
+			lines.append(Copy.filled("The House holds %d%% of you.", [int(round(state.surety() * 100.0))]))
 			lines.append("Nothing while the close is covered; all of it when the spins left cannot reach what is owed.")
 			lines.append("A dead spin puts it up by the spin it wasted. A paying one brings it down by what it paid.")
 		"odds":
 			title = "Multiplier"
-			lines.append("x%.2f on the line standing." % state.board.multiplier)
+			lines.append(Copy.filled("x%.2f on the line standing.", [state.board.multiplier]))
 			var devices: int = (state.board.breakdown.get("triggered", []) as Array).size()
-			lines.append("%s, %d device%s, and a stake of %d." % [
+			lines.append(Copy.filled("%s, %d device%s, and a stake of %d.", [
 					Probability.pattern_name(state.board.pattern).capitalize(),
-					devices, "" if devices == 1 else "s", maxi(1, state.stake)])
+					devices, "" if devices == 1 else "s", maxi(1, state.stake)]))
 			lines.append("The receipt prints every part of it as the spin scores.")
 		"reel":
 			var index: int = int(parts[1]) if parts.size() > 1 else 0
@@ -621,17 +621,17 @@ func _on_inspect(id: StringName) -> void:
 				title = Copy.of(symbol.display_name)
 				var gilt: int = state.symbol_bonus(symbol)
 				if symbol.is_curse:
-					lines.append("Costs %d, and voids the pattern unless something is warding it." % state.config.curse_penalty)
+					lines.append(Copy.filled("Costs %d, and voids the pattern unless something is warding it.", [state.config.curse_penalty]))
 				else:
-					lines.append("Pays %d%s." % [maxi(0, symbol.base_value + gilt),
-							" (%d gilt on)" % gilt if gilt > 0 else ""])
-				lines.append("Lands %.1f%% of the time on this reel as it stands." % (
-						Probability.symbol_chance(state.reel(), symbol.id) * 100.0))
+					lines.append(Copy.filled("Pays %d%s.", [maxi(0, symbol.base_value + gilt),
+							" (%d gilt on)" % gilt if gilt > 0 else ""]))
+				lines.append(Copy.filled("Lands %.1f%% of the time on this reel as it stands.", [(
+						Probability.symbol_chance(state.reel(), symbol.id) * 100.0)]))
 				if symbol.chip_value > 0:
-					lines.append("Pays %d chip%s wherever it stands on a scoring row." % [
-							symbol.chip_value, "" if symbol.chip_value == 1 else "s"])
+					lines.append(Copy.filled("Pays %d chip%s wherever it stands on a scoring row.", [
+							symbol.chip_value, "" if symbol.chip_value == 1 else "s"]))
 				if symbol.family != &"":
-					lines.append("One of the %s." % String(symbol.family))
+					lines.append(Copy.filled("One of the %s.", [String(symbol.family)]))
 	if title.is_empty():
 		_inspector.hide_card()
 		return
@@ -1231,15 +1231,15 @@ func _prompt_ante() -> void:
 	var short: int = ante - state.economy.cash
 	var verdict: String = "you are %d short" % short if short > 0 else "you can cover it"
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("ANTE DUE  %d     CASH %d     %s" % [ante, state.economy.cash, verdict])
+	lines.append(Copy.filled("ANTE DUE  %d     CASH %d     %s", [ante, state.economy.cash, verdict]))
 	# The one thing that can still be done about a shortfall, said at the one
 	# moment it matters. A reserve the player has forgotten about is a reserve
 	# that loses them the run.
 	if short > 0 and state.economy.vault > 0:
 		var reaching: int = int(floor(float(state.economy.vault)
 				* (1.0 - state.config.vault_break_percent / 100.0)))
-		lines.append("The vault holds %d — breaking it now returns %d." % [
-			state.economy.vault, reaching])
+		lines.append(Copy.filled("The vault holds %d — breaking it now returns %d.", [
+			state.economy.vault, reaching]))
 	lines.append(TouchBar.hint("SPACE to settle", "TAP to settle"))
 	_set_prompt("\n".join(lines))
 	if _camera != null:
@@ -1351,11 +1351,11 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			# Said the moment it is decided, naming the spin: the player
 			# should be able to point at it and say the House did that.
 			if not bool(payload.get("resumed", false)):
-				_set_prompt("THE HOUSE HAS NOTICED — %d in one spin.\n%s will be on floor %d: %s\nEvery ante from here is %d%% dearer." % [
+				_set_prompt(Copy.filled("THE HOUSE HAS NOTICED — %d in one spin.\n%s will be on floor %d: %s\nEvery ante from here is %d%% dearer.", [
 					int(payload.get("payout", 0)), Copy.of(String(payload.get("name", ""))).to_upper(),
 					int(payload.get("floor", 0)), String(payload.get("tell", "")),
 					int(round(float(payload.get("notices", 1))
-							* state.config.notice_ante_percent))])
+							* state.config.notice_ante_percent))]))
 		EffectBus.Event.TABLE_KEPT:
 			_clear_prompt()
 			if _camera != null:
@@ -1395,7 +1395,7 @@ func _refresh_diegetic() -> void:
 	if _floor_sign != null:
 		# Two lines: the long lens crops the right of the frame, and a floor
 		# name on one line ran off it from the third floor on.
-		_floor_sign.text = "FLOOR %d\n%s" % [floor_index, floor_name.to_upper()]
+		_floor_sign.text = Copy.filled("FLOOR %d\n%s", [floor_index, floor_name.to_upper()])
 		# The glow shells are the same text, softened; a sign whose halo spells
 		# the previous floor has broken the trick.
 		for child: Node in _floor_sign.get_children():
@@ -1469,12 +1469,12 @@ func _finish_run(reason: String) -> void:
 		_board.save()
 		var after_hours: int = state.floors_cleared - floors
 		if reason == "dawn":
-			lines.append("DAWN — the House closes. After hours %d, and you walk out." % after_hours)
+			lines.append(Copy.filled("DAWN — the House closes. After hours %d, and you walk out.", [after_hours]))
 		else:
-			lines.append("THE HOUSE KEPT YOU — after hours %d" % after_hours)
-		lines.append("%s     score %d     rank %d on this ruleset" % [
+			lines.append(Copy.filled("THE HOUSE KEPT YOU — after hours %d", [after_hours]))
+		lines.append(Copy.filled("%s     score %d     rank %d on this ruleset", [
 			SeedBook.to_code(state.seed_value), int(stayed["score"]),
-			_board.rank_of(int(stayed["score"]), String(stayed["ruleset"]))])
+			_board.rank_of(int(stayed["score"]), String(stayed["ruleset"]))]))
 		lines.append(TouchBar.hint("F5 for a new run     F2 for setup",
 				"New run / Setup — the buttons top right"))
 		_set_prompt("\n".join(lines), true)
@@ -1490,14 +1490,14 @@ func _finish_run(reason: String) -> void:
 	lines.append("THE ACCOUNT IS SETTLED" if state.phase == RunState.Phase.WON
 			else "THE HOUSE KEEPS THE SURETY")
 	lines.append(RunRecap.outcome_line(state))
-	lines.append("%s     score %d     rank %d on this ruleset" % [
-		SeedBook.to_code(state.seed_value), int(entry["score"]), rank])
-	_show_statement("score %d     rank %d on this ruleset" % [int(entry["score"]), rank])
+	lines.append(Copy.filled("%s     score %d     rank %d on this ruleset", [
+		SeedBook.to_code(state.seed_value), int(entry["score"]), rank]))
+	_show_statement(Copy.filled("score %d     rank %d on this ruleset", [int(entry["score"]), rank]))
 	if not earned.is_empty():
 		var names: PackedStringArray = PackedStringArray()
 		for unlock: UnlockDef in earned:
 			names.append(Copy.of(unlock.display_name))
-		lines.append("UNLOCKED: %s" % ", ".join(names))
+		lines.append(Copy.filled("UNLOCKED: %s", [", ".join(names)]))
 	if state.phase == RunState.Phase.WON and not state.endless:
 		# The counter-offer. Only to a run that has beaten the House, and the
 		# key that takes it is the key that spins.
@@ -1812,8 +1812,7 @@ func _prompt_decision() -> void:
 			# without ever finding out what the word meant.
 			if state.floor_index <= 1:
 				var board: SpinBoard = state.board
-				_set_prompt("NUDGE — %d left.  Each paid nudge costs a spin."
-						% board.nudges)
+				_set_prompt(Copy.filled("NUDGE — %d left.  Each paid nudge costs a spin.", [board.nudges]))
 			else:
 				_clear_prompt()
 		RunState.Decision.GAMBLE:
@@ -1837,26 +1836,26 @@ func _announce_floor(payload: Dictionary) -> void:
 	# a twist nobody was told about is not a boss, it is a bug report.
 	var skin_name: String = Copy.of(String(payload.get("skin_name", "")))
 	if skin_name != "":
-		lines.append("%s — %s" % [skin_name.to_upper(), String(payload.get("skin_line", ""))])
+		lines.append(Copy.filled("%s — %s", [skin_name.to_upper(), String(payload.get("skin_line", ""))]))
 	var boss_name: String = Copy.of(String(payload.get("boss_name", "")))
 	if boss_name != "":
-		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])
+		lines.append(Copy.filled("%s — %s", [boss_name.to_upper(), String(payload.get("boss_intro", ""))]))
 		lines.append(String(payload.get("boss_tell", "")))
 	if state != null and state.floor_index == 1 and not state.ship_lean.is_empty():
 		var heavy: SymbolDef = ContentDB.shared().symbol_by_id(state.ship_lean["heavy"])
 		var light: SymbolDef = ContentDB.shared().symbol_by_id(state.ship_lean["light"])
 		if heavy != null and light != null:
-			lines.append("THE REEL TODAY — %s heavy, %s light." % [
-					Copy.lower(heavy.display_name), Copy.lower(light.display_name)])
+			lines.append(Copy.filled("THE REEL TODAY — %s heavy, %s light.", [
+					Copy.lower(heavy.display_name), Copy.lower(light.display_name)]))
 	var watcher_name: String = String(payload.get("watcher_name", ""))
 	if watcher_name != "":
-		lines.append("%s, BECAUSE THE HOUSE NOTICED — %s" % [watcher_name.to_upper(),
-				String(payload.get("watcher_intro", ""))])
+		lines.append(Copy.filled("%s, BECAUSE THE HOUSE NOTICED — %s", [watcher_name.to_upper(),
+				String(payload.get("watcher_intro", ""))]))
 		lines.append(String(payload.get("watcher_tell", "")))
 	if state != null and state.floor_at(state.floor_index + 1) == null \
 			and state.economy.debt > 0:
-		lines.append("LAST FLOOR — ante %d, and you still owe %d." % [
-			int(payload.get("ante", 0)), state.economy.debt])
+		lines.append(Copy.filled("LAST FLOOR — ante %d, and you still owe %d.", [
+			int(payload.get("ante", 0)), state.economy.debt]))
 		lines.append("Clear both, or the House keeps you.")
 	if lines.is_empty():
 		return

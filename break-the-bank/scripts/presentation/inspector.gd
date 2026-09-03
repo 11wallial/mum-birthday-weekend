@@ -56,9 +56,12 @@ func show_card(id: StringName, title: String, lines: PackedStringArray) -> void:
 	for child: Node in _rows.get_children():
 		_rows.remove_child(child)
 		child.queue_free()
-	_rows.add_child(_line(title.to_upper(), 13.0, UiSkin.PAPER_STAMP, true))
+	# The card is the one place a number on the cabinet becomes a sentence,
+	# so it is also where those sentences are translated. A line already
+	# folded together by the room arrives finished and passes through.
+	_rows.add_child(_line(Copy.upper(title), 13.0, UiSkin.PAPER_STAMP, true))
 	for text: String in lines:
-		_rows.add_child(_line(text, 12.0, UiSkin.PAPER_INK, false))
+		_rows.add_child(_line(Copy.of(text), 12.0, UiSkin.PAPER_INK, false))
 	_panel.visible = true
 	_place()
 

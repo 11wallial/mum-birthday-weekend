@@ -65,7 +65,7 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 		_rows.remove_child(child)
 		child.queue_free()
 	var won: bool = bool(recap.get("won", false))
-	_rows.add_child(_cell("STATEMENT OF ACCOUNT — %s" % seed_code, 18.0, UiSkin.PAPER_STAMP))
+	_rows.add_child(_cell(Copy.filled("STATEMENT OF ACCOUNT — %s", [seed_code]), 18.0, UiSkin.PAPER_STAMP))
 	_rows.add_child(_cell(String(recap.get("outcome", "")), 14.0, UiSkin.PAPER_INK, true))
 	_rows.add_child(_rule())
 	var grid: GridContainer = GridContainer.new()
@@ -76,12 +76,12 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 	var account: Array = [
 		["FLOORS CLEARED", str(recap.get("floors_cleared", 0))],
 		["SPINS", str(recap.get("spins_taken", 0))],
-		["EARNED", "%d cr" % int(recap.get("earned", 0))],
-		["BEST SPIN", "%d cr" % int(recap.get("best_payout", 0))],
+		["EARNED", Copy.filled("%d cr", [int(recap.get("earned", 0))])],
+		["BEST SPIN", Copy.filled("%d cr", [int(recap.get("best_payout", 0))])],
 		["CHIPS EARNED", str(recap.get("chips", 0))],
 		["HARDWARE", str((recap.get("hardware", []) as PackedStringArray).size())],
-		["OWED AT THE CLOSE", "%d cr" % int(recap.get("debt", 0))],
-		["IN HAND", "%d cr" % int(recap.get("cash", 0))],
+		["OWED AT THE CLOSE", Copy.filled("%d cr", [int(recap.get("debt", 0))])],
+		["IN HAND", Copy.filled("%d cr", [int(recap.get("cash", 0))])],
 	]
 	for pair: Array in account:
 		grid.add_child(_cell(String(pair[0]), 11.0, UiSkin.PAPER_INK_MUTED))
@@ -94,7 +94,7 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 			["settle_floor", "settled early"], ["press", "pressed"], ["sign_contract", "contracted"]]:
 		var n: int = int(moves.get(String(pair[0]), 0))
 		if n > 0:
-			move_line.append("%s %d" % [String(pair[1]), n])
+			move_line.append("%s %d" % [Copy.of(String(pair[1])), n])
 	if not move_line.is_empty():
 		_rows.add_child(_cell("THE MOVES   " + "   ".join(move_line), 11.0, UiSkin.PAPER_INK_MUTED))
 	var findings: PackedStringArray = recap.get("findings", PackedStringArray())

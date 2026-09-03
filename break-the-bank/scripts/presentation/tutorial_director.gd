@@ -187,12 +187,13 @@ func _say(at: Step) -> void:
 	match at:
 		Step.FIRST_PULL:
 			spoke.emit("THE CLERK — Basement. Your account is open and the machine is yours. "
-					+ "Pull the lever.", TouchBar.hint("SPACE, or click the lever     %s" % hint,
-					"TAP to pull     %s" % hint))
+					+ "Pull the lever.", TouchBar.hint(Copy.filled("SPACE, or click the lever     %s", [hint]),
+					Copy.filled("TAP to pull     %s", [hint])))
 		Step.SECOND_PULL:
 			spoke.emit("THE CLERK — Three reels, one line. The middle row is the one that pays; "
 					+ "the rows above and below are what nearly landed, and they matter later. "
-					+ "Pull again.", TouchBar.hint("SPACE     %s" % hint, "TAP     %s" % hint))
+					+ "Pull again.", TouchBar.hint(Copy.filled("SPACE     %s", [hint]),
+					Copy.filled("TAP     %s", [hint])))
 		Step.NUDGE:
 			spoke.emit("THE CLERK — A pair. The machine owes you nudges. A nudge drops the symbol "
 					+ "above a reel onto the line, and each one costs a spin off the floor. "
@@ -201,11 +202,11 @@ func _say(at: Step) -> void:
 		Step.HOLD:
 			spoke.emit("THE CLERK — A pair, and nothing owed. Hold it: lock the two matching "
 					+ "reels and spin the third for the set. A lock costs a credit on the spin.",
-					TouchBar.hint("press the reel's number, or its button     %s" % hint,
-					"tap the reel's button     %s" % hint))
+					TouchBar.hint(Copy.filled("press the reel's number, or its button     %s", [hint]),
+					Copy.filled("tap the reel's button     %s", [hint])))
 		Step.HOLD_SPIN:
 			spoke.emit("THE CLERK — Locked. Now spin the third.",
-					TouchBar.hint("SPACE     %s" % hint, "TAP     %s" % hint))
+					TouchBar.hint(Copy.filled("SPACE     %s", [hint]), Copy.filled("TAP     %s", [hint])))
 		Step.ANTE:
 			spoke.emit("THE CLERK — The ante is due when the spins run out. Cover it or the House "
 					+ "keeps the table — and the surety on the account is you. The column on "

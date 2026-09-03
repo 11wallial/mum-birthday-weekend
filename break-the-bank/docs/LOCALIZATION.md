@@ -34,8 +34,17 @@ Groundwork, laid early because it gets more expensive weekly.
   or reordering what is already there. `--check` reports what is missing and
   exits non-zero; CI runs that, so a new artifact ships with a row or does
   not ship.
-- **Still literals in code:** the HUD's composed prompts, the statement's
-  sentences and the Clerk's lines have no rows yet. `python3
-  tools/text/voice.py --strings` lists them; they are the fourth step.
+- **A composed sentence is translated by its shape.** `Copy.filled("%d due
+  when the spins run out.", [owed])` looks the shape up and fills it after,
+  so a translator can move the number to where the language wants it. The
+  HUD's log, the cabinet's inspection cards, the draft, the back office, the
+  statement and the Clerk all compose this way now. The extractor reads
+  shapes as readily as sentences, and glues adjacent literals joined by `+`
+  back together first, because the join is what the player is shown.
+- **Still literals in code:** the statement's findings are composed inside
+  `RunRecap`, which is simulation and translates nothing, so they arrive at
+  the panel already folded together. Moving them to shapes and arguments is
+  the next step, and it is a change to what the recap returns rather than to
+  how it is drawn.
 - `tests/unit/test_localization.gd` holds the table loading and a
   runtime translation being honoured.

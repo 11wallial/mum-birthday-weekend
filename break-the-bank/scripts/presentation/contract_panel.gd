@@ -96,16 +96,16 @@ func _redraw() -> void:
 		child.queue_free()
 	var next_floor: FloorDef = _state.content.floor_at(_state.floor_index + 1)
 	if _title != null:
-		_title.text = "THE BACK OFFICE — SIGN FOR %s" % (
-				Copy.upper(next_floor.display_name) if next_floor != null else "THE NEXT FLOOR")
+		_title.text = Copy.filled("THE BACK OFFICE — SIGN FOR %s", [
+				Copy.upper(next_floor.display_name) if next_floor != null else "THE NEXT FLOOR"])
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
 	_cursor = clampi(_cursor, 0, maxi(_state.contract_offers.size() - 1, 0))
 	for i: int in _state.contract_offers.size():
 		_rows.add_child(_build_row(i))
 	if _footer != null:
 		_footer.text = TouchBar.hint(
-				"1-%d or click to sign     the terms hold for one floor"
-						% maxi(_state.contract_offers.size(), 1),
+				Copy.filled("1-%d or click to sign     the terms hold for one floor",
+						[maxi(_state.contract_offers.size(), 1)]),
 				"Tap a contract to sign     the terms hold for one floor")
 
 
@@ -132,7 +132,7 @@ func _build_row(index: int) -> Control:
 	var head: HBoxContainer = HBoxContainer.new()
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_theme_constant_override(&"separation", int(roundf(12.0 * _scale)))
-	head.add_child(_cell("%d." % (index + 1), 17.0, UiSkin.PAPER_INK_MUTED))
+	head.add_child(_cell(Copy.filled("%d.", [(index + 1)]), 17.0, UiSkin.PAPER_INK_MUTED))
 	var name_cell: Label = _cell(Copy.of(contract.display_name), 17.0, UiSkin.PAPER_INK)
 	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_cell)

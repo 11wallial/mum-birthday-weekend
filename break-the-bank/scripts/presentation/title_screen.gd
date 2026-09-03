@@ -406,8 +406,8 @@ func _draw_collection() -> void:
 	for section: Array in sections:
 		var kind: String = String(section[1])
 		var defs: Array = section[2]
-		rows.add_child(_label("%s   %d of %d" % [String(section[0]),
-				_profile.seen_count(kind), defs.size()], 12.0, UiSkin.INK))
+		rows.add_child(_label(Copy.filled("%s   %d of %d", [String(section[0]),
+				_profile.seen_count(kind), defs.size()]), 12.0, UiSkin.INK))
 		for def: Resource in defs:
 			var id: StringName = def.get("id")
 			var met: bool = _profile.has_seen(kind, id)
@@ -445,7 +445,7 @@ func _draw_settings() -> void:
 	var toggle_name: Label = _label("ON SCREEN", 12.0, UiSkin.INK)
 	toggle_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
 	toggle_row.add_child(toggle_name)
-	toggle_row.add_child(_small("CONTROLS AND COUNTERS: %s" % ("ON" if overlay_on else "OFF"),
+	toggle_row.add_child(_small(Copy.filled("CONTROLS AND COUNTERS: %s", [Copy.of("ON") if overlay_on else Copy.of("OFF")]),
 			func() -> void:
 				var now: float = 0.0 if overlay_on else 1.0
 				_settings["overlay"] = now
@@ -458,7 +458,7 @@ func _draw_settings() -> void:
 	var steady_name: Label = _label("PICTURE", 12.0, UiSkin.INK)
 	steady_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
 	steady_row.add_child(steady_name)
-	steady_row.add_child(_small("STEADY — no flicker, flash, tearing or shake: %s" % ("ON" if steady_on else "OFF"),
+	steady_row.add_child(_small(Copy.filled("STEADY — no flicker, flash, tearing or shake: %s", [Copy.of("ON") if steady_on else Copy.of("OFF")]),
 			func() -> void:
 				var now: float = 0.0 if steady_on else 1.0
 				_settings["steady"] = now
