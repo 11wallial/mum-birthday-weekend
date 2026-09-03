@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_skindef")
-id = &"quiet_room"
-display_name = "A Quiet Room"
+id = &"nobody_playing"
+display_name = "Nobody Playing"
 line = "Nobody is playing. One spin fewer and the House asks less to be left alone."
 floors = Array[int]([])
 spins_delta = -1

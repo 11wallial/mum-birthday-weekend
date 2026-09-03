@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_skindef")
-id = &"night_shift"
-display_name = "The Night Shift"
+id = &"a_full_room"
+display_name = "A Full Room"
 line = "The floor is busy and the machines are warm. One more spin, and the House prices the room accordingly."
 floors = Array[int]([])
 spins_delta = 1

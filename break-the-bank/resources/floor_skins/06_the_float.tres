@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_skindef")
-id = &"the_float"
-display_name = "The Float"
+id = &"short_float"
+display_name = "A Short Float"
 line = "The float came up short this morning. Scrip instead of credit, and the House keeps a little of both."
 floors = Array[int]([])
 spins_delta = 0

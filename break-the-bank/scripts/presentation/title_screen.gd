@@ -427,12 +427,18 @@ func _draw_collection() -> void:
 			var met: bool = _profile.has_seen(kind, id)
 			var line: String = "— · —"
 			if met:
+				# Each kind carries its own words under its own name: a boss
+				# has a tell, a skin has the line the floor opens with, and
+				# everything else has a description. Asking every one of them
+				# for a description printed <null> under every skin.
 				var blurb: String = ""
-				if kind == "bosses":
-					blurb = String(def.get("tell"))
-				else:
-					blurb = String(def.get("description"))
-				line = "%s — %s" % [Copy.of(String(def.get("display_name"))), blurb]
+				for field: String in ["description", "tell", "line"]:
+					var words: Variant = def.get(field)
+					if words is String and words != "":
+						blurb = words
+						break
+				line = "%s — %s" % [Copy.of(String(def.get("display_name"))),
+						Copy.of(blurb)]
 			var entry: Label = _label(line, 11.0, UiSkin.INK if met else UiSkin.INK_MUTED)
 			entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
