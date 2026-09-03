@@ -15,6 +15,11 @@
 /reports/
 *.tmp
 
+# Python's own build output. tools/text is a package now that extract.py
+# imports voice.py, so running either leaves a cache behind.
+__pycache__/
+*.pyc
+
 # GdUnit4 is installed locally / in CI, never vendored
 addons/gdUnit4/
 shots/
