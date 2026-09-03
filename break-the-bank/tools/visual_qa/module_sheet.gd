@@ -63,6 +63,9 @@ func _process(delta: float) -> bool:
 		return false
 	match _stage:
 		0:
+			# The session opens on the door; the sheet wants the machine.
+			if _root_node.has_method("debug_close_door"):
+				_root_node.call("debug_close_door")
 			if _root_node.has_method("debug_fit_modules"):
 				_root_node.call("debug_fit_modules", _choices())
 			# Four floors down, a few hundred banked, and lit as the vault. The

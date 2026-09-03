@@ -60,19 +60,19 @@ static func build(artifact: ArtifactDef) -> Node3D:
 		ArtifactDef.Effect.DEBT_PAYDOWN: _shredder(root, finish)
 		ArtifactDef.Effect.DEBT_LEVERAGE: _scale(root, finish)
 		ArtifactDef.Effect.SPIN_REFUND: _freewheel(root, finish)
-		# The synergy web's effects borrow the shapes of what they resemble
-		# until the hardware kit (§5 of the roadmap) gives each its own.
-		ArtifactDef.Effect.MULT_PER_SEEN: _meter(root, finish)
-		ArtifactDef.Effect.AWAKENED_MULT: _meter(root, finish)
-		ArtifactDef.Effect.MULT_PER_TRIGGER: _manifold(root, finish)
-		ArtifactDef.Effect.MULT_PER_TAG: _manifold(root, finish)
-		ArtifactDef.Effect.MULT_PER_CURSE: _bell_jar(root, finish)
-		ArtifactDef.Effect.MULT_PER_HOLD: _coil(root, finish)
-		ArtifactDef.Effect.MULT_PER_NUDGE: _escapement(root, finish)
-		ArtifactDef.Effect.MULT_PER_SPIN_LEFT: _escapement(root, finish)
-		ArtifactDef.Effect.MULT_PER_STAKE: _scale(root, finish)
-		ArtifactDef.Effect.MULT_PER_STREAK: _flywheel(root, finish)
-		ArtifactDef.Effect.PARTNER_MULT: _comparator(root, finish)
+		# The synergy web's effects, each with its own hardware: the promise
+		# that a build is visible on the machine, kept for all of them.
+		ArtifactDef.Effect.MULT_PER_SEEN: _tally(root, finish)
+		ArtifactDef.Effect.AWAKENED_MULT: _lamp(root, finish)
+		ArtifactDef.Effect.MULT_PER_TRIGGER: _relays(root, finish)
+		ArtifactDef.Effect.MULT_PER_TAG: _rack(root, finish)
+		ArtifactDef.Effect.MULT_PER_CURSE: _urn(root, finish)
+		ArtifactDef.Effect.MULT_PER_HOLD: _clamp(root, finish)
+		ArtifactDef.Effect.MULT_PER_NUDGE: _pawl(root, finish)
+		ArtifactDef.Effect.MULT_PER_SPIN_LEFT: _hourglass(root, finish)
+		ArtifactDef.Effect.MULT_PER_STAKE: _chip_stack(root, finish)
+		ArtifactDef.Effect.MULT_PER_STREAK: _lamp_chain(root, finish)
+		ArtifactDef.Effect.PARTNER_MULT: _linked_rings(root, finish)
 		_: _gears(root, finish)
 	return root
 
@@ -358,3 +358,131 @@ static func _shredder(root: Node3D, finish: Finish) -> void:
 				Vector3(x, -0.03 - length * 0.5, 0.045), paper)
 		strip.rotation.z = sin(float(i) * 1.7) * 0.16
 	Prims.box(root, Vector3(0.23, 0.016, 0.1), Vector3(0.0, -0.025, 0.045), finish.trim)
+
+
+# --- the synergy web's own forms --------------------------------------------
+
+## MULT_PER_SEEN: a tally — a counter drum with a pawl, turned by what lands.
+static func _tally(root: Node3D, finish: Finish) -> void:
+	var drum: Node3D = Prims.group(root, &"Drive")
+	drum.position = Vector3(0.0, 0.01, 0.04)
+	Prims.cylinder(drum, 0.075, 0.06, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5), finish.body, 24)
+	for i: int in 10:
+		var angle: float = TAU * float(i) / 10.0
+		Prims.box(drum, Vector3(0.05, 0.006, 0.014),
+				Vector3(0.0, cos(angle) * 0.076, sin(angle) * 0.076), finish.trim)
+	Prims.box(root, Vector3(0.02, 0.09, 0.012), Vector3(0.0, 0.1, 0.03), finish.trim)
+	Prims.sphere(root, 0.014, Vector3(0.0, 0.056, 0.03), Materials.glowing(finish.glow, 1.3))
+
+
+## AWAKENED_MULT: a caged lamp, lit once its hardware has woken.
+static func _lamp(root: Node3D, finish: Finish) -> void:
+	Prims.cylinder(root, 0.05, 0.03, Vector3(0.0, -0.08, 0.03), Vector3.ZERO, finish.trim, 14)
+	Prims.sphere(root, 0.055, Vector3(0.0, 0.0, 0.03), Materials.glowing(finish.glow, 1.5))
+	for i: int in 6:
+		var angle: float = TAU * float(i) / 6.0
+		Prims.box(root, Vector3(0.006, 0.16, 0.006),
+				Vector3(cos(angle) * 0.065, 0.0, 0.03 + sin(angle) * 0.065), finish.trim)
+	Prims.cylinder(root, 0.03, 0.02, Vector3(0.0, 0.085, 0.03), Vector3.ZERO, finish.trim, 12)
+
+
+## MULT_PER_TRIGGER: a bank of relays, contacts lit as they close.
+static func _relays(root: Node3D, finish: Finish) -> void:
+	for i: int in 3:
+		var x: float = -0.075 + float(i) * 0.075
+		Prims.box(root, Vector3(0.06, 0.13, 0.07), Vector3(x, 0.0, 0.0), finish.body)
+		Prims.box(root, Vector3(0.04, 0.02, 0.02), Vector3(x, 0.05, 0.045), finish.trim)
+		Prims.sphere(root, 0.011, Vector3(x, -0.04, 0.045),
+				Materials.glowing(finish.glow, 0.7 + 0.4 * float(i)))
+	Prims.box(root, Vector3(0.24, 0.012, 0.03), Vector3(0.0, -0.085, 0.02), finish.trim)
+
+
+## MULT_PER_TAG: a rack of badges, one for every kind the run has bought.
+static func _rack(root: Node3D, finish: Finish) -> void:
+	Prims.cylinder(root, 0.008, 0.24, Vector3(0.0, 0.06, 0.03), Vector3(0.0, 0.0, PI * 0.5), finish.trim, 8)
+	for i: int in 4:
+		var x: float = -0.09 + float(i) * 0.06
+		Prims.box(root, Vector3(0.006, 0.05, 0.006), Vector3(x, 0.03, 0.03), finish.trim)
+		Prims.cylinder(root, 0.022, 0.008, Vector3(x, -0.01, 0.03), FACING,
+				Materials.glowing(finish.glow, 0.9) if i % 2 == 0 else finish.body, 12)
+
+
+## MULT_PER_CURSE: an urn for the skulls, sealed and faintly lit from within.
+static func _urn(root: Node3D, finish: Finish) -> void:
+	Prims.cylinder(root, 0.07, 0.14, Vector3(0.0, -0.01, 0.03), Vector3.ZERO,
+			Materials.painted(Color(0.09, 0.08, 0.075), 141), 16)
+	Prims.cylinder(root, 0.078, 0.02, Vector3(0.0, 0.07, 0.03), Vector3.ZERO, finish.trim, 16)
+	Prims.cylinder(root, 0.03, 0.025, Vector3(0.0, 0.09, 0.03), Vector3.ZERO, finish.trim, 10)
+	Prims.box(root, Vector3(0.05, 0.03, 0.006), Vector3(0.0, -0.01, 0.102),
+			Materials.glowing(Color(0.75, 0.12, 0.1), 0.8))
+
+
+## MULT_PER_HOLD: a clamp — two jaws on a screw, the lock made of iron.
+static func _clamp(root: Node3D, finish: Finish) -> void:
+	Prims.box(root, Vector3(0.04, 0.16, 0.06), Vector3(-0.07, 0.0, 0.03), finish.body)
+	Prims.box(root, Vector3(0.04, 0.16, 0.06), Vector3(0.07, 0.0, 0.03), finish.body)
+	var screw: Node3D = Prims.group(root, &"Drive")
+	screw.position = Vector3(0.0, 0.05, 0.03)
+	Prims.cylinder(screw, 0.012, 0.2, Vector3.ZERO, Vector3(0.0, 0.0, PI * 0.5), finish.trim, 8)
+	Prims.ring(screw, 6, 0.03, Vector3(0.02, 0.012, 0.012), 0.0, finish.trim)
+	Prims.box(root, Vector3(0.09, 0.03, 0.03), Vector3(0.0, -0.03, 0.03),
+			Materials.glowing(finish.glow, 1.0))
+
+
+## MULT_PER_NUDGE: a pawl on a ratchet wheel — one tooth at a time.
+static func _pawl(root: Node3D, finish: Finish) -> void:
+	var wheel: Node3D = Prims.group(root, &"Drive")
+	wheel.position = Vector3(-0.03, -0.02, 0.04)
+	Prims.cylinder(wheel, 0.07, 0.025, Vector3.ZERO, FACING, finish.body, 16)
+	Prims.ring(wheel, 10, 0.08, Vector3(0.02, 0.024, 0.024), 0.0, finish.trim)
+	var arm: Node3D = Prims.group(root, &"Arm")
+	arm.position = Vector3(0.06, 0.07, 0.04)
+	arm.rotation.z = -0.5
+	Prims.box(arm, Vector3(0.016, 0.12, 0.016), Vector3(0.0, -0.05, 0.0), finish.trim)
+	Prims.sphere(root, 0.012, Vector3(0.06, 0.07, 0.04), Materials.glowing(finish.glow, 1.2))
+
+
+## MULT_PER_SPIN_LEFT: an hourglass — the spins you have not spent, running.
+static func _hourglass(root: Node3D, finish: Finish) -> void:
+	Prims.cone(root, 0.06, 0.006, 0.07, Vector3(0.0, 0.045, 0.03), Vector3.ZERO,
+			Materials.lamp_glass(finish.glow, 0.6))
+	Prims.cone(root, 0.006, 0.06, 0.07, Vector3(0.0, -0.045, 0.03), Vector3.ZERO,
+			Materials.lamp_glass(finish.glow, 0.6))
+	for sy: float in [-1.0, 1.0]:
+		Prims.cylinder(root, 0.07, 0.014, Vector3(0.0, sy * 0.088, 0.03), Vector3.ZERO, finish.trim, 14)
+	for i: int in 3:
+		var angle: float = TAU * float(i) / 3.0
+		Prims.box(root, Vector3(0.008, 0.18, 0.008),
+				Vector3(cos(angle) * 0.062, 0.0, 0.03 + sin(angle) * 0.062), finish.trim)
+
+
+## MULT_PER_STAKE: a stack of the House's chips, the wager made visible.
+static func _chip_stack(root: Node3D, finish: Finish) -> void:
+	for i: int in 6:
+		Prims.cylinder(root, 0.055, 0.012, Vector3(0.0, -0.06 + float(i) * 0.016, 0.03),
+				Vector3.ZERO, finish.body if i % 2 == 0 else finish.trim, 16)
+	Prims.cylinder(root, 0.03, 0.006, Vector3(0.0, 0.04, 0.03), Vector3.ZERO,
+			Materials.glowing(finish.glow, 1.1), 12)
+	Prims.box(root, Vector3(0.16, 0.012, 0.16), Vector3(0.0, -0.075, 0.03), finish.trim)
+
+
+## MULT_PER_STREAK: a chain of lamps, each brighter than the last.
+static func _lamp_chain(root: Node3D, finish: Finish) -> void:
+	Prims.cylinder(root, 0.008, 0.22, Vector3(0.0, 0.0, 0.03), Vector3(0.0, 0.0, PI * 0.5), finish.trim, 8)
+	for i: int in 4:
+		var x: float = -0.08 + float(i) * 0.053
+		Prims.cylinder(root, 0.014, 0.02, Vector3(x, -0.02, 0.03), Vector3.ZERO, finish.trim, 10)
+		Prims.sphere(root, 0.018, Vector3(x, -0.045, 0.03),
+				Materials.glowing(finish.glow, 0.5 + 0.35 * float(i)))
+
+
+## PARTNER_MULT: two rings, linked — the pair that pays together.
+static func _linked_rings(root: Node3D, finish: Finish) -> void:
+	var left: Node3D = Prims.group(root, &"Drive")
+	left.position = Vector3(-0.035, 0.0, 0.03)
+	Prims.ring(left, 14, 0.06, Vector3(0.018, 0.02, 0.02), 0.0, finish.body)
+	var right: Node3D = Prims.group(root, &"Drive2")
+	right.position = Vector3(0.035, 0.0, 0.05)
+	right.rotation.y = 0.6
+	Prims.ring(right, 14, 0.06, Vector3(0.018, 0.02, 0.02), 0.0, finish.trim)
+	Prims.sphere(root, 0.014, Vector3(0.0, 0.0, 0.04), Materials.glowing(finish.glow, 1.2))
