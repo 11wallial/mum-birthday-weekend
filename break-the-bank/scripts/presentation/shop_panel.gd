@@ -331,17 +331,21 @@ func _build_row(index: int) -> Control:
 	var price: int = _state.shop_prices[index]
 	var affordable: bool = _state.can_buy(index)
 
+	# The build's own stamp colour, on the row's left border — a run chasing
+	# one build can scan the whole draft for its ink without reading a line.
+	var accent: Color = UiSkin.archetype_color(artifact.archetype)
 	var button: Button = Button.new()
 	button.disabled = not affordable
 	button.focus_mode = Control.FOCUS_NONE
 	button.mouse_default_cursor_shape = (Control.CURSOR_POINTING_HAND if affordable
 			else Control.CURSOR_ARROW)
 	# The mark: the row a pad has picked wears the hover face.
-	button.add_theme_stylebox_override(&"normal", UiSkin.paper_row(affordable, index == _cursor))
-	button.add_theme_stylebox_override(&"hover", UiSkin.paper_row(affordable, true))
-	button.add_theme_stylebox_override(&"pressed", UiSkin.paper_row(affordable, true))
-	button.add_theme_stylebox_override(&"disabled", UiSkin.paper_row(affordable))
-	button.add_theme_stylebox_override(&"focus", UiSkin.paper_row(affordable, true))
+	button.add_theme_stylebox_override(&"normal",
+			UiSkin.paper_row(affordable, index == _cursor, accent))
+	button.add_theme_stylebox_override(&"hover", UiSkin.paper_row(affordable, true, accent))
+	button.add_theme_stylebox_override(&"pressed", UiSkin.paper_row(affordable, true, accent))
+	button.add_theme_stylebox_override(&"disabled", UiSkin.paper_row(affordable, false, accent))
+	button.add_theme_stylebox_override(&"focus", UiSkin.paper_row(affordable, true, accent))
 	button.pressed.connect(_on_row_pressed.bind(index))
 
 	# The label grid sits inside the button and ignores the pointer, so the whole
@@ -378,7 +382,7 @@ func _build_row(index: int) -> Control:
 	var build: ArchetypeDef = ContentDB.shared().archetype_by_id(artifact.archetype)
 	if build != null:
 		head.add_child(_cell(Copy.upper(build.display_name), 11.0,
-				UiSkin.PAPER_INK_MUTED if affordable else UiSkin.PAPER_DENIED))
+				accent if affordable else UiSkin.PAPER_DENIED))
 	var price_cell: Label = _cell(Copy.filled("%d chips", [price]), 17.0,
 			UiSkin.PAPER_STAMP if affordable else UiSkin.PAPER_DENIED)
 	price_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

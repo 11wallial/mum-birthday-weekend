@@ -142,15 +142,17 @@ func _build_row(index: int) -> Control:
 	flavour.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	grid.add_child(flavour)
 
-	# The two halves, in the two colours the rest of the game already uses for
-	# "this is yours" and "this is the house's".
+	# The two halves, coloured to be told apart at a glance rather than read:
+	# green ink for what the contract gives, red for what it takes. Distinct
+	# from PAPER_DENIED, which already means "the draft is refusing this
+	# row" — a toll is a cost, not a rejection.
 	var terms: HBoxContainer = HBoxContainer.new()
 	terms.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	terms.add_theme_constant_override(&"separation", int(roundf(22.0 * _scale)))
 	for entry: Dictionary in contract.clauses():
 		var gives: bool = bool(entry["gives"])
 		terms.add_child(_cell(ContractDef.phrase(entry), 14.0,
-				UiSkin.PAPER_STAMP if gives else UiSkin.PAPER_DENIED))
+				UiSkin.PAPER_GOOD if gives else UiSkin.PAPER_BAD))
 	grid.add_child(terms)
 
 	button.add_child(grid)

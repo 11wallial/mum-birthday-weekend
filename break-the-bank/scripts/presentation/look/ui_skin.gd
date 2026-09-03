@@ -32,6 +32,11 @@ const PAPER_INK_MUTED: Color = Color(0.38, 0.34, 0.29)
 ## The stamp: the House's red, for prices, titles and anything it insists on.
 const PAPER_STAMP: Color = Color(0.6, 0.14, 0.1)
 const PAPER_DENIED: Color = Color(0.55, 0.5, 0.45)
+## What a contract gives, and what it takes — distinct from PAPER_DENIED
+## (which already means "you can't afford this row"), so a toll reads as a
+## cost rather than as a row the draft is refusing.
+const PAPER_GOOD: Color = Color(0.09, 0.5, 0.16)
+const PAPER_BAD: Color = Color(0.72, 0.1, 0.09)
 const PAPER_SHADER: String = "res://assets/shaders/paper.gdshader"
 
 static var _cache: Dictionary = {}
@@ -70,8 +75,9 @@ static func sheet(panel: PanelContainer) -> void:
 
 ## One line of a form: a rule under it, the stamp's red down the left when
 ## it can be taken, grey when it cannot.
-static func paper_row(affordable: bool, hovered: bool = false) -> StyleBoxFlat:
-	var key: String = "paper_row:%s:%s" % [affordable, hovered]
+static func paper_row(affordable: bool, hovered: bool = false,
+		accent: Color = PAPER_STAMP) -> StyleBoxFlat:
+	var key: String = "paper_row:%s:%s:%s" % [affordable, hovered, accent.to_html(false)]
 	return _flat(key, func() -> StyleBoxFlat:
 		var style: StyleBoxFlat = StyleBoxFlat.new()
 		style.bg_color = PAPER_ROW_HOVER if hovered else PAPER_ROW
@@ -79,8 +85,31 @@ static func paper_row(affordable: bool, hovered: bool = false) -> StyleBoxFlat:
 		_padding(style, 14.0, 11.0)
 		style.border_width_left = 4
 		style.border_width_bottom = 1
-		style.border_color = PAPER_STAMP if affordable else PAPER_DENIED
+		style.border_color = accent if affordable else PAPER_DENIED
 		return style)
+
+
+## One stamp-ink colour per build, muted to sit on paper rather than shout —
+## a real rubber stamp's ink, not a flat UI accent. The draft's left border
+## and the build tag both wear it, so a run chasing one build can scan the
+## whole draft for its colour without reading a line of it.
+const ARCHETYPE_COLOR: Dictionary = {
+	&"clamp": Color(0.29, 0.4, 0.56),
+	&"clock": Color(0.58, 0.44, 0.14),
+	&"exchange": Color(0.16, 0.45, 0.42),
+	&"marker": PAPER_STAMP,
+	&"orchard": Color(0.36, 0.44, 0.15),
+	&"skulls": Color(0.34, 0.21, 0.34),
+	&"trail": Color(0.58, 0.3, 0.13),
+	&"whale": Color(0.42, 0.19, 0.44),
+}
+
+
+## The stamp colour for a build id, or the ledger's own red for hardware that
+## fits any machine — the same colour a row without a build wore before this,
+## so nothing goes uncoloured.
+static func archetype_color(id: StringName) -> Color:
+	return ARCHETYPE_COLOR.get(id, PAPER_STAMP)
 
 
 ## A button on a form: a boxed line, typed.
