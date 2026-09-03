@@ -256,12 +256,12 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_CIRCLE, PAINT_INK2, 0.5, _rotate(Vector2(0.3, -0.64), 0.5),
 					[0.28], Vector2(1.0, 2.4))
 		&"lemon":
-			# A tilted ellipse with a nub at each end, and a leaf at the top one.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2.ZERO, [0.66],
-					Vector2(1.0, 1.5))
-			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(0.7, 0.0), [0.26, 0.14])
-			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(-0.7, 0.0), [0.26, 0.14])
-			_add(ops, OP_CIRCLE, PAINT_INK2, -0.9, _rotate(Vector2(0.5, -0.66), -0.9),
+			# A fat tilted ellipse with a round nub at each end, and a leaf.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2.ZERO, [0.7],
+					Vector2(1.0, 1.35))
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2(0.72, 0.0), [0.15])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2(-0.72, 0.0), [0.15])
+			_add(ops, OP_CIRCLE, PAINT_INK2, -0.9, _rotate(Vector2(0.5, -0.7), -0.9),
 					[0.2], Vector2(1.0, 2.2))
 		&"orange":
 			# A whole fruit, a stub of stem and one leaf.
@@ -318,13 +318,16 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.6),
 					[0.2, 0.03, 0.01])
 		&"horseshoe":
-			# An open ring, heels down, four nail holes in black.
+			# An open ring, heels down and capped, nail holes in black. The gap
+			# is wide and the hole large so the arms read as a U, not a bagel.
 			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.06), [0.82])
-			for hole: Vector2 in [Vector2(-0.6, -0.28), Vector2(-0.34, -0.62),
-					Vector2(0.34, -0.62), Vector2(0.6, -0.28)]:
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(-0.64, 0.6), [0.18, 0.12, 0.02])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.64, 0.6), [0.18, 0.12, 0.02])
+			for hole: Vector2 in [Vector2(-0.64, -0.2), Vector2(-0.4, -0.6),
+					Vector2(0.4, -0.6), Vector2(0.64, -0.2)]:
 				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, hole, [0.075])
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.46])
-			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.76), [0.4, 0.42, 0.0])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.5])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.8), [0.46, 0.46, 0.0])
 		&"bank":
 			# Steps, four columns, an entablature and a pediment: the building
 			# the game is named after, with the word under it. Sat high in the
@@ -357,14 +360,14 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_RHOMBUS, PAINT_CARVE, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
 			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
 		&"coin":
-			# A struck gold disc: rim, an inset face, a bold stamped mark. No
-			# edge reeding — a first pass put ticks at the disc's own radius
-			# and the outline's stroke swallowed them; moving them inward
-			# still read as noise at this size, and the plain three-shape
-			# plate is the bolder, clearer read anyway.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2.ZERO, [0.82])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.6])
-			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2.ZERO, [0.26, 0.26])
+			# A token, face on: a bronze rim, a gold face, and a bold struck "1".
+			# A disc with an abstract mark read as a washer, and a stack fused
+			# into a bun; a denomination is what makes a disc money.
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.84])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2.ZERO, [0.64])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.0), [0.09, 0.36, 0.01])
+			_add(ops, OP_BOX, PAINT_BLACK, -0.6, _rotate(Vector2(-0.1, -0.28), -0.6), [0.13, 0.05, 0.01])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.32), [0.2, 0.05, 0.01])
 		&"clover":
 			# The classic luck symbol: four round lobes and a stem, nothing else.
 			for lobe: Vector2 in [Vector2(-0.34, -0.24), Vector2(0.34, -0.24),
@@ -382,27 +385,29 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 					Vector2.ZERO, Vector2(-0.32, 0.32), Vector2(0.32, 0.32)]:
 				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, pip, [0.12])
 		&"crown":
-			# A banded base and three spikes — the centre spike tallest, using
-			# the bank pediment's own taper direction — each tipped with a
-			# jewel in the second ink.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.74, 0.2, 0.04])
+			# A banded base and three tall spikes — the centre tallest — each
+			# tipped with a jewel. The first pass was squat; the spikes now
+			# take two thirds of the cell so the points are the shape.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.58), [0.76, 0.2, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.58), [0.62, 0.07, 0.02])
 			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.08),
-					[0.26, 0.52, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.48, 0.1),
-					[0.22, 0.38, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.48, 0.1),
-					[0.22, 0.38, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.54), [0.1])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.44, -0.2), [0.08])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.44, -0.2), [0.08])
+					[0.3, 0.6, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.5, 0.06),
+					[0.26, 0.46, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.5, 0.06),
+					[0.26, 0.46, 0.02], Vector2.ONE, 4.0, 0.06)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.68), [0.11])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.5, -0.4), [0.09])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.5, -0.4), [0.09])
 		&"gold_bar":
-			# A plain stamped ingot — a block, an inset panel, a struck mark —
-			# the same flat-slab construction as the bar and double bar, so it
-			# reads as family with them rather than as a foreign object.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.68, 0.48, 0.1])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.06), [0.52, 0.32, 0.06])
-			_add(ops, OP_RHOMBUS, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.18, 0.18])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.66), [0.32, 0.06, 0.02])
+			# An ingot: a trapezoid wider at the foot than the crown, filling the
+			# cell, a lighter top face in the second ink, a struck mark. The
+			# taper is the crown's warp held shallow so it stays a slab.
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.08),
+					[0.62, 0.4, 0.03], Vector2.ONE, 1.0, 0.3)
+			_add(ops, OP_TAPER_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.22),
+					[0.44, 0.1, 0.02], Vector2.ONE, 1.0, 0.3)
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.0, 0.16), [0.15, 0.12])
 		&"plum":
 			# A single deep fruit, bold and round, a thick stem and a leaf.
 			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.68],

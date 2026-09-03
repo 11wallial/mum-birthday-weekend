@@ -13,4 +13,4 @@ is_wild = false
 is_curse = false
 glyph = "CO"
 color = Color(0.98, 0.78, 0.15, 1)
-color2 = Color(0.72, 0.42, 0.06, 1)
+color2 = Color(0.5, 0.26, 0.04, 1)
