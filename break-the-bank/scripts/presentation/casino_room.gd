@@ -1437,6 +1437,10 @@ func _lesson_running() -> bool:
 
 
 func _on_clerk_spoke(body: String, hint: String) -> void:
+	# The Clerk's lines are keys of their own: a translator gets each
+	# sentence as its row, and a sentence with no row is said as written.
+	body = tr(body)
+	hint = tr(hint)
 	_tutorial_line = body
 	_tutorial_hint = hint
 	if _hud == null or not _hud.has_method("set_prompt"):

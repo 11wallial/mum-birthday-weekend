@@ -17,7 +17,9 @@ Groundwork, laid early because it gets more expensive weekly.
 - **Content is not here yet.** Artifact, boss, contract and chit copy
   lives in `.tres` files and is shown as data. The route for that is
   Godot's resource remaps per locale, or a `description_key` per resource;
-  neither is built. The HUD's prompts, the Clerk's lines and the
-  statement's sentences are still literals in code.
+  neither is built. The Clerk's lines pass through `tr()` as whole
+  sentences (no rows yet — a translator adds them); the HUD's composed
+  prompts, the floor sign and the statement's sentences are still
+  literals in code.
 - `tests/unit/test_localization.gd` holds the table loading and a
   runtime translation being honoured.
