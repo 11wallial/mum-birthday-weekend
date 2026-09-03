@@ -89,7 +89,10 @@ static func load_or_new(path: String = SAVE_PATH) -> Leaderboard:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not (parsed is Dictionary):
 		return board
-	for entry: Variant in (parsed as Dictionary).get("entries", []):
+	var entries: Variant = (parsed as Dictionary).get("entries", [])
+	if not (entries is Array):
+		return board
+	for entry: Variant in entries:
 		if entry is Dictionary:
 			board.entries.append(entry)
 	return board

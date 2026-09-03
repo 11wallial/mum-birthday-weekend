@@ -128,11 +128,16 @@ func to_dict() -> Dictionary:
 ## Reads a journal back. Returns null for anything that is not one of ours, or
 ## that a newer build wrote.
 static func from_dict(data: Dictionary) -> RunJournal:
-	if int(data.get("version", 0)) > VERSION or not data.has("seed"):
+	var version: Variant = data.get("version", 0)
+	var seed_value: Variant = data.get("seed", null)
+	if not (version is int or version is float) or int(version) > VERSION:
+		return null
+	if not (seed_value is int or seed_value is float):
 		return null
 	var journal: RunJournal = RunJournal.new()
-	journal.seed_value = int(data.get("seed", 0))
-	journal.daily_key = String(data.get("daily", ""))
+	journal.seed_value = int(clampf(float(seed_value), -9.0e15, 9.0e15))
+	var daily: Variant = data.get("daily", "")
+	journal.daily_key = String(daily) if daily is String else ""
 	var options: Variant = data.get("options", {})
 	journal.options = RunOptions.from_dict(options if options is Dictionary else {})
 	var entries: Variant = data.get("entries", [])

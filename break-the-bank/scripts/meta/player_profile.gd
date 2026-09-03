@@ -223,28 +223,55 @@ func to_dict() -> Dictionary:
 	}
 
 
+## A number out of a save that may not contain one. A profile written by
+## an older build, a half-flushed disk or a text editor can hold a string,
+## a list or nothing at all where a count belongs, and casting that with
+## int() takes the game down — which the torture suite proved before this
+## existed.
+static func _number(data: Dictionary, key: String, fallback: int = 0) -> int:
+	var value: Variant = data.get(key, fallback)
+	if value is int or value is float:
+		return int(clampf(float(value), -9.0e15, 9.0e15))
+	if value is String and (value as String).is_valid_int():
+		return int(value)
+	return fallback
+
+
+static func _flag(data: Dictionary, key: String, fallback: bool = false) -> bool:
+	var value: Variant = data.get(key, fallback)
+	return bool(value) if (value is bool or value is int or value is float) else fallback
+
+
+static func _text(data: Dictionary, key: String, fallback: String = "") -> String:
+	var value: Variant = data.get(key, fallback)
+	return String(value) if value is String else fallback
+
+
 static func from_dict(data: Dictionary) -> PlayerProfile:
 	var profile: PlayerProfile = PlayerProfile.new()
-	profile.runs_played = int(data.get("runs_played", 0))
-	profile.wins = int(data.get("wins", 0))
-	profile.best_floor = int(data.get("best_floor", 0))
-	profile.lifetime_earned = int(data.get("lifetime_earned", 0))
-	profile.debt_cleared = int(data.get("debt_cleared", 0))
-	profile.deepest_after_hours = int(data.get("deepest_after_hours", 0))
-	profile.total_spins = int(data.get("total_spins", 0))
-	profile.biggest_spin = int(data.get("biggest_spin", 0))
-	profile.vig_paid = int(data.get("vig_paid", 0))
-	profile.selected_starter = StringName(data.get("selected_starter", "standard"))
-	profile.selected_difficulty = StringName(data.get("selected_difficulty", "standard"))
-	profile.selected_challenge = StringName(data.get("selected_challenge", ""))
+	profile.runs_played = _number(data, "runs_played")
+	profile.wins = _number(data, "wins")
+	profile.best_floor = _number(data, "best_floor")
+	profile.lifetime_earned = _number(data, "lifetime_earned")
+	profile.debt_cleared = _number(data, "debt_cleared")
+	profile.deepest_after_hours = _number(data, "deepest_after_hours")
+	profile.total_spins = _number(data, "total_spins")
+	profile.biggest_spin = _number(data, "biggest_spin")
+	profile.vig_paid = _number(data, "vig_paid")
+	profile.selected_starter = StringName(_text(data, "selected_starter", "standard"))
+	profile.selected_difficulty = StringName(_text(data, "selected_difficulty", "standard"))
+	profile.selected_challenge = StringName(_text(data, "selected_challenge", ""))
 	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks",
 			"records", "settings", "seen"]:
 		var table: Variant = data.get(key, {})
 		if table is Dictionary:
 			profile.set(key, table)
-	profile.tutorial_seen = bool(data.get("tutorial_seen", false))
-	for entry: Variant in data.get("unlocked", []):
-		profile.unlocked.append(StringName(entry))
+	profile.tutorial_seen = _flag(data, "tutorial_seen")
+	var unlocked: Variant = data.get("unlocked", [])
+	if unlocked is Array:
+		for entry: Variant in unlocked:
+			if entry is String:
+				profile.unlocked.append(StringName(entry))
 	return profile
 
 
@@ -269,7 +296,7 @@ static func load_or_new(path: String = SAVE_PATH) -> PlayerProfile:
 		push_warning("PlayerProfile: %s is not readable, starting fresh" % path)
 		return PlayerProfile.new()
 	var data: Dictionary = parsed
-	if int(data.get("version", 0)) > VERSION:
+	if _number(data, "version") > VERSION:
 		push_warning("PlayerProfile: %s is from a newer build, starting fresh" % path)
 		return PlayerProfile.new()
 	return from_dict(data)

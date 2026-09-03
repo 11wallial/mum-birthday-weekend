@@ -41,10 +41,12 @@ static func read(content: ContentDB, path: String = SAVE_PATH) -> RunJournal:
 		push_warning("RunSave: %s is not readable, starting fresh" % path)
 		return null
 	var data: Dictionary = parsed
-	if int(data.get("save_version", 0)) > VERSION:
+	var version: Variant = data.get("save_version", 0)
+	if not (version is int or version is float) or int(version) > VERSION:
 		push_warning("RunSave: %s is from a newer build, starting fresh" % path)
 		return null
-	if String(data.get("content", "")) != fingerprint(content):
+	var stamp: Variant = data.get("content", "")
+	if not (stamp is String) or String(stamp) != fingerprint(content):
 		push_warning("RunSave: %s was played against different content, starting fresh" % path)
 		return null
 	return RunJournal.from_dict(data)
