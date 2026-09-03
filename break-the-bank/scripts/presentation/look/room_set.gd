@@ -30,6 +30,9 @@ const LAMP_TARGET: Vector3 = Vector3(-0.2, 0.85, 0.2)
 ## when the camera stands over it.
 const DESK: Vector3 = Vector3(2.75, 0.86, 1.3)
 const BOARD_SIZE: Vector2 = Vector2(0.92, 0.5)
+## The board's centre above the desktop. Its bottom edge, tilted, sits
+## 0.213 below this; the desktop's face is at 0.025 and the tray at 0.09.
+const BOARD_LIFT: float = 0.32
 
 var _root: Node3D
 
@@ -97,10 +100,17 @@ func _desk() -> MeshInstance3D:
 			Materials.rubber(Color(0.12, 0.1, 0.09), 92))
 	# The clipboard: a board propped on a block so it faces the reader, a
 	# clip at its head, and the form itself as a quad the room draws into.
+	# It stands high enough that its tilted bottom edge clears the desktop
+	# and the tray beside it — at 0.2 it sank four centimetres into the top
+	# and the tray's corner sat in front of the form's last line, which was
+	# every mounted screen losing its footer to a black wedge.
 	var board: MeshInstance3D = Prims.quad(desk, Vector2(BOARD_SIZE.x, BOARD_SIZE.y),
-			Vector3(0.0, 0.2, 0.06), Materials.enamel(Materials.PAPER, 93))
+			Vector3(0.0, BOARD_LIFT, 0.06), Materials.enamel(Materials.PAPER, 93))
 	board.name = "Board"
 	board.rotation.x = -0.55
+	# The block it leans on: behind the form's plane at every height it
+	# spans, so only the bit under the bottom edge shows.
+	_box(desk, Vector3(0.36, 0.17, 0.1), Vector3(0.0, 0.11, 0.06), Materials.timber(94))
 	var backing: MeshInstance3D = Prims.box(board, Vector3(BOARD_SIZE.x + 0.04, BOARD_SIZE.y + 0.06, 0.012),
 			Vector3(0.0, 0.0, -0.008), Materials.timber(94))
 	backing.name = "Backing"
