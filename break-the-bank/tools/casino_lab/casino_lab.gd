@@ -46,6 +46,9 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var rerolls: PackedInt32Array = PackedInt32Array()
 	# How often the House noticed a run: the notice is tuned on this.
 	var notices: PackedInt32Array = PackedInt32Array()
+	# Paper: how much a run bought and how much of it was spent.
+	var chits_bought: PackedInt32Array = PackedInt32Array()
+	var chits_used: PackedInt32Array = PackedInt32Array()
 	var drafts_total: int = 0
 	# Offers put in front of every run, against what was taken: the share of
 	# the draft a run can afford is the number the chip supply is set by.
@@ -126,6 +129,8 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		drafts_total += state.chips_left_at_drafts.size()
 		rerolls.append(state.rerolls_total)
 		notices.append(state.notices)
+		chits_bought.append(state.chits_bought)
+		chits_used.append(state.chits_used)
 		for seen: StringName in state.offers_seen:
 			offers_total += int(state.offers_seen[seen])
 		taken_total += state.owned.size()
@@ -237,6 +242,8 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"rerolls_per_run": describe(rerolls),
 		"rerolls_per_draft": _ratio(_sum(rerolls), drafts_total),
 		"notices": describe(notices),
+		"chits_bought": describe(chits_bought),
+		"chits_used": describe(chits_used),
 		"end_reasons": end_reasons,
 		"debt": {
 			"serviced": describe(serviced),

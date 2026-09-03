@@ -135,6 +135,7 @@ var vig_deferred: bool = false
 var forced_symbol: StringName = &""
 var peeked_line: Array[StringName] = []
 var chits_used: int = 0
+var chits_bought: int = 0
 const POCKET: int = 2
 ## The House's person on this floor, or null on a floor nobody was sent to.
 ## Chosen as the floor opens, torn up as it closes, like a contract.

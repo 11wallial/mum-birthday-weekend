@@ -1480,6 +1480,7 @@ func _do_buy_chit(state: RunState) -> bool:
 	var chit: ChitDef = state.chit_offer
 	state.economy.debit_chips(chit.cost, &"chit")
 	state.pocket.append(chit)
+	state.chits_bought += 1
 	state.chit_offer = null
 	_bus.emit_event(EffectBus.Event.CHIT_BOUGHT, {
 		"chit": String(chit.id), "name": chit.display_name, "kind": int(chit.kind),

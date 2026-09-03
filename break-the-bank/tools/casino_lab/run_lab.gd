@@ -105,6 +105,9 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 		float(top.get("share", 0.0)) * 100.0])
 	var noticed: Dictionary = report.get("notices", {})
 	print("noticed        mean %.2f a run  p95 %d" % [float(noticed.get("mean", 0.0)), int(noticed.get("p95", 0))])
+	var bought: Dictionary = report.get("chits_bought", {})
+	var used: Dictionary = report.get("chits_used", {})
+	print("chits          bought %.2f a run  spent %.2f" % [float(bought.get("mean", 0.0)), float(used.get("mean", 0.0))])
 	print("chips          mean %.1f  p50 %d  p95 %d   hardware mean %.1f  max %d   took %.0f%% of the draft   settled early mean %.2f floors" % [
 		float(chips.get("mean", 0.0)), int(chips.get("p50", 0)), int(chips.get("p95", 0)),
 		float(hardware.get("mean", 0.0)), int(hardware.get("max", 0)),
