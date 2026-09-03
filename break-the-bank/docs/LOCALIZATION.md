@@ -48,5 +48,25 @@ Groundwork, laid early because it gets more expensive weekly.
   become words. Two shapes where a count is involved, one for "once" and one
   for "%d times", because a language that counts differently cannot be served
   by folding "3 times" into a `%s`.
-- `tests/unit/test_localization.gd` holds the table loading and a
-  runtime translation being honoured.
+- **A Control translates itself; a Label3D does not.** Godot translates a
+  Label or Button's own text as it draws it, so a caption set in English
+  there is fine as long as the table has a row. The cabinet's words are
+  `Label3D` — the console keys, the drums' verdicts, the ledger tube, the
+  brass plates — and those are drawn exactly as they are set, so they have
+  to arrive translated. `Copy` is how, in both cases.
+- **`tools/text/pseudo_check.gd` is the backstop.** It gives every row in
+  the table a translation that is the English in ⟦brackets⟧, sets a locale
+  no build ships, plays the room, and reads back every label on the screen.
+  Anything with letters and no brackets never went through the table. It is
+  the only check here that reads what was drawn rather than what was
+  written, and it found forty-six strings the extractor could not see —
+  captions set in scenes, the machine's engraving, the Clerk's paragraphs
+  split across lines. CI runs it at 120 moves.
+
+```bash
+godot --headless --path . --script res://tools/text/pseudo_check.gd -- --moves=120 --list
+```
+
+- `tests/unit/test_localization.gd` holds the table loading, a runtime
+  translation being honoured, and every artifact, boss and chit having a
+  row.

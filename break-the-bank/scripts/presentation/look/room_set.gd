@@ -280,7 +280,7 @@ func _floor_sign() -> Label3D:
 	var label: Label3D = Label3D.new()
 	label.name = "Text"
 	Type.face(label, &"display")
-	label.text = "FLOOR 1\nTHE BASEMENT"
+	label.text = "FLOOR 1\n" + Copy.upper("The Basement")
 	label.font_size = 88
 	# A long floor name wraps rather than running off the right of a
 	# narrow window: THE HIGH ROLLER ROOM did both before this.
@@ -431,7 +431,7 @@ func _intercom() -> void:
 			Materials.lamp_glass(Color(1.0, 0.55, 0.2), 0.0))
 	lamp.name = "Lamp"
 	var plate: Label3D = Label3D.new()
-	plate.text = "TANNOY"
+	plate.text = Copy.of("TANNOY")
 	Type.face(plate, &"display")
 	plate.font_size = 30
 	plate.pixel_size = 0.0009
@@ -482,7 +482,7 @@ func _props() -> void:
 		spoke.rotation.x = TAU * float(i) / 4.0
 	# A sign over the manifold, the House's kind of joke.
 	var notice: Label3D = Label3D.new()
-	notice.text = "NO CREDIT"
+	notice.text = Copy.of("NO CREDIT")
 	Type.face(notice, &"display")
 	notice.font_size = 44
 	notice.pixel_size = 0.0018

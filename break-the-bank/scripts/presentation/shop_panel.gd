@@ -134,9 +134,10 @@ func _redraw() -> void:
 		_rows.remove_child(child)
 		child.queue_free()
 	if _title != null:
-		_title.text = "THE DRAFT — FLOOR %d CLEARED      CHIPS %d      CASH %d      DEBT %d" % [
+		_title.text = Copy.filled(
+			"THE DRAFT — FLOOR %d CLEARED      CHIPS %d      CASH %d      DEBT %d", [
 			_state.floors_cleared, _state.economy.chips, _state.economy.cash,
-			_state.economy.debt]
+			_state.economy.debt])
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
 	_cursor = clampi(_cursor, 0, maxi(_state.shop_offers.size() - 1, 0))
 	for i: int in _state.shop_offers.size():
@@ -183,11 +184,14 @@ func _draw_press() -> void:
 		var text: String = ""
 		match String(job.get("kind", "")):
 			"strike":
-				text = "STRIKE the %s  −%d weight" % [name.to_lower(), int(job.get("magnitude", 0))]
+				text = Copy.filled("STRIKE the %s  −%d weight",
+						[Copy.lower(name), int(job.get("magnitude", 0))])
 			"print":
-				text = "PRINT more %s  +%d weight" % [name.to_lower(), int(job.get("magnitude", 0))]
+				text = Copy.filled("PRINT more %s  +%d weight",
+						[Copy.lower(name), int(job.get("magnitude", 0))])
 			"gild":
-				text = "GILD the %s  +%d a symbol" % [name.to_lower(), int(job.get("magnitude", 0))]
+				text = Copy.filled("GILD the %s  +%d a symbol",
+						[Copy.lower(name), int(job.get("magnitude", 0))])
 		var index: int = i
 		var badge: TextureRect = _symbol_badge(symbol.id if symbol != null else &"",
 				_state.can_press(i))

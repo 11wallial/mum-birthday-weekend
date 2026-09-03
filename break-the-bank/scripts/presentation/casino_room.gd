@@ -1406,7 +1406,7 @@ func _refresh_diegetic() -> void:
 		# memos wait for a floor with nobody on it.
 		var memo: String = ""
 		for person: BossDef in BossEngine.people(state):
-			memo += ("  " if not memo.is_empty() else "") + person.tell
+			memo += ("  " if not memo.is_empty() else "") + Copy.of(person.tell)
 		if memo.is_empty() and state.notice_pending != null:
 			memo = Copy.filled("Noticed. %s is coming.", [Copy.of(state.notice_pending.display_name)])
 		# The peek: the next line, on the ledger, until it is spun.
@@ -1415,9 +1415,10 @@ func _refresh_diegetic() -> void:
 			for symbol_id: StringName in state.peeked_line:
 				var symbol: SymbolDef = ContentDB.shared().symbol_by_id(symbol_id)
 				names.append(Copy.lower(symbol.display_name) if symbol != null else "?")
-			memo = "NEXT: %s" % " · ".join(names) + ("\n" + memo if not memo.is_empty() else "")
+			memo = Copy.filled("NEXT: %s", [" · ".join(names)]) \
+					+ ("\n" + memo if not memo.is_empty() else "")
 		if memo.is_empty():
-			memo = _memos.memo_for(state) if _memos != null else ""
+			memo = Copy.of(_memos.memo_for(state)) if _memos != null else ""
 		var log: PackedStringArray = PackedStringArray()
 		if _hud != null and _hud.has_method("recent_lines"):
 			log = _hud.call("recent_lines", 2)

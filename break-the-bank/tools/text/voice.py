@@ -18,13 +18,23 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CONTENT_FIELDS = ("description", "intro", "tell", "line", "brief", "flavour",
-                  "display_name", "requirement", "epitaph", "body")
+                  "display_name", "requirement", "epitaph", "body", "text")
 # Files whose string literals reach the player.
 CODE = ["scripts/presentation/casino_room.gd", "scripts/presentation/tutorial_director.gd",
         "scripts/presentation/inspector.gd", "scripts/presentation/recap_panel.gd",
         "scripts/presentation/hud.gd", "scripts/presentation/title_screen.gd",
         "scripts/presentation/shop_panel.gd", "scripts/presentation/contract_panel.gd",
-        "scripts/simulation/run_recap.gd", "scripts/simulation/endless.gd"]
+        "scripts/simulation/run_recap.gd", "scripts/simulation/endless.gd",
+        # The cabinet's own words, which the pseudolocale check found nobody
+        # was reading: the console keys, the drums' verdicts, the receipt,
+        # the inspection card and the signs around the room.
+        "scripts/presentation/control_deck.gd", "scripts/presentation/slot_view_3d.gd",
+        "scripts/presentation/payout_receipt.gd", "scripts/presentation/room_dressing.gd",
+        "scripts/presentation/look/machine_frame.gd", "scripts/presentation/look/room_set.gd",
+        # Two in the simulation whose strings are shown as they stand: the
+        # names of the systems a floor grants, and the patterns the line can
+        # land in. The simulation never translates them; the cabinet does.
+        "scripts/simulation/systems.gd", "scripts/simulation/artifact_engine.gd"]
 
 RULES = [
     ("shouts", re.compile(r"!")),

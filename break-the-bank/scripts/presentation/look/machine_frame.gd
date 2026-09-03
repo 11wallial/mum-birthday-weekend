@@ -707,7 +707,7 @@ func _counter_bank() -> Dictionary:
 			digits.append(digit)
 		# The caption, engraved under the bank.
 		var caption: Label3D = Label3D.new()
-		caption.text = String(bank[1])
+		caption.text = Copy.of(String(bank[1]))
 		Type.face(caption, &"display")
 		caption.font_size = 48
 		caption.pixel_size = 0.0013
@@ -930,7 +930,7 @@ func _gearbox() -> Node3D:
 				Materials.glowing(Materials.JACKPOT, 0.9))
 		mark.rotation.z = angle - PI * 0.5
 	var heat_label: Label3D = Label3D.new()
-	heat_label.text = "HEAT"
+	heat_label.text = Copy.of("HEAT")
 	Type.face(heat_label, &"display")
 	# Bebas is narrow: a caption set in it needs more size than the same
 	# caption set in the engine's default did.
@@ -1047,7 +1047,7 @@ func _monitor() -> MeshInstance3D:
 	terminal.add_child(ground)
 	var readout: Label = Label.new()
 	readout.name = "Readout"
-	readout.text = "LEDGER OF ACCOUNT\n--------------------\nDEBT 0"
+	readout.text = Copy.of("LEDGER OF ACCOUNT") + "\n--------------------\nDEBT 0"
 	# Eight lines fit at this size: the heading, the floor, the principal,
 	# two of memo and two of the run's log under a rule.
 	readout.add_theme_font_size_override(&"font_size", 18)
@@ -1337,7 +1337,7 @@ func _surety_column() -> Dictionary:
 	lamp.name = "Lamp"
 	lamp.material_override = (lamp.material_override as StandardMaterial3D).duplicate()
 	var caption: Label3D = Label3D.new()
-	caption.text = "SURETY"
+	caption.text = Copy.of("SURETY")
 	Type.face(caption, &"display")
 	caption.font_size = 42
 	caption.pixel_size = 0.0012
@@ -1533,7 +1533,7 @@ func _decals(parent: Node3D, front: float) -> void:
 		Prims.cylinder(plate, 0.005, 0.004, Vector3(sx * 0.085, 0.0, 0.004),
 				Vector3(PI * 0.5, 0.0, 0.0), Materials.machined(Materials.STEEL, 103), 8)
 	var serial: Label3D = Label3D.new()
-	serial.text = "No. 0447 · THE HOUSE"
+	serial.text = Copy.of("No. 0447 · THE HOUSE")
 	Type.face(serial, &"mono")
 	serial.font_size = 26
 	serial.pixel_size = 0.0009
@@ -1550,7 +1550,7 @@ func _decals(parent: Node3D, front: float) -> void:
 	Prims.quad(sticker, Vector2(0.13, 0.09), Vector3.ZERO,
 			Materials.enamel(Color(0.78, 0.74, 0.62), 104))
 	var inspected: Label3D = Label3D.new()
-	inspected.text = "INSPECTED\n— · —"
+	inspected.text = Copy.of("INSPECTED") + "\n— · —"
 	Type.face(inspected, &"display")
 	inspected.font_size = 18
 	inspected.pixel_size = 0.0009
@@ -1559,7 +1559,7 @@ func _decals(parent: Node3D, front: float) -> void:
 	inspected.position = Vector3(0.0, 0.008, 0.002)
 	sticker.add_child(inspected)
 	var voided: Label3D = Label3D.new()
-	voided.text = "VOID"
+	voided.text = Copy.of("VOID")
 	Type.face(voided, &"display")
 	voided.font_size = 34
 	voided.pixel_size = 0.0009
@@ -1585,7 +1585,7 @@ func _decals(parent: Node3D, front: float) -> void:
 	Prims.box(card, Vector3(0.05, 0.02, 0.002), Vector3(0.09, -0.06, 0.002),
 			Materials.enamel(Color(0.72, 0.68, 0.55), 107))
 	var lettered: Label3D = Label3D.new()
-	lettered.text = "NO CREDIT.\nNO EXCEPTIONS.\n— MGMT"
+	lettered.text = "\n".join([Copy.of("NO CREDIT."), Copy.of("NO EXCEPTIONS."), Copy.of("— MGMT")])
 	Type.face(lettered, &"display")
 	lettered.font_size = 20
 	lettered.pixel_size = 0.0011

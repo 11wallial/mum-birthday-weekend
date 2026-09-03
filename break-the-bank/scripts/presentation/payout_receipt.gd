@@ -175,7 +175,8 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 		for entry: Variant in steps:
 			var step: Dictionary = entry as Dictionary
 			if String(step.get("kind", "")) == "symbol":
-				dead.append("%s %s" % [step.get("label", ""), step.get("text", "")])
+				dead.append(Copy.filled("%s %s", [Copy.of(String(step.get("label", ""))),
+						step.get("text", "")]))
 		if not dead.is_empty():
 			lines.append(_line(" + ".join(dead), "", 12.0, INK_FAINT))
 		lines.append(_rule())
@@ -192,11 +193,16 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 		var kind: String = String(step.get("kind", ""))
 		# A step's label is a symbol, a device or the House, named by the
 		# simulation, which never translates anything.
-		var label: String = Copy.of(String(step.get("label", "")))
+		# A label the simulation wrote as a shape carries its numbers beside it,
+		# because "A pair — voided by the skull" is a sentence and the House
+		# does not translate sentences.
+		var values: Array = step.get("values", []) as Array
+		var label: String = (Copy.filled(String(step.get("label", "")), values)
+				if not values.is_empty() else Copy.of(String(step.get("label", ""))))
 		var text: String = String(step.get("text", ""))
 		match kind:
 			"symbol":
-				symbols.append("%s %s" % [label, text])
+				symbols.append(Copy.filled("%s %s", [label, text]))
 				symbol_total += int(text)
 			"artifact":
 				if device_lines < MAX_DEVICE_LINES:
@@ -221,7 +227,8 @@ func print_board(breakdown: Dictionary, payout: int, chips: int, settled: bool,
 	lines.append(_line("PAYS" if settled else "WOULD PAY", "%d cr" % payout, 18.0,
 			(INK_SCORE if settled else INK) if payout > 0 else INK_RED, true))
 	if chips > 0:
-		lines.append(_line("THE BANK", "+%d chip%s" % [chips, "" if chips == 1 else "s"],
+		lines.append(_line("THE BANK", Copy.filled("+%d chip", [chips]) if chips == 1
+				else Copy.filled("+%d chips", [chips]),
 				13.0, INK))
 	_print_lines(lines, over_seconds, tier)
 

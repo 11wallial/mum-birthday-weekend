@@ -101,6 +101,15 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}/tools/text
         run: python3 extract.py --check
 
+      # The extractor can only find a string where it is written. This plays
+      # the room in a language that does not exist — every row in the table
+      # translated to itself in brackets — and fails on anything that reached
+      # the screen without brackets, which is the only check here that reads
+      # what was drawn rather than what was typed.
+      - name: Play it in a language that does not exist
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . --script res://tools/text/pseudo_check.gd -- --moves=120
+
       # An audio asset with no licence row is a release blocker, not a warning.
       - name: Audit audio licences
         working-directory: ${{ env.PROJECT_DIR }}

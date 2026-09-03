@@ -226,9 +226,9 @@ func _build_reels() -> void:
 static func nudge_note(board: SpinBoard, reel: int, preview: Array[SymbolDef],
 		gain: int) -> String:
 	if not board.can_nudge(reel):
-		return "no nudge"
+		return Copy.of("no nudge")
 	if gain <= 0:
-		return "no better"
+		return Copy.of("no better")
 	var after: int = board.payout + gain
 	var leaving: SymbolDef = board.line[reel] if reel < board.line.size() else null
 	var arriving: SymbolDef = preview[reel] if reel < preview.size() else null
@@ -236,14 +236,17 @@ static func nudge_note(board: SpinBoard, reel: int, preview: Array[SymbolDef],
 	var now: Probability.Pattern = Probability.detect_pattern(preview)
 	var why: String = ""
 	if leaving != null and leaving.is_curse and (arriving == null or not arriving.is_curse):
-		why = "skull out"
+		why = Copy.of("skull out")
 	elif arriving != null and arriving.is_curse:
-		why = "skull in"
+		why = Copy.of("skull in")
 	elif now > was and now != Probability.Pattern.CLEAN_SWEEP:
-		why = ["", "a pair", "three", "jackpot", "sweep"][int(now)]
+		# Articled, and never one bare word: a lone lowercase word cannot be
+		# told from an identifier by the extractor that fills the string table.
+		why = Copy.of(["", "a pair", "three alike", "the jackpot", "a sweep"][int(now)])
 	elif arriving != null:
 		why = Copy.filled("%s in", [Copy.lower(arriving.display_name)])
-	return "→ %d · %s" % [after, why] if not why.is_empty() else "→ %d" % after
+	return Copy.filled("→ %d · %s", [after, why]) if not why.is_empty() \
+			else Copy.filled("→ %d", [after])
 
 
 func _build_actions() -> void:
@@ -251,7 +254,7 @@ func _build_actions() -> void:
 		RunState.Decision.NUDGE:
 			if _held_back:
 				return
-			_action(TAKE, "TAKE IT", "%d cr standing" % _state.board.payout, true, true)
+			_action(TAKE, "TAKE IT", Copy.filled("%d cr standing", [_state.board.payout]), true, true)
 			_build_pocket()
 			return
 		RunState.Decision.GAMBLE:
@@ -288,8 +291,8 @@ func _build_actions() -> void:
 	# choice between the two is the floor's whole decision.
 	if _state.can_settle_early():
 		var bonus: int = _state.settle_bonus(_state.spins_remaining)
-		_action(SETTLE, "SETTLE NOW", "+%d chips%s" % [bonus,
-				" · QUICK" if _state.is_quick_clear(_state.spins_remaining) else ""],
+		_action(SETTLE, "SETTLE NOW", Copy.filled("+%d chips%s", [bonus,
+				Copy.of(" · QUICK") if _state.is_quick_clear(_state.spins_remaining) else ""]),
 				true, false)
 	if _state.has_system(Systems.STAKE):
 		_extra(STAKE_DOWN, "STAKE −", "", _state.stake > 1)
@@ -390,7 +393,7 @@ func _reel_button(action: StringName, index: int, label: String,
 			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon.modulate = Color(1, 1, 1, 1.0 if enabled else 0.45)
 			head.add_child(icon)
-	head.add_child(_label("%s  %d" % [label, index + 1], 13.0,
+	head.add_child(_label(Copy.filled("%s  %d", [Copy.of(label), index + 1]), 13.0,
 			UiSkin.AMBER if lit else (UiSkin.INK if enabled else UiSkin.DENIED)))
 	column.add_child(head)
 	var caption: Label = _label(note, 11.0, UiSkin.INK_MUTED)

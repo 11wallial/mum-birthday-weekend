@@ -40,17 +40,26 @@ def table_rows() -> tuple[list[str], list[list[str]]]:
 	return rows[0], [row for row in rows[1:] if row]
 
 
+# A .tres field, including the ones written across several lines: a memo is
+# a paragraph with real newlines in it, and voice.py reads line by line.
+TRES_FIELD = re.compile(r'^(\w+) = "((?:[^"\\]|\\.)*)"', re.M | re.S)
+
+
 def content_strings() -> list[str]:
 	seen: dict[str, None] = {}
-	for _where, text in voice.strings_from_content(shortest=1):
-		seen.setdefault(text.replace("\\n", "\n"), None)
+	for tres in sorted((voice.ROOT / "resources").rglob("*.tres")):
+		for found in TRES_FIELD.finditer(tres.read_text()):
+			if found.group(1) in voice.CONTENT_FIELDS and len(found.group(2)) >= 1:
+				seen.setdefault(found.group(2).replace("\\n", "\n"), None)
 	return list(seen)
 
 
 def drawn(text: str) -> bool:
 	if len(text) < 4 or NOT_TEXT.match(text) or not HAS_WORDS.search(text):
 		return False
-	if re.fullmatch(r"[\w./-]+", text):
+	# A single word of word-characters is an id or a node name — unless it is
+	# shouted, which is how this game writes a caption: HOLD, VOID, SURETY.
+	if re.fullmatch(r"[\w./-]+", text) and not text.isupper():
 		return False
 	return " " in text or text.isupper()
 
@@ -78,9 +87,23 @@ def code_strings() -> list[str]:
 	return list(seen)
 
 
+def scene_strings() -> list[str]:
+	"""Captions set in the editor. A Control translates its own text as it
+	draws it, so these need a row and nothing else — and the pseudolocale
+	check is what found them missing, because no reader of the scripts could
+	have."""
+	seen: dict[str, None] = {}
+	for scene in sorted((voice.ROOT / "scenes").rglob("*.tscn")):
+		for line in scene.read_text().splitlines():
+			found = re.match(r'^text = "(.*)"$', line)
+			if found and drawn(found.group(1)):
+				seen.setdefault(found.group(1).replace("\\n", "\n"), None)
+	return list(seen)
+
+
 def every_string() -> list[str]:
 	seen: dict[str, None] = {}
-	for text in content_strings() + code_strings():
+	for text in content_strings() + code_strings() + scene_strings():
 		seen.setdefault(text, None)
 	return list(seen)
 
@@ -103,9 +126,9 @@ def main() -> int:
 	missing = [text for text in strings if text not in have]
 
 	if args.check:
-		print("%d of %d strings are in the table (%d in content, %d in code)" % (
+		print("%d of %d strings are in the table (%d in content, %d in code, %d in scenes)" % (
 			len(strings) - len(missing), len(strings),
-			len(content_strings()), len(code_strings())))
+			len(content_strings()), len(code_strings()), len(scene_strings())))
 		for text in missing[:20]:
 			print("  missing  %s" % text.replace("\n", "\\n")[:90])
 		if len(missing) > 20:

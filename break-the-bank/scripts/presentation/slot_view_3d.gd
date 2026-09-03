@@ -638,7 +638,7 @@ func _dress_button(button: Node3D, model: Dictionary) -> void:
 		if pick != null:
 			pick.input_event.connect(_on_button_input.bind(button))
 	if caption != null:
-		caption.text = String(model.get("label", ""))
+		caption.text = Copy.of(String(model.get("label", "")))
 		caption.visible = not model.is_empty()
 	if material == null:
 		return
@@ -862,8 +862,8 @@ func set_readout(debt: int, floor_name: String, memo: String = "",
 	if _readout == null:
 		return
 	var lines: PackedStringArray = PackedStringArray([
-		"LEDGER OF ACCOUNT", "--------------------", floor_name.to_upper(),
-		"PRINCIPAL  %d" % debt,
+		Copy.of("LEDGER OF ACCOUNT"), "--------------------", floor_name.to_upper(),
+		Copy.filled("PRINCIPAL  %d", [debt]),
 	])
 	if memo.is_empty():
 		lines.append("--------------------")
@@ -963,7 +963,7 @@ func set_action_controls(models: Array) -> void:
 		var caption: Label3D = key.get_node_or_null(^"Caption") as Label3D
 		if caption != null:
 			var note: String = String(model.get("note", ""))
-			caption.text = String(model.get("label", "")) \
+			caption.text = Copy.of(String(model.get("label", ""))) \
 					+ ("\n" + note if not note.is_empty() else "")
 		var lamp: MeshInstance3D = key.get_node_or_null(^"Lamp") as MeshInstance3D
 		var material: StandardMaterial3D = \

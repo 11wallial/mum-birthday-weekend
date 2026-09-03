@@ -85,7 +85,10 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 	# A curse on the line costs the player the pattern bonus entirely, unless a
 	# ward has turned the skulls into payroll.
 	if cursed:
-		ctx.step(&"pattern", "%s — voided by the skull" % _pattern_label(pattern), "x0")
+		# The shape stays here and is filled where it is drawn; the simulation
+		# translates nothing, and "A pair — voided by the skull" is a sentence.
+		ctx.step(&"pattern", "%s — voided by the skull", "x0",
+				{"values": [_pattern_label(pattern)]})
 	elif pattern < config.pattern_multipliers.size():
 		ctx.multiplier += config.pattern_multipliers[pattern]
 		if pattern != Probability.Pattern.NONE:

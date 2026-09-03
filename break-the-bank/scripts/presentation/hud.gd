@@ -345,14 +345,14 @@ func mark_result(result: SlotView3D.Result, _payout: int, settled: bool = true) 
 	# A board the machine still owes a decision on has not been judged yet. It
 	# used to be called dead while the player was looking at a nudge worth forty
 	# credits, which is the readout arguing with the buttons underneath it.
-	var verdict: String = ("STANDING" if not settled
-			else tr(["DEAD", "SCRAPING", "PAID", "STRONG", "HEAVY", "OVERLOAD"][int(result)]))
+	var verdict: String = (Copy.of("STANDING") if not settled
+			else Copy.of(["DEAD", "SCRAPING", "PAID", "STRONG", "HEAVY", "OVERLOAD"][int(result)]))
 	var tint: Color = (UiSkin.INK_MUTED if not settled else [
 		Color(0.63, 0.42, 0.40), Color(0.76, 0.71, 0.60),
 		Color(1.0, 0.82, 0.44), Color(1.0, 0.76, 0.34),
 		Color(1.0, 0.62, 0.24), Color(1.0, 0.5, 0.2),
 	][int(result)])
-	_line.text = "%s     %s" % [verdict, _line.text]
+	_line.text = Copy.filled("%s     %s", [verdict, _line.text])
 	_line.add_theme_color_override(&"font_color", tint)
 	_line.modulate = Color(1, 1, 1, 1)
 	if settled and result >= SlotView3D.Result.PAID:

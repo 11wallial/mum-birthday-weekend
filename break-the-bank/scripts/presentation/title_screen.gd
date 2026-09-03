@@ -262,8 +262,8 @@ func _redraw() -> void:
 			resume_requested.emit()))
 	_menu.add_child(_button("PULL THE LEVER", "a new run on the machine below", func() -> void:
 		start_requested.emit(0, "")))
-	_menu.add_child(_button("THE COLLECTION", "%d of %d pieces of hardware seen" % [
-			_profile.seen_count("artifacts"), ContentDB.shared().artifacts.size()],
+	_menu.add_child(_button("THE COLLECTION", Copy.filled("%d of %d pieces of hardware seen", [
+			_profile.seen_count("artifacts"), ContentDB.shared().artifacts.size()]),
 			func() -> void:
 				_collection_open = true
 				_redraw(), false))
@@ -596,11 +596,11 @@ func _clear(node: Node) -> void:
 
 func _stats_text() -> String:
 	var favourite: StringName = _profile.favourite_artifact()
-	return "RUNS %d   WINS %d   BEST FLOOR %d   BIGGEST SPIN %d   VIG PAID %d   AFTER HOURS %d   FAVOURITE %s   UNLOCKED %d of %d" % [
+	return Copy.filled("RUNS %d   WINS %d   BEST FLOOR %d   BIGGEST SPIN %d   VIG PAID %d   AFTER HOURS %d   FAVOURITE %s   UNLOCKED %d of %d", [
 		_profile.runs_played, _profile.wins, _profile.best_floor, _profile.biggest_spin,
 		_profile.vig_paid, _profile.deepest_after_hours,
 		String(favourite).capitalize() if favourite != &"" else "—",
-		_profile.unlocked.size(), _catalogue.unlocks.size()]
+		_profile.unlocked.size(), _catalogue.unlocks.size()])
 
 
 func _machine_name(id: StringName) -> String:
