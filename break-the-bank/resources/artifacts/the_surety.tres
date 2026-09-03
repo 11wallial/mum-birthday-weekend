@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"the_surety"
+display_name = "The Surety"
+description = "It reads what you signed, not what you hold. +0.8x for every 100 owed, up to +6.0x."
+cost = 17
+trigger = 2
+effect = 13
+magnitude = 0.8
+cap = 6.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"greed"])
+min_floor = 7
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"marker"
