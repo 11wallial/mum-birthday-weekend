@@ -21,7 +21,7 @@ extends RefCounted
 ## Cells around the drum: one per symbol in the set, so every symbol has its
 ## own printed plate. MachineFrame.BAND_ANGLE is TAU over this, and the drum
 ## radius grew with the count so a cell stays readable in the window.
-const CELLS: int = 20
+const CELLS: int = 19
 ## One cell in texels: x along the drum's axis, y around its circumference.
 ## 1072 texels per metre on both axes, so print density is isotropic.
 const CELL_PX: Vector2i = Vector2i(416, 256)
@@ -35,7 +35,7 @@ const PLATE_SHADER: String = "res://assets/shaders/reel_plate.gdshader"
 const PREFERRED: Array = [&"seven", &"cherry", &"bar", &"orange", &"bell",
 		&"lemon", &"skull", &"crown", &"watermelon", &"wild", &"grapes",
 		&"double_bar", &"clover", &"horseshoe", &"dice", &"bank", &"coin",
-		&"plum", &"diamond", &"gold_bar"]
+		&"plum", &"diamond"]
 
 ## The three maps of one strip: the print, its relief, and where it is metal.
 static var _strip: ImageTexture = null

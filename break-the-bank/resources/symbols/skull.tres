@@ -12,5 +12,5 @@ family = &""
 is_wild = false
 is_curse = true
 glyph = "X"
-color = Color(0.36, 0.38, 0.40, 1)
-color2 = Color(0.2, 0.2, 0.22, 1)
+color = Color(0.82, 0.83, 0.78, 1)
+color2 = Color(0.3, 0.31, 0.3, 1)

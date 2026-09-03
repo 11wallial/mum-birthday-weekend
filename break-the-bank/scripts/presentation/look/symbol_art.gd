@@ -80,7 +80,7 @@ static func captions_for(symbol_id: StringName) -> Array:
 		&"bar":
 			return [["BAR", 0.02]]
 		&"double_bar":
-			return [["BAR", -0.32], ["BAR", 0.34]]
+			return [["BAR", -0.4], ["BAR", 0.0], ["BAR", 0.4]]
 		&"bank":
 			return [["BANK", 0.8]]
 		_:
@@ -139,7 +139,11 @@ static func _shade(ops: PackedFloat32Array, p: Vector2, d: float,
 	const REACH: float = 0.055
 	var slope: float = _sample(ops, p - Vector2(REACH, REACH)).x - d
 	# Fades out toward the middle of a shape, so only the rim is bevelled.
-	var rim: float = clampf(1.0 + d / 0.62, 0.0, 1.0)
+	# The reach is a fixed width, not a fraction of the shape: at 0.62 a wide
+	# disc like the orange was still bevelling at its centre and came out
+	# airbrushed, while a thin slab like the bar bevelled edge-to-edge and
+	# came out hard — one set, two render styles, from this constant alone.
+	var rim: float = clampf(1.0 + d / 0.3, 0.0, 1.0)
 	var lift: float = clampf(slope / REACH, -1.0, 1.0) * rim
 	var lit: Color = colour
 	if lift > 0.0:
@@ -235,51 +239,57 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 	var ops: PackedFloat32Array = PackedFloat32Array()
 	match symbol_id:
 		&"seven":
-			# A top bar and a stroke leaning down-left off its right end. The
-			# lean has to be real: an almost-vertical stroke plus a crossbar
-			# reads as a capital F. A gold serif on the bar's left end.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.66),
-					[0.56, 0.17, 0.04])
-			_add(ops, OP_BOX, PAINT_INK, -0.34, _rotate(Vector2(0.1, 0.14), -0.34),
-					[0.16, 0.7, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.5, -0.56),
-					[0.08, 0.26, 0.03])
+			# A thick slab seven with a pale inner keyline: the strongest genre
+			# signal in the set, so it is drawn heaviest. The lean has to be real
+			# — an almost-vertical stroke plus a crossbar reads as a capital F.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.66), [0.62, 0.22, 0.04])
+			_add(ops, OP_BOX, PAINT_INK, -0.34, _rotate(Vector2(0.1, 0.16), -0.34),
+					[0.21, 0.74, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.72), [0.5, 0.05, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, -0.34, _rotate(Vector2(0.04, 0.16), -0.34),
+					[0.06, 0.6, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(-0.54, -0.54), [0.09, 0.28, 0.03])
 		&"cherry":
-			# Two fruit on stems, with a leaf. Stems in the press's black, leaf
-			# in the second ink, drawn after the fruit so it sits on them.
+			# Two fruit of different sizes on thick stems, the near one lower and
+			# larger, with a shadow where it crosses its neighbour so the pair
+			# sits in depth instead of lying flat, and a leaf clear of both.
 			_add(ops, OP_BOX, PAINT_BLACK, -0.42,
-					_rotate(Vector2(-0.24, -0.16), -0.42), [0.05, 0.44, 0.04])
+					_rotate(Vector2(-0.24, -0.16), -0.42), [0.07, 0.46, 0.04])
 			_add(ops, OP_BOX, PAINT_BLACK, 0.34,
-					_rotate(Vector2(0.2, -0.1), 0.34), [0.05, 0.42, 0.04])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(-0.38, 0.44), [0.36])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.38, 0.5), [0.3])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.5, _rotate(Vector2(0.3, -0.64), 0.5),
-					[0.28], Vector2(1.0, 2.4))
+					_rotate(Vector2(0.2, -0.1), 0.34), [0.07, 0.44, 0.04])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.3, 0.46), [0.34])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.4, 0.5), [0.29])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(-0.36, 0.42), [0.38])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.5, _rotate(Vector2(0.3, -0.66), 0.5),
+					[0.3], Vector2(1.0, 2.4))
 		&"lemon":
-			# A fat tilted ellipse with a round nub at each end, and a leaf.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2.ZERO, [0.7],
-					Vector2(1.0, 1.35))
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2(0.72, 0.0), [0.15])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2(-0.72, 0.0), [0.15])
+			# A fat tilted body drawn to a real point at each end. Round nubs
+			# left it an egg; the points are what separate it from the orange.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.36, Vector2.ZERO, [0.68],
+					Vector2(1.0, 1.4))
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(0.78, 0.0), [0.26, 0.17])
+			_add(ops, OP_RHOMBUS, PAINT_INK, 0.36, Vector2(-0.78, 0.0), [0.26, 0.17])
 			_add(ops, OP_CIRCLE, PAINT_INK2, -0.9, _rotate(Vector2(0.5, -0.7), -0.9),
 					[0.2], Vector2(1.0, 2.2))
 		&"orange":
-			# A whole fruit, a stub of stem and one leaf.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.08), [0.74])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.72), [0.06, 0.14, 0.03])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.55, _rotate(Vector2(0.32, -0.74), 0.55),
-					[0.26], Vector2(1.0, 2.3))
+			# A whole fruit with a dimple bitten out of the crown, a stem in it,
+			# and a leaf. The dimple is what stops this and the plum being the
+			# same circle: one is dented at the top, the other is drawn out.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.1), [0.76])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.78), [0.22])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.7), [0.07, 0.16, 0.03])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.55, _rotate(Vector2(0.36, -0.72), 0.55),
+					[0.27], Vector2(1.0, 2.3))
 		&"watermelon":
-			# A slice: the rind in the second ink, the flesh on it, three
-			# seeds in black, and the straight edge cut across the top.
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.12), [0.92])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.12), [0.64])
-			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.3, _rotate(Vector2(-0.3, 0.24), 0.3),
-					[0.08], Vector2(1.0, 1.7))
-			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.02, 0.4), [0.08],
-					Vector2(1.0, 1.7))
-			_add(ops, OP_CIRCLE, PAINT_BLACK, -0.3, _rotate(Vector2(0.32, 0.22), -0.3),
-					[0.08], Vector2(1.0, 1.7))
+			# A slice: a green rind, the flesh on it, and three teardrop seeds.
+			# Round seeds read as dirt; a pip has a point on it.
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.12), [0.94])
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.12), [0.72])
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.3, _rotate(Vector2(-0.32, 0.26), 0.3),
+					[0.08, 0.15])
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.02, 0.44), [0.08, 0.15])
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, -0.3, _rotate(Vector2(0.34, 0.24), -0.3),
+					[0.08, 0.15])
 			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.86), [1.3, 0.74, 0.0])
 		&"grapes":
 			# A bunch of six, a stem in black, a leaf in the second ink.
@@ -295,126 +305,149 @@ static func _build_ops(symbol_id: StringName) -> PackedFloat32Array:
 			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2.ZERO, [0.8, 0.3, 0.08])
 			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2.ZERO, [0.7, 0.2, 0.05])
 		&"double_bar":
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.34), [0.8, 0.25, 0.07])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.34), [0.7, 0.16, 0.04])
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.36), [0.8, 0.25, 0.07])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.36), [0.7, 0.16, 0.04])
+			# Three slabs stepping wider toward the foot, with a gap between them
+			# you can still see at 32px. Two same-width bars made this and the
+			# single BAR one shape at reel speed; the gaps are what make it
+			# countable in the blur, so they are cut wide on purpose.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.5), [0.5, 0.15, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.5), [0.38, 0.05, 0.02])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.0), [0.68, 0.15, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.0), [0.56, 0.05, 0.02])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.86, 0.15, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.74, 0.05, 0.02])
 		&"bell":
-			# Domed body flaring to a foot, with a clapper below and a loop
-			# above, both in the darker second ink. The flare is the shear
-			# warp; its base is the original 0.1 plus this op's 0.06
-			# translation, because the warp now runs after the translate.
+			# Domed body flaring to a broad foot, a clapper under it, and the two
+			# diagonal shine stripes without which a dome is just a dome — they
+			# are the thing that says slot bell rather than hat.
 			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.14), [0.46])
 			_add(ops, OP_SHEAR_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.06),
 					[0.42, 0.42, 0.06], Vector2.ONE, 0.85, 0.16)
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.78, 0.11, 0.05])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.72), [0.15])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.66), [0.12])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.88, 0.13, 0.05])
+			_add(ops, OP_BOX, PAINT_INK2, -0.5, _rotate(Vector2(-0.2, 0.06), -0.5),
+					[0.055, 0.3, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, -0.5, _rotate(Vector2(0.0, 0.1), -0.5),
+					[0.035, 0.24, 0.02])
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.0, 0.74), [0.15])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.64), [0.13])
 		&"diamond":
-			# A cut stone: the rhombus, a pale table across the top, and a
-			# facet notched out of the crown.
+			# A cut stone: the girdle, a pale table across the crown, two facet
+			# planes meeting under it and one hard spark. A flat kite reads as a
+			# playing-card pip; the facets are what make it a gem.
 			_add(ops, OP_RHOMBUS, PAINT_INK, 0.0, Vector2.ZERO, [0.64, 0.88])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.34), [0.4, 0.05, 0.02])
-			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.6),
-					[0.2, 0.03, 0.01])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.36), [0.42, 0.06, 0.02])
+			_add(ops, OP_RHOMBUS, PAINT_INK2, 0.0, Vector2(-0.2, 0.12), [0.16, 0.34])
+			_add(ops, OP_RHOMBUS, PAINT_INK2, 0.0, Vector2(0.22, 0.16), [0.12, 0.28])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, -0.62), [0.22, 0.03, 0.01])
 		&"horseshoe":
-			# An open ring, heels down and capped, nail holes in black. The gap
-			# is wide and the hole large so the arms read as a U, not a bagel.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.06), [0.82])
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(-0.64, 0.6), [0.18, 0.12, 0.02])
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.64, 0.6), [0.18, 0.12, 0.02])
-			for hole: Vector2 in [Vector2(-0.64, -0.2), Vector2(-0.4, -0.6),
-					Vector2(0.4, -0.6), Vector2(0.64, -0.2)]:
-				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, hole, [0.075])
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.5])
-			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.8), [0.46, 0.46, 0.0])
+			# An open ring in iron, heels down and capped, nail holes in black.
+			# The arms are thick: tapered thin they broke up at reel speed.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.06), [0.84])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(-0.62, 0.58), [0.22, 0.16, 0.03])
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.62, 0.58), [0.22, 0.16, 0.03])
+			for hole: Vector2 in [Vector2(-0.64, -0.16), Vector2(-0.38, -0.6),
+					Vector2(0.38, -0.6), Vector2(0.64, -0.16)]:
+				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, hole, [0.085])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.06), [0.44])
+			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.82), [0.4, 0.44, 0.0])
 		&"bank":
-			# Steps, four columns, an entablature and a pediment: the building
-			# the game is named after, with the word under it. Sat high in the
-			# cell so the lettering has the bottom of the plate.
+			# Steps, three columns, an entablature and a pediment. Five columns
+			# at 32px closed into one grey block — three with real air between
+			# them is the same building and survives the drum.
 			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.5), [0.9, 0.09, 0.03])
 			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.34), [0.78, 0.07, 0.02])
-			for column: float in [-0.56, -0.19, 0.19, 0.56]:
+			for column: float in [-0.42, 0.0, 0.42]:
 				_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(column, -0.06),
-						[0.1, 0.34, 0.03])
+						[0.13, 0.34, 0.03])
 			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.46), [0.84, 0.08, 0.02])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.37), [0.8, 0.04, 0.01])
 			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.72),
 					[0.92, 0.2, 0.02], Vector2.ONE, 4.0, 0.06)
 		&"wild":
-			# Five tapered spokes around a small hub. The taper must narrow
-			# outward, or five blunt spokes merge with the hub into an asterisk.
+			# Five spokes tapering to real points around a small hub. A fat hub
+			# and blunt tips read as a starfish; the star has to have corners.
 			for i: int in 5:
 				_add(ops, OP_TAPER_BOX, PAINT_INK, TAU * float(i) / 5.0,
-						Vector2(0.0, -0.5), [0.3, 0.5, 0.02], Vector2.ONE,
-						0.95, 0.12)
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.24])
+						Vector2(0.0, -0.52), [0.34, 0.52, 0.01], Vector2.ONE,
+						1.35, 0.08)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.15])
 		&"skull":
-			# Cranium, jaw, then sockets, nose and teeth carved out.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.18), [0.62],
-					Vector2(1.0, 1.12))
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.5), [0.34, 0.26, 0.12])
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(-0.24, -0.16), [0.2],
-					Vector2(1.0, 1.25))
-			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.24, -0.16), [0.2],
-					Vector2(1.0, 1.25))
-			_add(ops, OP_RHOMBUS, PAINT_CARVE, 0.0, Vector2(0.0, 0.16), [0.09, 0.14])
-			_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(0.0, 0.5), [0.4, 0.03, 0.01])
+			# A wide cranium, a heavy jaw, and sockets painted black rather
+			# than cut to paper — this is the bust symbol and it should be
+			# the loudest thing on the drum, not the quietest. Black sockets
+			# cost the outline its holes, so the teeth are cut up out of the
+			# jaw's bottom edge instead: the silhouette gets its bite back
+			# there, where a carve does not fight the black.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, -0.2), [0.72],
+					Vector2(1.0, 1.04))
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.52), [0.46, 0.3, 0.1])
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(-0.3, -0.2), [0.25],
+					Vector2(1.0, 1.15))
+			_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, Vector2(0.3, -0.2), [0.25],
+					Vector2(1.0, 1.15))
+			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.0, 0.16), [0.1, 0.15])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, 0.36), [0.46, 0.03, 0.0])
+			for gap: float in [-0.3, -0.1, 0.1, 0.3]:
+				_add(ops, OP_BOX, PAINT_CARVE, 0.0, Vector2(gap, 0.88), [0.045, 0.2, 0.0])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(-0.58, 0.36), [0.26])
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.58, 0.36), [0.26])
 		&"coin":
-			# A token, face on: a bronze rim, a gold face, and a bold struck "1".
-			# A disc with an abstract mark read as a washer, and a stack fused
-			# into a bun; a denomination is what makes a disc money.
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2.ZERO, [0.84])
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2.ZERO, [0.64])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.0), [0.09, 0.36, 0.01])
-			_add(ops, OP_BOX, PAINT_BLACK, -0.6, _rotate(Vector2(-0.1, -0.28), -0.6), [0.13, 0.05, 0.01])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.04, 0.32), [0.2, 0.05, 0.01])
+			# A copper token tipped toward the reader so its edge shows. Face on
+			# it was a plain disc — the orange, the plum and the clover's outline
+			# all over again at 32px. The edge is the whole point: it is the only
+			# thing that says struck metal rather than fruit.
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.42), [0.7, 0.16, 0.1])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.0), [0.82], Vector2(1.0, 1.85))
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.0), [0.66], Vector2(1.0, 1.85))
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.03, 0.0), [0.06, 0.17, 0.01])
+			_add(ops, OP_BOX, PAINT_BLACK, -0.6, _rotate(Vector2(-0.07, -0.09), -0.6), [0.09, 0.035, 0.01])
 		&"clover":
-			# The classic luck symbol: four round lobes and a stem, nothing else.
-			for lobe: Vector2 in [Vector2(-0.34, -0.24), Vector2(0.34, -0.24),
-					Vector2(-0.34, 0.3), Vector2(0.34, 0.3)]:
-				_add(ops, OP_CIRCLE, PAINT_INK, 0.0, lobe, [0.36])
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, 0.74), [0.055, 0.24, 0.02])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, 0.02), [0.16])
+			# Four lobes, each bitten deep at its outer corner. Shallow notches
+			# read as a shrub at 32px — the bite has to take a real chunk or the
+			# luck signal is gone and this is broccoli.
+			for lobe: Vector2 in [Vector2(-0.34, -0.3), Vector2(0.34, -0.3),
+					Vector2(-0.34, 0.26), Vector2(0.34, 0.26)]:
+				_add(ops, OP_CIRCLE, PAINT_INK, 0.0, lobe, [0.4])
+			for notch: Vector2 in [Vector2(-0.72, -0.66), Vector2(0.72, -0.66),
+					Vector2(-0.72, 0.62), Vector2(0.72, 0.62)]:
+				_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, notch, [0.3])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.12, _rotate(Vector2(0.06, 0.74), 0.12),
+					[0.05, 0.28, 0.02])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.02), [0.12])
 		&"dice":
-			# A single die: a bordered panel and five pips in the classic
-			# cross layout — the panel-in-panel is the bar's own technique,
-			# the pips are the horseshoe's nail holes at a bigger size.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2.ZERO, [0.72, 0.72, 0.16])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2.ZERO, [0.58, 0.58, 0.12])
-			for pip: Vector2 in [Vector2(-0.32, -0.32), Vector2(0.32, -0.32),
-					Vector2.ZERO, Vector2(-0.32, 0.32), Vector2(0.32, 0.32)]:
-				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.0, pip, [0.12])
+			# Turned off square. Axis-aligned it was a plain rectangle at 32px and
+			# sat in the same slot as the bar and the bank's entablature; a tilt
+			# is the cheapest thing that makes a cube read as an object.
+			_add(ops, OP_BOX, PAINT_INK, 0.28, Vector2.ZERO, [0.6, 0.6, 0.12])
+			_add(ops, OP_BOX, PAINT_INK2, 0.28, Vector2.ZERO, [0.5, 0.5, 0.08])
+			for pip: Vector2 in [Vector2(-0.29, -0.29), Vector2(0.29, -0.29),
+					Vector2.ZERO, Vector2(-0.29, 0.29), Vector2(0.29, 0.29)]:
+				_add(ops, OP_CIRCLE, PAINT_BLACK, 0.28, pip, [0.1])
 		&"crown":
-			# A banded base and three tall spikes — the centre tallest — each
-			# tipped with a jewel. The first pass was squat; the spikes now
-			# take two thirds of the cell so the points are the shape.
-			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.58), [0.76, 0.2, 0.04])
-			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.58), [0.62, 0.07, 0.02])
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.08),
-					[0.3, 0.6, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.5, 0.06),
-					[0.26, 0.46, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.5, 0.06),
-					[0.26, 0.46, 0.02], Vector2.ONE, 4.0, 0.06)
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.68), [0.11])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.5, -0.4), [0.09])
-			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.5, -0.4), [0.09])
-		&"gold_bar":
-			# An ingot: a trapezoid wider at the foot than the crown, filling the
-			# cell, a lighter top face in the second ink, a struck mark. The
-			# taper is the crown's warp held shallow so it stays a slab.
-			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.08),
-					[0.62, 0.4, 0.03], Vector2.ONE, 1.0, 0.3)
-			_add(ops, OP_TAPER_BOX, PAINT_INK2, 0.0, Vector2(0.0, -0.22),
-					[0.44, 0.1, 0.02], Vector2.ONE, 1.0, 0.3)
-			_add(ops, OP_RHOMBUS, PAINT_BLACK, 0.0, Vector2(0.0, 0.16), [0.15, 0.12])
+			# A banded base and three spikes, the centre tallest, each capped
+			# with a jewel that sits ON its point. Needle-sharp tapers left the
+			# jewels floating above the spikes like antennae.
+			_add(ops, OP_BOX, PAINT_INK, 0.0, Vector2(0.0, 0.58), [0.66, 0.22, 0.04])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.0, 0.58), [0.54, 0.07, 0.02])
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.0, -0.1),
+					[0.3, 0.6, 0.02], Vector2.ONE, 2.2, 0.16)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(-0.44, 0.12),
+					[0.26, 0.42, 0.02], Vector2.ONE, 2.2, 0.16)
+			_add(ops, OP_TAPER_BOX, PAINT_INK, 0.0, Vector2(0.44, 0.12),
+					[0.26, 0.42, 0.02], Vector2.ONE, 2.2, 0.16)
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.0, -0.66), [0.12])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(-0.44, -0.26), [0.1])
+			_add(ops, OP_CIRCLE, PAINT_INK2, 0.0, Vector2(0.44, -0.26), [0.1])
 		&"plum":
-			# A single deep fruit, bold and round, a thick stem and a leaf.
-			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.06), [0.68],
-					Vector2(1.0, 1.14))
-			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.56), [0.06, 0.18, 0.03])
-			_add(ops, OP_CIRCLE, PAINT_INK2, -0.5, _rotate(Vector2(-0.32, -0.72), -0.5),
-					[0.26], Vector2(1.0, 2.2))
+			# Drawn out tall with a cleft at the crown and a crease down the face:
+			# the crease is the thing that names a plum, and the cleft keeps its
+			# outline out of the orange's.
+			_add(ops, OP_CIRCLE, PAINT_INK, 0.0, Vector2(0.0, 0.1), [0.66],
+					Vector2(1.0, 1.24))
+			_add(ops, OP_CIRCLE, PAINT_CARVE, 0.0, Vector2(0.0, -0.84), [0.26])
+			_add(ops, OP_BOX, PAINT_INK2, 0.0, Vector2(0.02, 0.16), [0.045, 0.5, 0.02])
+			_add(ops, OP_BOX, PAINT_BLACK, 0.0, Vector2(0.0, -0.72), [0.06, 0.18, 0.03])
+			_add(ops, OP_CIRCLE, PAINT_INK2, -0.5, _rotate(Vector2(-0.34, -0.74), -0.5),
+					[0.24], Vector2(1.0, 2.2))
 		_:
 			pass
 	return ops
