@@ -259,22 +259,58 @@ static func _hold_floor(state: RunState) -> int:
 	return HOLD_FLOOR
 
 
-## Signs whichever contract adds the most spins, and otherwise the first.
+## Signs whichever contract reads best, priced in spins.
 ##
-## A crude reader of the terms, on purpose: the lab is measuring whether the
-## contracts are survivable, not whether an optimal signatory can exploit one.
+## It used to sign whichever added the most spins and otherwise the first,
+## which meant two of the House's standing offers were never signed once in
+## two and a half thousand runs — the lab could not see them at all, and a
+## contract nobody signs is a contract nobody has measured. This prices every
+## clause in the one unit a floor is actually spent in: a spin. The weights
+## are rough on purpose. A signatory who reads the terms perfectly is not
+## what the lab is for; a signatory who can tell a good deal from a bad one
+## is the least it can be.
+const CLAUSE_WORTH: Dictionary = {
+	ContractDef.Clause.SPINS: 1.0,
+	ContractDef.Clause.ANTE_PERCENT: -0.06,
+	ContractDef.Clause.PAYOUT_PERCENT: 0.04,
+	ContractDef.Clause.SYMBOL_VALUE: 0.06,
+	ContractDef.Clause.CURSE_PAYS: 0.15,
+	ContractDef.Clause.DEBT_INTEREST: -0.02,
+	ContractDef.Clause.NUDGES: 1.2,
+	ContractDef.Clause.WEIGHT: 0.08,
+}
+## A pattern's multiplier is worth what the pattern is worth landing: a pair
+## happens most spins, the whole line almost never.
+const PATTERN_WORTH: Array = [0.0, 0.8, 0.4, 0.25, 0.2]
+
+
 static func contract(_state: RunState, offers: Array[ContractDef]) -> int:
 	var best: int = 0
-	var best_spins: int = -99
+	var best_worth: float = -INF
 	for i: int in offers.size():
-		var spins: int = 0
+		var worth: float = 0.0
 		for entry: Dictionary in offers[i].clauses():
-			if int(entry["clause"]) == int(ContractDef.Clause.SPINS):
-				spins += int(entry["magnitude"])
-		if spins > best_spins:
-			best_spins = spins
+			worth += _clause_worth(entry)
+		if worth > best_worth:
+			best_worth = worth
 			best = i
 	return best
+
+
+## What one clause is worth, in spins.
+static func _clause_worth(entry: Dictionary) -> float:
+	var clause: int = int(entry["clause"])
+	var magnitude: float = float(entry["magnitude"])
+	if clause == int(ContractDef.Clause.PATTERN_MULT):
+		var pattern: int = int(entry.get("pattern", -1))
+		var worth: float = float(PATTERN_WORTH[pattern]) if pattern >= 0 \
+				and pattern < PATTERN_WORTH.size() else 0.4
+		return magnitude * worth
+	if clause == int(ContractDef.Clause.WEIGHT) \
+			and String(entry.get("symbol", "")) == "skull":
+		# More skulls printed is not a gift, whatever sign the number carries.
+		return -absf(magnitude) * 0.08
+	return magnitude * float(CLAUSE_WORTH.get(clause, 0.0))
 
 
 ## Banks the ante float between floors, and breaks the vault to save the run.

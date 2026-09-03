@@ -63,6 +63,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	var floor_deaths: Dictionary = {}
 	var artifact_runs: Dictionary = {}
 	var artifact_wins: Dictionary = {}
+	# The back office, by the same method: a contract is signed for a floor,
+	# and until now the only thing measured about one was that it existed.
+	var contract_runs: Dictionary = {}
+	var contract_wins: Dictionary = {}
 	var synergy_runs: Dictionary = {}
 	var synergy_wins: Dictionary = {}
 	# The builds, as builds: a run that owned two or more of an archetype's
@@ -188,6 +192,11 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			if won:
 				artifact_wins[key] = int(artifact_wins.get(key, 0)) + 1
 			_bump(artifact_depths, key, market, runs_by_market.size())
+		for contract_id: StringName in state.contracts_signed:
+			var signed: String = String(contract_id)
+			contract_runs[signed] = int(contract_runs.get(signed, 0)) + 1
+			if won:
+				contract_wins[signed] = int(contract_wins.get(signed, 0)) + 1
 		for tag: StringName in state.active_synergies():
 			var tag_key: String = String(tag)
 			synergy_runs[tag_key] = int(synergy_runs.get(tag_key, 0)) + 1
@@ -270,6 +279,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 			"deaths_by_floor": after_hours_deaths,
 		},
 		"artifact_win_rates": artifact_rates,
+		# Contracts are signed on the late floors by runs that got there, so
+		# the honest comparison is against runs that reached the office at
+		# all, not against every run in the batch.
+		"contract_win_rates": _skin_rates(contract_runs, contract_wins),
 		"synergy_win_rates": _stratified_rates(synergy_runs, synergy_wins, synergy_depths,
 				runs_by_market, wins_by_market, _ratio(stocked_wins, stocked_runs)),
 		"archetype_win_rates": _stratified_rates(archetype_runs, archetype_wins,

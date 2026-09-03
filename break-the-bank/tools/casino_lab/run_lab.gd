@@ -60,6 +60,22 @@ func _initialize() -> void:
 
 
 ## Floor first, then name, so the table reads top to bottom like the run.
+## The back office, sorted by how often a run signed it: a contract nobody
+## takes is a line in a book, and one everybody takes is not a decision.
+func _contracts(report: Dictionary) -> void:
+	var rates: Dictionary = report.get("contract_win_rates", {})
+	if rates.is_empty():
+		return
+	var ids: Array = rates.keys()
+	ids.sort_custom(func(a: String, b: String) -> bool:
+		return int((rates[a] as Dictionary)["runs"]) > int((rates[b] as Dictionary)["runs"]))
+	print("\nthe back office")
+	for id: String in ids:
+		var row: Dictionary = rates[id]
+		print("  %-22s signed by %5d   won %5.1f%%" % [
+			id, int(row["runs"]), float(row["win_rate"]) * 100.0])
+
+
 func _boss_order(bosses: Dictionary, key: String) -> String:
 	return "%02d:%s" % [int(bosses[key]["floor"]), key]
 
@@ -181,4 +197,5 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 				key, String(row["verdict"]), float(row["pick_rate"]) * 100.0,
 				int(row["offered"]), float(row["win_rate"]) * 100.0,
 				float(row["baseline"]) * 100.0, float(row["delta"]) * 100.0])
+	_contracts(report)
 	print("report → %s" % out_path)
