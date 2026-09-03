@@ -559,6 +559,42 @@ func _on_view_changed(view: CameraController.View) -> void:
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
+## How long the House takes to go dark after the account is settled.
+const ENDING_SECONDS: float = 3.4
+
+
+## The ending the premise promised: the payout is enough to collapse the
+## House that paid it. The room's lights die over three seconds, the sign
+## gutters, the machine's tubes go out one by one and its column drains,
+## and the score falls to nothing — then the desk lamp is the only light
+## left and the statement is on the clipboard under it.
+func _settled_ending() -> void:
+	# Watched from the machine: the last draft left the camera at the desk,
+	# and the House going dark is the thing the run was for.
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
+	if _audio != null:
+		_audio.hush(ENDING_SECONDS)
+		_audio.set_loop_volume(&"music_bed_loop", -60.0, ENDING_SECONDS)
+	for part: String in ["key", "cold", "wash", "ceiling", "sign_spill"]:
+		var light: Light3D = _room_parts.get(part, null) as Light3D
+		if light == null:
+			continue
+		var die: Tween = create_tween()
+		die.tween_property(light, "light_energy", light.light_energy * 0.08, ENDING_SECONDS * 0.8) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	var sign_label: Label3D = _room_parts.get("sign", null) as Label3D
+	if sign_label != null:
+		var gutter: Tween = create_tween()
+		for i: int in 6:
+			gutter.tween_property(sign_label, "modulate:a", 0.15 if i % 2 == 0 else 0.9, 0.12)
+		gutter.tween_property(sign_label, "modulate:a", 0.0, 0.6)
+	if _slot_view != null:
+		_slot_view.blackout(ENDING_SECONDS)
+	if _film != null and _film.has_method("set_strain"):
+		_film.call("set_strain", 0.0)
+
+
 ## The surety — how much of the player the House holds — onto the column on
 ## the machine and into the render. The machine holds the value through a
 ## spin and moves it on the spin's beat; the render degrades with it, which
@@ -904,6 +940,29 @@ func debug_run_summary() -> Dictionary:
 		"recap_open": _recap != null and _recap.is_open(),
 		"view": _camera.current_view if _camera != null else -1,
 	}
+
+
+## Wins the run on the spot: for the storyboard's ending frame.
+func debug_win() -> void:
+	if state == null or engine == null:
+		return
+	if state.is_over():
+		# After a losing frame: a fresh run, the door closed, and this one won.
+		new_run(0)
+		debug_close_door()
+	state.floor_index = ContentDB.shared().floors.size()
+	state.floors_cleared = state.floor_index - 1
+	state.economy.debt = 0
+	state.economy.cash = 1000000
+	state.spins_remaining = 0
+	state.decision = RunState.Decision.NONE
+	engine.step(state)
+	# The last floor's draft still opens; the win is declared on leaving it.
+	if state.phase == RunState.Phase.SHOPPING:
+		if _shop != null:
+			_shop.close()
+		engine.leave_shop(state)
+	_after_input()
 
 
 ## Ends the run on the spot, unpaid: for the storyboard's statement frame.
@@ -1267,6 +1326,19 @@ func _show_statement(score_line: String) -> void:
 	if _recap == null or state == null:
 		return
 	var entries: Array = engine.journal.entries if engine != null and engine.journal != null else []
+	if state.phase == RunState.Phase.WON and not state.endless:
+		# The account settled: the House goes dark first, and the statement
+		# is read by the desk lamp alone.
+		_settled_ending()
+		var later: Tween = create_tween()
+		later.tween_callback(func() -> void:
+			_recap.open(RunRecap.build(state, entries), SeedBook.to_code(state.seed_value),
+					score_line)
+			if _receipt != null:
+				_receipt.clear()
+			if _camera != null:
+				_camera.set_view(CameraController.View.DESK)).set_delay(ENDING_SECONDS)
+		return
 	_recap.open(RunRecap.build(state, entries), SeedBook.to_code(state.seed_value), score_line)
 	if _receipt != null:
 		_receipt.clear()

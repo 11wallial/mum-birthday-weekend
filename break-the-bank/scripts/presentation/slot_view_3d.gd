@@ -1134,6 +1134,46 @@ func _land(result: Result, payout: int, multiplier: float) -> void:
 	result_judged.emit(result, payout, true)
 
 
+## The machine goes dark: the counters' tubes out one by one, the odds
+## tubes with them, the console's keys, the lamp behind the window, the
+## column draining. The ending the win earns; nothing here is undone,
+## because a new run rebuilds every counter from the run it starts.
+func blackout(seconds: float) -> void:
+	var order: Array = ["chips", "spins", "ante", "cash"]
+	var step: float = seconds * 0.55 / 4.0
+	for i: int in order.size():
+		for digit: Label3D in _counters.get(order[i], []):
+			var out: Tween = create_tween()
+			out.tween_property(digit, "modulate", Color(0.2, 0.08, 0.02, 1.0), 0.25) \
+					.set_delay(step * float(i) + randf_range(0.0, 0.2))
+	if _odds != null:
+		for i: int in 4:
+			var digit: Label3D = _odds.get_node_or_null("Digit%d" % i) as Label3D
+			if digit != null:
+				var out: Tween = create_tween()
+				out.tween_property(digit, "modulate", Color(0.2, 0.08, 0.02, 1.0), 0.3) \
+						.set_delay(seconds * 0.5)
+	for key: Node3D in _console:
+		var lamp: MeshInstance3D = key.get_node_or_null(^"Lamp") as MeshInstance3D
+		var material: StandardMaterial3D = \
+				(lamp.material_override as StandardMaterial3D) if lamp != null else null
+		if material != null:
+			var out: Tween = create_tween()
+			out.tween_property(material, "emission_energy_multiplier", 0.0, 0.4) \
+					.set_delay(seconds * 0.6)
+	if _light != null:
+		var out: Tween = create_tween()
+		out.tween_property(_light, "light_energy", 0.0, seconds * 0.7)
+	if _surety_fluid != null:
+		var drain: Tween = create_tween()
+		drain.tween_property(_surety_fluid, "scale:y", 0.02, seconds * 0.8) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if _audio != null:
+		_audio.play_at(&"switch_click")
+		var thud: Tween = create_tween()
+		thud.tween_callback(func() -> void: _audio.play_at(&"cash_thud")).set_delay(seconds * 0.6)
+
+
 ## Writes the House's hold on the player onto the surety column, in 0..1.
 ## Held through a spin and released as the total lands, so the level moves
 ## on the spin's beat: up on a dead one, down on a paying one.
