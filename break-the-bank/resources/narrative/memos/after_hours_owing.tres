@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"after_hours_owing"
+text = "The debt is keeping
+pace with the table."
+debt_ratio_min = 0.5
+after_hours = true

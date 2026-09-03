@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"after_hours_settled"
+text = "You owe us nothing.
+You are still sitting."
+debt_ratio_max = 0.01
+after_hours = true

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"after_hours_first_heat"
+text = "You took the offer.
+We took a share."
+floor_min = 8
+floor_max = 9
+heat_min = 1
+after_hours = true
