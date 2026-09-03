@@ -267,7 +267,9 @@ func _conduit() -> void:
 ## the first playtest read "FL OR 2: THE CAS NO" for a whole run.
 func _floor_sign() -> Label3D:
 	var housing: Node3D = _group(&"FloorSign")
-	housing.position = Vector3(3.2, 2.28, DEPTH_BACK + 0.12)
+	# High enough to clear the crown, near enough to the centre to fit a narrow
+	# window: the sign ran off the right at 16:10 and behind the coil at 16:9.
+	housing.position = Vector3(2.85, 2.55, DEPTH_BACK + 0.12)
 	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
 	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
@@ -275,7 +277,7 @@ func _floor_sign() -> Label3D:
 	var label: Label3D = Label3D.new()
 	label.name = "Text"
 	label.text = "FLOOR 1\nTHE BASEMENT"
-	label.font_size = 80
+	label.font_size = 70
 	label.pixel_size = 0.0026
 	# Overdriven: past the environment's 1.1 glow threshold, so the letters
 	# bloom like lit tubes rather than reading as painted text.
@@ -295,7 +297,7 @@ func _floor_sign() -> Label3D:
 		var shell: Label3D = Label3D.new()
 		shell.name = "Glow"
 		shell.text = label.text
-		shell.font_size = 80
+		shell.font_size = 70
 		shell.pixel_size = 0.0026
 		shell.modulate = Color(Materials.SIGN.r, Materials.SIGN.g,
 				Materials.SIGN.b, 0.13)

@@ -186,8 +186,8 @@ principal with a penalty on top.
 | 3 | The High Roller Room | 255 | 10 | 7 | The stake and the gamble ladder |
 | 4 | The Vault | 810 | 11 | 10 | The vault: collateral and dividends |
 | 5 | The Back Office | 1,730 | 12 | 12 | Contracts |
-| 6 | The Engine Room | 4,080 | 13 | 14 | The works: reels and rows |
-| 7 | The House | 16,300 | 15 | 18 | The count |
+| 6 | The Engine Room | 3,960 | 13 | 14 | The works: reels and rows |
+| 7 | The House | 15,800 | 15 | 18 | The count |
 
 Fourteen symbols on the reel: five fruit (cherry, lemon, orange, grapes,
 watermelon — a family, so any two of them pair), the bar and the double bar,
@@ -354,7 +354,9 @@ floor's own boss and carries a rule the same way; every notice also puts two
 percent on every ante for the rest of the run. Measured on 2 September
 2026: the notice as first authored (ten pars, five percent) cost five
 points of win rate, so it sits at sixteen and two with floors 5–7 eased four
-percent (1,730 · 4,080 · 16,300) — 15.3% at 10k, inside every band, the
+percent (1,730 · 4,080 · 16,300; the last two eased another three percent
+to 3,960 · 15,800 once the chits and the quick clear had taken their
+points) — 15.3% at 10k, inside every band, the
 House noticing 0.85 times a run. The player's one answer is **the doorman**:
 at the draft after a notice, six chips (and three more each time) and the
 House sends nobody. The ante markup stands; the chips were the draft's.
