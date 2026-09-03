@@ -62,6 +62,7 @@ func options_for(profile: PlayerProfile, content: ContentDB) -> RunOptions:
 			return challenge.options_for(allowed)
 	var options: RunOptions = RunOptions.new()
 	options.allowed_artifacts = allowed
+	options.allowed_chits = profile.unlocked_chits(unlocks, content.chits)
 	var machine: MachineDef = machine_by_id(profile.selected_starter)
 	if machine == null:
 		machine = machine_by_id(&"standard")

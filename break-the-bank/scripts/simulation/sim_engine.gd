@@ -1459,7 +1459,7 @@ func _roll_chit(state: RunState, floor_def: FloorDef) -> ChitDef:
 		return null
 	var pool: Array[ChitDef] = []
 	for chit: ChitDef in _content.chits:
-		if chit.min_floor <= floor_def.index:
+		if chit.min_floor <= floor_def.index and state.options.allows_chit(chit):
 			pool.append(chit)
 	if pool.is_empty():
 		return null

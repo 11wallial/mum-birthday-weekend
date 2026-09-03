@@ -10,6 +10,8 @@ extends RefCounted
 ## Artifact ids the shop may offer. Empty means no restriction, which is what
 ## the balance lab uses so its numbers describe the full content set.
 var allowed_artifacts: Array[StringName] = []
+## Chit ids the draft may deal; empty means every chit.
+var allowed_chits: Array[StringName] = []
 ## Added to starting cash, from the machine.
 var bonus_cash: int = 0
 ## Added to (or removed from) starting debt.
@@ -66,6 +68,13 @@ func allows_system(system: StringName) -> bool:
 	return not locked_systems.has(system)
 
 
+## True when the draft may deal [param chit].
+func allows_chit(chit: ChitDef) -> bool:
+	if allowed_chits.is_empty():
+		return true
+	return allowed_chits.has(chit.id)
+
+
 ## True when the shop may offer [param artifact].
 func allows(artifact: ArtifactDef) -> bool:
 	if allowed_artifacts.is_empty():
@@ -114,6 +123,7 @@ func to_dict() -> Dictionary:
 		leaned[String(key)] = int(weight_shifts[key])
 	return {
 		"allowed_artifacts": ids,
+		"allowed_chits": Array(allowed_chits).map(func(c: StringName) -> String: return String(c)),
 		"bonus_cash": bonus_cash,
 		"bonus_debt": bonus_debt,
 		"bonus_chips": bonus_chips,
@@ -141,6 +151,8 @@ func to_dict() -> Dictionary:
 
 static func from_dict(data: Dictionary) -> RunOptions:
 	var options: RunOptions = RunOptions.new()
+	for chit_id: Variant in data.get("allowed_chits", []):
+		options.allowed_chits.append(StringName(String(chit_id)))
 	var ids: Variant = data.get("allowed_artifacts", [])
 	if ids is Array:
 		for id: Variant in ids:
@@ -185,6 +197,7 @@ static func from_dict(data: Dictionary) -> RunOptions:
 func duplicate_options() -> RunOptions:
 	var copy: RunOptions = RunOptions.new()
 	copy.allowed_artifacts = allowed_artifacts.duplicate()
+	copy.allowed_chits = allowed_chits.duplicate()
 	copy.bonus_cash = bonus_cash
 	copy.bonus_debt = bonus_debt
 	copy.bonus_chips = bonus_chips

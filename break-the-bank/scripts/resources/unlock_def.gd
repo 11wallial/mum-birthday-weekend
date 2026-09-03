@@ -34,6 +34,9 @@ enum Kind {
 	DIFFICULTY,
 	## Makes a challenge run selectable.
 	CHALLENGE,
+	## Puts a chit in the draft's pool. Appended: the value is written into
+	## profiles.
+	CHIT,
 }
 
 @export var id: StringName = &""

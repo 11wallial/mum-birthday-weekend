@@ -170,6 +170,19 @@ func unlocked_artifacts(catalogue: Array[UnlockDef], all_artifacts: Array[Artifa
 	return out
 
 
+## Chit ids unlocked so far, the same way: ungated paper is always dealt.
+func unlocked_chits(catalogue: Array[UnlockDef], all_chits: Array[ChitDef]) -> Array[StringName]:
+	var gated: Dictionary = {}
+	for unlock: UnlockDef in catalogue:
+		if unlock.kind == UnlockDef.Kind.CHIT:
+			gated[unlock.target_id] = unlock.id
+	var out: Array[StringName] = []
+	for chit: ChitDef in all_chits:
+		if not gated.has(chit.id) or unlocked.has(gated[chit.id]):
+			out.append(chit.id)
+	return out
+
+
 func _remember_score(state: RunState) -> void:
 	var key: String = "%s|%d" % [state.options.ruleset_key(), state.seed_value]
 	var score: int = state.economy.lifetime_earned

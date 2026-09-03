@@ -138,3 +138,19 @@ func test_a_chit_is_the_seeds_own_and_replays_from_the_journal() -> void:
 		assert_object(again.chit_offer).is_null()
 	else:
 		assert_str(String(again.chit_offer.id)).is_equal(String(offered.id))
+
+
+func test_a_chit_the_run_is_not_allowed_is_never_dealt() -> void:
+	_content.chits.assign([_chit(&"locked", ChitDef.Kind.PEEK), _chit(&"open", ChitDef.Kind.PEEK)])
+	var options: RunOptions = RunOptions.new()
+	options.allowed_chits = [&"open"]
+	for seed: int in 20:
+		_state = _engine.start_run(seed, options)
+		_state.economy.cash = 1000
+		_state.spins_remaining = 0
+		_engine.step(_state)
+		if _state.chit_offer != null:
+			assert_str(String(_state.chit_offer.id)).is_equal("open")
+	var back: RunOptions = RunOptions.from_dict(JSON.parse_string(JSON.stringify(options.to_dict())))
+	assert_bool(back.allows_chit(_chit(&"locked", ChitDef.Kind.PEEK))).is_false()
+	assert_bool(back.allows_chit(_chit(&"open", ChitDef.Kind.PEEK))).is_true()
