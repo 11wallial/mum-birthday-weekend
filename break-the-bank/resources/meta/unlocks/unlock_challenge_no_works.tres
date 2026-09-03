@@ -9,5 +9,5 @@ display_name = "No Works"
 description = "A challenge run: the engine room is closed."
 kind = 3
 target_id = &"no_works"
-condition = 2
-threshold = 6
+condition = 7
+threshold = 2982

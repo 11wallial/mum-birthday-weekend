@@ -9,5 +9,5 @@ display_name = "High Roller's Cage"
 description = "Hardware: where the big money is kept while it plays."
 kind = 0
 target_id = &"high_rollers_cage"
-condition = 2
-threshold = 5
+condition = 1
+threshold = 3

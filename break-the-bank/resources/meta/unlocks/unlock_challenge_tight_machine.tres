@@ -10,4 +10,4 @@ description = "A challenge run: every payout is nine tenths of what it should be
 kind = 3
 target_id = &"tight_machine"
 condition = 0
-threshold = 5
+threshold = 33

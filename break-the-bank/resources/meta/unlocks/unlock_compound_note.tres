@@ -9,5 +9,5 @@ display_name = "Compound Note"
 description = "Patience is a product."
 kind = 0
 target_id = &"compound_note"
-condition = 3
-threshold = 5000
+condition = 8
+threshold = 12000

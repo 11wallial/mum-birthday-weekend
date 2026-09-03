@@ -10,4 +10,4 @@ description = "The last letter they send."
 kind = 0
 target_id = &"final_notice"
 condition = 4
-threshold = 1000
+threshold = 1040

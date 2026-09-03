@@ -9,5 +9,5 @@ display_name = "House Contract"
 description = "They will renegotiate, once."
 kind = 0
 target_id = &"house_contract"
-condition = 2
-threshold = 4
+condition = 7
+threshold = 400

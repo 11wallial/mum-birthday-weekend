@@ -10,4 +10,4 @@ description = "A challenge run: ten credits fewer to start, and nothing to make 
 kind = 3
 target_id = &"lean"
 condition = 0
-threshold = 2
+threshold = 10

@@ -9,5 +9,5 @@ display_name = "No Vault"
 description = "A challenge run: nothing is banked."
 kind = 3
 target_id = &"no_vault"
-condition = 2
-threshold = 4
+condition = 7
+threshold = 2035

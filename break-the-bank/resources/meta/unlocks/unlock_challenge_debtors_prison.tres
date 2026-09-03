@@ -9,5 +9,5 @@ display_name = "Debtors' Prison"
 description = "A challenge run: you owe four times what you owe."
 kind = 3
 target_id = &"debtors_prison"
-condition = 1
-threshold = 1
+condition = 8
+threshold = 18000

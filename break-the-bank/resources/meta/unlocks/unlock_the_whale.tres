@@ -10,4 +10,4 @@ description = "Hardware: the House sends a car. +2.0x per stake level."
 kind = 0
 target_id = &"the_whale"
 condition = 1
-threshold = 2
+threshold = 4

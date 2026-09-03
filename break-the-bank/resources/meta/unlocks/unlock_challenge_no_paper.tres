@@ -9,5 +9,5 @@ display_name = "No Paper"
 description = "A challenge run: the back office is closed."
 kind = 3
 target_id = &"no_paper"
-condition = 2
-threshold = 5
+condition = 7
+threshold = 2567

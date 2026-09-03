@@ -9,5 +9,5 @@ display_name = "The Deferral"
 description = "A chit: this floor's vig goes on the principal instead."
 kind = 4
 target_id = &"deferral"
-condition = 0
-threshold = 3
+condition = 7
+threshold = 600

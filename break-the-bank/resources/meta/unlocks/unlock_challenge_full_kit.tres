@@ -9,5 +9,5 @@ display_name = "Full Kit"
 description = "A challenge run: every verb from the basement: the market, the stake, the ladder, the vault, the office, the works."
 kind = 3
 target_id = &"full_kit"
-condition = 1
-threshold = 1
+condition = 0
+threshold = 27

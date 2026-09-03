@@ -9,5 +9,5 @@ display_name = "The Strongbox"
 description = "A machine: the vault from the basement, cash in hand, payouts down."
 kind = 1
 target_id = &"strongbox"
-condition = 2
-threshold = 4
+condition = 0
+threshold = 15

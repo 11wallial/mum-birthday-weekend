@@ -9,5 +9,5 @@ display_name = "Cold Hands"
 description = "A challenge run: no stake and no ladder."
 kind = 3
 target_id = &"cold_hands"
-condition = 2
-threshold = 3
+condition = 0
+threshold = 12

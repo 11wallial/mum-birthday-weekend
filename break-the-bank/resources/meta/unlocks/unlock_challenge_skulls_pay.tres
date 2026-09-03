@@ -9,5 +9,5 @@ display_name = "Skulls Pay"
 description = "A challenge run: every skull on the line pays six instead of costing you."
 kind = 3
 target_id = &"skulls_pay"
-condition = 2
-threshold = 2
+condition = 0
+threshold = 4

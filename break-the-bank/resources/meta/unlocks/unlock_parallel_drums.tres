@@ -9,5 +9,5 @@ display_name = "Parallel Drums"
 description = "Two of everything."
 kind = 0
 target_id = &"parallel_drums"
-condition = 2
-threshold = 5
+condition = 7
+threshold = 1275

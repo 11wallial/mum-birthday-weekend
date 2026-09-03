@@ -10,4 +10,4 @@ description = "He remembers you now."
 kind = 0
 target_id = &"pit_boss"
 condition = 1
-threshold = 1
+threshold = 2

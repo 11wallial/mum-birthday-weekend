@@ -419,6 +419,24 @@ godot --headless --path . --script res://tools/casino_lab/ladder.gd -- --runs=10
 godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=2500 --difficulty=house_rules
 ```
 
+**The career lab** measures the other axis. The balance lab plays one run at
+a time from the whole content set; nobody plays that game. A career is one
+profile played forward — the pool the last run earned, the rung the last win
+opened — and the only question the unlock curve asks is when each thing
+arrives in one:
+
+```bash
+godot --headless --path . --script res://tools/casino_lab/career.gd -- --careers=40 --runs=70
+```
+
+It prints the run each unlock fires on (median across careers, because a
+career is mostly luck), how many a median career has open after each run, and
+what every paced condition is worth at each run — which is the conversion
+table between "this should arrive around run 25" and the threshold that puts
+it there. A run is 25–40 minutes, so 60 runs is the 30-hour arc the unlocks
+are paced against; `tests/simulation/test_unlock_pacing.gd` freezes that
+curve's shape so a retune cannot quietly collapse it back into one evening.
+
 **The lifetime ledger** on the door keeps the spins, the biggest single
 spin, the vig paid to the House across every run, the deepest table after
 hours, and the artifact most often owned at the end of a run.

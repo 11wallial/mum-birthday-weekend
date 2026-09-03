@@ -9,5 +9,5 @@ display_name = "House Edge"
 description = "You have been on the wrong side of it."
 kind = 0
 target_id = &"house_edge"
-condition = 2
-threshold = 6
+condition = 8
+threshold = 30000

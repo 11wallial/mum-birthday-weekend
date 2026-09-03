@@ -9,5 +9,5 @@ display_name = "The Quiet Room"
 description = "Hardware: no cameras, by arrangement."
 kind = 0
 target_id = &"quiet_room"
-condition = 3
-threshold = 30000
+condition = 8
+threshold = 52500

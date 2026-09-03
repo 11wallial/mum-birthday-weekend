@@ -9,5 +9,5 @@ display_name = "Dear Hardware"
 description = "A challenge run: everything in the draft costs sixty percent more."
 kind = 3
 target_id = &"dear_hardware"
-condition = 2
-threshold = 3
+condition = 0
+threshold = 39

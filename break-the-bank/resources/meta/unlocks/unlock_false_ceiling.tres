@@ -9,5 +9,5 @@ display_name = "False Ceiling"
 description = "Hardware: the count barely moves."
 kind = 0
 target_id = &"false_ceiling"
-condition = 2
-threshold = 7
+condition = 8
+threshold = 36500

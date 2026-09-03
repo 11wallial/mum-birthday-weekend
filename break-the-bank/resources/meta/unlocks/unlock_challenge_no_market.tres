@@ -9,5 +9,5 @@ display_name = "No Market"
 description = "A challenge run: the draft is what it is: no reroll, no selling back, no slate."
 kind = 3
 target_id = &"no_market"
-condition = 2
-threshold = 3
+condition = 7
+threshold = 950

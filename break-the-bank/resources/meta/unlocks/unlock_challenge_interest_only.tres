@@ -9,5 +9,5 @@ display_name = "Interest Only"
 description = "A challenge run: every floor's debt interest is forty points higher."
 kind = 3
 target_id = &"interest_only"
-condition = 4
-threshold = 100
+condition = 0
+threshold = 51

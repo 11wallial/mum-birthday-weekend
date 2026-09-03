@@ -10,4 +10,4 @@ description = "A challenge run: two fewer spins on every floor."
 kind = 3
 target_id = &"short_count"
 condition = 0
-threshold = 4
+threshold = 24

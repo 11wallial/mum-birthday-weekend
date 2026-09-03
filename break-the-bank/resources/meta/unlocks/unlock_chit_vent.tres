@@ -9,5 +9,5 @@ display_name = "The Vent"
 description = "A chit: forty off the count, at once."
 kind = 4
 target_id = &"vent"
-condition = 2
-threshold = 6
+condition = 7
+threshold = 1450

@@ -9,5 +9,5 @@ display_name = "The Vig Doubles"
 description = "A challenge run: the service payment is twice what it was, every floor."
 kind = 3
 target_id = &"the_vig_doubles"
-condition = 2
-threshold = 2
+condition = 8
+threshold = 21500
