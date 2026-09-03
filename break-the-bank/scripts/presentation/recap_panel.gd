@@ -66,7 +66,9 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 		child.queue_free()
 	var won: bool = bool(recap.get("won", false))
 	_rows.add_child(_cell(Copy.filled("STATEMENT OF ACCOUNT — %s", [seed_code]), 18.0, UiSkin.PAPER_STAMP))
-	_rows.add_child(_cell(String(recap.get("outcome", "")), 14.0, UiSkin.PAPER_INK, true))
+	var outcome: Dictionary = recap.get("outcome", {}) as Dictionary
+	_rows.add_child(_cell(Copy.filled(String(outcome.get("shape", "")),
+			outcome.get("values", []) as Array), 14.0, UiSkin.PAPER_INK, true))
 	_rows.add_child(_rule())
 	var grid: GridContainer = GridContainer.new()
 	grid.columns = 4
@@ -97,12 +99,16 @@ func open(recap: Dictionary, seed_code: String, score_line: String) -> void:
 			move_line.append("%s %d" % [Copy.of(String(pair[1])), n])
 	if not move_line.is_empty():
 		_rows.add_child(_cell("THE MOVES   " + "   ".join(move_line), 11.0, UiSkin.PAPER_INK_MUTED))
-	var findings: PackedStringArray = recap.get("findings", PackedStringArray())
+	# Findings arrive as shapes and their numbers, because the simulation
+	# wrote them and translates nothing. The paper is where they become words.
+	var findings: Array = recap.get("findings", []) as Array
 	if not findings.is_empty():
 		_rows.add_child(_rule())
 		_rows.add_child(_cell("THE HOUSE FINDS" if not won else "THE HOUSE NOTES", 12.0, UiSkin.PAPER_STAMP))
-		for finding: String in findings:
-			var line: Label = _cell("— " + finding, 13.0, UiSkin.PAPER_INK)
+		for entry: Variant in findings:
+			var finding: Dictionary = entry as Dictionary
+			var line: Label = _cell("— " + Copy.filled(String(finding.get("shape", "")),
+					finding.get("values", []) as Array), 13.0, UiSkin.PAPER_INK)
 			line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_rows.add_child(line)
 	var hardware: PackedStringArray = recap.get("hardware", PackedStringArray())

@@ -41,10 +41,12 @@ Groundwork, laid early because it gets more expensive weekly.
   statement and the Clerk all compose this way now. The extractor reads
   shapes as readily as sentences, and glues adjacent literals joined by `+`
   back together first, because the join is what the player is shown.
-- **Still literals in code:** the statement's findings are composed inside
-  `RunRecap`, which is simulation and translates nothing, so they arrive at
-  the panel already folded together. Moving them to shapes and arguments is
-  the next step, and it is a change to what the recap returns rather than to
-  how it is drawn.
+- **The statement is shapes all the way down.** `RunRecap` is simulation
+  and translates nothing, so it returns each finding and the outcome as
+  `{"shape", "values"}` — `RunRecap.said(...)` builds one, `RunRecap.say(...)`
+  is its English for the lab and the tests — and the paper is where they
+  become words. Two shapes where a count is involved, one for "once" and one
+  for "%d times", because a language that counts differently cannot be served
+  by folding "3 times" into a `%s`.
 - `tests/unit/test_localization.gd` holds the table loading and a
   runtime translation being honoured.

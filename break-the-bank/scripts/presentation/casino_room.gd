@@ -1489,7 +1489,8 @@ func _finish_run(reason: String) -> void:
 	# The headline is the outcome; the reason code stays on the statement.
 	lines.append("THE ACCOUNT IS SETTLED" if state.phase == RunState.Phase.WON
 			else "THE HOUSE KEEPS THE SURETY")
-	lines.append(RunRecap.outcome_line(state))
+	var outcome: Dictionary = RunRecap.outcome(state)
+	lines.append(Copy.filled(String(outcome["shape"]), outcome["values"] as Array))
 	lines.append(Copy.filled("%s     score %d     rank %d on this ruleset", [
 		SeedBook.to_code(state.seed_value), int(entry["score"]), rank]))
 	_show_statement(Copy.filled("score %d     rank %d on this ruleset", [int(entry["score"]), rank]))
