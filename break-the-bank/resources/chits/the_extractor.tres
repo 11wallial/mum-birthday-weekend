@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChitDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/chit_def.gd" id="1_chitdef"]
+
+[resource]
+script = ExtResource("1_chitdef")
+id = &"the_extractor"
+display_name = "The Extractor"
+description = "The whole room cleared of it. Seventy off the count, on the floor where the count is the game."
+cost = 7
+kind = 1
+magnitude = 70.0
+symbol = &""
+min_floor = 7
