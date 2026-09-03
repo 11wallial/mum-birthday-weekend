@@ -21,6 +21,13 @@ enum Kind {
 	MARKER,
 	## The next line is printed on the ledger before it is spun.
 	PEEK,
+	## Adds [member magnitude] nudges to the board on the table. Paper that
+	## buys control of a board that has already landed, rather than another
+	## board.
+	NUDGE_TICKET,
+	## Adds [member magnitude] spins to the floor's allowance. The only thing
+	## in the pocket that buys time.
+	SPIN_TICKET,
 }
 
 @export var id: StringName = &""

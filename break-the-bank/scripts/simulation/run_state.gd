@@ -507,6 +507,14 @@ func can_use_chit(index: int) -> bool:
 			return forced_symbol == &"" and not is_deciding() and spins_remaining > 0
 		ChitDef.Kind.PEEK:
 			return peeked_line.is_empty() and not is_deciding() and spins_remaining > 0
+		ChitDef.Kind.NUDGE_TICKET:
+			# Only against a board that is still on the table: nudges handed
+			# to a settled board are nudges nobody can spend.
+			return decision == Decision.NUDGE and board != null and not board.line.is_empty()
+		ChitDef.Kind.SPIN_TICKET:
+			# Not while a decision stands, and not past the floor: a spin
+			# added after the ante is due is a spin on the next floor's clock.
+			return not is_deciding() and floor_spins_total > 0
 	return false
 
 

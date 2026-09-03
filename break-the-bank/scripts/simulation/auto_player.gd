@@ -540,6 +540,17 @@ static func chits(engine: SimEngine, state: RunState) -> void:
 ## Spends chits at their moments: a respin on a board under par, a vent when
 ## the count is near a measure, a deferral when the close would fall short,
 ## a marker on the last spins of a short floor, a peek whenever it is held.
+## Every kind of paper this policy knows a moment for. A kind missing from
+## here is a kind the draft can sell and the lab never spends, which is how a
+## consumable ships unmeasured; the chit suite fails the build over it, the
+## same way the parity suite does for verbs.
+const CHIT_COVERAGE: Array = [
+	ChitDef.Kind.RESPIN, ChitDef.Kind.VENT, ChitDef.Kind.DEFERRAL,
+	ChitDef.Kind.MARKER, ChitDef.Kind.PEEK, ChitDef.Kind.NUDGE_TICKET,
+	ChitDef.Kind.SPIN_TICKET,
+]
+
+
 static func use_chits(engine: SimEngine, state: RunState) -> void:
 	if state.phase != RunState.Phase.SPINNING:
 		return
@@ -561,6 +572,15 @@ static func use_chits(engine: SimEngine, state: RunState) -> void:
 						and state.economy.cash < state.vig_due() + state.ante_due()
 			ChitDef.Kind.PEEK:
 				take = true
+			ChitDef.Kind.NUDGE_TICKET:
+				# A board worth nudging is one that is already paying: a
+				# nudge on nothing moves nothing.
+				take = state.board.payout > 0 \
+						and state.board.payout < SimEngine.par_for(state) * 2
+			ChitDef.Kind.SPIN_TICKET:
+				# Time bought when time is what is short, and not before.
+				take = state.spins_remaining <= 2 \
+						and state.economy.cash < state.vig_due() + state.ante_due()
 		if take:
 			engine.use_chit(state, i)
 

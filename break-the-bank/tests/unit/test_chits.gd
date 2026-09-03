@@ -154,3 +154,50 @@ func test_a_chit_the_run_is_not_allowed_is_never_dealt() -> void:
 	var back: RunOptions = RunOptions.from_dict(JSON.parse_string(JSON.stringify(options.to_dict())))
 	assert_bool(back.allows_chit(_chit(&"locked", ChitDef.Kind.PEEK))).is_false()
 	assert_bool(back.allows_chit(_chit(&"open", ChitDef.Kind.PEEK))).is_true()
+
+
+func test_a_nudge_ticket_only_spends_against_a_board_on_the_table() -> void:
+	# Nudges handed to a settled board are nudges nobody can spend, so the
+	# paper refuses to be spent there at all.
+	_state.pocket.append(_chit(&"shim", ChitDef.Kind.NUDGE_TICKET, 2, 2.0))
+	_state.phase = RunState.Phase.SPINNING
+	_state.decision = RunState.Decision.NONE
+	assert_bool(_state.can_use_chit(0)).override_failure_message(
+			"a nudge ticket spent with no decision standing").is_false()
+	_engine.step(_state)
+	while _state.decision != RunState.Decision.NUDGE and _state.spins_remaining > 0:
+		_engine.step(_state)
+	if _state.decision != RunState.Decision.NUDGE:
+		return
+	var before: int = _state.board.nudges
+	assert_bool(_state.can_use_chit(0)).is_true()
+	assert_bool(_engine.use_chit(_state, 0)).is_true()
+	assert_int(_state.board.nudges).override_failure_message(
+			"the ticket did not put its nudges on the board").is_equal(before + 2)
+
+
+func test_a_spin_ticket_buys_time_on_this_floor() -> void:
+	_state.phase = RunState.Phase.SPINNING
+	_state.decision = RunState.Decision.NONE
+	_state.pocket.append(_chit(&"pass", ChitDef.Kind.SPIN_TICKET, 2, 3.0))
+	var left: int = _state.spins_remaining
+	var total: int = _state.floor_spins_total
+	assert_bool(_state.can_use_chit(0)).is_true()
+	assert_bool(_engine.use_chit(_state, 0)).is_true()
+	assert_int(_state.spins_remaining).is_equal(left + 3)
+	# The floor's allowance moves with it, or the quick clear and every
+	# reading of "spins left of the floor" would be measured against a
+	# clock that no longer exists.
+	assert_int(_state.floor_spins_total).is_equal(total + 3)
+
+
+func test_every_kind_of_paper_has_a_moment_the_signatory_knows() -> void:
+	# The vocabulary is closed and small. A kind the automated player has no
+	# arm for is a kind the draft can sell and the lab never spends — it
+	# would ship unmeasured, which is the whole reason this list exists.
+	for kind: int in ChitDef.Kind.values():
+		assert_bool(AutoPlayer.CHIT_COVERAGE.has(kind)).override_failure_message(
+				"%s has no moment in AutoPlayer.use_chits" % ChitDef.Kind.keys()[kind]).is_true()
+	assert_int(AutoPlayer.CHIT_COVERAGE.size()).override_failure_message(
+			"the coverage list has grown past the vocabulary").is_equal(
+			ChitDef.Kind.values().size())

@@ -1576,6 +1576,15 @@ func _do_use_chit(state: RunState, index: int) -> bool:
 		ChitDef.Kind.PEEK:
 			state.peeked_line = _peek_line(state)
 			did = {"line": state.peeked_line.duplicate()}
+		ChitDef.Kind.NUDGE_TICKET:
+			var granted: int = int(chit.magnitude)
+			state.board.nudges += granted
+			did = {"nudges": granted, "standing": state.board.nudges}
+		ChitDef.Kind.SPIN_TICKET:
+			var added: int = int(chit.magnitude)
+			state.spins_remaining += added
+			state.floor_spins_total += added
+			did = {"spins": added, "remaining": state.spins_remaining}
 	state.pocket.remove_at(index)
 	state.chits_used += 1
 	if _bus.is_live():
