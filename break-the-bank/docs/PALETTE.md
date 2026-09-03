@@ -28,7 +28,7 @@ wall. Nothing else in the set is blue.
 | Nixie | `#ff8c24` | the counters, the odds, the halo behind a lit tube |
 | Phosphor | `#5aff6d` | the ledger's CRT |
 | Sign | per floor | the floor sign, swapped by `FloorMood` |
-| Jackpot red | `#d8272121` | the heat dial's red zone, a voided pattern |
+| Jackpot red | `#d82721` | the heat dial's red zone, a voided pattern |
 
 ## The accent
 

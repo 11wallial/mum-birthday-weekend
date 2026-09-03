@@ -58,13 +58,17 @@ of them stand.
 
 | | Artifact | Floor | Does |
 | --- | --- | --- | --- |
+| E | Undertaker's Cut | 1 | +0.35x per skull standing |
 | E | Gallows Humour | 2 | skulls pay 3 instead of costing |
 | E | Bone Orchard | 2 | +6 draw weight on Skull |
+| A | Death in Service | 3 | skulls pay 5 instead of costing |
 | A | Skull Tally | 3 | +0.6x per skull standing |
-| A | Ossuary | 4 | +0.04x per skull landed this run, to +3.0x |
 | A | Grave Digger | 4 | +2.0x beside the Bone Orchard |
+| A | Ossuary | 4 | +0.04x per skull landed this run, to +3.0x |
+| A | Headcount | 5 | +1.2x per skull standing |
 | A | Hazard Pay | 5 | skulls pay 6 |
 | C | Death Benefit | 6 | +1.6x per skull standing |
+| C | Gravedigger's Fee | 7 | +2.4x per skull standing |
 
 *Counter:* without a ward every skull costs the penalty and takes the pattern
 bonus with it, and a jackpot is a line the skulls are not on. Bone Saw is the
@@ -77,9 +81,15 @@ Every reel locked is a reel that pays.
 | | Artifact | Floor | Does |
 | --- | --- | --- | --- |
 | E | Reel Clamp | 1 | +0.6x per reel held |
+| E | Jaw Plate | 2 | +1.0x per reel held |
 | A | Brake Shoe | 3 | +1.2x per reel held |
+| A | Counter Jaw | 3 | +2.0x beside the Reel Clamp |
 | A | Lockstep | 4 | +1.8x per reel held |
+| A | Matched Pair | 4 | pair lines gain +2.8x |
+| A | Holding Frame | 5 | +2.4x per reel held |
 | C | Dead Man's Grip | 6 | +3.0x per reel held |
+| C | Twin Jaws | 6 | +3.0x beside Lockstep |
+| C | The Vice | 7 | +4.5x per reel held |
 
 *Counter:* a lock is charged for on every spin, and the last reel can never be
 held. The automated player holds cheap fruit only once it owns clamp hardware.
@@ -92,11 +102,16 @@ the step.
 | | Artifact | Floor | Does |
 | --- | --- | --- | --- |
 | E | Fine Adjuster | 1 | +0.5x per nudge spent |
-| E | Nudge Bar | 1 | one free nudge an award |
+| E | The Nudge Bar | 1 | one free nudge an award |
+| E | The Ratchet | 2 | +1.0x per nudge spent |
 | A | Second Lever | 3 | +1.5x beside the Nudge Bar |
 | A | Micrometer | 4 | +1.2x per nudge spent |
 | A | Ratchet Pawl | 4 | two free nudges an award |
+| A | Spare Pawl | 5 | two more free nudges an award |
+| A | Vernier Scale | 5 | +1.8x per nudge spent |
 | C | Master Key | 6 | +2.4x per nudge spent |
+| C | Pawl Rack | 6 | three free nudges an award |
+| C | The Long Haul | 7 | +3.6x per nudge spent |
 
 *Counter:* a paid nudge is a spin off the floor, and a board owes three at
 most.
@@ -108,11 +123,14 @@ The debt is the build.
 | | Artifact | Floor | Does |
 | --- | --- | --- | --- |
 | E | IOU | 1 | +0.06x per 100 owed, to +0.6x |
+| E | Promissory Note | 2 | +0.12x per 100 owed, to +1.2x |
 | A | Marker Note | 3 | +0.15x per 100 owed, to +1.2x |
+| A | Paying-In Book | 3 | +0.25x per bank device |
 | A | Creditors' Ledger | 4 | +0.35x per bank device |
 | A | Loan Shark | 4 | +2.0x beside the Marker Note |
 | A | Leverage Desk | 5 | +0.32x per 100 owed, to +2.8x |
 | C | Margin Call | 6 | +0.55x per 100 owed, to +4.5x |
+| C | The Surety | 7 | +0.8x per 100 owed, to +6.0x |
 | C | Usurer's Wheel | 7 | +0.7x per bank device |
 
 *Counter:* the vig every floor, the interest every floor after the grace, and
@@ -126,10 +144,14 @@ it costs.
 | | Artifact | Floor | Does |
 | --- | --- | --- | --- |
 | E | Hot Hand | 2 | +0.25x per paying spin in a row, to +2.5x |
+| E | House Manners | 2 | the count notices 15% less |
 | A | Whale Ticket | 3 | +0.5x per stake level above the first |
+| A | High Water Mark | 4 | +0.8x per stake level |
+| A | Run of Form | 4 | +0.35x per paying spin in a row, to +4.0x |
 | A | High Rollers' Cage | 5 | +1.0x per stake level |
 | A | Winning Streak | 5 | +0.5x per paying spin in a row, to +5.0x |
-| C | Quiet Room | 6 | the count notices 35% less |
+| C | Table Limit | 6 | +1.5x per stake level |
+| C | The Quiet Room | 6 | the count notices 35% less |
 | C | False Ceiling | 7 | the count notices 55% less |
 | C | The Whale | 7 | +2.0x per stake level |
 
@@ -149,11 +171,13 @@ Spins bought, spins refunded, and boilers that pay nothing until they light.
 | E | Cold Boiler | 2 | lights after 40 spins: +1.6x |
 | A | Night Shift | 3 | +2 spins a floor |
 | A | Rabbit Run | 3 | 12% of spins free |
+| A | Head of Steam | 4 | +0.12x per spin left, to +2.0x |
 | A | Long Fuse | 4 | lights after 70 spins: +3.5x |
 | A | Boiler Room | 5 | +0.14x per spin left, to +2.5x |
 | A | Graveyard Shift | 5 | 20% of spins free |
 | C | Pressure Valve | 6 | +4 spins a floor |
 | C | Twin Boilers | 6 | +2.5x beside the Pressure Valve |
+| C | The Governor | 7 | +0.5x per spin left, to +6.0x |
 
 *Counter:* the gauge falls as the floor runs on, and a boiler bought late
 lights after the run is over.
@@ -168,6 +192,7 @@ the trigger.
 | E | Lucky Charm, Cherry Bomb, Three Bar Salute, Pair Broker, Brass Multiplier, Mirror Shard | 1–2 | cheap triggers |
 | E | Relay Bank | 2 | +0.25x per other artifact that triggered |
 | A | Foreman | 3 | +0.3x per mechanical device |
+| A | Switch Yard | 4 | +0.45x per other artifact that triggered |
 | A | Counting Room | 5 | +0.12x per artifact owned |
 | A | Switchboard | 5 | +0.6x per other artifact that triggered |
 | C | Power Coupling | 6 | +0.2x per artifact owned |
@@ -191,6 +216,7 @@ The ledger of everything that has ever landed.
 | A | Bar Tab | 4 | +0.1x per Bar landed, to +4.0x |
 | A | Cider House | 5 | +0.03x per fruit landed, to +6.0x |
 | C | Harvest Festival | 6 | +0.06x per symbol landed, to +9.0x |
+| C | Windfall | 7 | +0.11x per fruit landed, to +13.0x |
 
 *Counter:* fruit pays two, every tally is capped, and the cold deck takes the
 sevens off the reel exactly when the counter wants them.

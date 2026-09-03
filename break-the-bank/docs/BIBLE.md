@@ -136,8 +136,8 @@ The tone of the ending recolours the whole run. Neither ending is a joke.
 
 ## Reading the voice back
 
-`python3 tools/text/voice.py` reads every string the player can see — 466
-in content, 132 written in code — and flags the ones out of register: a
+`python3 tools/text/voice.py` reads every string the player can see — 620
+in content, 151 written in code — and flags the ones out of register: a
 line that shouts, apologises, congratulates, names a menu or a screen, or
 calls hardware an upgrade. CI runs it and fails the build on a single
 flag, because the strings that drift are always the ones written alone,

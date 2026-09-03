@@ -222,15 +222,15 @@ tag, and per spin left on the floor. That keeps balance edits confined to
 Owning three artifacts sharing a tag lights a synergy and adds to every line's
 multiplier.
 
-Ninety-eight artifacts, seventy-six of them belonging to one of eight named builds
-(`resources/archetypes/`): the Payroll (skulls as wages), the Clamp (paid per
-reel held), the Trail (paid per nudge), the Marker (the debt as leverage), the
-Whale (the stake made superlinear), the Clock (spins and boilers), the
-Exchange (many small triggers and a switchboard) and the Orchard (the tally of
-everything landed). Each build has enablers on the first two floors, amplifiers
-in the middle, a capstone from floor six, and something written down that
-pushes back against it; the content suite holds every build to that shape,
-and `docs/ARCHETYPES.md` is the design.
+One hundred and fourteen artifacts, ninety of them belonging to one of eight
+named builds (`resources/archetypes/`): the Payroll (skulls as wages), the
+Clamp (paid per reel held), the Trail (paid per nudge), the Marker (the debt as
+leverage), the Whale (the stake made superlinear), the Clock (spins and
+boilers), the Exchange (many small triggers and a switchboard) and the Orchard
+(the tally of everything landed). Each build has enablers on the first two
+floors, amplifiers in the middle, a capstone from floor six, and something
+written down that pushes back against it; the content suite holds every build
+to that shape, and `docs/ARCHETYPES.md` is the design.
 
 Artifacts with a `module_scene_path` physically bolt themselves onto the machine
 frame when acquired — the Brass Multiplier adds a gearbox, the Entropy Engine a
@@ -316,7 +316,9 @@ Lean, the High Roller, the Bone Press and the Orchard are in git at
 into a pocket of two and spent once, at their moment — a respin with the
 decision still on the table, forty off the count, a vig deferred to the
 principal, a wild marked for the last drum, the next line peeked at on
-the ledger. Paper is a decision bought in advance; hardware stays. Measured on 3
+the ledger, a nudge bought for a board that has already landed, a spin
+bought for the floor's allowance. Paper is a decision bought in advance;
+hardware stays. Measured on 3
 September 2026, with the chits, the quick clear and the eased late antes
 all in: 15.2% at 10k, the Exchange the primary build of 27% of wins, the
 House noticing 0.99 times a run, 1.08 chits bought and 0.73 spent a run —
@@ -356,10 +358,10 @@ batch rose from 15.0% to 17.2% on the variety alone (16.7% at 10k, inside
 every band).
 
 **How a floor is running.** The same floor, found in a different state: a
-skin is drawn as the floor opens and announced with it — the Night Shift,
-a Quiet Room, an Orchard Run, Cold Iron, Short-Staffed, the Float, Lights
-Out, Papered Over — and torn up when it closes. About half of floors run
-ordinary; the basement never runs anything but.
+skin is drawn as the floor opens and announced with it — sixteen of them,
+from A Full Room and Nobody Playing to The Cage and The Late Sitting — and
+torn up when it closes. About half of floors run ordinary; the basement
+never runs anything but. `docs/FLOORS.md` has the list.
 
 **The notice.** The House acts against success, not only on a schedule: a
 single spin paying sixteen pars — most of an ante in one — is loud enough
@@ -451,12 +453,12 @@ godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=5
 godot --headless --path . --script res://tools/casino_lab/gate.gd -- --report=res://reports/opening_report.json
 ```
 
-It wins 16.1% over 4,000 runs against the whole set's 15.6%, so the twelve
-specialists behind unlocks cost the opening nothing. Gating four more — the
-Hot Hand, the Whale Ticket, the Mirror Shard and the Dead Man's Grip, the
-four most-taken artifacts in the game — takes it to 4.2%. That is the shape
-of this cliff: the opening pool tolerates losing its specialists and not its
-staples, and nothing about it is visible in a whole-content batch.
+It wins 16.1% over 4,000 runs against the whole set's 15.6%, so the
+twenty-six specialists behind unlocks cost the opening nothing. Gating four
+more — the Hot Hand, the Whale Ticket, the Mirror Shard and the Dead Man's
+Grip, the four most-taken artifacts in the game — takes it to 4.2%. That is
+the shape of this cliff: the opening pool tolerates losing its specialists
+and not its staples, and nothing about it is visible in a whole-content batch.
 
 **The door's settings** are a number per key on the profile, applied by
 `CasinoRoom._apply_setting`: four buses, the pace, the text size, the

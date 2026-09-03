@@ -22,7 +22,7 @@ Current state: `godot --headless --path . --script res://tools/audio/audit.gd`
 
 ## 1. Sound effect asset manifest
 
-87 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
+96 cues. Every row below is a real `.tres` in `resources/audio/cues/`; the
 fields shown here are the ones a sourcing pass needs. `Pitch` is the per-trigger
 random range, `Vol` the per-trigger dB jitter added to the authored level.
 
@@ -315,8 +315,9 @@ The filesystem check happens **once per cue per run**, then it is cache lookups.
 Two paths, because they answer different problems:
 
 - **`ProceduralCues.make_wav(def)`** renders a finite buffer once — used for
-  one-shots. Six shapes (`CLICK`, `TONE`, `RISE`, `FALL`, `DRONE`, `SIREN`)
-  cover the manifest. Seeded from the cue id, so a placeholder sounds identical
+  one-shots. Thirty-one shapes (`CLICK`, `TONE`, `RISE`, `FALL`, `DRONE`,
+  `SIREN` and twenty-five more; the full list is `SoundDef.Fallback`) cover
+  the manifest. Seeded from the cue id, so a placeholder sounds identical
   every launch and is never mistaken for a bug. Envelope fades top and tail so
   it never clicks.
 - **`ProceduralCues.make_generator(def)` + `ProceduralLoopFeeder`** uses
