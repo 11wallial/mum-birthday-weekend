@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"the_slow_hand"
+display_name = "The Slow Hand"
+description = "Two nudges come with every award. Eight more skulls are printed onto the drum, for the practice."
+min_floor = 6
+boon = 8
+boon_magnitude = 2
+boon_symbol = &""
+boon_pattern = -1
+toll = 9
+toll_magnitude = 8
+toll_symbol = &"skull"
+toll_pattern = -1

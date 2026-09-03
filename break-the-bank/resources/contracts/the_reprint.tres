@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"the_reprint"
+display_name = "The Reprint"
+description = "Sixteen more sevens are printed onto the drum. The bells come back from the press worth nothing."
+min_floor = 6
+boon = 9
+boon_magnitude = 16
+boon_symbol = &"seven"
+boon_pattern = -1
+toll = 5
+toll_magnitude = -4
+toll_symbol = &"bell"
+toll_pattern = -1

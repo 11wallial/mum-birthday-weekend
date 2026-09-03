@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"double_entry"
+display_name = "Double Entry"
+description = "Every pair is entered twice over. The floor's interest is written up 30 for the second entry."
+min_floor = 5
+boon = 4
+boon_magnitude = 1.3
+boon_symbol = &""
+boon_pattern = 1
+toll = 7
+toll_magnitude = 30
+toll_symbol = &""
+toll_pattern = -1
