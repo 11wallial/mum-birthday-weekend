@@ -1164,6 +1164,10 @@ func blackout(seconds: float) -> void:
 	if _light != null:
 		var out: Tween = create_tween()
 		out.tween_property(_light, "light_energy", 0.0, seconds * 0.7)
+	var window_lamp: Light3D = get_node_or_null(^"Reels/WindowLamp") as Light3D
+	if window_lamp != null:
+		var out: Tween = create_tween()
+		out.tween_property(window_lamp, "light_energy", 0.0, seconds * 0.75)
 	if _surety_fluid != null:
 		var drain: Tween = create_tween()
 		drain.tween_property(_surety_fluid, "scale:y", 0.02, seconds * 0.8) \

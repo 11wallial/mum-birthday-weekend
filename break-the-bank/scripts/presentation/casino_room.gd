@@ -1281,11 +1281,19 @@ func _refresh_diegetic() -> void:
 	if state == null:
 		return
 	var floor_def: FloorDef = state.current_floor()
+	var floor_index: int = state.floor_index
+	if floor_def == null and state.is_over():
+		# A won run has stepped past the last floor; the sign keeps the
+		# floor it was won on rather than naming one that does not exist.
+		var floors: Array[FloorDef] = ContentDB.shared().floors
+		if not floors.is_empty():
+			floor_def = floors[floors.size() - 1]
+			floor_index = floor_def.index
 	var floor_name: String = floor_def.display_name if floor_def != null else ""
 	if _floor_sign != null:
 		# Two lines: the long lens crops the right of the frame, and a floor
 		# name on one line ran off it from the third floor on.
-		_floor_sign.text = "FLOOR %d\n%s" % [state.floor_index, floor_name.to_upper()]
+		_floor_sign.text = "FLOOR %d\n%s" % [floor_index, floor_name.to_upper()]
 		# The glow shells are the same text, softened; a sign whose halo spells
 		# the previous floor has broken the trick.
 		for child: Node in _floor_sign.get_children():
