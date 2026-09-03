@@ -222,7 +222,7 @@ tag, and per spin left on the floor. That keeps balance edits confined to
 Owning three artifacts sharing a tag lights a synergy and adds to every line's
 multiplier.
 
-Eighty-six artifacts, sixty-one of them belonging to one of eight named builds
+Ninety-eight artifacts, seventy-six of them belonging to one of eight named builds
 (`resources/archetypes/`): the Payroll (skulls as wages), the Clamp (paid per
 reel held), the Trail (paid per nudge), the Marker (the debt as leverage), the
 Whale (the stake made superlinear), the Clock (spins and boilers), the

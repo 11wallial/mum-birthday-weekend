@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"undertakers_cut"
+display_name = "Undertaker's Cut"
+description = "The House pays for the ones it buries. +0.35x per skull standing."
+cost = 2
+trigger = 2
+effect = 20
+magnitude = 0.35
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"chaos"])
+min_floor = 1
+module_scene_path = ""
+archetype = &"skulls"

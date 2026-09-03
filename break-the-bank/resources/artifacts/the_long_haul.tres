@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"the_long_haul"
+display_name = "The Long Haul"
+description = "Every step of it, paid at the end. +3.6x per nudge spent on the board."
+cost = 16
+trigger = 2
+effect = 22
+magnitude = 3.6
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"greed"])
+min_floor = 7
+module_scene_path = ""
+archetype = &"trail"

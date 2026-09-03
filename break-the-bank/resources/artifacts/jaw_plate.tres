@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"jaw_plate"
+display_name = "Jaw Plate"
+description = "A drum held is a drum that pays. +1.0x per reel held for the spin."
+cost = 3
+trigger = 2
+effect = 21
+magnitude = 1.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 2
+module_scene_path = ""
+archetype = &"clamp"

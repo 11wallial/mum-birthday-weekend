@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"gravediggers_fee"
+display_name = "Gravedigger's Fee"
+description = "The whole payroll, standing. +2.4x per skull on the line."
+cost = 16
+trigger = 2
+effect = 20
+magnitude = 2.4
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"chaos", &"contract"])
+min_floor = 7
+module_scene_path = ""
+archetype = &"skulls"
