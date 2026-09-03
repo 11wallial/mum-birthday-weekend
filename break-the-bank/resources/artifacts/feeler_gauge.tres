@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"feeler_gauge"
+display_name = "Feeler Gauge"
+description = "Reads the gap before the lever does. +1.1x per nudge spent on the board."
+cost = 5
+trigger = 2
+effect = 22
+magnitude = 1.1
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 3
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"trail"
