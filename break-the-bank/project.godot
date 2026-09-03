@@ -119,7 +119,7 @@ bb_slot_5={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://resources/locale/strings.en.translation")
+locale/translations=PackedStringArray("res://resources/locale/strings.en.translation", "res://resources/locale/strings.fr.translation")
 
 [rendering]
 
