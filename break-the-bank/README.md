@@ -317,7 +317,10 @@ into a pocket of two and spent once, at their moment — a respin with the
 decision still on the table, forty off the count, a vig deferred to the
 principal, a wild marked for the last drum, the next line peeked at on
 the ledger. Paper is a decision bought in advance; hardware stays. Measured on 3
-September 2026: 15.0% at 10k with the chits in, inside every band.
+September 2026, with the chits, the quick clear and the eased late antes
+all in: 15.2% at 10k, the Exchange the primary build of 27% of wins, the
+House noticing 0.99 times a run, 1.08 chits bought and 0.73 spent a run —
+inside every band.
 
 **The collection.** The profile keeps what it has met — every piece of
 hardware offered or owned, every one of the House's people faced, every
