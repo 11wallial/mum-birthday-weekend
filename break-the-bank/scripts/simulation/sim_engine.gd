@@ -198,6 +198,7 @@ func announce(state: RunState) -> void:
 			"description": floor_def.description, "resumed": true,
 		}
 		standing.merge(boss_payload(state))
+		standing.merge(skin_payload(state))
 		_bus.emit_event(EffectBus.Event.FLOOR_STARTED, standing)
 	if state.notice_pending != null:
 		var noticed: Dictionary = notice_payload(state)
@@ -416,9 +417,15 @@ func begin_floor(state: RunState) -> void:
 	# Who the House sends comes before the allowance is counted, because some
 	# of them come for the allowance. The watcher it decided on last floor
 	# arrives first; the boss is drawn after, and never the same person.
+	# How the floor is running is drawn first: a short-staffed room is one
+	# the House could not send anybody to.
+	state.skin = _choose_skin(state, floor_def)
+	if state.skin != null:
+		state.skins_seen.append(state.skin.id)
 	state.watcher = state.notice_pending
 	state.notice_pending = null
-	state.boss = BossEngine.choose(state, floor_def)
+	state.boss = null if (state.skin != null and state.skin.no_boss) \
+			else BossEngine.choose(state, floor_def)
 	if state.boss != null and state.watcher != null and state.boss.id == state.watcher.id:
 		state.boss = BossEngine.choose(state, floor_def)
 		if state.boss != null and state.boss.id == state.watcher.id:
@@ -431,7 +438,8 @@ func begin_floor(state: RunState) -> void:
 	state.mark_reel_dirty()
 	state.spins_remaining = maxi(1, floor_def.spins + ArtifactEngine.spin_bonus(state)
 			+ state.options.bonus_spins + ContractEngine.spins_delta(state)
-			+ BossEngine.spins_delta(state))
+			+ BossEngine.spins_delta(state)
+			+ (state.skin.spins_delta if state.skin != null else 0))
 	state.floor_spins_total = state.spins_remaining
 	# Announced before FLOOR_STARTED so the interface can put the new verb on
 	# screen as the floor opens rather than a beat into it.
@@ -456,11 +464,38 @@ func begin_floor(state: RunState) -> void:
 		"description": floor_def.description,
 	}
 	opened.merge(boss_payload(state))
+	opened.merge(skin_payload(state))
 	_bus.emit_event(EffectBus.Event.FLOOR_STARTED, opened)
 
 
 ## Who is on the floor, for the payload that opens it. Empty strings when
 ## nobody was sent, so a listener can read the keys without checking first.
+## How the floor is running today, drawn off the run's own skin stream.
+## Never on the basement: the first floor is the lesson, and a lesson with
+## a variable in it teaches the variable.
+func _choose_skin(state: RunState, floor_def: FloorDef) -> FloorSkinDef:
+	if floor_def == null or state.options.no_bosses:
+		return null
+	var pool: Array[FloorSkinDef] = _content.skins_for(floor_def.index)
+	if pool.is_empty():
+		return null
+	# A floor is ordinary as often as it is not: the variants are the
+	# exception the player notices, not the rule they stop reading.
+	if state.skin_rng.next_float() < 0.45:
+		return null
+	return pool[state.skin_rng.next_int(0, pool.size() - 1)]
+
+
+## What the floor is, for the payload that opens it.
+func skin_payload(state: RunState) -> Dictionary:
+	var skin: FloorSkinDef = state.skin
+	return {
+		"skin": String(skin.id) if skin != null else "",
+		"skin_name": skin.display_name if skin != null else "",
+		"skin_line": skin.line if skin != null else "",
+	}
+
+
 func boss_payload(state: RunState) -> Dictionary:
 	var boss: BossDef = state.boss
 	var watcher: BossDef = state.watcher
@@ -1139,7 +1174,8 @@ func _close_floor(state: RunState) -> void:
 	# is the whole of what the draft is bought with.
 	var spins_left: int = state.spins_left_at_settle
 	state.spins_left_at_settle = 0
-	var stipend: int = maxi(0, floor_def.chips)
+	var stipend: int = maxi(0, floor_def.chips
+			+ (state.skin.chips_delta if state.skin != null else 0))
 	var bonus: int = state.settle_bonus(spins_left)
 	state.economy.credit_chips(stipend, &"floor")
 	state.economy.credit_chips(bonus, &"settle")
@@ -1149,6 +1185,7 @@ func _close_floor(state: RunState) -> void:
 	state.set_contract(null)
 	state.boss = null
 	state.watcher = null
+	state.skin = null
 	# The count is a floor's worth of attention. A new floor is a new room —
 	# unless the audit says the House remembers.
 	state.heat *= clampf(state.options.heat_carry, 0.0, 1.0)

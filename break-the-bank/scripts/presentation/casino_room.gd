@@ -1835,6 +1835,9 @@ func _announce_floor(payload: Dictionary) -> void:
 	_granted.clear()
 	# Whoever the House has sent is announced with the floor, rule and all:
 	# a twist nobody was told about is not a boss, it is a bug report.
+	var skin_name: String = String(payload.get("skin_name", ""))
+	if skin_name != "":
+		lines.append("%s — %s" % [skin_name.to_upper(), String(payload.get("skin_line", ""))])
 	var boss_name: String = String(payload.get("boss_name", ""))
 	if boss_name != "":
 		lines.append("%s — %s" % [boss_name.to_upper(), String(payload.get("boss_intro", ""))])

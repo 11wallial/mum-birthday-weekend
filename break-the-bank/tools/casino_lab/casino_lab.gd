@@ -47,6 +47,10 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 	# How often the House noticed a run: the notice is tuned on this.
 	var notices: PackedInt32Array = PackedInt32Array()
 	# Paper: how much a run bought and how much of it was spent.
+	# How often a floor was found running some way other than ordinary.
+	var skins_seen: PackedInt32Array = PackedInt32Array()
+	var skin_runs: Dictionary = {}
+	var skin_wins: Dictionary = {}
 	var chits_bought: PackedInt32Array = PackedInt32Array()
 	var chits_used: PackedInt32Array = PackedInt32Array()
 	var drafts_total: int = 0
@@ -130,6 +134,11 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		rerolls.append(state.rerolls_total)
 		notices.append(state.notices)
 		chits_bought.append(state.chits_bought)
+		skins_seen.append(state.skins_seen.size())
+		for skin_id: StringName in state.skins_seen:
+			skin_runs[String(skin_id)] = int(skin_runs.get(String(skin_id), 0)) + 1
+			if won:
+				skin_wins[String(skin_id)] = int(skin_wins.get(String(skin_id), 0)) + 1
 		chits_used.append(state.chits_used)
 		for seen: StringName in state.offers_seen:
 			offers_total += int(state.offers_seen[seen])
@@ -242,6 +251,9 @@ static func run_batch(count: int, base_seed: int = 1, options: RunOptions = null
 		"rerolls_per_run": describe(rerolls),
 		"rerolls_per_draft": _ratio(_sum(rerolls), drafts_total),
 		"notices": describe(notices),
+		"skins_seen": describe(skins_seen),
+		"skin_counts": skin_runs,
+		"skin_win_rates": _skin_rates(skin_runs, skin_wins),
 		"chits_bought": describe(chits_bought),
 		"chits_used": describe(chits_used),
 		"end_reasons": end_reasons,
@@ -280,6 +292,18 @@ static func _top_share(counts: Dictionary, total: int) -> Dictionary:
 			most = int(counts[key])
 			top = String(key)
 	return {"build": top, "share": _ratio(most, total)}
+
+
+## How often a run that met a skin went on to win. Not stratified: a skin
+## is met on a floor rather than bought at a depth, so the cohorts are
+## already close to comparable.
+static func _skin_rates(runs: Dictionary, wins: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for key: Variant in runs:
+		var seen: int = int(runs[key])
+		out[String(key)] = {"runs": seen, "wins": int(wins.get(key, 0)),
+				"win_rate": _ratio(int(wins.get(key, 0)), seen)}
+	return out
 
 
 static func _sum(sample: PackedInt32Array) -> int:

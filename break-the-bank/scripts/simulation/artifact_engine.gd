@@ -148,6 +148,10 @@ static func evaluate_spin(state: RunState, line: Array[SymbolDef],
 		ctx.multiplier *= floor_def.payout_scale
 		if not is_equal_approx(floor_def.payout_scale, 1.0):
 			ctx.step(&"house", floor_def.display_name, "x%.2f" % floor_def.payout_scale)
+	# How the floor is running tonight, if it is running any way at all.
+	if state.skin != null and not is_equal_approx(state.skin.payout_scale, 1.0):
+		ctx.multiplier *= state.skin.payout_scale
+		ctx.step(&"house", state.skin.display_name, "x%.2f" % state.skin.payout_scale)
 	# The House's person on the floor taxes the pattern they were sent for.
 	var taxed: float = BossEngine.pattern_scale(state, pattern)
 	ctx.multiplier *= taxed

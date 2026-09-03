@@ -355,6 +355,12 @@ baseline win rate — availability, not strength; after it, 26%, and the
 batch rose from 15.0% to 17.2% on the variety alone (16.7% at 10k, inside
 every band).
 
+**How a floor is running.** The same floor, found in a different state: a
+skin is drawn as the floor opens and announced with it — the Night Shift,
+a Quiet Room, an Orchard Run, Cold Iron, Short-Staffed, the Float, Lights
+Out, Papered Over — and torn up when it closes. About half of floors run
+ordinary; the basement never runs anything but.
+
 **The notice.** The House acts against success, not only on a schedule: a
 single spin paying sixteen pars — most of an ante in one — is loud enough
 for it to notice, and it answers at once and out loud, naming the spin and

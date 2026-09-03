@@ -257,6 +257,13 @@ worth knowing before touching the simulation:
   seed's); a peek reads the stream through `RngStream.peek`, which puts it
   back; a deferral is settled in `_close_floor`. `_roll_chit` deals one a
   draft off the shop stream, none when the pocket is full.
+- A floor's skin (`FloorSkinDef`, `resources/floor_skins/`) is drawn in
+  `begin_floor` off the `skin` stream before the boss — a short-staffed
+  room is one the House sent nobody to — and torn up in `_close_floor`
+  with the contract and the boss. Its numbers are read where that number
+  already lives: the allowance in `begin_floor`, the ante in
+  `ante_due_for`, the stipend in `_close_floor`, the weights in
+  `RunState.reel()`, the payout in `ArtifactEngine`. Never the basement.
 - The House notices: `SimEngine._observe_notice` on every banked spin, at
   `BalanceConfig.notice_par_multiple` pars, sets `RunState.notice_pending`
   (a `BossDef` from the next floor's pool, off the `boss` stream) and emits

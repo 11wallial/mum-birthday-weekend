@@ -103,6 +103,9 @@ func _summarise(report: Dictionary, out_path: String) -> void:
 	var top: Dictionary = report.get("top_build_share", {})
 	print("top build      %s in %.0f%% of wins" % [String(top.get("build", "")),
 		float(top.get("share", 0.0)) * 100.0])
+	var skinned: Dictionary = report.get("skins_seen", {})
+	print("floors skinned  mean %.2f a run  p95 %d" % [
+		float(skinned.get("mean", 0.0)), int(skinned.get("p95", 0))])
 	var noticed: Dictionary = report.get("notices", {})
 	print("noticed        mean %.2f a run  p95 %d" % [float(noticed.get("mean", 0.0)), int(noticed.get("p95", 0))])
 	var bought: Dictionary = report.get("chits_bought", {})

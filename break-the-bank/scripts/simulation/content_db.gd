@@ -12,6 +12,7 @@ const CONTRACT_DIR: String = "res://resources/contracts"
 const ARCHETYPE_DIR: String = "res://resources/archetypes"
 const BOSS_DIR: String = "res://resources/bosses"
 const CHIT_DIR: String = "res://resources/chits"
+const SKIN_DIR: String = "res://resources/floor_skins"
 const BALANCE_PATH: String = "res://resources/rules/balance_config.tres"
 
 var symbols: Array[SymbolDef] = []
@@ -22,6 +23,8 @@ var archetypes: Array[ArchetypeDef] = []
 var bosses: Array[BossDef] = []
 ## The chits the draft may put in the pocket.
 var chits: Array[ChitDef] = []
+## How a floor can be found running. See [FloorSkinDef].
+var skins: Array[FloorSkinDef] = []
 var balance: BalanceConfig = BalanceConfig.new()
 
 static var _shared: ContentDB = null
@@ -42,6 +45,7 @@ func load_all() -> void:
 	archetypes.assign(_load_dir(ARCHETYPE_DIR))
 	bosses.assign(_load_dir(BOSS_DIR))
 	chits.assign(_load_dir(CHIT_DIR))
+	skins.assign(_load_dir(SKIN_DIR))
 	var loaded_floors: Array[FloorDef] = []
 	loaded_floors.assign(_load_dir(FLOOR_DIR))
 	loaded_floors.sort_custom(func(a: FloorDef, b: FloorDef) -> bool: return a.index < b.index)
@@ -107,6 +111,26 @@ func boss_by_id(id: StringName) -> BossDef:
 
 
 ## Everyone the House can send to floor [param index], in id order.
+## The states floor [param index] can be found in. A skin with no floors
+## listed is at home on any of them; the basement is never skinned, because
+## it is the lesson.
+func skins_for(index: int) -> Array[FloorSkinDef]:
+	var out: Array[FloorSkinDef] = []
+	if index <= 1:
+		return out
+	for skin: FloorSkinDef in skins:
+		if skin.floors.is_empty() or skin.floors.has(index):
+			out.append(skin)
+	return out
+
+
+func skin_by_id(id: StringName) -> FloorSkinDef:
+	for skin: FloorSkinDef in skins:
+		if skin.id == id:
+			return skin
+	return null
+
+
 func bosses_for(index: int) -> Array[BossDef]:
 	var out: Array[BossDef] = []
 	for boss: BossDef in bosses:

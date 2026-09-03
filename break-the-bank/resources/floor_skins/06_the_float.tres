@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"the_float"
+display_name = "The Float"
+line = "The float came up short this morning. Scrip instead of credit, and the House keeps a little of both."
+floors = Array[int]([])
+spins_delta = 0
+ante_percent = 0.0
+chips_delta = 2
+payout_scale = 0.92
+weight_shifts = {}
+no_boss = false

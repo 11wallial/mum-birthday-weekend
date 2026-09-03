@@ -140,6 +140,10 @@ const POCKET: int = 2
 ## The House's person on this floor, or null on a floor nobody was sent to.
 ## Chosen as the floor opens, torn up as it closes, like a contract.
 var boss: BossDef = null
+## How this floor is running: drawn as it opens, torn up as it closes.
+var skin: FloorSkinDef = null
+## Every skin this run has been dealt, by id, for the collection and the lab.
+var skins_seen: Array[StringName] = []
 ## The second of the House's people on the floor: sent because the House
 ## noticed a spin on the floor before, announced then, arrived now. Torn
 ## up with the boss when the floor closes. The House acting against
@@ -182,6 +186,9 @@ var gamble_rng: RngStream
 ## Draws for who the House sends to a floor, so restaffing a floor can never
 ## move the reels, the shop or the ladder.
 var boss_rng: RngStream
+## The floor's own state, off its own stream: a skin drawn today cannot
+## move the reels of a seed played yesterday.
+var skin_rng: RngStream
 ## The day's lean on the reel, drawn once at the start and never again.
 var lean_rng: RngStream
 ## The symbols the reel ships heavy and light on this seed, by id, or empty.
@@ -210,6 +217,7 @@ func _init(p_seed: int, p_content: ContentDB, p_bus: EffectBus,
 	band_rng = RngStream.new(p_seed, &"band")
 	gamble_rng = RngStream.new(p_seed, &"gamble")
 	boss_rng = RngStream.new(p_seed, &"boss")
+	skin_rng = RngStream.new(p_seed, &"skin")
 	lean_rng = RngStream.new(p_seed, &"lean")
 	board.resize(config.reel_count)
 
@@ -273,6 +281,8 @@ func ante_due_for(floor_def: FloorDef) -> int:
 	ante *= 1.0 + heat_ante_percent / 100.0
 	ante *= 1.0 + BossEngine.ante_percent(self) / 100.0
 	ante *= 1.0 + float(notices) * config.notice_ante_percent / 100.0
+	if skin != null:
+		ante *= maxf(0.0, 1.0 + skin.ante_percent / 100.0)
 	return maxi(0, int(round(ante * (1.0 - discount / 100.0))))
 
 
@@ -425,8 +435,10 @@ func is_over() -> bool:
 func reel() -> Array[Probability.ReelEntry]:
 	if _reel_cache_dirty:
 		var shifts: Dictionary = weight_shifts.duplicate()
+		var from_skin: Dictionary = skin.weight_shifts if skin != null else {}
 		for source: Dictionary in [ContractEngine.weight_shifts(self),
-				HeatEngine.weight_shifts(self), BossEngine.weight_shifts(self)]:
+				HeatEngine.weight_shifts(self), BossEngine.weight_shifts(self),
+				from_skin]:
 			for key: StringName in source:
 				shifts[key] = int(shifts.get(key, 0)) + int(source[key])
 		_reel_cache = Probability.build_reel(content.symbols, shifts)

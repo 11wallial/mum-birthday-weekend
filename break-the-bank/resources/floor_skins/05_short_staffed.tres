@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"short_staffed"
+display_name = "Short-Staffed"
+line = "Nobody could be spared for this floor. The House charges for the privilege."
+floors = Array[int]([2, 3, 4, 5, 6, 7])
+spins_delta = 0
+ante_percent = 18.0
+chips_delta = 0
+payout_scale = 1.0
+weight_shifts = {}
+no_boss = true

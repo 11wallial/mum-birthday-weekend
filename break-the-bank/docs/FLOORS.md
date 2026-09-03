@@ -247,6 +247,37 @@ before it is spun, off the reel stream without moving it). Two verbs,
 when each kind's moment is. The bot buys paper before hardware with change
 kept, and spends each kind at the moment a person would.
 
+### How a floor is running
+
+Seven floors in a fixed order are memorised by the tenth hour. A **skin**
+is the cheapest answer: the same floor, found in a different state.
+`FloorSkinDef` under `resources/floor_skins/`, drawn as the floor opens off
+the run's own `skin` stream, announced with the floor, torn up when it
+closes — a room's condition, not one of the House's people.
+
+Everything a skin can do is a number the engine already understood: the
+allowance, the ante, the stipend, what the reels carry, what the floor
+pays, and whether the House could spare anybody for it. Eight of them: the
+Night Shift (a spin more, and the House prices the room), a Quiet Room (a
+spin fewer, and it asks less), an Orchard Run (fruit heavy), Cold Iron
+(bars and sevens riding high), Short-Staffed (nobody was sent, and the
+House charges for the privilege), the Float (scrip instead of credit),
+Lights Out (a spin fewer, what pays pays well), Papered Over (the skulls
+struck off and not replaced).
+
+The basement is never skinned: the first floor is the lesson, and a lesson
+with a variable in it teaches the variable. A floor is ordinary about
+half the time, so a variant is the exception a player notices rather than
+the rule they stop reading.
+
+Measured on 3 September 2026: at 2,500 runs the bot meets 2.7 skinned
+floors a run and wins 16.0%, against 15.2% with no skins at all — variety
+that costs about what it gives. The per-skin rates the lab reports
+(`skin_win_rates`) are survivorship-flattered, since a run that lives
+longer meets more floors; read them against each other, not against the
+overall rate. The three that led that ranking — Short-Staffed, the Float
+and Lights Out — were priced up until the feature was flat.
+
 ### The notice
 
 The House also acts against success, not only on a schedule — the design

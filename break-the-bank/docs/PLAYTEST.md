@@ -72,6 +72,9 @@ Known gaps a tester will hit, so nobody logs them twice:
 - The quick clear: settling with half the spins left pays double scrip.
   The bot loses a point on it; watch whether a person reads it as a goal
   or a trap.
+- Floors now run in states: watch whether a tester reads the skin's line
+  at the floor's opening and whether it changes what they do, or whether
+  it goes past as flavour.
 - Three machines at the door, not seven. The Lean, the High Roller, the
   Bone Press and the Orchard are in git and return one at a time.
 
