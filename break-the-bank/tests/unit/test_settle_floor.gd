@@ -33,6 +33,8 @@ func test_a_floor_cannot_be_settled_until_the_ante_is_covered() -> void:
 func test_settling_pays_the_stipend_and_a_chip_per_spin_left() -> void:
 	_state.economy.cash = 60
 	_state.spins_remaining = 4
+	# A long floor, so four spins left is a settle and not a quick clear.
+	_state.floor_spins_total = 20
 	assert_bool(_state.can_settle_early()).is_true()
 	assert_int(_state.settle_bonus(4)).is_equal(4)
 	assert_bool(_engine.settle_floor(_state)).is_true()
@@ -51,6 +53,7 @@ func test_settling_pays_the_stipend_and_a_chip_per_spin_left() -> void:
 
 func test_the_spins_left_bonus_is_capped() -> void:
 	_state.config.chips_spin_left_cap = 2
+	_state.floor_spins_total = 20
 	assert_int(_state.settle_bonus(6)).is_equal(2)
 
 
@@ -99,3 +102,12 @@ func test_the_bank_symbol_pays_chips_on_the_line() -> void:
 	_engine.collect(_state)
 	assert_int(_state.economy.chips).is_equal(before + 2)
 	assert_int(_state.economy.chips_from_symbols).is_equal(2)
+
+
+func test_a_quick_clear_pays_its_bonus_twice() -> void:
+	_state.economy.cash = 60
+	_state.floor_spins_total = 6
+	assert_bool(_state.is_quick_clear(3)).is_true()
+	assert_bool(_state.is_quick_clear(2)).is_false()
+	assert_int(_state.settle_bonus(2)).is_equal(2)
+	assert_int(_state.settle_bonus(3)).is_equal(6)

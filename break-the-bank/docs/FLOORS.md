@@ -225,6 +225,14 @@ costs:
 | `STAKE_FROZEN` | the stake stays at one | the Cashier |
 | `SKIMMED` | a share off every payout, before the count's own | the Manager |
 
+### The quick clear
+
+The balance guide's early-game sub-goal: a floor settled with at least
+half its spins still on the clock (`quick_clear_share`) pays its settle
+bonus twice. A first run will not know to chase it; a veteran reads the
+floor for it from the first spin. The key says "quick clear" while it is
+one.
+
 ### The chits
 
 The consumable class, in the House's paper: a **chit** is a slip bought at

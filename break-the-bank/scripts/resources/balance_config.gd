@@ -40,6 +40,11 @@ extends Resource
 @export var chips_spin_left_cap: int = 8
 ## Chips held over at a floor's close earn one more per this many, up to the
 ## cap. Saving is a decision only when it pays.
+## The quick clear: a floor settled with at least this share of its spins
+## still on the clock pays its settle bonus twice. The balance guide's
+## early-game sub-goal for veterans — a floor cleared fast is worth more
+## scrip than a floor cleared — that a first run will not know to chase.
+@export var quick_clear_share: float = 0.5
 @export var chip_interest_per: int = 5
 @export var chip_interest_cap: int = 3
 ## Credits one chip is worth to the House, as a percent of the floor's ante:

@@ -318,8 +318,17 @@ func surety() -> float:
 func settle_bonus(spins_left: int) -> int:
 	if spins_left <= 0 or config.chips_per_spin_left <= 0:
 		return 0
-	return mini(spins_left * config.chips_per_spin_left,
+	var bonus: int = mini(spins_left * config.chips_per_spin_left,
 			maxi(0, config.chips_spin_left_cap))
+	return bonus * 2 if is_quick_clear(spins_left) else bonus
+
+
+## True when settling with [param spins_left] is a quick clear: at least
+## [member BalanceConfig.quick_clear_share] of the floor's spins unspent.
+func is_quick_clear(spins_left: int) -> bool:
+	var total: int = maxi(1, floor_spins_total)
+	return config.quick_clear_share > 0.0 \
+			and float(spins_left) >= float(total) * config.quick_clear_share
 
 
 ## True once a floor has handed this run [param id]. See [Systems].

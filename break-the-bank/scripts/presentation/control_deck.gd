@@ -288,7 +288,9 @@ func _build_actions() -> void:
 	# choice between the two is the floor's whole decision.
 	if _state.can_settle_early():
 		var bonus: int = _state.settle_bonus(_state.spins_remaining)
-		_action(SETTLE, "SETTLE NOW", "ante covered   +%d chips" % bonus, true, false)
+		_action(SETTLE, "SETTLE NOW", "%s   +%d chips" % [
+				"quick clear" if _state.is_quick_clear(_state.spins_remaining) else "ante covered",
+				bonus], true, false)
 	if _state.has_system(Systems.STAKE):
 		_extra(STAKE_DOWN, "STAKE −", "", _state.stake > 1)
 		_extra(STAKE_UP, "STAKE +", "", _state.stake < _state.config.max_stake)
