@@ -19,6 +19,7 @@ var _next_frame: float = 0.0
 var _frame: int = 0
 var _stage: int = 0
 var _wait: float = 1.2
+var _paid_only: bool = false
 
 
 func _initialize() -> void:
@@ -26,6 +27,7 @@ func _initialize() -> void:
 	_out = String(args.get("out", "user://spin"))
 	_seconds = float(args.get("seconds", 3.0))
 	_interval = 1.0 / maxf(float(args.get("fps", 20.0)), 1.0)
+	_paid_only = args.has("paid")
 	DirAccess.make_dir_recursive_absolute(_out)
 	var packed: PackedScene = load("res://scenes/3d/casino_room.tscn") as PackedScene
 	_room = packed.instantiate()
@@ -45,6 +47,14 @@ func _process(delta: float) -> bool:
 			_wait -= delta
 			if _wait <= 0.0:
 				_room.call("debug_advance")
+				# --paid records a paying spin: the simulation knows the
+				# board the moment the lever is pulled, so a dead one is let
+				# play out and the next is pulled, until one pays par.
+				var state: RunState = _room.get("state") as RunState
+				if _paid_only and state != null \
+						and float(state.board.payout) < SimEngine.par_for(state):
+					_wait = 2.8
+					return false
 				_stage = 2
 		2:
 			_clock += delta
