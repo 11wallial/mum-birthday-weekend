@@ -156,6 +156,9 @@ signal pause_started(seconds: float)
 ## A physical reel button was clicked. Same shape as the deck's
 ## action_requested, and the room routes both through one handler.
 signal control_pressed(action: StringName, index: int)
+## The pointer came to rest on something the machine can explain, or left
+## it. The room turns the id into words; the machine only says which thing.
+signal inspect_hovered(id: StringName)
 ## Artifacts acquired this run. Drives how hard the reels are backlit.
 var _upgrades: int = 0
 ## What one spin needs to be worth on this floor. Set from FLOOR_STARTED.
@@ -176,6 +179,15 @@ func _ready() -> void:
 	_counters = parts.get("counters", {})
 	_console.assign(parts.get("console", []))
 	_payline = parts.get("payline", null) as MeshInstance3D
+	for zone: Area3D in parts.get("inspect", []):
+		var id: StringName = zone.get_meta(&"inspect", &"") as StringName
+		zone.mouse_entered.connect(func() -> void: inspect_hovered.emit(id))
+		zone.mouse_exited.connect(func() -> void: inspect_hovered.emit(&""))
+		# A phone has no hover: a tap on a zone asks the same question.
+		zone.input_event.connect(func(_camera: Node, event: InputEvent, _at: Vector3,
+				_normal: Vector3, _shape: int) -> void:
+			if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+				inspect_hovered.emit(id))
 	var lever_pick: Area3D = parts.get("lever_pick", null) as Area3D
 	if lever_pick != null:
 		lever_pick.input_event.connect(_on_lever_input)

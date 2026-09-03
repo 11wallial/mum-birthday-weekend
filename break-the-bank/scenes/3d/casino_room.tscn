@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
 [ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/presentation/tutorial_director.gd" id="15_clerk"]
 [ext_resource type="Script" path="res://scripts/presentation/payout_receipt.gd" id="16_receipt"]
 [ext_resource type="Script" path="res://scripts/presentation/recap_panel.gd" id="17_recap"]
+[ext_resource type="Script" path="res://scripts/presentation/inspector.gd" id="18_inspect"]
 
 [node name="CasinoRoom" type="Node3D"]
 script = ExtResource("1_room")
@@ -100,3 +101,9 @@ script = ExtResource("16_receipt")
 [node name="RecapPanel" type="CanvasLayer" parent="."]
 layer = 3
 script = ExtResource("17_recap")
+
+; What is this? — the card the machine prints about whatever the pointer
+; is resting on.
+[node name="Inspector" type="CanvasLayer" parent="."]
+layer = 4
+script = ExtResource("18_inspect")

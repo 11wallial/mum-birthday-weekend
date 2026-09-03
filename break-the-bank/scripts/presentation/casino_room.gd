@@ -48,6 +48,8 @@ var _receipt: PayoutReceipt
 var _recap: RecapPanel
 ## The grade over the world, and the render's degradation with the surety.
 var _film: Node
+## The card that answers "what is this?" about anything on the machine.
+var _inspector: Inspector
 ## The clipboard's viewport: the draft and the back office are drawn into it
 ## and the paper in the room wears it.
 var _board_viewport: SubViewport
@@ -101,6 +103,7 @@ func _ready() -> void:
 	_receipt = get_node_or_null(receipt_path) as PayoutReceipt
 	_film = get_node_or_null(^"FilmOverlay")
 	_recap = get_node_or_null(^"RecapPanel") as RecapPanel
+	_inspector = get_node_or_null(^"Inspector") as Inspector
 	if _receipt != null and _audio != null:
 		_receipt.set_audio(_audio)
 	_tutorial = get_node_or_null(tutorial_path) as TutorialDirector
@@ -139,6 +142,7 @@ func _ready() -> void:
 	if _slot_view != null:
 		_slot_view.result_judged.connect(_on_result_judged)
 		_slot_view.scoring_started.connect(_on_scoring_started)
+		_slot_view.inspect_hovered.connect(_on_inspect)
 		_slot_view.pause_started.connect(_on_pause_started)
 	if _shop != null:
 		_shop.buy_requested.connect(_on_buy_requested)
@@ -539,6 +543,99 @@ func _on_board_input(_camera: Node, event: InputEvent, position: Vector3,
 		forwarded = move
 	if forwarded != null:
 		_board_viewport.push_input(forwarded)
+
+
+## What the pointer is resting on, in the House's words: the number, what
+## it is worth right now, and where it comes from. The machine says which
+## thing was pointed at; this is the only place that knows what it means.
+func _on_inspect(id: StringName) -> void:
+	if _inspector == null:
+		return
+	if id == &"" or state == null:
+		_inspector.hide_card()
+		return
+	var lines: PackedStringArray = PackedStringArray()
+	var title: String = ""
+	var parts: PackedStringArray = String(id).split(":")
+	match parts[0]:
+		"counter":
+			match parts[1] if parts.size() > 1 else "":
+				"cash":
+					title = "Cash"
+					lines.append("%d credits in hand." % state.economy.cash)
+					lines.append("A spin costs %d. The close of this floor charges the vig of %d and then the ante of %d." % [
+							state.spin_price(), state.vig_due(), state.ante_due()])
+					lines.append("Credits never buy hardware — that is what the chips are for.")
+				"ante":
+					title = "Ante"
+					var floor_def: FloorDef = state.current_floor()
+					lines.append("%d due when the spins run out." % state.ante_due())
+					if floor_def != null and state.ante_due() != floor_def.ante:
+						lines.append("%s asks %d; the rest is what the House has added since — its people, the count, the contract, and %d notice%s." % [
+								floor_def.display_name, floor_def.ante, state.notices,
+								"" if state.notices == 1 else "s"])
+					lines.append("Miss it and the House keeps the table.")
+				"spins":
+					title = "Spins"
+					lines.append("%d left of the %d this floor allows." % [
+							state.spins_remaining, state.floor_spins_total])
+					lines.append("A paid nudge costs one of them.")
+					if state.config.quick_clear_share > 0.0:
+						lines.append("Settle with %d or more still on the clock and the scrip pays double." % int(
+								ceil(float(state.floor_spins_total) * state.config.quick_clear_share)))
+				"chips":
+					title = "Chips"
+					lines.append("%d of the House's scrip." % state.economy.chips)
+					lines.append("It buys the draft, the reroll, the press and a word with the doorman. It settles nothing.")
+					if state.has_system(Systems.MARKET):
+						lines.append("A reroll costs %d." % state.reroll_price())
+		"heat":
+			title = "The count"
+			var measure: HeatEngine.Measure = HeatEngine.current(state)
+			lines.append("%d of 100." % int(round(HeatEngine.heat_of(state))))
+			if not state.has_system(Systems.HEAT):
+				lines.append("Nobody is counting yet. The House starts on its own floor.")
+			elif measure == HeatEngine.Measure.NONE:
+				lines.append("Nobody has looked up. The skim starts at %d." % int(state.config.heat_skim_at))
+			else:
+				lines.append("%s. A word costs %d credits." % [
+						HeatEngine.measure_name(measure), HeatEngine.launder_price(state)])
+			lines.append("It rises with what you win and falls with every spin you do not.")
+		"surety":
+			title = "Surety"
+			lines.append("The House holds %d%% of you." % int(round(state.surety() * 100.0)))
+			lines.append("Nothing while the close is covered; all of it when the spins left cannot reach what is owed.")
+			lines.append("A dead spin puts it up by the spin it wasted. A paying one brings it down by what it paid.")
+		"odds":
+			title = "Multiplier"
+			lines.append("x%.2f on the line standing." % state.board.multiplier)
+			var devices: int = (state.board.breakdown.get("triggered", []) as Array).size()
+			lines.append("%s, %d device%s, and a stake of %d." % [
+					Probability.pattern_name(state.board.pattern).capitalize(),
+					devices, "" if devices == 1 else "s", maxi(1, state.stake)])
+			lines.append("The receipt prints every part of it as the spin scores.")
+		"reel":
+			var index: int = int(parts[1]) if parts.size() > 1 else 0
+			if index < state.board.line.size() and state.board.line[index] != null:
+				var symbol: SymbolDef = state.board.line[index]
+				title = symbol.display_name
+				var gilt: int = state.symbol_bonus(symbol)
+				if symbol.is_curse:
+					lines.append("Costs %d, and voids the pattern unless something is warding it." % state.config.curse_penalty)
+				else:
+					lines.append("Pays %d%s." % [maxi(0, symbol.base_value + gilt),
+							" (%d gilt on)" % gilt if gilt > 0 else ""])
+				lines.append("Lands %.1f%% of the time on this reel as it stands." % (
+						Probability.symbol_chance(state.reel(), symbol.id) * 100.0))
+				if symbol.chip_value > 0:
+					lines.append("Pays %d chip%s wherever it stands on a scoring row." % [
+							symbol.chip_value, "" if symbol.chip_value == 1 else "s"])
+				if symbol.family != &"":
+					lines.append("One of the %s." % String(symbol.family))
+	if title.is_empty():
+		_inspector.hide_card()
+		return
+	_inspector.show_card(id, title, lines)
 
 
 ## The survey is lit to be surveyed. At the machine the room falls to
@@ -963,6 +1060,11 @@ func debug_win() -> void:
 			_shop.close()
 		engine.leave_shop(state)
 	_after_input()
+
+
+## Asks the machine about one of its parts, as a hover would. Visual QA.
+func debug_inspect(id: String) -> void:
+	_on_inspect(StringName(id))
 
 
 ## Ends the run on the spot, unpaid: for the storyboard's statement frame.
