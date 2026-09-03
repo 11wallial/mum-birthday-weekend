@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"scrip_held_back"
+display_name = "Scrip Held Back"
+line = "The stipend is being held back against a shortfall on another floor. Fewer chips at the close, and less asked in credit at the door."
+floors = Array[int]([])
+spins_delta = 0
+ante_percent = -14.0
+chips_delta = -2
+payout_scale = 1.0
+weight_shifts = {}
+no_boss = false

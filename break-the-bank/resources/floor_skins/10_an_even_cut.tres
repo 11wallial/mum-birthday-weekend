@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"an_even_cut"
+display_name = "An Even Cut"
+line = "The strip came back cut in even lengths. Nothing on it is rare tonight, and the door is dearer for the fact."
+floors = Array[int]([])
+spins_delta = 0
+ante_percent = 8.0
+chips_delta = 0
+payout_scale = 1.0
+weight_shifts = {&"": 3}
+no_boss = false

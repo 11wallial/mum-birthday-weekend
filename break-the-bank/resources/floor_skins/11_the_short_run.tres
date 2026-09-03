@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"the_short_run"
+display_name = "The Short Run"
+line = "There was not enough stock for a full strip. Less of everything, next to none of the rarest, and a spin added to make up the difference."
+floors = Array[int]([])
+spins_delta = 1
+ante_percent = 0.0
+chips_delta = 0
+payout_scale = 1.0
+weight_shifts = {&"": -2}
+no_boss = false
