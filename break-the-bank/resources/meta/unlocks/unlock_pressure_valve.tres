@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_pressure_valve"
+display_name = "Pressure Valve"
+description = "Hardware: the boiler will take a vent."
+kind = 0
+target_id = &"pressure_valve"
+condition = 7
+threshold = 1790

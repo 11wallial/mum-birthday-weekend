@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_master_key"
+display_name = "Master Key"
+description = "Every stop on the machine opens."
+kind = 0
+target_id = &"master_key"
+condition = 8
+threshold = 9500

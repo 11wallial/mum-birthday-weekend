@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_hazard_pay"
+display_name = "Hazard Pay"
+description = "The policy is amended in your favour."
+kind = 0
+target_id = &"hazard_pay"
+condition = 7
+threshold = 330

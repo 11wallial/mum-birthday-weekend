@@ -51,6 +51,10 @@ func _initialize() -> void:
 	# chosen for the run it should land on rather than guessed at.
 	var stat_track: Dictionary = {}
 	var wins_total: int = 0
+	# Wins per run index, across careers: gating hardware later thins the
+	# early pool, and this is where that shows up if it goes too far.
+	var wins_at_run: PackedInt32Array = PackedInt32Array()
+	wins_at_run.resize(runs)
 	var started: int = Time.get_ticks_msec()
 	for career: int in careers:
 		var profile: PlayerProfile = PlayerProfile.new()
@@ -60,6 +64,7 @@ func _initialize() -> void:
 			var state: RunState = engine.simulate_run(base_seed + career * CAREER_STRIDE + run, options)
 			if state.phase == RunState.Phase.WON:
 				wins_total += 1
+				wins_at_run[run] += 1
 			for unlock: UnlockDef in profile.record_run(state, catalogue.unlocks):
 				var key: String = String(unlock.id)
 				# A packed array in a dictionary is a value, not a handle:
@@ -87,6 +92,7 @@ func _initialize() -> void:
 	var report: Dictionary = _report(catalogue, fired, opened_after, careers, runs, climb)
 	report["stats"] = _stat_curve(stat_track, runs)
 	report["win_rate"] = float(wins_total) / float(maxi(1, careers * runs))
+	report["wins_at_run"] = wins_at_run
 	report["seconds"] = float(Time.get_ticks_msec() - started) / 1000.0
 	if args.has("out"):
 		_write(String(args["out"]), report)
@@ -165,6 +171,20 @@ func _print(report: Dictionary, catalogue: MetaCatalogue, careers: int, runs: in
 		line.append("run %d: %d (%.0fh)" % [
 			run + 1, curve[run], float(run + 1) * MINUTES_PER_RUN / 60.0])
 	print("  " + "\n  ".join(line))
+	# The early game is the one gating can break, so it is reported first.
+	var wins_at_run: PackedInt32Array = report["wins_at_run"]
+	var blocks: Array = [[0, 5], [5, 10], [10, 20], [20, 40], [40, runs]]
+	var won_cells: PackedStringArray = PackedStringArray()
+	for block: Array in blocks:
+		if int(block[0]) >= runs:
+			continue
+		var last: int = mini(int(block[1]), runs)
+		var won: int = 0
+		for run: int in range(int(block[0]), last):
+			won += wins_at_run[run]
+		won_cells.append("runs %d-%d: %.1f%%" % [int(block[0]) + 1, last,
+			100.0 * float(won) / float(maxi(1, careers * (last - int(block[0]))))])
+	print("\nWon, as the pool fills: " + ", ".join(won_cells))
 	var stats: Dictionary = report["stats"]
 	print("\nWhat a median career has by then:")
 	var keys: Array = ["runs_played", "wins", "best_floor", "lifetime_earned",

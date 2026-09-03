@@ -429,6 +429,14 @@ arrives in one:
 godot --headless --path . --script res://tools/casino_lab/career.gd -- --careers=40 --runs=70
 ```
 
+`--flat` keeps the player on the first rung instead of climbing as it opens,
+which is how the opening is measured: a fresh profile on the first rung wins
+12% of its first five runs and 16-17% once the pool has filled, against the
+15.6% the balance lab reports for the whole content set. The two numbers are
+different games — the lab measures a set nobody starts with — and gating
+hardware moves the first one without touching the second, so a gate added
+here is checked there.
+
 It prints the run each unlock fires on (median across careers, because a
 career is mostly luck), how many a median career has open after each run, and
 what every paced condition is worth at each run — which is the conversion
