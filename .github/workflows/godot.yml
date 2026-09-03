@@ -81,6 +81,19 @@ jobs:
           godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
             --report=res://reports/balance_report.json
 
+      # The batch above draws from the whole content set. Nobody starts there:
+      # a new profile draws from what no unlock is holding back, and a gate
+      # added to the collection moves that pool without touching the other.
+      # Same bands, because it is the same game — only the pool differs.
+      - name: Run and gate the opening batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
+            --runs=5000 --seed=1 --fresh --out=res://reports/opening_report.json
+          godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
+            --report=res://reports/opening_report.json
+
       # An audio asset with no licence row is a release blocker, not a warning.
       - name: Audit audio licences
         working-directory: ${{ env.PROJECT_DIR }}
@@ -91,7 +104,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: balance-report
-          path: ${{ env.PROJECT_DIR }}/reports/balance_report.json
+          path: |
+            ${{ env.PROJECT_DIR }}/reports/balance_report.json
+            ${{ env.PROJECT_DIR }}/reports/opening_report.json
           if-no-files-found: warn
 
   static-check:

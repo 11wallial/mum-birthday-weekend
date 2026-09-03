@@ -430,12 +430,7 @@ godot --headless --path . --script res://tools/casino_lab/career.gd -- --careers
 ```
 
 `--flat` keeps the player on the first rung instead of climbing as it opens,
-which is how the opening is measured: a fresh profile on the first rung wins
-12% of its first five runs and 16-17% once the pool has filled, against the
-15.6% the balance lab reports for the whole content set. The two numbers are
-different games — the lab measures a set nobody starts with — and gating
-hardware moves the first one without touching the second, so a gate added
-here is checked there.
+which is the career a first-time player has.
 
 It prints the run each unlock fires on (median across careers, because a
 career is mostly luck), how many a median career has open after each run, and
@@ -444,6 +439,24 @@ table between "this should arrive around run 25" and the threshold that puts
 it there. A run is 25–40 minutes, so 60 runs is the 30-hour arc the unlocks
 are paced against; `tests/simulation/test_unlock_pacing.gd` freezes that
 curve's shape so a retune cannot quietly collapse it back into one evening.
+
+**The opening pool** is the other game the lab was not measuring. Every
+batch above draws from the whole content set; a new profile draws from what
+no unlock is holding back, and the two are not the same game. `run_lab.gd
+--fresh` measures the second, and CI gates it against the same bands as the
+first:
+
+```bash
+godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- --runs=5000 --fresh --out=res://reports/opening_report.json
+godot --headless --path . --script res://tools/casino_lab/gate.gd -- --report=res://reports/opening_report.json
+```
+
+It wins 16.1% over 4,000 runs against the whole set's 15.6%, so the twelve
+specialists behind unlocks cost the opening nothing. Gating four more — the
+Hot Hand, the Whale Ticket, the Mirror Shard and the Dead Man's Grip, the
+four most-taken artifacts in the game — takes it to 4.2%. That is the shape
+of this cliff: the opening pool tolerates losing its specialists and not its
+staples, and nothing about it is visible in a whole-content batch.
 
 **The lifetime ledger** on the door keeps the spins, the biggest single
 spin, the vig paid to the House across every run, the deepest table after

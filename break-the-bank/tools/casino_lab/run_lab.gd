@@ -6,6 +6,9 @@
 ##
 ## --stay tells every run to take the House's offer and play on past the last
 ## floor, which measures the endless curve rather than the game that ends.
+## --fresh measures the pool a new profile actually has — the artifacts and
+## paper no unlock is holding back — which is a different game from the whole
+## content set, and the one every player starts with.
 ## --difficulty=<id> measures one rung of the ladder; --challenge=<id> one
 ## challenge, each with the whole content set allowed. --no-bosses sends
 ## nobody to any floor, which is how what the bosses cost is measured.
@@ -25,6 +28,10 @@ func _initialize() -> void:
 	var out_path: String = String(args.get("out", "user://balance_report.json"))
 	var lift: float = float(args.get("lift", 0.25))
 	var options: RunOptions = null
+	if args.has("fresh"):
+		var catalogue: MetaCatalogue = MetaCatalogue.new()
+		catalogue.load_all()
+		options = catalogue.options_for(PlayerProfile.new(), ContentDB.shared())
 	if args.has("machine"):
 		var catalogue: MetaCatalogue = MetaCatalogue.new()
 		catalogue.load_all()
@@ -45,6 +52,7 @@ func _initialize() -> void:
 		options.no_bosses = true
 
 	var report: Dictionary = CasinoLab.run_batch(runs, base_seed, options)
+	report["pool"] = "opening" if args.has("fresh") else "everything"
 	report["anomalies"] = CasinoLab.find_anomalies(report, lift)
 	_write(out_path, report)
 	_summarise(report, out_path)

@@ -33,8 +33,9 @@ func _initialize() -> void:
 	var floors: int = ContentDB.shared().floors.size()
 	var checks: Array[Dictionary] = BalanceGate.check(report, bands, floors)
 	print("── Balance gate ────────────────────────────")
-	print("report         %s (%d runs, seed %d)" % [
-		report_path, int(report.get("runs", 0)), int(report.get("base_seed", 0))])
+	print("report         %s (%d runs, seed %d, pool: %s)" % [
+		report_path, int(report.get("runs", 0)), int(report.get("base_seed", 0)),
+		String(report.get("pool", "everything"))])
 	for line: String in BalanceGate.describe(checks):
 		print(line)
 	if args.has("previous"):
