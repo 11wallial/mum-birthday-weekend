@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"counter_jaw"
+display_name = "Counter Jaw"
+description = "A jaw is no use without something to close against. +2.0x while you own the Reel Clamp."
+cost = 7
+trigger = 2
+effect = 27
+magnitude = 2.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 3
+module_scene_path = ""
+partner = &"reel_clamp"
+tag_filter = &""
+archetype = &"clamp"

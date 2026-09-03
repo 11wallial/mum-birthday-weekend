@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"vernier_scale"
+display_name = "Vernier Scale"
+description = "It reads the part of the drop nobody else can see. +1.8x per nudge spent on the board."
+cost = 10
+trigger = 2
+effect = 22
+magnitude = 1.8
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"greed"])
+min_floor = 5
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"trail"
