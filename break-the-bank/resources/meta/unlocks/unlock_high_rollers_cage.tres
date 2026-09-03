@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_high_rollers_cage"
+display_name = "High Roller's Cage"
+description = "Hardware: where the big money is kept while it plays."
+kind = 0
+target_id = &"high_rollers_cage"
+condition = 2
+threshold = 5

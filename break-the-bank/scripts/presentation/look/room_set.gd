@@ -581,6 +581,10 @@ func _pendant() -> MeshInstance3D:
 	_root.add_child(key)
 	_aim(key, LAMP + Vector3(0.0, -0.08, 0.0), LAMP_TARGET)
 	# Thicker air under the lamp, so the cone is a cone and not a suggestion.
+	# Not on the Compatibility renderer, which has no fog volumes and logs
+	# an error for the shader every boot.
+	if RenderingServer.get_current_rendering_method() == "gl_compatibility":
+		return bulb
 	var shaft: FogVolume = FogVolume.new()
 	shaft.name = "Shaft"
 	shaft.shape = RenderingServer.FOG_VOLUME_SHAPE_CONE
