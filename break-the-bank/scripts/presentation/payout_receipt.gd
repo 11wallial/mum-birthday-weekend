@@ -99,7 +99,7 @@ func _fit() -> void:
 	var window: Window = get_window()
 	if window == null or window.size.x <= 0:
 		return
-	_scale = clampf(DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	_scale = clampf(DESIGN_WIDTH / float(window.size.x), 1.0, 2.3) * RunHUD.user_scale
 	# Bottom right, above the key hint, beside the machine's own printer.
 	_panel.anchor_left = 1.0
 	_panel.anchor_right = 1.0

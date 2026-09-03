@@ -672,9 +672,9 @@ func _on_tutorial_requested() -> void:
 
 ## Reads every setting off the profile into the buses and the reels.
 func _apply_settings() -> void:
-	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay", "steady"]:
+	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay", "steady", "ui_scale"]:
 		_apply_setting(StringName(key), float(_profile.settings.get(key,
-				1.0 if key == "pace" else 0.0)))
+				1.0 if key == "pace" or key == "ui_scale" else 0.0)))
 
 
 func _apply_setting(key: StringName, value: float) -> void:
@@ -686,6 +686,10 @@ func _apply_setting(key: StringName, value: float) -> void:
 		&"steady":
 			SlotView3D.steady = value > 0.5
 			_settle_surety()
+		&"ui_scale":
+			# Every overlay refits on a resize; the setting is a resize.
+			RunHUD.user_scale = clampf(value, 0.5, 2.0)
+			get_viewport().size_changed.emit()
 		&"overlay":
 			# The machine carries its own controls and counters; the overlay
 			# repeats them on the screen for whoever wants that.

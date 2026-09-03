@@ -198,7 +198,7 @@ func _fit() -> void:
 	var window: Window = get_window()
 	if window == null or window.size.x <= 0:
 		return
-	_scale = clampf(DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	_scale = clampf(DESIGN_WIDTH / float(window.size.x), 1.0, 2.3) * RunHUD.user_scale
 	_column.anchor_left = 0.0
 	_column.anchor_right = 0.0
 	_column.anchor_top = 0.0
@@ -436,6 +436,8 @@ func _draw_settings() -> void:
 	# rest, per spin.
 	_settings_box.add_child(_slider("PACE", &"pace", 0.0, 2.0,
 			float(_settings.get("pace", 1.0))))
+	_settings_box.add_child(_slider("TEXT", &"ui_scale", 0.8, 1.5,
+			float(_settings.get("ui_scale", 1.0))))
 	var overlay_on: bool = float(_settings.get("overlay", 0.0)) > 0.5
 	var toggle_row: HBoxContainer = HBoxContainer.new()
 	toggle_row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
@@ -478,7 +480,7 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 	var slider: HSlider = HSlider.new()
 	slider.min_value = low
 	slider.max_value = high
-	slider.step = 1.0
+	slider.step = 0.1 if key == &"ui_scale" else 1.0
 	slider.value = float(SlotView3D.pace_index(value)) if key == &"pace" else value
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.custom_minimum_size = Vector2(240.0 * _scale, 22.0 * _scale)
@@ -498,6 +500,8 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 func _setting_text(key: StringName, value: float) -> String:
 	if key == &"pace":
 		return SlotView3D.PACE_NAMES[SlotView3D.pace_index(value)]
+	if key == &"ui_scale":
+		return "%d%%" % int(round(value * 100.0))
 	return "%+.0f dB" % value
 
 

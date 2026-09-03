@@ -24,6 +24,11 @@ extends CanvasLayer
 const LOG_LINES: int = 4
 ## The viewport width the type sizes were chosen at.
 const DESIGN_WIDTH: float = 1152.0
+## The player's own multiplier on every overlay's type, from the door's
+## TEXT setting: the display hygiene the roadmap asks for on a Deck or a
+## television across the room. The forms on the clipboard are texels and
+## take the camera's word instead.
+static var user_scale: float = 1.0
 ## Height the callout allows per line of text, and for its own padding.
 const PROMPT_LINE: float = 26.0
 const PROMPT_PADDING: float = 26.0
@@ -82,7 +87,7 @@ func _fit_type() -> void:
 	var window_width: float = float(window.size.x)
 	if window_width <= 0.0:
 		return
-	_scale = clampf(DESIGN_WIDTH / window_width, 1.0, 2.3)
+	_scale = clampf(DESIGN_WIDTH / window_width, 1.0, 2.3) * user_scale
 	var scale_up: float = _scale
 	for entry: Array in [
 		[_cash, 27.0], [_ante, 27.0], [_spins, 27.0],

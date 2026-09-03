@@ -111,7 +111,7 @@ func _fit() -> void:
 	var window: Window = get_window()
 	if window == null or window.size.x <= 0:
 		return
-	_scale = clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3)
+	_scale = clampf(RunHUD.DESIGN_WIDTH / float(window.size.x), 1.0, 2.3) * RunHUD.user_scale
 	# The chips sit under the HUD's own rows, which scale with the type.
 	if _status != null:
 		_status.offset_left = 22.0 * _scale
