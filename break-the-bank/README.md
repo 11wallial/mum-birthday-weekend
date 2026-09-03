@@ -441,6 +441,11 @@ xvfb-run -a godot --rendering-driver opengl3 \
     --script res://tools/visual_qa/screenshot.gd -- --out=res://shots --spins=6
 ```
 
+`tools/visual_qa/record.gd -- --out=/tmp/spin --seconds=3 --fps=20` records
+a spin as a numbered PNG sequence — the performance in motion, which no
+still can show and the trailer's opening shot needs; `ffmpeg -i
+frame_%04d.png` assembles it.
+
 It renders under Compatibility rather than Forward+, so volumetric fog and glow
 are absent from the shots; geometry, scale and framing are exact. Locally it
 renders in Forward+. `--settle=<s>` is how long each frame waits before the
