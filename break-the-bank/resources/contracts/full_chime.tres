@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"full_chime"
+display_name = "Full Chime"
+description = "Every bell is gilded 18 above its face. Everything the machine pays comes back 10% lighter for the metal."
+min_floor = 6
+boon = 5
+boon_magnitude = 18
+boon_symbol = &"bell"
+boon_pattern = -1
+toll = 3
+toll_magnitude = -10
+toll_symbol = &""
+toll_pattern = -1

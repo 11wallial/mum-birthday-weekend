@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"paid_mourners"
+display_name = "Paid Mourners"
+description = "Nine a head for the skulls, and they cost nothing further. The wage comes out of the whole line, which now pays a third."
+min_floor = 5
+boon = 6
+boon_magnitude = 9
+boon_symbol = &""
+boon_pattern = -1
+toll = 4
+toll_magnitude = -2.0
+toll_symbol = &""
+toll_pattern = 3
