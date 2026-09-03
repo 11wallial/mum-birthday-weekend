@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"receipt"
+display_name = "Receipt"
+base_value = 6
+base_weight = 1
+family = &""
+is_wild = false
+is_curse = false
+glyph = "RC"
+color = Color(0.82, 0.74, 0.56, 1)
+color2 = Color(0.16, 0.16, 0.18, 1)
