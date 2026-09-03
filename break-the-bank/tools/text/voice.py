@@ -34,7 +34,9 @@ CODE = ["scripts/presentation/casino_room.gd", "scripts/presentation/tutorial_di
         # Two in the simulation whose strings are shown as they stand: the
         # names of the systems a floor grants, and the patterns the line can
         # land in. The simulation never translates them; the cabinet does.
-        "scripts/simulation/systems.gd", "scripts/simulation/artifact_engine.gd"]
+        "scripts/simulation/systems.gd", "scripts/simulation/artifact_engine.gd",
+        # What every key does, in words, on the door.
+        "scripts/presentation/key_book.gd"]
 
 RULES = [
     ("shouts", re.compile(r"!")),

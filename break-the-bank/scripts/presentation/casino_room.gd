@@ -805,9 +805,26 @@ func _on_tutorial_requested() -> void:
 
 ## Reads every setting off the profile into the buses and the reels.
 func _apply_settings() -> void:
-	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay", "steady", "ui_scale"]:
-		_apply_setting(StringName(key), float(_profile.settings.get(key,
-				1.0 if key == "pace" or key == "ui_scale" else 0.0)))
+	for key: String in ["master", "music", "sfx", "ambience", "pace", "overlay", "steady",
+			"ui_scale", "fullscreen", "vsync", "render_scale"]:
+		_apply_setting(StringName(key), float(_profile.settings.get(key, _default_of(key))))
+	# The keys the player has moved, over the bindings the project ships.
+	KeyBook.remember_defaults()
+	KeyBook.apply(_profile.bindings)
+	# The language is a name, not a number, so it does not go through the
+	# same door as the rest.
+	var locale: String = String(_profile.settings.get("locale", ""))
+	if locale != "" and TranslationServer.get_loaded_locales().has(locale):
+		TranslationServer.set_locale(locale)
+
+
+## What a setting is worth before anyone has touched it.
+func _default_of(key: String) -> float:
+	match key:
+		"pace", "ui_scale", "vsync", "render_scale":
+			return 1.0
+		_:
+			return 0.0
 
 
 func _apply_setting(key: StringName, value: float) -> void:
@@ -830,6 +847,18 @@ func _apply_setting(key: StringName, value: float) -> void:
 				_deck.show_overlay(value > 0.5)
 			if _hud != null and _hud.has_method("show_gauges"):
 				_hud.call("show_gauges", value > 0.5)
+		&"fullscreen":
+			# Borderless full screen: the machine is a dark room, and a
+			# window's chrome around it is a light on in the room.
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN
+					if value > 0.5 else DisplayServer.WINDOW_MODE_WINDOWED)
+		&"vsync":
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED
+					if value > 0.5 else DisplayServer.VSYNC_DISABLED)
+		&"render_scale":
+			# The room is rendered at a fraction and scaled up; the overlays
+			# and every word on them stay at the screen's own resolution.
+			get_viewport().scaling_3d_scale = clampf(value, 0.5, 1.0)
 		&"master":
 			_set_bus("Master", value)
 		&"music":
@@ -963,6 +992,13 @@ func debug_dress_room(floors: int, cash: int, mood: StringName) -> void:
 func debug_open_setup() -> void:
 	if _title != null:
 		_open_door(state != null)
+
+
+## Opens the door on its settings. For the storyboard.
+func debug_open_settings(keys: bool = false) -> void:
+	debug_open_setup()
+	if _title != null and _title.has_method("debug_open_settings"):
+		_title.call("debug_open_settings", keys)
 
 
 ## Closes the door. For tools and tests.

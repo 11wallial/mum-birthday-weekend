@@ -67,6 +67,11 @@ var _stats: Label
 var _settings_box: VBoxContainer
 var _settings_open: bool = false
 var _collection_open: bool = false
+## The action waiting for a key, while the controls list is listening.
+var _listening: StringName = &""
+## The keys are a panel of their own: ten rows and a way back is more than
+## the settings column can hold under the machine.
+var _keys_open: bool = false
 var _line_index: int = 0
 
 
@@ -121,6 +126,7 @@ func _show() -> void:
 	_open = true
 	visible = true
 	_settings_open = false
+	_keys_open = false
 	_redraw()
 
 
@@ -222,12 +228,20 @@ func _redraw() -> void:
 	_clear(_menu)
 	_clear(_pickers)
 	_clear(_settings_box)
-	_settings_box.visible = _settings_open
+	_settings_box.visible = _settings_open or _keys_open
 	_clear(_collection_box)
 	_collection_box.visible = _collection_open
 	_wordmark.text = "BREAK THE BANK" if _mode == Mode.TITLE else "THE FLOOR IS PAUSED"
 	_line.text = String(LINES[_line_index]) if _mode == Mode.TITLE \
 			else "The House waits. It is good at it."
+	if _keys_open:
+		_draw_controls()
+		_menu.add_child(_button("BACK", "", func() -> void:
+			_keys_open = false
+			_listening = &""
+			_redraw()))
+		_stats.text = ""
+		return
 	if _settings_open:
 		_draw_settings()
 		_menu.add_child(_button("BACK", "", func() -> void:
@@ -439,36 +453,108 @@ func _draw_settings() -> void:
 			float(_settings.get("pace", 1.0))))
 	_settings_box.add_child(_slider("TEXT", &"ui_scale", 0.8, 1.5,
 			float(_settings.get("ui_scale", 1.0))))
-	var overlay_on: bool = float(_settings.get("overlay", 0.0)) > 0.5
-	var toggle_row: HBoxContainer = HBoxContainer.new()
-	toggle_row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
-	var toggle_name: Label = _label("ON SCREEN", 12.0, UiSkin.INK)
-	toggle_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
-	toggle_row.add_child(toggle_name)
-	toggle_row.add_child(_small(Copy.filled("CONTROLS AND COUNTERS: %s", [Copy.of("ON") if overlay_on else Copy.of("OFF")]),
-			func() -> void:
-				var now: float = 0.0 if overlay_on else 1.0
-				_settings["overlay"] = now
-				setting_changed.emit(&"overlay", now)
-				_redraw()))
-	_settings_box.add_child(toggle_row)
-	var steady_on: bool = float(_settings.get("steady", 0.0)) > 0.5
-	var steady_row: HBoxContainer = HBoxContainer.new()
-	steady_row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
-	var steady_name: Label = _label("PICTURE", 12.0, UiSkin.INK)
-	steady_name.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
-	steady_row.add_child(steady_name)
-	steady_row.add_child(_small(Copy.filled("STEADY — no flicker, flash, tearing or shake: %s", [Copy.of("ON") if steady_on else Copy.of("OFF")]),
-			func() -> void:
-				var now: float = 0.0 if steady_on else 1.0
-				_settings["steady"] = now
-				setting_changed.emit(&"steady", now)
-				_redraw()))
-	_settings_box.add_child(steady_row)
+	_settings_box.add_child(_toggle("ON SCREEN", "CONTROLS AND COUNTERS", &"overlay"))
+	_settings_box.add_child(_toggle("PICTURE",
+			"STEADY — no flicker, flash, tearing or shake", &"steady"))
+	# The video settings the door never had. Each is the same seam as the
+	# rest: a number on the profile, applied by the room.
+	_settings_box.add_child(_toggle("SCREEN", "FULL SCREEN", &"fullscreen"))
+	_settings_box.add_child(_toggle("SYNC", "WAIT FOR THE SCREEN — no tearing", &"vsync", 1.0))
+	_settings_box.add_child(_slider("DETAIL", &"render_scale", 0.5, 1.0,
+			float(_settings.get("render_scale", 1.0))))
+	_settings_box.add_child(_languages())
+	_settings_box.add_child(_small(Copy.of("THE KEYS"), func() -> void:
+		_keys_open = true
+		_redraw()))
 	var about: Label = _label("Pace is how long the reels and the count take; hold the lever, or Space, through a payout to hurry it. The machine carries its controls and its counters; the overlay repeats them. Louder than 0 dB is the House's own risk.",
 			11.0, UiSkin.INK_MUTED)
 	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_settings_box.add_child(about)
+
+
+## The keys, and what happens when one is clicked: the row starts listening,
+## and the next thing pressed becomes the binding. The reel keys are not here
+## on purpose — they are positional, and a player who moves them cannot tell
+## which reel is which.
+func _draw_controls() -> void:
+	_settings_box.add_child(_label("THE KEYS", 14.0, UiSkin.AMBER))
+	_settings_box.add_child(_label(
+			"Choose a key, then press what should take its place. The reels stay on 1 to 5.",
+			11.0, UiSkin.INK_MUTED))
+	# Two columns: ten rows one above the other is taller than the door,
+	# whatever the screen, because the door scales with it.
+	var grid: GridContainer = GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override(&"h_separation", int(roundf(18.0 * _scale)))
+	grid.add_theme_constant_override(&"v_separation", int(roundf(6.0 * _scale)))
+	for row: Array in KeyBook.ACTIONS:
+		var action: StringName = row[0]
+		var cell: HBoxContainer = HBoxContainer.new()
+		cell.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+		var name_cell: Label = _label(String(row[1]), 11.0, UiSkin.INK)
+		name_cell.custom_minimum_size = Vector2(130.0 * _scale, 0.0)
+		cell.add_child(name_cell)
+		var listening: bool = _listening == action
+		cell.add_child(_small(Copy.of("PRESS A KEY") if listening
+				else KeyBook.describe(action),
+				func() -> void:
+					_listening = &"" if listening else action
+					_redraw()))
+		grid.add_child(cell)
+	_settings_box.add_child(grid)
+	var footer: HBoxContainer = HBoxContainer.new()
+	footer.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	footer.add_child(_small(Copy.of("PUT THE KEYS BACK"), func() -> void:
+		KeyBook.reset_all()
+		_profile.bindings = {}
+		_profile.save()
+		_listening = &""
+		_redraw()))
+	_settings_box.add_child(footer)
+
+
+## A named on/off row: the name on the left, the state written into the
+## button, because a checkbox says nothing about what it does when it is off.
+func _toggle(row_name: String, caption: String, key: StringName,
+		default_on: float = 0.0) -> Control:
+	var on: bool = float(_settings.get(String(key), default_on)) > 0.5
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	var label: Label = _label(row_name, 12.0, UiSkin.INK)
+	label.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
+	row.add_child(label)
+	row.add_child(_small(Copy.filled("%s: %s", [Copy.of(caption),
+			Copy.of("ON") if on else Copy.of("OFF")]),
+			func() -> void:
+				var now: float = 0.0 if on else 1.0
+				_settings[String(key)] = now
+				setting_changed.emit(key, now)
+				_redraw()))
+	return row
+
+
+## The languages the build carries. One column today; the row exists so the
+## second one is a column and not a feature.
+func _languages() -> Control:
+	var locales: PackedStringArray = TranslationServer.get_loaded_locales()
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	var label: Label = _label("LANGUAGE", 12.0, UiSkin.INK)
+	label.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
+	row.add_child(label)
+	if locales.size() < 2:
+		row.add_child(_label(TranslationServer.get_locale_name(
+				TranslationServer.get_locale()).to_upper(), 12.0, UiSkin.INK_MUTED))
+		return row
+	for locale: String in locales:
+		var here: String = locale
+		row.add_child(_small(TranslationServer.get_locale_name(here).to_upper(),
+				func() -> void:
+					TranslationServer.set_locale(here)
+					_profile.settings["locale"] = here
+					_profile.save()
+					_redraw()))
+	return row
 
 
 func _slider(caption: String, key: StringName, low: float, high: float,
@@ -482,7 +568,7 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 	var slider: HSlider = HSlider.new()
 	slider.min_value = low
 	slider.max_value = high
-	slider.step = 0.1 if key == &"ui_scale" else 1.0
+	slider.step = 0.1 if key == &"ui_scale" or key == &"render_scale" else 1.0
 	slider.value = float(SlotView3D.pace_index(value)) if key == &"pace" else value
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.custom_minimum_size = Vector2(240.0 * _scale, 22.0 * _scale)
@@ -502,7 +588,7 @@ func _slider(caption: String, key: StringName, low: float, high: float,
 func _setting_text(key: StringName, value: float) -> String:
 	if key == &"pace":
 		return SlotView3D.PACE_NAMES[SlotView3D.pace_index(value)]
-	if key == &"ui_scale":
+	if key == &"ui_scale" or key == &"render_scale":
 		return "%d%%" % int(round(value * 100.0))
 	return "%+.0f dB" % value
 
@@ -664,14 +750,37 @@ func _start_seed() -> void:
 	start_requested.emit(parsed if parsed >= 0 else 0, "")
 
 
+## Opens the settings panel. For the storyboard and for tests: the panel is
+## the longest thing the door draws and the easiest to overflow.
+func debug_open_settings(keys: bool = false) -> void:
+	_settings_open = true
+	_keys_open = keys
+	_redraw()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _open:
+		return
+	# A row that is listening takes the next thing pressed, whatever it is,
+	# including the keys this panel otherwise uses to leave.
+	if _listening != &"" and event.is_pressed() and not event.is_echo():
+		var taking: StringName = _listening
+		_listening = &""
+		if KeyBook.rebind(taking, event):
+			_profile.bindings = KeyBook.to_dict()
+			_profile.save()
+		_redraw()
+		get_viewport().set_input_as_handled()
 		return
 	var typing: bool = _seed_field != null and is_instance_valid(_seed_field) \
 			and _seed_field.has_focus()
 	if event.is_action_pressed(&"bb_cancel") or event.is_action_pressed(&"bb_menu"):
 		if typing:
 			_seed_field.release_focus()
+		elif _keys_open:
+			_keys_open = false
+			_listening = &""
+			_redraw()
 		elif _settings_open:
 			_settings_open = false
 			_redraw()

@@ -73,6 +73,8 @@ func _initialize() -> void:
 		_shots.append({"name": "04c_draft_%d" % i, "action": "draft"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
 	_shots.append({"name": "06_run_setup", "action": "setup"})
+	_shots.append({"name": "06b_settings", "action": "settings"})
+	_shots.append({"name": "06c_keys", "action": "keys"})
 	# Six of the seven systems live on floors a real run takes minutes to reach.
 	# A storyboard that stopped at floor one was checking the game with most of
 	# its mechanics switched off, so the rest are jumped to directly.
@@ -178,6 +180,12 @@ func _apply(action: String) -> void:
 		"setup":
 			if _root_node.has_method("debug_open_setup"):
 				_root_node.call("debug_open_setup")
+		"settings":
+			if _root_node.has_method("debug_open_settings"):
+				_root_node.call("debug_open_settings", false)
+		"keys":
+			if _root_node.has_method("debug_open_settings"):
+				_root_node.call("debug_open_settings", true)
 		"contracts":
 			if _root_node.has_method("debug_open_contracts"):
 				_root_node.call("debug_open_contracts")

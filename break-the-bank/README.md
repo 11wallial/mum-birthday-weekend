@@ -458,6 +458,17 @@ four most-taken artifacts in the game — takes it to 4.2%. That is the shape
 of this cliff: the opening pool tolerates losing its specialists and not its
 staples, and nothing about it is visible in a whole-content batch.
 
+**The door's settings** are a number per key on the profile, applied by
+`CasinoRoom._apply_setting`: four buses, the pace, the text size, the
+overlay, the steady picture, and — new — full screen, waiting for the
+screen, and the detail the room is rendered at. **The keys** are their own
+panel: [KeyBook] keeps the bindings the project ships as the defaults,
+applies a profile's changes over them at boot, and writes back only what
+moved, as a keycode or a pad button rather than a serialised `InputEvent`,
+so an old save is readable and a newer one is ignorable. A key replaces the
+key and a pad button replaces the pad button, so rebinding the keyboard
+never costs a player their controller.
+
 **The lifetime ledger** on the door keeps the spins, the biggest single
 spin, the vig paid to the House across every run, the deepest table after
 hours, and the artifact most often owned at the end of a run.

@@ -108,6 +108,14 @@ func _process(delta: float) -> bool:
 		_room.call("debug_inspect", &"counter:cash")
 	if _made % 17 == 9:
 		_room.call("debug_inspect", &"heat")
+	# The door, its settings and its keys, which no run reaches on its own.
+	if _made == 12 and _room.has_method("debug_open_settings"):
+		_room.call("debug_open_settings", false)
+	elif _made == 14 and _room.has_method("debug_open_settings"):
+		_room.call("debug_open_settings", true)
+	elif _made == 16 and _room.has_method("debug_close_door"):
+		_read(root)
+		_room.call("debug_close_door")
 	_made += 1
 	_wait = _settle
 	if _made >= _moves:

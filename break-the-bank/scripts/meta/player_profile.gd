@@ -39,6 +39,9 @@ var records: Dictionary = {}
 ## Volume per bus in dB and the pace of the reels, as the title's settings
 ## panel keeps them. Presentation reads these; the simulation never does.
 var settings: Dictionary = {}
+## Keys and pad buttons the player has moved, by action id. Only what differs
+## from the bindings the project ships with; [KeyBook] reads and writes it.
+var bindings: Dictionary = {}
 ## Whether the guided first run has been played through or skipped, so the
 ## Clerk only walks a debtor through the basement once unless asked.
 var tutorial_seen: bool = false
@@ -211,6 +214,7 @@ func to_dict() -> Dictionary:
 		"total_spins": total_spins,
 		"biggest_spin": biggest_spin,
 		"vig_paid": vig_paid,
+		"bindings": bindings,
 		"runs_by_difficulty": runs_by_difficulty,
 		"wins_by_difficulty": wins_by_difficulty,
 		"artifact_picks": artifact_picks,
@@ -264,7 +268,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.selected_difficulty = StringName(_text(data, "selected_difficulty", "standard"))
 	profile.selected_challenge = StringName(_text(data, "selected_challenge", ""))
 	for key: String in ["runs_by_difficulty", "wins_by_difficulty", "artifact_picks",
-			"records", "settings", "seen"]:
+			"records", "settings", "seen", "bindings"]:
 		var table: Variant = data.get(key, {})
 		if table is Dictionary:
 			profile.set(key, table)

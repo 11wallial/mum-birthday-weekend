@@ -67,6 +67,13 @@ Groundwork, laid early because it gets more expensive weekly.
 godot --headless --path . --script res://tools/text/pseudo_check.gd -- --moves=120 --list
 ```
 
+  It opens the door, its settings and its keys on the way past, because no
+  run reaches those on its own.
+- **A key's name is the keyboard's word, not the table's.** Godot asks the
+  OS for it and the OS answers in the layout's own language. The words this
+  game supplies for a pad or a mouse — PAD A, CLICK — go through `Copy`
+  like everything else.
+
 - `tests/unit/test_localization.gd` holds the table loading, a runtime
   translation being honoured, and every artifact, boss and chit having a
   row.
