@@ -237,15 +237,17 @@ one.
 
 The consumable class, in the House's paper: a **chit** is a slip bought at
 the draft for chips into a pocket of two and spent once, at its moment.
-Five kinds (`ChitDef.Kind`, resolved in `SimEngine._do_use_chit`): the
-Respin (the last drum again, with the decision still on the table), the
-Vent (forty off the count, from the sixth floor), the Deferral (this
-floor's vig added to the principal instead of charged), the Marker (the
-last drum lands a wild next spin), the Peek (the next line on the ledger
-before it is spun, off the reel stream without moving it). Two verbs,
-`buy_chit` and `use_chit`, both journaled; `RunState.can_use_chit` says
-when each kind's moment is. The bot buys paper before hardware with change
-kept, and spends each kind at the moment a person would.
+Seven kinds (`ChitDef.Kind`, resolved in `SimEngine._do_use_chit`): the
+Respin (the last drum again, with the decision still on the table), the Vent
+(forty off the count, from the sixth floor), the Deferral (this floor's vig
+added to the principal instead of charged), the Marker (the last drum lands
+a wild next spin), the Peek (the next line on the ledger before it is spun,
+off the reel stream without moving it), the nudge ticket (more stops on a
+board that has already landed — the Shim, the Crowbar), and the spin ticket
+(more pulls on the floor's allowance — the Late Pass, the Lock-In). Two
+verbs, `buy_chit` and `use_chit`, both journaled; `RunState.can_use_chit`
+says when each kind's moment is. The bot buys paper before hardware with
+change kept, and spends each kind at the moment a person would.
 
 ### How a floor is running
 
@@ -257,13 +259,20 @@ closes — a room's condition, not one of the House's people.
 
 Everything a skin can do is a number the engine already understood: the
 allowance, the ante, the stipend, what the reels carry, what the floor
-pays, and whether the House could spare anybody for it. Eight of them: the
-Night Shift (a spin more, and the House prices the room), a Quiet Room (a
-spin fewer, and it asks less), an Orchard Run (fruit heavy), Cold Iron
+pays, and whether the House could spare anybody for it. Sixteen of them:
+A Full Room (a spin more, and the House prices the room), Nobody Playing
+(a spin fewer, and it asks less), An Orchard Run (fruit heavy), Cold Iron
 (bars and sevens riding high), Short-Staffed (nobody was sent, and the
-House charges for the privilege), the Float (scrip instead of credit),
-Lights Out (a spin fewer, what pays pays well), Papered Over (the skulls
-struck off and not replaced).
+House charges for the privilege), A Short Float (scrip instead of
+credit), Lights Out (a spin fewer, what pays pays well), Papered Over
+(the skulls struck off and not replaced), Scrip Held Back (chips held
+back against a shortfall, and less asked at the door), An Even Cut
+(nothing on the strip is rare tonight), The Short Run (less of
+everything, and a spin added to make up for it), The Joker's Shift
+(wilds printed heavy), A Bad Print (skulls printed twice over, paid at a
+better rate), A Bare Orchard (the fruit struck off, worth more, and the
+door cheaper), The Late Sitting (two spins more, and the door dearer),
+The Cage (pays in scrip wherever the bank lands).
 
 The basement is never skinned: the first floor is the lesson, and a lesson
 with a variable in it teaches the variable. A floor is ordinary about
@@ -275,8 +284,8 @@ floors a run and wins 16.0%, against 15.2% with no skins at all — variety
 that costs about what it gives. The per-skin rates the lab reports
 (`skin_win_rates`) are survivorship-flattered, since a run that lives
 longer meets more floors; read them against each other, not against the
-overall rate. The three that led that ranking — Short-Staffed, the Float
-and Lights Out — were priced up until the feature was flat.
+overall rate. The three that led that ranking — Short-Staffed, A Short
+Float and Lights Out — were priced up until the feature was flat.
 
 ### The notice
 
