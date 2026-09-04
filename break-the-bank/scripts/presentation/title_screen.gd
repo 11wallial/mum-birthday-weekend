@@ -67,6 +67,11 @@ var _seed_field: LineEdit
 var _stats: Label
 var _settings_box: VBoxContainer
 var _settings_open: bool = false
+## The counter: the screen a run is actually set up on. The door used to be
+## the menu and the setup on one page, which is why it overflowed — the
+## machine, the challenge, the eight-rung audit and the seed field all sat
+## under four menu buttons on a column pinned to a fixed height.
+var _setup_open: bool = false
 var _collection_open: bool = false
 ## The action waiting for a key, while the controls list is listening.
 var _listening: StringName = &""
@@ -251,6 +256,8 @@ func _redraw() -> void:
 	_wordmark.text = "BREAK THE BANK" if _mode == Mode.TITLE else "THE FLOOR IS PAUSED"
 	_line.text = String(LINES[_line_index]) if _mode == Mode.TITLE \
 			else "The House waits. It is good at it."
+	if _setup_open and _mode == Mode.TITLE:
+		_line.text = "Set the machine and the terms. The House agrees to both."
 	if _keys_open:
 		_draw_controls()
 		_menu.add_child(_button("BACK", "", func() -> void:
@@ -273,6 +280,9 @@ func _redraw() -> void:
 			_redraw()))
 		_stats.text = ""
 		return
+	if _setup_open and _mode == Mode.TITLE:
+		_draw_setup()
+		return
 	if _mode == Mode.PAUSE:
 		_menu.add_child(_button("RESUME", TouchBar.hint("ESC", ""), func() -> void:
 			resume_requested.emit()))
@@ -291,8 +301,10 @@ func _redraw() -> void:
 	if _has_save:
 		_menu.add_child(_button("CONTINUE", "the run on the table", func() -> void:
 			resume_requested.emit()))
-	_menu.add_child(_button("PULL THE LEVER", "a new run on the machine below", func() -> void:
-		start_requested.emit(0, "")))
+	_menu.add_child(_button("PULL THE LEVER", "set the machine and the terms",
+			func() -> void:
+				_setup_open = true
+				_redraw()))
 	_menu.add_child(_button("THE COLLECTION", Copy.filled("%d of %d pieces of hardware seen", [
 			_profile.seen_count("artifacts"), ContentDB.shared().artifacts.size()]),
 			func() -> void:
@@ -301,6 +313,25 @@ func _redraw() -> void:
 	_menu.add_child(_button("THE DAILY", "%s — one seed, everyone" % SeedBook.today_key(),
 			func() -> void:
 				start_requested.emit(SeedBook.today_seed(), SeedBook.today_key())))
+	var lower: HBoxContainer = HBoxContainer.new()
+	lower.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
+	lower.add_child(_small("HOW TO PLAY", func() -> void: tutorial_requested.emit()))
+	lower.add_child(_small("SETTINGS", func() -> void:
+		_settings_open = true
+		_redraw()))
+	if not OS.has_feature("web"):
+		lower.add_child(_small("QUIT", func() -> void: get_tree().quit()))
+	_menu.add_child(lower)
+	_stats.text = _stats_text()
+
+
+## The counter: where a run is set up, once the door has been walked through.
+##
+## The machine, the challenge, the audit's eight rungs and the seed all live
+## here now. On the door they sat under the menu on a column pinned to a
+## fixed height, and the last two things in that column — the audit's caption
+## and the run stats — were what fell off the bottom of the screen.
+func _draw_setup() -> void:
 	_draw_pickers()
 	var seed_row: HBoxContainer = HBoxContainer.new()
 	seed_row.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
@@ -317,16 +348,12 @@ func _redraw() -> void:
 	seed_row.add_child(_seed_field)
 	var play_seed: Button = _small("PLAY THIS SEED", func() -> void: _start_seed())
 	seed_row.add_child(play_seed)
-	_menu.add_child(seed_row)
-	var lower: HBoxContainer = HBoxContainer.new()
-	lower.add_theme_constant_override(&"separation", int(roundf(8.0 * _scale)))
-	lower.add_child(_small("HOW TO PLAY", func() -> void: tutorial_requested.emit()))
-	lower.add_child(_small("SETTINGS", func() -> void:
-		_settings_open = true
+	_pickers.add_child(seed_row)
+	_pickers.add_child(_button("PULL THE LEVER", "a new run on the machine below",
+			func() -> void: start_requested.emit(0, "")))
+	_pickers.add_child(_button("BACK", "", func() -> void:
+		_setup_open = false
 		_redraw()))
-	if not OS.has_feature("web"):
-		lower.add_child(_small("QUIT", func() -> void: get_tree().quit()))
-	_menu.add_child(lower)
 	_stats.text = _stats_text()
 
 
@@ -782,6 +809,14 @@ func _start_seed() -> void:
 
 ## Opens the settings panel. For the storyboard and for tests: the panel is
 ## the longest thing the door draws and the easiest to overflow.
+## Opens the door on the counter, where a run is set up. For the storyboard.
+func debug_open_counter() -> void:
+	_setup_open = true
+	_settings_open = false
+	_keys_open = false
+	_redraw()
+
+
 func debug_open_settings(keys: bool = false) -> void:
 	_settings_open = true
 	_keys_open = keys

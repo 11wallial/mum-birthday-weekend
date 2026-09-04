@@ -1119,6 +1119,14 @@ func debug_open_setup() -> void:
 		_open_door(state != null)
 
 
+## Opens the door and walks through to the counter. For the storyboard.
+func debug_open_counter() -> void:
+	if _title == null:
+		return
+	_open_door(state != null)
+	_title.debug_open_counter()
+
+
 ## Opens the door on its settings. For the storyboard.
 func debug_open_settings(keys: bool = false) -> void:
 	debug_open_setup()

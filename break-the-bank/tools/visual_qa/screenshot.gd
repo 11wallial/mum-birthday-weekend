@@ -73,6 +73,9 @@ func _initialize() -> void:
 		_shots.append({"name": "04c_draft_%d" % i, "action": "draft"})
 	_shots.append({"name": "05_after_spins_room", "action": "room"})
 	_shots.append({"name": "06_run_setup", "action": "setup"})
+	# The counter, which is where a run is actually set up now that the door
+	# is not both screens at once.
+	_shots.append({"name": "06a_counter", "action": "counter"})
 	_shots.append({"name": "06b_settings", "action": "settings"})
 	_shots.append({"name": "06c_keys", "action": "keys"})
 	# Six of the seven systems live on floors a real run takes minutes to reach.
@@ -204,6 +207,9 @@ func _apply(action: String) -> void:
 		"inspect":
 			if _root_node.has_method("debug_inspect"):
 				_root_node.call("debug_inspect", "counter:ante")
+		"counter":
+			if _root_node.has_method("debug_open_counter"):
+				_root_node.call("debug_open_counter")
 		"uninspect":
 			if _root_node.has_method("debug_inspect"):
 				_root_node.call("debug_inspect", "")
