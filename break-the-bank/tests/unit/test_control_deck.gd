@@ -65,6 +65,7 @@ func test_a_fresh_machine_offers_a_spin_and_a_lock_per_reel() -> void:
 
 
 func test_a_verb_the_run_has_not_been_given_is_not_on_the_deck() -> void:
+	_deck.show_overlay(true)
 	assert_str(_actions()).not_contains("STAKE")
 	assert_str(_actions()).not_contains("BANK")
 	assert_str(_status()).not_contains("COUNT")
@@ -74,6 +75,24 @@ func test_a_verb_the_run_has_not_been_given_is_not_on_the_deck() -> void:
 	_deck.refresh()
 	assert_str(_actions()).contains("STAKE")
 	assert_str(_status()).contains("COUNT")
+
+
+## The status row repeats readings the machine now carries itself — chips and
+## the count on a tube and a dial, the stake on the crown, the vault and the
+## signed terms on the ledger. It grew a pill per unlocked system until it
+## reached across the CRT, so it is off unless the player asks for counters
+## on screen. The verbs are not affected: those are the deck's actual job.
+func test_the_status_row_is_off_until_counters_are_asked_for() -> void:
+	_state.grant_system(Systems.STAKE)
+	_state.grant_system(Systems.HEAT)
+	_deck.show_overlay(false)
+	assert_str(_status()).override_failure_message(
+			"the status row drew with the overlay off").is_empty()
+	assert_str(_actions()).override_failure_message(
+			"the overlay setting took the verbs with it").contains("STAKE")
+
+	_deck.show_overlay(true)
+	assert_str(_status()).contains("CHIPS")
 
 
 func test_the_spin_button_prices_the_locks_it_is_carrying() -> void:

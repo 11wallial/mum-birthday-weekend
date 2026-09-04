@@ -68,6 +68,16 @@ func _ready() -> void:
 	# The scene carries the desktop wording; a touch build has no such keys.
 	if _hint != null and TouchBar.is_touch_device():
 		_hint.text = "TAP to spin / advance     buttons top-right"
+	elif _hint != null:
+		# From the bindings, not from a literal in the scene. The hint was
+		# authored as fixed text naming SPACE, TAB and F5, so rebinding any
+		# of the three left it confidently telling the player the wrong key.
+		# One key each. describe() lists every binding on an action, which
+		# turned this into "SPACE PAD A CLICK spin / advance …" and ran it
+		# straight out of a box the scene fixes at 538 units.
+		_hint.text = "%s spin / advance     %s camera     %s new run" % [
+			KeyBook.primary(&"bb_advance"), KeyBook.primary(&"bb_camera"),
+			KeyBook.primary(&"bb_new_run")]
 	_fit_type()
 	get_viewport().size_changed.connect(_fit_type)
 	set_prompt("")

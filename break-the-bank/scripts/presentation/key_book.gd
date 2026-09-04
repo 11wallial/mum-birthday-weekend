@@ -86,6 +86,20 @@ static func _same_kind(a: InputEvent, b: InputEvent) -> bool:
 
 ## How this action reads on the door: the key first, because that is what
 ## most players are looking for, then the pad button if there is one.
+## The first binding only, for places that name a key rather than list the
+## ways to press it. [method describe] joins every event on the action —
+## keyboard, pad and mouse — which is right for the keys panel and far too
+## long for a hint sitting in a fixed box in the corner of the screen.
+static func primary(action: StringName) -> String:
+	if not InputMap.has_action(action):
+		return "—"
+	for event: InputEvent in InputMap.action_get_events(action):
+		var name: String = name_of(event)
+		if name != "":
+			return name
+	return "—"
+
+
 static func describe(action: StringName) -> String:
 	if not InputMap.has_action(action):
 		return "—"

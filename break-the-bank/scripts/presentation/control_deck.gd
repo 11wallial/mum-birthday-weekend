@@ -136,7 +136,14 @@ func refresh() -> void:
 	_clear(_extras)
 	_clear(_actions)
 	if _state != null and not _state.is_over() and not _shelved:
-		_build_status()
+		# The status row repeats what the machine already says: chips and the
+		# count are on tubes and a dial, the stake is on the crown, the vault
+		# and the signed terms are on the ledger. It grew a pill per unlocked
+		# system until by floor seven it reached across the CRT, which is the
+		# one thing on screen that is the House talking. Off unless the player
+		# asks for counters on screen, which is what this setting is for.
+		if overlay_shown:
+			_build_status()
 		if _state.phase == RunState.Phase.SPINNING:
 			_build_reels()
 			_build_actions()
