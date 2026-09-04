@@ -202,7 +202,36 @@ static func _cell(index: int, def: SymbolDef, shader: Shader, pass_kind: int = 0
 			label.position = Vector2(0.0, centre_y - 34.0)
 			label.size = Vector2(float(CELL_PX.x), 68.0)
 			rect.add_child(label)
+	if def != null and def.base_value > 0:
+		rect.add_child(_value_tag(def, tint))
 	return rect
+
+
+## The number in the plate's corner: what this symbol pays where it lands.
+##
+## A player could not learn a symbol's worth without hovering one already
+## standing on the payline, which is the moment the knowledge stops being
+## useful. Balatro gets this for free because its symbols are playing cards
+## and everyone arrives knowing what a card is worth; a bespoke set has to
+## print it. Small, in the plate's own second ink, low in the corner where
+## no drawing in the set reaches.
+static func _value_tag(def: SymbolDef, tint: Color) -> Label:
+	var tag: Label = Label.new()
+	tag.text = str(def.base_value)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	tag.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	# 48, not 34: at a third of that the digit was present on the plate and
+	# unreadable on the drum, which is the same as not being there. A heavy
+	# outline made it worse — on a glyph this small the halo closes up the
+	# counters and eats the contrast it was added to protect.
+	tag.add_theme_font_size_override(&"font_size", 48)
+	tag.add_theme_font_override(&"font", Type.mono())
+	tag.add_theme_color_override(&"font_color", SymbolArt.INK)
+	tag.add_theme_color_override(&"font_outline_color", tint.lightened(0.72))
+	tag.add_theme_constant_override(&"outline_size", 3)
+	tag.position = Vector2(float(CELL_PX.x) - 96.0, float(CELL_PX.y) - 76.0)
+	tag.size = Vector2(74.0, 56.0)
+	return tag
 
 
 ## The shader takes a fixed-size vec4 array; ops are padded out to it.
