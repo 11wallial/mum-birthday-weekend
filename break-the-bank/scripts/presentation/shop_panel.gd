@@ -445,6 +445,9 @@ func _cell(text: String, size: float, tint: Color) -> Label:
 	label.text = tr(text)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override(&"font_size", int(roundf(size * _scale)))
+	# Mono: this is paper the House printed, and it sits on the same
+	# clipboard as the statement, which has always been set in it.
+	label.add_theme_font_override(&"font", Type.mono())
 	label.add_theme_color_override(&"font_color", tint)
 	return label
 

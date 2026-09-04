@@ -11,32 +11,56 @@
 class_name UiSkin
 extends RefCounted
 
+# Every colour below is one of the room's own, and says which. The claim in
+# the docstring above — "no colour that is not already somewhere in the set" —
+# was true of the intent and not of the constants: the overlay carried four
+# near-ambers of its own that matched nothing on the machine. GDScript cannot
+# call darkened() in a const and ARCHETYPE_COLOR needs these at parse time, so
+# the derivation is written out here rather than evaluated, and the test in
+# test_palette.gd is what keeps the arithmetic honest.
+
+## Materials.CONCRETE * 0.3 — the floor, under the panel's own shade.
 const GROUND: Color = Color(0.035, 0.031, 0.027, 0.94)
+## Tuned, not derived: a row has to sit a step off GROUND at 0.85 alpha over
+## a moving 3D scene, which no single swatch in the set does.
 const ROW: Color = Color(0.075, 0.067, 0.055, 0.85)
 const ROW_HOVER: Color = Color(0.126, 0.110, 0.086, 0.92)
-const EDGE: Color = Color(0.62, 0.451, 0.196, 0.55)
-const EDGE_SOFT: Color = Color(0.55, 0.42, 0.21, 0.3)
+## Materials.BRASS, and BRASS * 0.85 — the hairline is the machine's own trim.
+const EDGE: Color = Color(0.663, 0.494, 0.208, 0.55)
+const EDGE_SOFT: Color = Color(0.564, 0.42, 0.177, 0.3)
+## Materials.PAPER, lightened: the overlay's type is paper seen against dark.
 const INK: Color = Color(0.905, 0.871, 0.804)
 const INK_MUTED: Color = Color(0.686, 0.647, 0.573)
-const AMBER: Color = Color(1.0, 0.796, 0.478)
+## Materials.LAMP. The overlay's amber is now the bulb's amber, not a fourth
+## one of its own — the set had UiSkin.AMBER, LAMP, SCORE and a caption ink
+## all within a few points of each other and none of them equal.
+const AMBER: Color = Color(1.0, 0.831, 0.616)
+## Materials.JACKPOT, drained toward the neutrals: refused, not alarming.
 const DENIED: Color = Color(0.749, 0.435, 0.376)
 
 ## The forms on the clipboard: paper, and the inks the House types and
 ## stamps on it. Dark on cream, the reverse of the overlay's panels, because
 ## a form is a lit object in the room and not a screen.
-const PAPER_GROUND: Color = Color(0.9, 0.87, 0.8, 1.0)
-const PAPER_ROW: Color = Color(0.86, 0.83, 0.75, 1.0)
-const PAPER_ROW_HOVER: Color = Color(0.95, 0.92, 0.84, 1.0)
+## Materials.PAPER, lightened by the desk lamp standing over it.
+const PAPER_GROUND: Color = Color(0.875, 0.861, 0.828, 1.0)
+const PAPER_ROW: Color = Color(0.85, 0.834, 0.794, 1.0)
+const PAPER_ROW_HOVER: Color = Color(0.906, 0.896, 0.871, 1.0)
 const PAPER_INK: Color = Color(0.12, 0.1, 0.08)
 const PAPER_INK_MUTED: Color = Color(0.38, 0.34, 0.29)
 ## The stamp: the House's red, for prices, titles and anything it insists on.
-const PAPER_STAMP: Color = Color(0.6, 0.14, 0.1)
+## Materials.JACKPOT darkened — the same red as the heat dial's zone and a
+## voided pattern, dried into ink.
+const PAPER_STAMP: Color = Color(0.601, 0.109, 0.092)
 const PAPER_DENIED: Color = Color(0.55, 0.5, 0.45)
 ## What a contract gives, and what it takes — distinct from PAPER_DENIED
 ## (which already means "you can't afford this row"), so a toll reads as a
 ## cost rather than as a row the draft is refusing.
+## PAPER_GOOD is PHOSPHOR's green held far deeper than a derivation gives:
+## printed on cream under a warm key, the CRT's own value goes muddy and
+## stops reading as green at all. Tuned against a render, on purpose.
 const PAPER_GOOD: Color = Color(0.09, 0.5, 0.16)
-const PAPER_BAD: Color = Color(0.72, 0.1, 0.09)
+## Materials.JACKPOT, barely darkened.
+const PAPER_BAD: Color = Color(0.72, 0.13, 0.11)
 const PAPER_SHADER: String = "res://assets/shaders/paper.gdshader"
 
 static var _cache: Dictionary = {}

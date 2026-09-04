@@ -171,6 +171,9 @@ func _build() -> void:
 	_wordmark = Label.new()
 	_wordmark.name = "Wordmark"
 	_wordmark.text = "BREAK THE BANK"
+	# The one place in the door that is a name rather than prose, set in the
+	# face the machine's own engraving uses.
+	_wordmark.add_theme_font_override(&"font", Type.display())
 	_wordmark.add_theme_color_override(&"font_color", UiSkin.AMBER)
 	_wordmark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_column.add_child(_wordmark)

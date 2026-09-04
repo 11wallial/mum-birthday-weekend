@@ -29,6 +29,10 @@ const PHOSPHOR: Color = Color(0.353, 1.0, 0.427)
 const SIGN: Color = Color(1.0, 0.376, 0.078)
 const JACKPOT: Color = Color(0.847, 0.153, 0.129)
 const LAMP: Color = Color(1.0, 0.831, 0.616)
+## The cold side of the set: the ambient, the fog, and the bounce off the left
+## wall. Shadows lean cool against the warm key, and this is that blue — the
+## fifth colour of the spine, and the only one the palette never wrote down.
+const SHADOW: Color = Color(0.125, 0.145, 0.196)
 ## The accent, and the one rule about it: SCORE is reserved for scoring and
 ## state feedback — a plate lit because it paid, the payline bar on a win, a
 ## tube flaring as the total lands, the receipt's total. Nothing decorative
