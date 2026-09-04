@@ -1,7 +1,15 @@
 # Sourcing the remaining cues
 
-Sixty-six of the ninety-six cues have no file behind them; the director
-synthesises a placeholder at runtime instead. This is the worksheet for
+**Closed.** All ninety-six cues are sourced; `audit.gd --strict` reports
+96/96 and no placeholders. What follows is the record of how, and the one
+thing still owed: the fourteen Freesound files came in as the public
+128 kbps HQ previews rather than the uploaders' originals, because a
+download URL returns the login page. Someone with an account should swap
+them before ship. Every one is CC0, so nothing is blocked on permission —
+only on quality.
+
+Originally: sixty-six of the ninety-six cues had no file behind them and
+the director synthesised a placeholder at runtime. This is the worksheet for
 closing that, written against each cue's own `frequency_notes`, which are
 already a brief.
 

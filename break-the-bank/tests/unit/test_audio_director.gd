@@ -24,17 +24,29 @@ func test_an_unknown_cue_is_ignored_rather_than_fatal() -> void:
 
 func test_playing_a_cue_with_no_sourced_file_still_makes_sound() -> void:
 	# The whole point of the placeholder path: a full manifest and an empty
-	# asset folder still produces a playing voice. The cue is found rather
-	# than named, so sourcing one more asset never breaks this.
+	# asset folder still produces a playing voice. It is the safety net for a
+	# file that goes missing, so it has to keep working after the manifest is
+	# complete — which is now, and is what broke the old version of this test.
+	# It hunted the content set for an unsourced one-shot and there are none
+	# left, so it failed with its own message about having nothing to prove.
+	# The subject is made here instead of found, which tests the fallback
+	# directly and cannot be undone by sourcing anything.
 	var placeholder: StringName = &""
 	for id: Variant in _director.cue_ids():
 		var candidate: SoundDef = _director.definition(StringName(id))
-		if candidate != null and not candidate.loops and not candidate.is_sourced():
+		if candidate != null and not candidate.loops:
 			placeholder = StringName(id)
 			break
 	assert_str(String(placeholder)).override_failure_message(
-			"every one-shot is sourced now; this test has nothing to prove").is_not_empty()
+			"the content set has no one-shot cues at all").is_not_empty()
+	var subject: SoundDef = _director.definition(placeholder)
+	var real: String = subject.file_name
+	# Pointed at a file that is not there, exactly as a missing asset would be.
+	subject.file_name = "mechanical/no_such_file_on_disk.wav"
+	assert_bool(subject.is_sourced()).override_failure_message(
+			"the test's own stand-in resolved to a real file").is_false()
 	var player: AudioStreamPlayer = _director.play(placeholder)
+	subject.file_name = real
 	assert_object(player).is_not_null()
 	assert_object(player.stream).is_not_null()
 	assert_bool(player.playing).is_true()
