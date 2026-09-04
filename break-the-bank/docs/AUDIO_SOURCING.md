@@ -20,10 +20,30 @@ actually asks for.
   loop-matched by hand and still would not hit "60–120 Hz rumble, gentle 2 kHz
   air". These are cheaper and better made than found.
 - **FIELD** — a real recording of a real thing: a sprung lever, a dot-matrix
-  head, a voice on a tannoy. Freesound's CC0 filter is the place to start
-  (`freesound.org/search/?q=…&f=license%3A%22Creative+Commons+0%22`), but it is
-  thin per term — a search for a neon transformer returns one result — so
-  expect to record or commission some of these.
+  head, a voice on a tannoy. All fourteen are on Freesound under CC0. The
+  first pass here concluded they would need recording or commissioning, and
+  that was an artefact of searching badly: Freesound ANDs the words in a
+  query, so "slot machine lever arm" and "ratchet handbrake lever" both
+  return nothing while "ratchet" alone returns 195. Search the object, or the
+  component, not the sentence.
+
+  | Cue | Search | CC0 hits | Pick |
+  | --- | --- | --- | --- |
+  | `receipt_print` | `dot matrix printer` | 17 | "Dot-Matrix Printer 1/2/3" by chungus43A |
+  | `handle_pull`, `handle_return`, `reel_tension`, `reel_nudge`, `gear_grind` | `ratchet` | 195 | "Clockwork Ticks, Ratchets and Springs" by bassimat; "creaky ratchet" by cartoonrob |
+  | `amb_casino_crowd_loop` | `walla` | 1,352 | "Slot Machines & Walla" by craigsmith; "Medium Crowd Walla" by IENBA |
+  | `intercom_crackle` | `intercom` | 143 | "Intercom static and buttons" by sethlind |
+  | `leather_squeak`, `foley_groan` | `squeak` | 2,751 | "Old truck metal squeaks, creaks, rattle" by dilsun |
+  | `arc_charge` | `neon transformer buzz` | 1 | "jacobs ladder from side" by parabolix — a real neon-sign transformer arcing |
+  | `amb_felt_friction`, `lever_steam_release`, `receipt_tear`, `heat_measure`, `foley_drip` | `fabric`, `air release`, `paper tear`, `relay`, `water drip` | — | not yet run; the pattern above holds |
+
+  Worth knowing: a search for `slot machine` returns 64 CC0 sounds including
+  whole-cabinet recordings, and several of the machine's own cues could be
+  cut from those rather than assembled from components.
+
+  Freesound's CC0 licence is a public-domain dedication, so these need no
+  attribution — but they go in `CREDITS.md` anyway, because the audit does not
+  distinguish and a file nobody can trace is a file nobody can clear.
 
 | Cue | Destination | Route | Proposed source | The brief |
 | --- | --- | --- | --- | --- |
@@ -102,6 +122,10 @@ actually asks for.
 | SYNTH | 24 |
 | FIELD | 14 |
 | **Total outstanding** | **66** |
+
+None of the three routes needs anything bought, and none needs anything
+recorded. The whole set is reachable from CC0 sources plus a toolchain this
+repository already has.
 
 Every sourced file needs a row in `assets/audio/CREDITS.md` before it ships.
 CI fails the build otherwise, which is the point of it.
