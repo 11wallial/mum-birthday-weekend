@@ -816,6 +816,32 @@ func _remark_on(result: SlotView3D.Result) -> void:
 		_refresh_diegetic())
 
 
+## The House's own words, explained the first time each one is used.
+##
+## The game speaks a vocabulary — the vig, scrip, the press — and only ever
+## explained one term of it. The surety gets a line from the Clerk and "the
+## works" gets one at grant; the rest a player was left to infer from
+## context, while the log said things like "the vig, again" on a floor where
+## the word had never been defined. The profile already tracks first
+## sightings for hardware, bosses, contracts and chits, so the words go in
+## the same book and are said once each, ever, in the House's register.
+const WORDS: Dictionary = {
+	&"vig": "The vig is the interest. It is charged on the whole debt, every floor, whether or not you clear it.",
+	&"scrip": "Chips are the House's scrip. They spend at the machine and nowhere else, and they do not settle the ante.",
+	&"press": "The press re-cuts the drums. What it strikes comes off the reels; what it prints goes on.",
+}
+
+
+func _teach_word(word: StringName) -> void:
+	if _profile == null or not WORDS.has(word):
+		return
+	if not _profile.note_seen("words", word):
+		return
+	_profile.save()
+	if _hud != null and _hud.has_method("push_line"):
+		_hud.call("push_line", Copy.of(String(WORDS[word])))
+
+
 ## The surety — how much of the player the House holds — onto the column on
 ## the machine and into the render. The machine holds the value through a
 ## spin and moves it on the spin's beat; the render degrades with it, which
@@ -1487,6 +1513,11 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 				_receipt.print_board(state.board.breakdown, state.board.payout,
 						state.board.chips, false)
 		EffectBus.Event.SHOP_OPENED:
+			# The first draft that offers the press is where the press gets
+			# explained: the header is the only place the word has ever
+			# appeared, over two buttons whose verbs assume it.
+			if state != null and not state.press_offers.is_empty():
+				_teach_word(&"press")
 			# A callout left over from the floor that just ended would sit on
 			# top of the form the player is being asked to read. The camera
 			# walks to the desk: the draft is a form on the clipboard.
@@ -1552,6 +1583,15 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 	if kind in [EffectBus.Event.RUN_STARTED, EffectBus.Event.FLOOR_CLEARED,
 			EffectBus.Event.RUN_ENDED, EffectBus.Event.ANTE_SETTLED]:
 		_settle_surety()
+	# The two words the run itself teaches. Outside the match for the same
+	# reason the surety is: an arm that already listed one of these events
+	# would shadow the arm that handles it.
+	if kind == EffectBus.Event.CHIPS_CHANGED and state != null \
+			and state.economy.chips > 0:
+		_teach_word(&"scrip")
+	if kind == EffectBus.Event.FLOOR_CLEARED and state != null \
+			and state.economy.debt > 0:
+		_teach_word(&"vig")
 	# The sign and the machine's own monitor track the run on every event, so
 	# they can never disagree with the HUD about where the player is.
 	_refresh_diegetic()

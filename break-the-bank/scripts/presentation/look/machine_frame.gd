@@ -953,17 +953,26 @@ func _gearbox() -> Node3D:
 				Materials.enamel(Materials.JACKPOT, 60))
 		mark.rotation.z = angle - PI * 0.5
 	var heat_label: Label3D = Label3D.new()
-	heat_label.text = Copy.of("HEAT")
+	# COUNT, not HEAT. One number carried two player-facing names: the system
+	# is granted as "THE COUNT", the inspect card is titled "The count", the
+	# House's copy calls it the count — and the dial in the middle of the
+	# frame said HEAT. The field and the events keep the old name because
+	# that is a hundred references of no interest to a player; the engraving
+	# is the only place the second word ever reached one.
+	heat_label.text = Copy.of("COUNT")
 	Type.face(heat_label, &"display")
 	# Bebas is narrow: a caption set in it needs more size than the same
 	# caption set in the engine's default did.
-	heat_label.font_size = 48
+	heat_label.font_size = 40
 	heat_label.pixel_size = 0.0011
 	heat_label.modulate = Color(0.2, 0.19, 0.18)
 	heat_label.shaded = false
-	# Low on the face and behind the needle's plane: at -0.1 the needle swept
-	# straight over the word for a third of its travel.
-	heat_label.position = Vector3(0.0, -0.185, 0.332)
+	# Low on the face, and in front of it. The enamel disc is 45mm deep and
+	# centred at 0.31, so its front surface is at 0.3325 — an earlier pass
+	# moved this to 0.332 to get the word out from under the needle and
+	# buried it half a millimetre inside its own dial. Clear of the face,
+	# and low enough that the needle only crosses it at the hot stop.
+	heat_label.position = Vector3(0.0, -0.132, 0.339)
 	dial.add_child(heat_label)
 	_inspect_zone(dial, &"heat", Vector3(0.42, 0.42, 0.08), Vector3(0.0, 0.0, 0.33))
 	var heat_needle: Node3D = Node3D.new()

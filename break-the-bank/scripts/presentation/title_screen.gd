@@ -454,21 +454,32 @@ func _draw_collection() -> void:
 	rows.add_theme_constant_override(&"separation", 2)
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(rows)
+	# The builds are listed first and never hidden. They are not something a
+	# player collects — they are the words the draft uses. Every piece of
+	# hardware wears its build's name on a coloured band, and until now the
+	# only way to learn that THE WHALE means the run that stakes big was to
+	# infer it from the pieces that happened to carry the tag. The sentence
+	# explaining it has been sitting in the resource the whole time: brief
+	# and counter are on every ArchetypeDef and were read nowhere in the
+	# codebase.
 	var sections: Array = [
-		["HARDWARE", "artifacts", content.artifacts],
-		["THE HOUSE'S PEOPLE", "bosses", content.bosses],
-		["CONTRACTS", "contracts", content.contracts],
-		["CHITS", "chits", content.chits],
-		["HOW A FLOOR RUNS", "skins", content.skins],
+		["THE BUILDS", "archetypes", content.archetypes, true],
+		["HARDWARE", "artifacts", content.artifacts, false],
+		["THE HOUSE'S PEOPLE", "bosses", content.bosses, false],
+		["CONTRACTS", "contracts", content.contracts, false],
+		["CHITS", "chits", content.chits, false],
+		["HOW A FLOOR RUNS", "skins", content.skins, false],
 	]
 	for section: Array in sections:
 		var kind: String = String(section[1])
 		var defs: Array = section[2]
+		var always: bool = bool(section[3])
 		rows.add_child(_label(Copy.filled("%s   %d of %d", [String(section[0]),
-				_profile.seen_count(kind), defs.size()]), 12.0, UiSkin.INK))
+				defs.size() if always else _profile.seen_count(kind), defs.size()]),
+				12.0, UiSkin.INK))
 		for def: Resource in defs:
 			var id: StringName = def.get("id")
-			var met: bool = _profile.has_seen(kind, id)
+			var met: bool = always or _profile.has_seen(kind, id)
 			var line: String = "— · —"
 			if met:
 				# Each kind carries its own words under its own name: a boss
@@ -476,13 +487,18 @@ func _draw_collection() -> void:
 				# everything else has a description. Asking every one of them
 				# for a description printed <null> under every skin.
 				var blurb: String = ""
-				for field: String in ["description", "tell", "line"]:
+				for field: String in ["description", "tell", "line", "brief"]:
 					var words: Variant = def.get(field)
 					if words is String and words != "":
 						blurb = words
 						break
 				line = "%s — %s" % [Copy.of(String(def.get("display_name"))),
 						Copy.of(blurb)]
+				# How the House answers it, where the resource says so. The
+				# counter is the other half of knowing what a build is.
+				var against: Variant = def.get("counter")
+				if against is String and against != "":
+					line += "\n      %s" % Copy.of(against)
 			var entry: Label = _label(line, 11.0, UiSkin.INK if met else UiSkin.INK_MUTED)
 			entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
