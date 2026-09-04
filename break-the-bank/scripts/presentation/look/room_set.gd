@@ -70,6 +70,8 @@ func build(root: Node3D) -> Dictionary:
 		"board": board,
 		"board_pick": board.get_node_or_null(^"Pick"),
 		"cards": _root.get_node_or_null(^"Desk/Cards"),
+		"ground": _root.get_node_or_null(^"Shell/Ground"),
+		"back_wall": _root.get_node_or_null(^"Shell/BackWall"),
 	}
 
 
@@ -275,11 +277,20 @@ func _shell() -> void:
 	var depth: float = DEPTH_FRONT - DEPTH_BACK
 	var mid_z: float = (DEPTH_FRONT + DEPTH_BACK) * 0.5
 
-	_box(shell, Vector3(WIDTH * 2.0, 0.3, depth), Vector3(0.0, -0.15, mid_z), floor_material)
+	var ground: MeshInstance3D = _box(shell, Vector3(WIDTH * 2.0, 0.3, depth),
+			Vector3(0.0, -0.15, mid_z), floor_material)
+	ground.name = "Ground"
+	# Its own copy of the concrete, so the floor can take a floor's colour
+	# without repainting every other concrete surface in the room: the
+	# material factories cache, and a cached material is shared by everything
+	# that asked for it.
+	ground.material_override = (floor_material as StandardMaterial3D).duplicate()
 	_box(shell, Vector3(WIDTH * 2.0, 0.3, depth),
 			Vector3(0.0, CEILING + 0.15, mid_z), wall_material)
-	_box(shell, Vector3(WIDTH * 2.0, CEILING, 0.3),
+	var back: MeshInstance3D = _box(shell, Vector3(WIDTH * 2.0, CEILING, 0.3),
 			Vector3(0.0, CEILING * 0.5, DEPTH_BACK - 0.15), wall_material)
+	back.name = "BackWall"
+	back.material_override = (wall_material as StandardMaterial3D).duplicate()
 	for sx: float in [-1.0, 1.0]:
 		_box(shell, Vector3(0.3, CEILING, depth),
 				Vector3(sx * (WIDTH + 0.15), CEILING * 0.5, mid_z), wall_material)
@@ -604,8 +615,12 @@ func _cage_lamp() -> void:
 				Vector3(0.0, -0.08, 0.0), Materials.machined(Materials.STEEL, 78))
 		wire.position += Vector3(cos(TAU * float(i) / 6.0) * 0.07, 0.0,
 				sin(TAU * float(i) / 6.0) * 0.07)
+	# 1.7, not 6.0. The environment's glow threshold is 1.1, so at nearly six
+	# times over the bulb bloomed straight through the cage that was built
+	# around it and the fitting read as a saturated blob on the wall — which
+	# is what the art review saw. It is a bulb in a cage again.
 	Prims.sphere(cage, 0.045, Vector3(0.0, -0.08, 0.0),
-			Materials.glowing(Color(1.0, 0.8, 0.55), 6.0))
+			Materials.glowing(Color(1.0, 0.8, 0.55), 1.7))
 	var light: OmniLight3D = OmniLight3D.new()
 	light.name = "Bulb"
 	light.light_color = Color(1.0, 0.78, 0.5)

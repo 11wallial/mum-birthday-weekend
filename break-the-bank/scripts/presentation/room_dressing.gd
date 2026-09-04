@@ -102,6 +102,7 @@ func _dress_floor(environment_id: StringName) -> void:
 					Materials.rubber(Color(0.3, 0.06, 0.08), 114))
 			Prims.box(set_root, Vector3(0.9, 0.02, 0.9), Vector3(-3.4, 0.91, -1.5),
 					Materials.enamel(Color(0.12, 0.32, 0.18), 115))
+			_practical(set_root, Vector3(-3.0, 1.9, 1.4), Color(1.0, 0.86, 0.55), 1.1, 3.0)
 		&"vault":
 			# Deposit boxes, racked on the left wall.
 			for row: int in 4:
@@ -113,6 +114,7 @@ func _dress_floor(environment_id: StringName) -> void:
 							Vector3(0.0, 0.0, PI * 0.5), Materials.brass(120), 8)
 			Prims.box(set_root, Vector3(0.06, 1.16, 1.6), Vector3(-4.5, 0.9, -0.2),
 					Materials.machined(Color(0.3, 0.31, 0.32), 121))
+			_practical(set_root, Vector3(-3.9, 1.8, -0.2), Color(0.72, 0.84, 1.0), 1.2, 3.2)
 		&"back_office":
 			# A filing cabinet with a drawer left open, and a tray of forms.
 			Prims.box(set_root, Vector3(0.5, 1.3, 0.6), Vector3(-3.3, 0.65, 0.5),
@@ -124,6 +126,7 @@ func _dress_floor(environment_id: StringName) -> void:
 					Materials.painted(Color(0.35, 0.36, 0.33), 122))
 			Prims.box(set_root, Vector3(0.3, 0.06, 0.4), Vector3(-3.3, 1.33, 0.5),
 					Materials.enamel(Materials.PAPER, 124))
+			_practical(set_root, Vector3(-3.0, 2.0, 0.6), Color(0.94, 0.96, 0.82), 1.0, 3.0)
 		&"engine_room":
 			# A generator on the left, flywheel and all, wired to the machine.
 			var generator: Node3D = Node3D.new()
@@ -140,6 +143,8 @@ func _dress_floor(environment_id: StringName) -> void:
 						Vector3.ZERO, Materials.rusted(128), 10)
 			Prims.segment(set_root, Vector3(-3.1, 0.7, 2.2), Vector3(-1.3, 0.75, 0.2), 0.02,
 					Materials.rubber(Color(0.09, 0.085, 0.08), 129))
+			# Firelight off the generator, low and warm, from under the flywheel.
+			_practical(set_root, Vector3(-3.3, 0.9, 2.2), Color(1.0, 0.52, 0.2), 1.5, 3.0)
 		&"the_house":
 			# A portrait of nobody, on the back wall, under its own red lamp.
 			Prims.box(set_root, Vector3(0.6, 0.8, 0.04), Vector3(2.4, 2.0, -3.24),
@@ -157,6 +162,27 @@ func _dress_floor(environment_id: StringName) -> void:
 			set_root.add_child(lamp)
 		_:
 			pass
+
+
+## A light belonging to one floor's dressing.
+##
+## Four of the six dressed floors had none: the velvet rope, the deposit
+## boxes, the filing cabinet and the generator were all built and then left
+## in the dark at the far end of a room lit by one bulb over the machine. A
+## set that cannot be seen is not a set, and this is the cheapest way to
+## make a floor's arrival read — the dressing brings its own light with it.
+func _practical(parent: Node3D, at: Vector3, tint: Color, energy: float,
+		reach: float) -> OmniLight3D:
+	var lamp: OmniLight3D = OmniLight3D.new()
+	lamp.light_color = tint
+	lamp.light_energy = energy
+	lamp.omni_range = reach
+	lamp.omni_attenuation = 1.4
+	lamp.light_volumetric_fog_energy = 0.6
+	lamp.shadow_enabled = false
+	lamp.position = at
+	parent.add_child(lamp)
+	return lamp
 
 
 func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:

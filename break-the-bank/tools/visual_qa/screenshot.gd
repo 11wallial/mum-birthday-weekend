@@ -88,6 +88,11 @@ func _initialize() -> void:
 	_shots.append({"name": "11_the_house", "action": "floor:7"})
 	_shots.append({"name": "11b_counted", "action": "spin"})
 	_shots.append({"name": "11c_inspect", "action": "inspect"})
+	# The room once it has filled up. The storyboard photographed the room on
+	# floor one and never again, so six floors of accumulated dressing — the
+	# carpet, the rope, the deposit boxes, the generator, the portrait — went
+	# unphotographed for the whole life of the tool.
+	_shots.append({"name": "11e_room_late", "action": "room"})
 	# Put the inspect card down again. Without this the storyboard carries it
 	# into every frame after 11c and the shot lies about the game: the card
 	# was raised by the tool and nothing in the tool ever lowered it.

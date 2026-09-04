@@ -673,7 +673,14 @@ func _on_view_changed(view: CameraController.View) -> void:
 	if _inspector != null:
 		_inspector.hide_card()
 	var survey: bool = view == CameraController.View.ROOM
-	for entry: Array in [["wash", 0.8, 3.4], ["ceiling", 0.55, 2.2], ["cold", 1.0, 2.6]]:
+	# The survey is the only framing that can show what a run has built: six
+	# floors of dressing live down the left of the room and along the back
+	# wall, well outside the machine's own framing. At the old lift the room
+	# still read as a void with a bright island in it, so a floor-seven room
+	# and a floor-one room were the same photograph. The house lights come up
+	# properly when the player stands back, and go down again when they lean in.
+	for entry: Array in [["wash", 0.8, 6.2], ["ceiling", 0.55, 4.1],
+			["cold", 1.0, 4.4], ["sign_spill", 0.85, 1.6]]:
 		var light: Light3D = _room_parts.get(String(entry[0]), null) as Light3D
 		if light == null:
 			continue

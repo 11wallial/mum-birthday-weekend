@@ -37,6 +37,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.125, 0.145, 0.196), "ambient_energy": 0.14,
 		"fog": Color(0.129, 0.145, 0.184), "fog_density": 0.01,
 		"sign": Color(1.0, 0.376, 0.078),
+		# the shell as built: everything else is measured from here
+		"tint": Color(1.0, 1.0, 1.0),
 	},
 	&"casino": {
 		# Carpet and noise: everything warmer, hazier, and a red sign over it.
@@ -45,6 +47,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.204, 0.145, 0.161), "ambient_energy": 0.16,
 		"fog": Color(0.216, 0.149, 0.161), "fog_density": 0.01,
 		"sign": Color(1.0, 0.267, 0.212),
+		# nicotine and carpet dye
+		"tint": Color(1.06, 0.9, 0.86),
 	},
 	&"high_roller": {
 		# Baize and brass. The green comes off the tables, not the walls.
@@ -53,6 +57,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.11, 0.157, 0.129), "ambient_energy": 0.13,
 		"fog": Color(0.125, 0.169, 0.145), "fog_density": 0.01,
 		"sign": Color(1.0, 0.796, 0.267),
+		# baize throwing green up the walls
+		"tint": Color(0.96, 1.02, 0.94),
 	},
 	&"vault": {
 		# Cold storage. Hard, blue-white, and the air completely still.
@@ -61,6 +67,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.106, 0.129, 0.176), "ambient_energy": 0.12,
 		"fog": Color(0.11, 0.133, 0.184), "fog_density": 0.00,
 		"sign": Color(0.706, 0.847, 1.0),
+		# cold concrete, no warmth in it at all
+		"tint": Color(0.9, 0.95, 1.04),
 	},
 	&"back_office": {
 		# Fluorescent and flat. The least dramatic floor in the game, on purpose:
@@ -70,6 +78,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.169, 0.184, 0.153), "ambient_energy": 0.20,
 		"fog": Color(0.176, 0.192, 0.161), "fog_density": 0.01,
 		"sign": Color(0.851, 0.910, 0.62),
+		# strip light and old paper
+		"tint": Color(1.0, 1.0, 0.94),
 	},
 	&"engine_room": {
 		# Hot. Every machine on the floor wired to yours, and the air full of it.
@@ -78,6 +88,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.235, 0.137, 0.086), "ambient_energy": 0.18,
 		"fog": Color(0.267, 0.157, 0.098), "fog_density": 0.02,
 		"sign": Color(1.0, 0.478, 0.129),
+		# soot, and the fire under it
+		"tint": Color(1.08, 0.94, 0.84),
 	},
 	&"the_house": {
 		# No warmth anywhere. One cold light, deep shadow, and a sign the colour
@@ -87,6 +99,8 @@ const MOODS: Dictionary = {
 		"ambient": Color(0.075, 0.086, 0.106), "ambient_energy": 0.09,
 		"fog": Color(0.086, 0.098, 0.118), "fog_density": 0.01,
 		"sign": Color(0.902, 0.937, 1.0),
+		# clean, and colder than any of them
+		"tint": Color(0.94, 0.94, 0.98),
 	},
 }
 
@@ -106,6 +120,20 @@ static func apply(mood_id: StringName, parts: Dictionary, environment: Environme
 			mood["key"], float(mood["key_energy"]))
 	_light(tween, parts.get("cold", null) as Light3D,
 			mood["cold"], float(mood["cold_energy"]))
+	# The shell itself takes a cast. Lamp colour alone moves the light in the
+	# room and leaves the room the same colour underneath it; a floor that
+	# has been lived in differently should be a different colour when the
+	# lamp is off it. Held near white on purpose — this is a cast, not a
+	# repaint, and the surfaces are scanned concrete and plaster that stop
+	# looking like either if they are pushed.
+	for key: String in ["ground", "back_wall"]:
+		var surface: MeshInstance3D = parts.get(key, null) as MeshInstance3D
+		if surface == null:
+			continue
+		var material: StandardMaterial3D = surface.material_override as StandardMaterial3D
+		if material != null:
+			tween.tween_property(material, "albedo_color",
+					mood.get("tint", Color.WHITE) as Color, TRANSITION)
 	var sign_label: Label3D = parts.get("sign", null) as Label3D
 	if sign_label != null:
 		# Overdriven for bloom; the glow shells keep their own faded alpha.
