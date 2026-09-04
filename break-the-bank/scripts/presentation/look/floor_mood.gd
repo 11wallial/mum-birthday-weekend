@@ -130,10 +130,8 @@ static func apply(mood_id: StringName, parts: Dictionary, environment: Environme
 		var surface: MeshInstance3D = parts.get(key, null) as MeshInstance3D
 		if surface == null:
 			continue
-		var material: StandardMaterial3D = surface.material_override as StandardMaterial3D
-		if material != null:
-			tween.tween_property(material, "albedo_color",
-					mood.get("tint", Color.WHITE) as Color, TRANSITION)
+		_cast(tween, surface.material_override,
+				mood.get("tint", Color.WHITE) as Color)
 	var sign_label: Label3D = parts.get("sign", null) as Label3D
 	if sign_label != null:
 		# Overdriven for bloom; the glow shells keep their own faded alpha.
@@ -165,3 +163,26 @@ static func _light(tween: Tween, light: Light3D, tint: Color, energy: float) -> 
 		return
 	tween.tween_property(light, "light_color", tint, TRANSITION)
 	tween.tween_property(light, "light_energy", energy, TRANSITION)
+
+
+## Casts [param tint] over one shell surface without losing the colour it was
+## painted with. RoomSet records that under [code]base_tint[/code] and this
+## multiplies, so a mood of pure white leaves the concrete exactly as authored.
+##
+## Both material types are handled because both occur: a scanned set arrives as
+## a ShaderMaterial tinting through [code]tint[/code], its fallback as a
+## StandardMaterial3D tinting through [code]albedo_color[/code]. Reading only
+## the latter meant the cast quietly did nothing on every surface that had a
+## scan, which in a normal boot is all of them.
+static func _cast(tween: Tween, material: Material, tint: Color) -> void:
+	if material == null:
+		return
+	var recorded: Variant = material.get_meta(&"base_tint", Color.WHITE)
+	var base: Color = Color.WHITE
+	if recorded is Color:
+		base = recorded
+	var target: Color = base * tint
+	if material is ShaderMaterial:
+		tween.tween_property(material, "shader_parameter/tint", target, TRANSITION)
+	elif material is StandardMaterial3D:
+		tween.tween_property(material, "albedo_color", target, TRANSITION)

@@ -260,6 +260,32 @@ func _wall_wash() -> void:
 	_root.add_child(ceiling)
 
 
+## A private copy of [param material] that FloorMood can cast a colour over,
+## carrying the colour it was authored with under [code]base_tint[/code].
+##
+## Which property holds that colour depends on the type, and the type is not
+## knowable at the call site: [method Materials.weathered] returns a
+## ShaderMaterial whose [code]tint[/code] multiplies the scan whenever the set
+## and the shader both load — the normal path — and a StandardMaterial3D whose
+## [code]albedo_color[/code] does the same job when either is missing. Reading
+## the base here, where the material is in hand, is what lets the mood multiply
+## the cast in rather than replace the surface with it.
+static func _tintable(material: Material) -> Material:
+	var copy: Material = material.duplicate()
+	var base: Color = Color.WHITE
+	var shaded: ShaderMaterial = copy as ShaderMaterial
+	if shaded != null:
+		var authored: Variant = shaded.get_shader_parameter(&"tint")
+		if authored is Color:
+			base = authored
+	else:
+		var standard: StandardMaterial3D = copy as StandardMaterial3D
+		if standard != null:
+			base = standard.albedo_color
+	copy.set_meta(&"base_tint", base)
+	return copy
+
+
 ## Aims a node at a point without anyone writing a basis by hand.
 func _aim(node: Node3D, from: Vector3, at: Vector3) -> void:
 	node.global_transform = Transform3D(Basis.IDENTITY, from).looking_at(at, Vector3.UP)
@@ -284,13 +310,13 @@ func _shell() -> void:
 	# without repainting every other concrete surface in the room: the
 	# material factories cache, and a cached material is shared by everything
 	# that asked for it.
-	ground.material_override = (floor_material as StandardMaterial3D).duplicate()
+	ground.material_override = _tintable(floor_material)
 	_box(shell, Vector3(WIDTH * 2.0, 0.3, depth),
 			Vector3(0.0, CEILING + 0.15, mid_z), wall_material)
 	var back: MeshInstance3D = _box(shell, Vector3(WIDTH * 2.0, CEILING, 0.3),
 			Vector3(0.0, CEILING * 0.5, DEPTH_BACK - 0.15), wall_material)
 	back.name = "BackWall"
-	back.material_override = (wall_material as StandardMaterial3D).duplicate()
+	back.material_override = _tintable(wall_material)
 	for sx: float in [-1.0, 1.0]:
 		_box(shell, Vector3(0.3, CEILING, depth),
 				Vector3(sx * (WIDTH + 0.15), CEILING * 0.5, mid_z), wall_material)
