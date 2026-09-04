@@ -56,6 +56,7 @@ var lesson_running: bool = false
 
 var _root: Control
 var _dim: ColorRect
+var _scroll: ScrollContainer
 var _column: VBoxContainer
 var _wordmark: Label
 var _line: Label
@@ -148,11 +149,24 @@ func _build() -> void:
 	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_dim)
 
+	# A scroller around the column. The door is the longest thing the game
+	# draws and it is pinned to a fixed rect, so the last two things in it —
+	# the audit ladder's caption and the run stats — ran off the bottom of
+	# the screen. The TEXT setting makes it worse from both ends at once:
+	# it grows the type by up to 1.5 while the container shrinks.
+	_scroll = ScrollContainer.new()
+	_scroll.name = "Scroll"
+	_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.follow_focus = true
+	_root.add_child(_scroll)
+
 	_column = VBoxContainer.new()
 	_column.name = "Column"
 	_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_column.add_theme_constant_override(&"separation", 8)
-	_root.add_child(_column)
+	_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_column)
 
 	_wordmark = Label.new()
 	_wordmark.name = "Wordmark"
@@ -205,14 +219,14 @@ func _fit() -> void:
 	if window == null or window.size.x <= 0:
 		return
 	_scale = clampf(DESIGN_WIDTH / float(window.size.x), 1.0, 2.3) * RunHUD.user_scale
-	_column.anchor_left = 0.0
-	_column.anchor_right = 0.0
-	_column.anchor_top = 0.0
-	_column.anchor_bottom = 1.0
-	_column.offset_left = 64.0 * _scale
-	_column.offset_right = 64.0 * _scale + 620.0 * _scale
-	_column.offset_top = 36.0 * _scale
-	_column.offset_bottom = -24.0 * _scale
+	_scroll.anchor_left = 0.0
+	_scroll.anchor_right = 0.0
+	_scroll.anchor_top = 0.0
+	_scroll.anchor_bottom = 1.0
+	_scroll.offset_left = 64.0 * _scale
+	_scroll.offset_right = 64.0 * _scale + 620.0 * _scale
+	_scroll.offset_top = 36.0 * _scale
+	_scroll.offset_bottom = -24.0 * _scale
 	_wordmark.add_theme_font_size_override(&"font_size", int(roundf(46.0 * _scale)))
 	_line.add_theme_font_size_override(&"font_size", int(roundf(16.0 * _scale)))
 	_stats.add_theme_font_size_override(&"font_size", int(roundf(12.0 * _scale)))
@@ -459,13 +473,16 @@ func _draw_settings() -> void:
 			float(_settings.get("pace", 1.0))))
 	_settings_box.add_child(_slider("TEXT", &"ui_scale", 0.8, 1.5,
 			float(_settings.get("ui_scale", 1.0))))
-	_settings_box.add_child(_toggle("ON SCREEN", "CONTROLS AND COUNTERS", &"overlay"))
-	_settings_box.add_child(_toggle("PICTURE",
-			"STEADY — no flicker, flash, tearing or shake", &"steady"))
+	_settings_box.add_child(_toggle("ON SCREEN", "CONTROLS AND COUNTERS SHOWN",
+			&"overlay", 0.0, "CONTROLS AND COUNTERS HIDDEN"))
+	_settings_box.add_child(_toggle("PICTURE", "STEADY", &"steady", 0.0,
+			"FLICKER, FLASH AND SHAKE"))
 	# The video settings the door never had. Each is the same seam as the
 	# rest: a number on the profile, applied by the room.
-	_settings_box.add_child(_toggle("SCREEN", "FULL SCREEN", &"fullscreen"))
-	_settings_box.add_child(_toggle("SYNC", "WAIT FOR THE SCREEN — no tearing", &"vsync", 1.0))
+	_settings_box.add_child(_toggle("SCREEN", "FULL SCREEN", &"fullscreen", 0.0,
+			"IN A WINDOW"))
+	_settings_box.add_child(_toggle("SYNC", "WAIT FOR THE SCREEN", &"vsync", 1.0,
+			"DRAW AS FAST AS IT CAN"))
 	_settings_box.add_child(_slider("DETAIL", &"render_scale", 0.5, 1.0,
 			float(_settings.get("render_scale", 1.0))))
 	_settings_box.add_child(_languages())
@@ -522,15 +539,19 @@ func _draw_controls() -> void:
 ## A named on/off row: the name on the left, the state written into the
 ## button, because a checkbox says nothing about what it does when it is off.
 func _toggle(row_name: String, caption: String, key: StringName,
-		default_on: float = 0.0) -> Control:
+		default_on: float = 0.0, off_caption: String = "") -> Control:
+	if off_caption == "":
+		off_caption = caption
 	var on: bool = float(_settings.get(String(key), default_on)) > 0.5
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
 	var label: Label = _label(row_name, 12.0, UiSkin.INK)
 	label.custom_minimum_size = Vector2(80.0 * _scale, 0.0)
 	row.add_child(label)
-	row.add_child(_small(Copy.filled("%s: %s", [Copy.of(caption),
-			Copy.of("ON") if on else Copy.of("OFF")]),
+	# The effect, not its absence. "STEADY — no flicker, flash, tearing or
+	# shake: OFF" asks the player to resolve a double negative to find out
+	# that the flicker is on.
+	row.add_child(_small(Copy.of(caption if on else off_caption),
 			func() -> void:
 				var now: float = 0.0 if on else 1.0
 				_settings[String(key)] = now

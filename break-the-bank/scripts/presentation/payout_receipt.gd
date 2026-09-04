@@ -43,6 +43,13 @@ const PAPER_SHADER: String = "res://assets/shaders/paper.gdshader"
 const TILT: float = -0.022
 ## Fringe past the last line: the torn foot.
 const FOOT: float = 26.0
+## Paper width. At 300 the text column came to about twenty-six characters of
+## mono, so " + ".join of three symbols always wrapped and the sum below it
+## detached from its own subject. A till roll is this wide for the same
+## reason a receipt is: the longest line has to fit on one.
+const WIDTH: float = 384.0
+## The figures column. Every sum lines up under the last within it.
+const FIGURES: float = 72.0
 var _bus: EffectBus
 var _scale: float = 1.0
 var _printing: Tween
@@ -55,6 +62,8 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "Paper"
 	var style: StyleBoxEmpty = StyleBoxEmpty.new()
+	# Rescaled with the type in _fit: left as literals the gutters collapsed
+	# proportionally as the TEXT setting grew the rows inside them.
 	style.content_margin_left = 18.0
 	style.content_margin_right = 18.0
 	style.content_margin_top = 14.0
@@ -105,14 +114,22 @@ func _fit() -> void:
 	_panel.anchor_right = 1.0
 	_panel.anchor_top = 1.0
 	_panel.anchor_bottom = 1.0
-	_panel.offset_left = -(300.0 + 22.0) * _scale
+	_panel.offset_left = -(WIDTH + 22.0) * _scale
 	_panel.offset_right = -22.0 * _scale
 	_panel.offset_bottom = -30.0 * _scale
 	_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	# A hair off true, hung from its top-right corner where it left the
 	# printer: a receipt lying square to the screen is a panel.
-	_panel.pivot_offset = Vector2(300.0 * _scale, 0.0)
+	_panel.pivot_offset = Vector2(WIDTH * _scale, 0.0)
 	_panel.rotation = TILT
+	var style: StyleBoxEmpty = _panel.get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if style != null:
+		style.content_margin_left = 18.0 * _scale
+		# Wider than the left: the paper hangs off true from its top-right
+		# corner, so the tilt walks every row below the head toward that edge.
+		style.content_margin_right = 28.0 * _scale
+		style.content_margin_top = 14.0 * _scale
+		style.content_margin_bottom = (12.0 + FOOT) * _scale
 	_size_paper()
 
 
@@ -290,10 +307,13 @@ func _line(left: String, right: String, size: float, tint: Color,
 		b.add_theme_font_override(&"font", Type.mono())
 		b.add_theme_color_override(&"font_color", tint)
 		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		b.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		# Top, not bottom: when the description wraps, a bottom-aligned figure
+		# drops to the foot of the block and reads as belonging to the line
+		# under it. The sum sits on the first line of its own subject.
+		b.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		# A figures column of one width, so every sum lines up under the
 		# last: "= 27" floating mid-panel was the handover's example.
-		b.custom_minimum_size = Vector2(64.0 * _scale, 0.0)
+		b.custom_minimum_size = Vector2(FIGURES * _scale, 0.0)
 		row.add_child(b)
 	if bold:
 		a.add_theme_color_override(&"font_color", tint)

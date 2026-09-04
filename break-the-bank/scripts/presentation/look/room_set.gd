@@ -282,10 +282,18 @@ func _floor_sign() -> Label3D:
 	# Two lines of Bebas, hung clear of the conduit above and inside the
 	# crop of a 16:10 window: the sign is read from the machine, and both
 	# of those edges have cut it before.
-	housing.position = Vector3(2.72, 2.3, DEPTH_BACK + 0.12)
-	_box(housing, Vector3(2.05, 0.4, 0.09), Vector3.ZERO,
+	# Clear of the machine, and high. The sign hangs on the back wall while
+	# the machine stands three metres in front of it, so the machine covers
+	# a far wider angular span than its own width — at 2.72 the coil and the
+	# mast ate the first word and every playtest read "ROLLER ROOM". Later
+	# floors made it worse: the window grows and takes more of the wall.
+	housing.position = Vector3(3.26, 2.36, DEPTH_BACK + 0.12)
+	# Tall enough for three lines. "FLOOR 3 / THE HIGH / ROLLER ROOM" is
+	# 0.69m of Bebas at this size against a 0.40m box, so the floor number
+	# hung off the top of its own housing and read as unlit text on a wall.
+	_box(housing, Vector3(2.05, 0.82, 0.09), Vector3.ZERO,
 			Materials.painted(Color(0.11, 0.10, 0.095), 20))
-	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.25, 0.0),
+	_box(housing, Vector3(2.11, 0.06, 0.13), Vector3(0.0, 0.46, 0.0),
 			Materials.rusted(28))
 	var label: Label3D = Label3D.new()
 	label.name = "Text"

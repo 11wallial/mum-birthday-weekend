@@ -179,7 +179,8 @@ func _draw_press() -> void:
 		var job: Dictionary = _state.press_offers[i]
 		var symbol: SymbolDef = ContentDB.shared().symbol_by_id(
 				StringName(String(job.get("symbol", ""))))
-		var name: String = Copy.of(symbol.display_name) if symbol != null \
+		# The bare noun: these three patterns supply their own article.
+		var name: String = Copy.of(symbol.press_noun()) if symbol != null \
 				else String(job.get("symbol", "")).capitalize()
 		var text: String = ""
 		match String(job.get("kind", "")):

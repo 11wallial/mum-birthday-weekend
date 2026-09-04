@@ -506,7 +506,9 @@ func _reel_bank(reel_count: int) -> Array[Node3D]:
 			if metal != null:
 				material.metallic = 1.0
 				material.metallic_texture = metal
-				material.metallic_specular = 0.5)
+				# 0.32: at 0.5 the upward-tilted top row threw a specular
+				# highlight straight back at the window lamp.
+				material.metallic_specular = 0.32)
 	return reels
 
 
@@ -623,19 +625,24 @@ func _button_row(reel_count: int) -> void:
 		var caption: Label3D = Label3D.new()
 		caption.name = "Caption"
 		caption.text = ""
-		caption.font_size = 52
+		# 44pt with a 4px outline is about 58mm of glyph. At 52 with an 8px
+		# outline it came to 81mm on a 58mm placard and the word ran off the
+		# card top and bottom onto the painted shelf behind it.
+		caption.font_size = 44
 		Type.face(caption, &"display")
 		caption.pixel_size = 0.0012
 		caption.modulate = Color(0.9, 0.86, 0.78)
-		caption.outline_size = 8
+		caption.outline_size = 4
 		caption.outline_modulate = Color(0.05, 0.045, 0.04, 0.9)
 		caption.shaded = false
 		caption.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 		# A placard hung off the apron's lip, backed dark so the word reads
 		# whatever the key light is doing to the shelf.
-		Prims.box(button, Vector3(0.19, 0.058, 0.012),
+		Prims.box(button, Vector3(0.19, 0.078, 0.012),
 				Vector3(0.0, -0.036, 0.142), Materials.cavity())
-		caption.position = Vector3(0.0, -0.036, 0.15)
+		# 8mm off the card, not 2: at grazing angles on a shelf tilted 0.42
+		# rad the transparent pass was depth-fighting the placard it sits on.
+		caption.position = Vector3(0.0, -0.036, 0.156)
 		caption.rotation.x = 0.0
 		button.add_child(caption)
 		# The pick body. SlotView3D wires input_event and reads the action
@@ -922,23 +929,28 @@ func _gearbox() -> Node3D:
 		_box(dial, Vector3(0.012, 0.012, 0.05),
 				Vector3(cos(angle) * 0.16, sin(angle) * 0.16, 0.325),
 				Materials.machined(Color(0.2, 0.19, 0.18), 59))
-	# The red zone, where GAUGE_SWEEP's hot end parks the needle.
+	# The red zone, where GAUGE_SWEEP's hot end parks the needle. Painted,
+	# not lit: drawn in the same glowing red as the needle itself, the four
+	# marks merged at a distance into a second pink needle sitting at the
+	# far end of the sweep. A zone is printed on the face; a needle glows.
 	for i: int in 4:
 		var angle: float = -GAUGE_SWEEP + float(i) * 0.11 + PI * 0.5
 		var mark: MeshInstance3D = _box(dial, Vector3(0.024, 0.038, 0.046),
 				Vector3(cos(angle) * 0.155, sin(angle) * 0.155, 0.327),
-				Materials.glowing(Materials.JACKPOT, 0.9))
+				Materials.enamel(Materials.JACKPOT, 60))
 		mark.rotation.z = angle - PI * 0.5
 	var heat_label: Label3D = Label3D.new()
 	heat_label.text = Copy.of("HEAT")
 	Type.face(heat_label, &"display")
 	# Bebas is narrow: a caption set in it needs more size than the same
 	# caption set in the engine's default did.
-	heat_label.font_size = 62
+	heat_label.font_size = 48
 	heat_label.pixel_size = 0.0011
 	heat_label.modulate = Color(0.2, 0.19, 0.18)
 	heat_label.shaded = false
-	heat_label.position = Vector3(0.0, -0.1, 0.335)
+	# Low on the face and behind the needle's plane: at -0.1 the needle swept
+	# straight over the word for a third of its travel.
+	heat_label.position = Vector3(0.0, -0.185, 0.332)
 	dial.add_child(heat_label)
 	_inspect_zone(dial, &"heat", Vector3(0.42, 0.42, 0.08), Vector3(0.0, 0.0, 0.33))
 	var heat_needle: Node3D = Node3D.new()
@@ -1108,6 +1120,19 @@ func _odds_display() -> Node3D:
 		stud.rotation.x = PI * 0.5
 	_segment(housing, Vector3(0.0, -0.19, 0.0), Vector3(0.0, -0.4, -0.1), 0.03,
 			Materials.machined(Materials.STEEL, 62))
+	# Engraved under the bank, the way every counter on the machine is. This
+	# was the one readout with no plate: four lit digits reading "1x" with
+	# nothing on the brass to say what they counted.
+	var caption: Label3D = Label3D.new()
+	caption.text = Copy.of("ODDS")
+	Type.face(caption, &"display")
+	caption.font_size = 48
+	caption.pixel_size = 0.0013
+	caption.modulate = Color(0.95, 0.82, 0.52)
+	caption.outline_size = 0
+	caption.shaded = false
+	caption.position = Vector3(0.0, -0.202, 0.108)
+	housing.add_child(caption)
 	# A dark backboard, so a dead tube reads as glass with nothing lit in it.
 	_box(housing, Vector3(0.68, 0.24, 0.02), Vector3(0.0, 0.02, -0.05),
 			Materials.cavity())
@@ -1296,7 +1321,10 @@ func _lever() -> Node3D:
 ## absence. Returns the fluid and the lamp for [SlotView3D] to drive.
 func _surety_column() -> Dictionary:
 	var column: Node3D = _group(&"Surety")
-	column.position = Vector3(CHASSIS.x + 0.1, CHASSIS_Y - 0.16, CHASSIS.z + 0.02)
+	# Outboard of the gamble ladder, not on top of it. At +0.1 the column's
+	# backplate and its bracket both intersected the ladder's plate, and the
+	# glass ran through two of its rung lamps.
+	column.position = Vector3(CHASSIS.x + 0.22, CHASSIS_Y - 0.16, CHASSIS.z + 0.02)
 	var brass: StandardMaterial3D = Materials.brass(51)
 	# The base and the cap, and a bracket tying the column to the flank.
 	_box(column, Vector3(0.16, 0.05, 0.14), Vector3(0.0, 0.0, 0.0),

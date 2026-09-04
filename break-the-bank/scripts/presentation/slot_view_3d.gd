@@ -186,8 +186,10 @@ func _ready() -> void:
 		# A phone has no hover: a tap on a zone asks the same question.
 		zone.input_event.connect(func(_camera: Node, event: InputEvent, _at: Vector3,
 				_normal: Vector3, _shape: int) -> void:
-			if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
-				inspect_hovered.emit(id))
+			if event is InputEventScreenTouch:
+				# Lifting the finger closes the card. Without this a phone
+				# raises one on the first tap and never puts it down.
+				inspect_hovered.emit(id if (event as InputEventScreenTouch).pressed else &""))
 	var lever_pick: Area3D = parts.get("lever_pick", null) as Area3D
 	if lever_pick != null:
 		lever_pick.input_event.connect(_on_lever_input)
@@ -816,7 +818,11 @@ func _light_rows(rows: int) -> void:
 					row.material_override as StandardMaterial3D
 			if material == null:
 				continue
-			material.albedo_color = (Color(0.93, 0.91, 0.87) if _row_pays(i, rows)
+			# 0.86, not 0.93. The top row is tilted up into the window lamp
+			# and the 9.5 key, and the strips carry metallic 1.0; promoted to
+			# the payline's own albedo it went past the 1.1 glow threshold
+			# and bleached the print off the paper it was lighting.
+			material.albedo_color = (Color(0.86, 0.84, 0.81) if _row_pays(i, rows)
 					else Color(0.76, 0.74, 0.71))
 	for i: int in 3:
 		var marks: Node3D = get_node_or_null(

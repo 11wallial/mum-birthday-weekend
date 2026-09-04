@@ -88,6 +88,10 @@ func _initialize() -> void:
 	_shots.append({"name": "11_the_house", "action": "floor:7"})
 	_shots.append({"name": "11b_counted", "action": "spin"})
 	_shots.append({"name": "11c_inspect", "action": "inspect"})
+	# Put the inspect card down again. Without this the storyboard carries it
+	# into every frame after 11c and the shot lies about the game: the card
+	# was raised by the tool and nothing in the tool ever lowered it.
+	_shots.append({"name": "11d_uninspect", "action": "uninspect"})
 	_shots.append({"name": "12_statement", "action": "lose"})
 	_shots.append({"name": "13_settled", "action": "win"})
 
@@ -195,6 +199,9 @@ func _apply(action: String) -> void:
 		"inspect":
 			if _root_node.has_method("debug_inspect"):
 				_root_node.call("debug_inspect", "counter:ante")
+		"uninspect":
+			if _root_node.has_method("debug_inspect"):
+				_root_node.call("debug_inspect", "")
 		"lose":
 			if _root_node.has_method("debug_lose"):
 				_root_node.call("debug_lose")

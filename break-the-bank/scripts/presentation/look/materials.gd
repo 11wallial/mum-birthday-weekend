@@ -120,7 +120,7 @@ static func weathered(set_name: String, tint: Color, tiles_per_metre: float,
 ##
 ## Returns false when the set is missing, so a caller can fall back.
 static func _dress(material: StandardMaterial3D, set_name: String,
-		normal_depth: float, tiles_per_metre: float) -> bool:
+		normal_depth: float, tiles_per_metre: float, phase: int = 0) -> bool:
 	var albedo: Texture2D = scan(set_name, "albedo")
 	if albedo == null:
 		return false
@@ -144,6 +144,14 @@ static func _dress(material: StandardMaterial3D, set_name: String,
 		material.metallic_texture = arm
 		material.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
 	_triplanar(material, tiles_per_metre)
+	# Every part built from one scan otherwise shares a tiling phase, so the
+	# same scratch lands in the same place on the rail, the bezel and the
+	# crown gears and the eye reads the repeat as pattern. The seed each
+	# caller already passes for the procedural fallback offsets it instead.
+	if phase != 0:
+		var drift: float = float(phase % 97) / 97.0
+		var lift: float = float((phase * 31) % 89) / 89.0
+		material.uv1_offset = Vector3(drift, lift, 0.0)
 	return true
 
 
@@ -194,7 +202,10 @@ static func brass(seed_value: int = 37) -> StandardMaterial3D:
 	return _build("brass:%d" % seed_value, func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = BRASS
-		if _dress(material, "plate_metal", 0.42, 7.5):
+		# 2.8 tiles/m, not 7.5. At 7.5 the scan repeated every 13cm, and the
+		# counter rail is 1.88m of it — fourteen visible repeats reading as
+		# a printed pattern rather than as metal.
+		if _dress(material, "plate_metal", 0.42, 2.8, seed_value):
 			# Brass is a full metal whatever the scan's own metallic channel
 			# says: the plate it was scanned from is steel, and only the wear
 			# pattern is being borrowed.
@@ -217,7 +228,7 @@ static func machined(tint: Color = STEEL, seed_value: int = 53) -> StandardMater
 	return _build("steel:%s:%d" % [tint.to_html(false), seed_value], func() -> StandardMaterial3D:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.albedo_color = tint
-		if _dress(material, "plate_metal", 0.5, 8.5):
+		if _dress(material, "plate_metal", 0.5, 3.2, seed_value):
 			material.metallic_texture = null
 			material.metallic = 1.0
 			return material

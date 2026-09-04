@@ -9,6 +9,13 @@ extends Resource
 ## Stable identifier used by artifacts, telemetry and save data.
 @export var id: StringName = &""
 @export var display_name: String = ""
+## The bare noun, for sentences that supply their own article. The press
+## prints "STRIKE the %s", and the one symbol whose display name already
+## carries an article — The Bank — came out as "STRIKE the the bank".
+## Stripping a leading article in code cannot work: French mirrors the same
+## patterns with its own articles, so the exception belongs in the data.
+## Left empty, the display name is used unchanged.
+@export var noun: String = ""
 ## Base credits paid when this symbol lands in any slot.
 @export var base_value: int = 0
 ## Relative draw weight on a stock reel. Higher is more common.
@@ -34,6 +41,11 @@ extends Resource
 
 
 ## The second ink, or the first where none was printed.
+## The noun to drop into a sentence that brings its own article.
+func press_noun() -> String:
+	return noun if noun != "" else display_name
+
+
 func second_color() -> Color:
 	return color2 if color2.a > 0.0 else color
 

@@ -6,6 +6,7 @@
 script = ExtResource("1_symboldef")
 id = &"bank"
 display_name = "The Bank"
+noun = "Bank"
 base_value = 5
 base_weight = 6
 family = &""

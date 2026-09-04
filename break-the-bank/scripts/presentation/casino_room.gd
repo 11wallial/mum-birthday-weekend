@@ -645,6 +645,11 @@ func _on_inspect(id: StringName) -> void:
 ## the plaques, each floor's dressing — cannot be seen. The washes come up
 ## while the camera stands back, and go down again as it returns.
 func _on_view_changed(view: CameraController.View) -> void:
+	# Godot only re-runs physics picking on input events, so walking the
+	# camera off the machine with the pointer still fires no mouse_exited
+	# and a card raised by hover survives the move onto the clipboard.
+	if _inspector != null:
+		_inspector.hide_card()
 	var survey: bool = view == CameraController.View.ROOM
 	for entry: Array in [["wash", 0.8, 3.4], ["ceiling", 0.55, 2.2], ["cold", 1.0, 2.6]]:
 		var light: Light3D = _room_parts.get(String(entry[0]), null) as Light3D
@@ -1243,6 +1248,10 @@ func _sync_deck() -> void:
 			or (_contracts != null and _contracts.is_open())
 			or (_title != null and _title.is_open()))
 	_deck.shelve(modal)
+	# The panels are painted onto a quad in the room, so they never cover the
+	# Inspector and never steal its pointer — it has to be dismissed by hand.
+	if modal and _inspector != null:
+		_inspector.hide_card()
 
 
 ## Redraws the deck, the lamps and the prompt after a hand-made move.
@@ -1472,6 +1481,8 @@ func _refresh_diegetic() -> void:
 func _show_statement(score_line: String) -> void:
 	if _recap == null or state == null:
 		return
+	if _inspector != null:
+		_inspector.hide_card()
 	var entries: Array = engine.journal.entries if engine != null and engine.journal != null else []
 	if state.phase == RunState.Phase.WON and not state.endless:
 		# The account settled: the House goes dark first, and the statement
