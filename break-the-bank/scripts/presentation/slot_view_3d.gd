@@ -68,6 +68,7 @@ var _heat_needle: Node3D
 ## The surety column on the right flank: its fluid's pivot and its lamp.
 var _surety_fluid: Node3D
 var _surety_lamp: MeshInstance3D
+var _surety_reading: Label3D
 ## The level the column is waiting to show, or -1. Held through a spin like
 ## the cash counter, so the surety moves on the spin's own beat.
 var _surety_pending: float = -1.0
@@ -207,6 +208,7 @@ func _ready() -> void:
 	var surety: Dictionary = parts.get("surety", {})
 	_surety_fluid = surety.get("fluid", null) as Node3D
 	_surety_lamp = surety.get("lamp", null) as MeshInstance3D
+	_surety_reading = surety.get("reading", null) as Label3D
 	var arc: Dictionary = parts.get("arc", {})
 	_arc_material = arc.get("material", null) as ShaderMaterial
 	_arc_light = arc.get("light", null) as OmniLight3D
@@ -698,6 +700,18 @@ func _resolve_ladder(won: bool, rung: int) -> void:
 			9.0, 3.2, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
+## The two dials on the crown: the wager, and the House's attention.
+##
+## Both were built with the comment that a needle parked at a decorative
+## angle is set dressing and these read real state — and then neither was
+## ever driven. The stake dial was bound at boot and never written to; the
+## count dial only twitched at random while the reels were spinning up. They
+## are the reason the overlay had to carry a STAKE pill and a COUNT pill.
+func set_dials(stake: float, count: float) -> void:
+	_set_gauge(_gauge_stake, stake, Materials.LAMP)
+	_set_gauge(_gauge_count, count, Materials.JACKPOT)
+
+
 ## Turns a dial to [param value] in 0..1, and tints it as it climbs.
 func _set_gauge(pivot: Node3D, value: float, hot: Color) -> void:
 	if pivot == null:
@@ -860,17 +874,30 @@ func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void
 	material.emission_energy_multiplier = energy
 
 
+## How many lines the tube holds before the glass runs out.
+const READOUT_LINES: int = 9
+
+
 ## Puts the run's debt on the machine's own monitor, as the ledger a terminal
 ## would actually be showing, with whatever the House has to say underneath.
 ## The screen holds six short lines; a memo is two of them.
 func set_readout(debt: int, floor_name: String, memo: String = "",
-		log: PackedStringArray = PackedStringArray()) -> void:
+		log: PackedStringArray = PackedStringArray(), vault: int = 0,
+		terms: String = "") -> void:
 	if _readout == null:
 		return
 	var lines: PackedStringArray = PackedStringArray([
 		Copy.of("LEDGER OF ACCOUNT"), "--------------------", floor_name.to_upper(),
 		Copy.filled("PRINCIPAL  %d", [debt]),
 	])
+	# The two balances the overlay used to carry in pills of their own. A
+	# ledger is where an account's holdings belong, and both are absent from
+	# the screen far more often than they are on it, so neither costs a line
+	# until the run actually has one.
+	if vault > 0:
+		lines.append(Copy.filled("VAULT      %d", [vault]))
+	if not terms.is_empty():
+		lines.append(Copy.filled("TERMS  %s", [terms.left(13)]))
 	if memo.is_empty():
 		lines.append("--------------------")
 		lines.append("> _")
@@ -880,9 +907,14 @@ func set_readout(debt: int, floor_name: String, memo: String = "",
 			lines.append(("> " if i == 0 else "  ") + said[i].strip_edges())
 	# The run's last entries, printed under the memo: the event log lives on
 	# the ledger now, not in the corner of the screen.
-	if not log.is_empty():
+	# The log yields to the account. The tube fits nine lines and the block
+	# above it grows by two when a run is holding a vault under a contract;
+	# entries scrolling off the bottom of the glass are worse than fewer.
+	if not log.is_empty() and lines.size() < READOUT_LINES - 1:
 		lines.append("--------------------")
 		for entry: String in log:
+			if lines.size() >= READOUT_LINES:
+				break
 			lines.append("· " + entry.left(26))
 	var text: String = "\n".join(lines)
 	if text != _readout.text and _audio != null and not _readout.text.is_empty():
@@ -1221,6 +1253,8 @@ func _show_surety(value: float) -> void:
 		rise.tween_property(_surety_fluid, "scale:y", maxf(0.02, level), 0.5 * pace) \
 				.set_trans(Tween.TRANS_BACK if rising else Tween.TRANS_SINE) \
 				.set_ease(Tween.EASE_OUT)
+	if _surety_reading != null:
+		_surety_reading.text = "%d%%" % int(roundf(level * 100.0))
 	if _surety_lamp != null:
 		var material: StandardMaterial3D = _surety_lamp.material_override as StandardMaterial3D
 		if material != null:

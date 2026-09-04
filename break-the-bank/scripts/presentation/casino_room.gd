@@ -1467,13 +1467,22 @@ func _refresh_diegetic() -> void:
 		var log: PackedStringArray = PackedStringArray()
 		if _hud != null and _hud.has_method("recent_lines"):
 			log = _hud.call("recent_lines", 2)
-		_slot_view.set_readout(state.economy.debt, floor_name, memo, log)
+		var terms: String = Copy.of(state.contract.display_name) \
+				if state.contract != null else ""
+		_slot_view.set_readout(state.economy.debt, floor_name, memo, log,
+				state.economy.vault, terms)
 		# The counters across the chassis: the four numbers the overlay used
 		# to carry. The view holds a payout back until the drums land.
 		_slot_view.set_counter("cash", state.economy.cash)
 		_slot_view.set_counter("chips", state.economy.chips)
 		_slot_view.set_counter("spins", state.spins_remaining)
 		_slot_view.set_counter("ante", engine.ante_for(state) if engine != null else 0)
+		# The crown's two dials, which the machine has always had and never
+		# used. Against the ceiling the run can actually reach, so a dial at
+		# its stop means the stake is at its stop.
+		var ceiling: int = maxi(1, state.config.max_stake) if state.config != null else 1
+		_slot_view.set_dials(float(state.stake - 1) / float(maxi(1, ceiling - 1)),
+				clampf(state.heat / 100.0, 0.0, 1.0))
 
 
 ## The statement of account on the clipboard, and the camera over it: the

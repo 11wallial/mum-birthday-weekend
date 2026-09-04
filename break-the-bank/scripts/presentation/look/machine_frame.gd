@@ -718,7 +718,7 @@ func _counter_bank() -> Dictionary:
 		Type.face(caption, &"display")
 		caption.font_size = 48
 		caption.pixel_size = 0.0013
-		caption.modulate = Color(0.95, 0.82, 0.52)
+		caption.modulate = Materials.LAMP
 		caption.outline_size = 0
 		caption.shaded = false
 		caption.position = Vector3(centre, y - 0.104, z + 0.034)
@@ -1128,7 +1128,7 @@ func _odds_display() -> Node3D:
 	Type.face(caption, &"display")
 	caption.font_size = 48
 	caption.pixel_size = 0.0013
-	caption.modulate = Color(0.95, 0.82, 0.52)
+	caption.modulate = Materials.LAMP
 	caption.outline_size = 0
 	caption.shaded = false
 	caption.position = Vector3(0.0, -0.202, 0.108)
@@ -1371,14 +1371,28 @@ func _surety_column() -> Dictionary:
 	Type.face(caption, &"display")
 	caption.font_size = 42
 	caption.pixel_size = 0.0012
-	caption.modulate = Color(0.95, 0.82, 0.52)
+	caption.modulate = Materials.LAMP
 	caption.outline_size = 0
 	caption.shaded = false
 	caption.position = Vector3(0.0, -0.04, 0.075)
 	column.add_child(caption)
+	# The figure the column never carried. It is the only instrument on the
+	# machine that showed a quantity with no number against it — a level in
+	# a glass tells you it is rising and not how far it has left to go.
+	var reading: Label3D = Label3D.new()
+	reading.name = "Reading"
+	reading.text = "0%"
+	Type.face(reading, &"mono")
+	reading.font_size = 46
+	reading.pixel_size = 0.0011
+	reading.modulate = Materials.LAMP
+	reading.outline_size = 0
+	reading.shaded = false
+	reading.position = Vector3(0.0, -0.1, 0.075)
+	column.add_child(reading)
 	_inspect_zone(column, &"surety", Vector3(0.16, SURETY_HEIGHT + 0.2, 0.16),
 			Vector3(0.0, 0.06 + SURETY_HEIGHT * 0.5, 0.0))
-	return {"fluid": pivot, "lamp": lamp}
+	return {"fluid": pivot, "lamp": lamp, "reading": reading}
 
 
 func _spool() -> Node3D:

@@ -26,7 +26,7 @@ const BUDGET: Dictionary = {
 	&"control_deck.gd": 1,
 	&"hud.gd": 8,
 	&"look/floor_mood.gd": 36,
-	&"look/machine_frame.gd": 72,
+	&"look/machine_frame.gd": 69,
 	&"look/module_factory.gd": 16,
 	&"look/proc_textures.gd": 11,
 	&"look/room_set.gd": 43,
