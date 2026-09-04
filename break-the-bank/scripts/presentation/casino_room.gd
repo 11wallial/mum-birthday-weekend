@@ -436,6 +436,7 @@ func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) ->
 		_flicker_room(0.9)
 		if _audio != null:
 			_audio.overload(0.9)
+	_remark_on(result)
 
 
 ## The performance is starting: the receipt prints in time with it, and the
@@ -774,6 +775,45 @@ func _seized_ending() -> void:
 		gutter.tween_property(sign_label, "modulate:a", 0.2, 0.1)
 		gutter.tween_property(sign_label, "modulate:a", 0.8, 0.08)
 		gutter.tween_property(sign_label, "modulate:a", 0.0, 0.5)
+
+
+## What the House says about a spin, and how rarely it says anything.
+##
+## Only two outcomes are worth a word: a payout big enough to hurt the House,
+## and a loss that was nearly a win. Everything between them is the machine
+## doing its job, and a creditor who remarks on every spin is a mascot.
+## RESTRAINT is the whole design of this: at one spin in six the House reads
+## as watching, and at one in one it reads as chatty.
+const REMARK_GAP: int = 6
+## How long a remark stands before the standing memo comes back.
+const REMARK_SECONDS: float = 4.5
+
+var _remark: String = ""
+var _spins_since_remark: int = 99
+
+
+func _remark_on(result: SlotView3D.Result) -> void:
+	_spins_since_remark += 1
+	var lines: PackedStringArray = PackedStringArray()
+	if result >= SlotView3D.Result.HEAVY:
+		lines = PackedStringArray(["We saw that.", "That was ours.",
+				"Noted, and counted."])
+	elif result == SlotView3D.Result.DEAD and _slot_view != null and _slot_view.was_tense():
+		lines = PackedStringArray(["Close. We keep close.",
+				"Nearly. We are patient.", "Not this one."])
+	if lines.is_empty() or _spins_since_remark < REMARK_GAP:
+		return
+	_spins_since_remark = 0
+	# Deterministic per seed and spin, so a run replays the same.
+	var pick: int = RngStream.derive_seed(state.seed_value,
+			StringName("remark/%d" % state.spins_remaining)) % lines.size()
+	_remark = Copy.of(lines[pick])
+	_refresh_diegetic()
+	var fade: Tween = create_tween()
+	fade.tween_interval(REMARK_SECONDS)
+	fade.tween_callback(func() -> void:
+		_remark = ""
+		_refresh_diegetic())
 
 
 ## The surety — how much of the player the House holds — onto the column on
@@ -1555,6 +1595,11 @@ func _refresh_diegetic() -> void:
 					+ ("\n" + memo if not memo.is_empty() else "")
 		if memo.is_empty():
 			memo = Copy.of(_memos.memo_for(state)) if _memos != null else ""
+		# What the House just said about the last spin, over the standing
+		# memo while it stands. The ledger is the only thing on screen that
+		# is the House talking, and it never once acknowledged a spin.
+		if not _remark.is_empty():
+			memo = _remark
 		var log: PackedStringArray = PackedStringArray()
 		if _hud != null and _hud.has_method("recent_lines"):
 			log = _hud.call("recent_lines", 2)

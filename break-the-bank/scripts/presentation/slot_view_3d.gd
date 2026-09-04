@@ -123,6 +123,11 @@ var _busy: bool = false
 var _redraw_booked: bool = false
 ## The last memo the ledger printed, so a beep marks a new one only.
 var _last_memo: String = ""
+## The last text asked for, which is not always the text on the glass: the
+## cursor blink and the typewriter both rewrite the label mid-flight.
+var _readout_text: String = ""
+var _typing: Tween
+var _cursor_blink: Tween
 ## The receipt of the spin being performed: the breakdown's steps, from
 ## PAYOUT_CALCULATED, which is what the scoring chain is made of.
 var _steps: Array = []
@@ -926,6 +931,10 @@ func _set_lamp(reel: Node3D, path: NodePath, tint: Color, energy: float) -> void
 
 ## How many lines the tube holds before the glass runs out.
 const READOUT_LINES: int = 9
+## How long the House takes to say a whole memo, at pace 1.
+const TYPE_SECONDS: float = 0.9
+## Half a cursor cycle.
+const CURSOR_BLINK: float = 0.55
 
 
 ## Puts the run's debt on the machine's own monitor, as the ledger a terminal
@@ -967,14 +976,91 @@ func set_readout(debt: int, floor_name: String, memo: String = "",
 				break
 			lines.append("· " + entry.left(26))
 	var text: String = "\n".join(lines)
-	if text != _readout.text and _audio != null and not _readout.text.is_empty():
+	# Compared against what was last asked for, not against what is on the
+	# glass. The cursor blinks by rewriting the label, so a readout that
+	# checked the label would see the blink as a change and click at it.
+	if text != _readout_text and _audio != null and not _readout_text.is_empty():
 		# The tube rewrites: a click, and a beep when the House has something
 		# new to say.
 		_audio.play(&"crt_click")
 		if memo != _last_memo:
 			_audio.play(&"crt_beep")
+	var fresh_memo: bool = memo != _last_memo and not memo.is_empty()
+	var had: bool = not _readout_text.is_empty()
 	_last_memo = memo
+	_readout_text = text
+	_type_readout(text, fresh_memo and had)
+
+
+## Puts [param text] on the tube, typed if the House has something new to say.
+##
+## The ledger is the only thing in the game that is the House talking, and it
+## arrived between frames — the whole screen replaced at once, with a static
+## underscore drawn where a cursor should be. A terminal that has just been
+## written to types, and the difference between a machine displaying a number
+## and a creditor addressing you is entirely in that.
+##
+## Only when the memo changes. The account block above it is rewritten on
+## every spin as the cash and the ante move, and typing that out four times a
+## floor would be a tic rather than a voice.
+func _type_readout(text: String, typed: bool) -> void:
+	if _typing != null and _typing.is_valid():
+		_typing.kill()
+	if _cursor_blink != null and _cursor_blink.is_valid():
+		_cursor_blink.kill()
+	if not typed or pace <= 0.0:
+		_readout.text = text
+		_blink_cursor(text)
+		return
+	# The account is already on the glass; only what the House says is typed.
+	# Split on the line the memo starts at, so the numbers do not crawl.
+	var lines: PackedStringArray = text.split("\n")
+	var head: int = lines.size()
+	for i: int in lines.size():
+		if lines[i].begins_with("> "):
+			head = i
+			break
+	if head >= lines.size():
+		_readout.text = text
+		_blink_cursor(text)
+		return
+	var fixed: String = "\n".join(lines.slice(0, head))
+	var said: String = "\n".join(lines.slice(head))
+	_readout.text = fixed
+	_typing = create_tween()
+	var step: float = clampf(TYPE_SECONDS * pace / maxf(float(said.length()), 1.0),
+			0.004, 0.05)
+	for i: int in said.length() + 1:
+		_typing.tween_callback(func() -> void:
+			_readout.text = "%s\n%s" % [fixed, said.substr(0, i)]
+			# A key every few characters, not every one: a click per letter on
+			# a forty-character line is a rattle, not a terminal.
+			if _audio != null and i > 0 and i % 4 == 0:
+				_audio.play(&"crt_click"))
+		_typing.tween_interval(step)
+	_typing.tween_callback(func() -> void: _blink_cursor(text))
+
+
+## The cursor, blinking under whatever the House last said.
+func _blink_cursor(text: String) -> void:
+	if _readout == null:
+		return
 	_readout.text = text
+	if not text.ends_with("_"):
+		return
+	var bare: String = text.substr(0, text.length() - 1)
+	_cursor_blink = create_tween().set_loops()
+	_cursor_blink.tween_interval(CURSOR_BLINK)
+	_cursor_blink.tween_callback(func() -> void: _readout.text = bare)
+	_cursor_blink.tween_interval(CURSOR_BLINK)
+	_cursor_blink.tween_callback(func() -> void: _readout.text = text)
+
+
+## Whether the spin just resolved was a near miss — the anticipation tells
+## fired and then nothing paid. The room asks so the House can remark on a
+## loss that was nearly a win, which is the only kind worth a word.
+func was_tense() -> bool:
+	return _tense
 
 
 ## How this spin went, relative to what the floor needs per spin.
