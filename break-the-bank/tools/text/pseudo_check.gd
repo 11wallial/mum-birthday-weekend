@@ -135,13 +135,28 @@ func _read(node: Node) -> void:
 	var drawn: bool = node is Label3D
 	if node is Label or node is Button or node is Label3D or node is RichTextLabel:
 		text = String(node.get("text"))
-	if text != "":
+	if text != "" and not _mid_reveal(text):
 		_seen += 1
 		for line: String in text.split("\n"):
 			if _is_loose(line, drawn):
 				_loose[line] = int(_loose.get(line, 0)) + 1
 	for child: Node in node.get_children():
 		_read(child)
+
+
+## True while a label is still typing a translated string out. The memo
+## readout reveals a character at a time, so a frame caught mid-reveal holds
+## a prefix — and a prefix of a translated paragraph has lost its closing
+## bracket, which is the only mark this check has to go on. The second line
+## of "⟦We have your number.\nWe do not need a name.⟧" arrives as "We do no"
+## and looks exactly like a caption nobody translated.
+##
+## A finished string always carries both brackets, so counting them tells the
+## two apart without this needing to know a typewriter exists. Judging the
+## whole label rather than the line is what makes that work: the opening
+## bracket is on the first line and the missing closing one on the last.
+func _mid_reveal(text: String) -> bool:
+	return text.count("⟦") != text.count("⟧")
 
 
 ## True when a line of drawn text will reach the player in English. A line
