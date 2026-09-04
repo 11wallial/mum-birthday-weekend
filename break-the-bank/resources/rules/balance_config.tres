@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="BalanceConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/balance_config.gd" id="1_balanceconfig"]
+
+[resource]
+script = ExtResource("1_balanceconfig")
+reel_count = 3
+starting_cash = 12
+starting_debt = 260
+spin_cost = 1
+base_multiplier = 0.0
+pattern_multipliers = PackedFloat32Array(0, 0.4, 1.2, 3, 0.6)
+curse_penalty = 2
+synergy_bonus = 0.5
+synergy_threshold = 3
+starting_chips = 0
+chips_per_spin_left = 2
+chips_spin_left_cap = 8
+chip_interest_per = 5
+chip_interest_cap = 3
+chip_credit_rate_percent = 3.0
+max_stake = 5
+stake_ante_percent = 10.0
+max_nudges = 3
+gamble_odds = PackedFloat32Array(0.5, 0.45, 0.4, 0.35)
+reroll_base_cost = 2
+reroll_growth = 2.0
+sellback_percent = 50.0
+slate_markup_percent = 40.0
+vault_interest_percent = 30.0
+vault_collateral_antes = 0.55
+vault_collateral_cap = 3.0
+vault_break_percent = 25.0
+max_extra_reels = 2
+max_extra_rows = 2
+reel_cost_percent = 24.0
+row_cost_percent = 38.0
+notice_par_multiple = 16.0
+notice_ante_percent = 2.0
+heat_skim_at = 35.0
+heat_cold_at = 65.0
+heat_boss_at = 100.0
+heat_per_par = 9.0
+heat_decay = 3.0
+heat_skim_percent = 15.0
+heat_boss_ante_percent = 20.0
+launder_cost = 1.4
+launder_relief = 40.0
+debt_service_percent = 12.0
+debt_default_penalty_percent = 50.0
+debt_grace_floors = 1
+endless_ante_growth = 2.0
+endless_spins_bonus = 0
+endless_floors_max = 24

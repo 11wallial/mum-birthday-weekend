@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"power_coupling"
+display_name = "Power Coupling"
+description = "Wire the machines together. +0.2x per artifact owned."
+cost = 13
+trigger = 2
+effect = 11
+magnitude = 0.2
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"chaos"])
+min_floor = 6
+module_scene_path = ""
+archetype = &"exchange"

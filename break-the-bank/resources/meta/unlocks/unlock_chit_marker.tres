@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_chit_marker"
+display_name = "The Marker"
+description = "A chit: the last drum lands a wild next spin."
+kind = 4
+target_id = &"marker"
+condition = 1
+threshold = 1

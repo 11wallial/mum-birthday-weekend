@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"lights_out"
+display_name = "Lights Out"
+line = "Half the room is dark. What pays, pays well."
+floors = Array[int]([3, 4, 5, 6, 7])
+spins_delta = -1
+ante_percent = 8.0
+chips_delta = 0
+payout_scale = 1.03
+weight_shifts = {}
+no_boss = false

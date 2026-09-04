@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_chit_deferral"
+display_name = "The Deferral"
+description = "A chit: this floor's vig goes on the principal instead."
+kind = 4
+target_id = &"deferral"
+condition = 7
+threshold = 600

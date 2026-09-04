@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"debt_light"
+text = "The vig is small.
+We are patient."
+floor_min = 2
+debt_ratio_max = 0.5

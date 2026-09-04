@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"micrometer"
+display_name = "Micrometer"
+description = "Measures the drop to the thousandth. +1.2x per nudge spent on the board."
+cost = 8
+trigger = 2
+effect = 22
+magnitude = 1.2
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"luck"])
+min_floor = 4
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"trail"

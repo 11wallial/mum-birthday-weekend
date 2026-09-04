@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"danger_money"
+display_name = "Danger Money"
+description = "Hazard rates apply. The house stops honouring its own lucky number."
+min_floor = 5
+boon = 6
+boon_magnitude = 7
+boon_symbol = &""
+boon_pattern = -1
+toll = 5
+toll_magnitude = -14
+toll_symbol = &"seven"
+toll_pattern = -1

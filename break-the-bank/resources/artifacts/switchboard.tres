@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"switchboard"
+display_name = "Switchboard"
+description = "Every trigger is patched through. +0.6x per other artifact that triggered on the line."
+cost = 9
+trigger = 2
+effect = 19
+magnitude = 0.6
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"chaos"])
+min_floor = 5
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"exchange"

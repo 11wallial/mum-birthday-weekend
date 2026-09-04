@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"escrow_account"
+display_name = "Escrow Account"
+description = "Held, and quietly earning. 8% of your float, up to 60."
+cost = 6
+trigger = 3
+effect = 4
+magnitude = 8.0
+cap = 60.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"contract"])
+min_floor = 4
+module_scene_path = ""

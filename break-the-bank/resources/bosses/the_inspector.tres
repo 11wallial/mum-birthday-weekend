@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_inspector"
+display_name = "The Inspector"
+intro = "He signs for every nudge personally."
+tell = "No nudge is free on this floor."
+floor = 2
+rule = 2
+magnitude = 0.0
+symbol = &""
+pattern = -1

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_timekeeper"
+display_name = "The Timekeeper"
+intro = "He started the clock before you came in."
+tell = "One fewer spin on this floor."
+floor = 3
+rule = 8
+magnitude = 1.0
+symbol = &""
+pattern = -1

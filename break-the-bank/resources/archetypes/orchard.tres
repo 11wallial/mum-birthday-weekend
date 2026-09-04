@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"orchard"
+display_name = "The Orchard"
+brief = "The ledger of everything that has ever landed. Fruit by the bushel, sevens by the count, and a multiplier that has been growing since the basement."
+counter = "Fruit pays two, every tally is capped, and the cold deck takes the sevens off the reel exactly when the counter wants them."

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChitDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/chit_def.gd" id="1_chitdef"]
+
+[resource]
+script = ExtResource("1_chitdef")
+id = &"the_last_call"
+display_name = "The Last Call"
+description = "Seven more pulls on the floor that keeps its own count. Signed by somebody who had nowhere else to be."
+cost = 9
+kind = 6
+magnitude = 7.0
+symbol = &""
+min_floor = 7

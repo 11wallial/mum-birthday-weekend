@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"bank_charter"
+display_name = "Bank Charter"
+description = "Your float is a business now. Pays 12% of cash per floor, up to 120."
+cost = 7
+trigger = 3
+effect = 4
+magnitude = 12.0
+cap = 120.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank"])
+min_floor = 4
+module_scene_path = ""

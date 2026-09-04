@@ -1,0 +1,59 @@
+[gd_resource type="Environment" load_steps=2 format=3]
+
+[ext_resource type="Sky" path="res://scenes/3d/basement_sky.tres" id="1_sky"]
+
+; The grade. The room is lit by one warm bulb and nothing else, so the whole
+; frame has to hold together across four stops of falloff: bright brass under the
+; lamp, readable paint in the mid, and a near-black that still has colour in it.
+;
+; AgX rather than Filmic. Filmic clips the bulb and the phosphor screen to white
+; and takes the hue with it; AgX rolls highlights off and desaturates as it goes,
+; which is exactly the response the reference has and the reason the palette can
+; afford saturated accents at all.
+
+[resource]
+background_mode = 1
+sky = ExtResource("1_sky")
+; Reflections come from the panorama; ambient stays on the tuned colour, which
+; FloorMood swaps per floor. Taking both from the sky would hand the descent's
+; lighting to a photograph of somebody else's garage.
+reflected_light_source = 2
+background_color = Color(0.016, 0.019, 0.027, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.125, 0.145, 0.196, 1)
+ambient_light_energy = 0.14
+tonemap_mode = 4
+tonemap_exposure = 1.05
+tonemap_white = 4.0
+ssao_enabled = true
+ssao_radius = 0.7
+ssao_intensity = 2.4
+ssao_power = 1.6
+ssao_light_affect = 0.2
+ssil_enabled = false
+glow_enabled = true
+glow_intensity = 0.45
+glow_strength = 0.9
+glow_bloom = 0.08
+glow_blend_mode = 1
+glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_mode = 0
+fog_light_color = Color(0.129, 0.145, 0.184, 1)
+fog_light_energy = 0.8
+fog_sun_scatter = 0.1
+fog_density = 0.008
+fog_aerial_perspective = 0.3
+fog_height = 0.0
+fog_height_density = 0.02
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.028
+volumetric_fog_albedo = Color(0.898, 0.812, 0.694, 1)
+volumetric_fog_emission = Color(0.031, 0.024, 0.02, 1)
+volumetric_fog_gi_inject = 0.4
+volumetric_fog_anisotropy = 0.35
+volumetric_fog_length = 24.0
+adjustment_enabled = true
+adjustment_brightness = 1.0
+adjustment_contrast = 1.3
+adjustment_saturation = 0.9

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"house_scrip"
+display_name = "House Scrip"
+description = "Paid in full and in the House's own paper. The drums stop where they stop."
+min_floor = 5
+boon = 3
+boon_magnitude = 25
+boon_symbol = &""
+boon_pattern = -1
+toll = 8
+toll_magnitude = -1
+toll_symbol = &""
+toll_pattern = -1

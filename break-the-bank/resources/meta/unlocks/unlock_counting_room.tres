@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_counting_room"
+display_name = "Counting Room"
+description = "They let you watch the count."
+kind = 0
+target_id = &"counting_room"
+condition = 7
+threshold = 840

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"curse_land"
+file_name = "logic/curse_land.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(200, 300)
+frequency_notes = "Skull on the line: dull bone knock, 200-800 Hz, no bright partials."
+pitch_jitter = Vector2(0.94, 1.06)
+volume_jitter_db = Vector2(-2.0, 1.5)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 3
+priority = 6
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 380.0

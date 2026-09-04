@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"bell"
+display_name = "Bell"
+base_value = 4
+base_weight = 14
+family = &""
+is_wild = false
+is_curse = false
+glyph = "BL"
+color = Color(0.96, 0.72, 0.22, 1)
+color2 = Color(0.62, 0.4, 0.12, 1)

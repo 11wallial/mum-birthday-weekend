@@ -1,0 +1,109 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/casino_room.gd" id="1_room"]
+[ext_resource type="Environment" path="res://scenes/3d/default_env.tres" id="2_env"]
+[ext_resource type="PackedScene" path="res://scenes/3d/slot_machine_3d.tscn" id="3_machine"]
+[ext_resource type="Script" path="res://scripts/presentation/camera_controller.gd" id="4_camera"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/presentation/audio/audio_director.gd" id="6_audio"]
+[ext_resource type="Script" path="res://scripts/presentation/room_dressing.gd" id="7_dressing"]
+[ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="8_shop"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_bar.tscn" id="10_touch"]
+[ext_resource type="PackedScene" path="res://scenes/ui/film_overlay.tscn" id="11_film"]
+[ext_resource type="PackedScene" path="res://scenes/ui/control_deck.tscn" id="12_deck"]
+[ext_resource type="PackedScene" path="res://scenes/ui/contract_panel.tscn" id="13_contracts"]
+[ext_resource type="Script" path="res://scripts/presentation/title_screen.gd" id="14_title"]
+[ext_resource type="Script" path="res://scripts/presentation/tutorial_director.gd" id="15_clerk"]
+[ext_resource type="Script" path="res://scripts/presentation/payout_receipt.gd" id="16_receipt"]
+[ext_resource type="Script" path="res://scripts/presentation/recap_panel.gd" id="17_recap"]
+[ext_resource type="Script" path="res://scripts/presentation/inspector.gd" id="18_inspect"]
+
+[node name="CasinoRoom" type="Node3D"]
+script = ExtResource("1_room")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+; The set is built by RoomSet at _ready, for the same reason the machine is.
+[node name="RoomSet" type="Node3D" parent="."]
+
+[node name="SlotMachine3D" parent="." instance=ExtResource("3_machine")]
+
+; A cold, weak bounce off the left wall. Its only job is to keep the machine's
+; left silhouette from dissolving into the background — at this energy it is
+; separation, not illumination.
+[node name="ColdBounce" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.9, 1.4)
+light_color = Color(0.42, 0.545, 0.769, 1)
+light_energy = 1.3
+light_specular = 0.3
+omni_range = 8.0
+omni_attenuation = 1.3
+
+; A rim from behind and below, picking out the plinth's top edge and the
+; underside of the chassis so the machine sits on the floor rather than in it.
+[node name="Rim" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.75, -1.8)
+light_color = Color(1, 0.678, 0.408, 1)
+light_energy = 0.5
+light_specular = 0.6
+omni_range = 4.2
+omni_attenuation = 2.4
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_camera")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+fov = 52.0
+near = 0.05
+current = true
+
+[node name="RoomDressing" type="Node3D" parent="."]
+script = ExtResource("7_dressing")
+
+[node name="AudioDirector" type="Node" parent="."]
+script = ExtResource("6_audio")
+positional_anchor_path = NodePath("../SlotMachine3D")
+
+; Grain and vignette go between the world and the UI, so the room is graded and
+; the text on top of it is not.
+[node name="FilmOverlay" parent="." instance=ExtResource("11_film")]
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
+layer = 2
+
+[node name="ShopPanel" parent="." instance=ExtResource("8_shop")]
+layer = 3
+
+[node name="TouchBar" parent="." instance=ExtResource("10_touch")]
+layer = 5
+
+[node name="ControlDeck" parent="." instance=ExtResource("12_deck")]
+
+[node name="ContractPanel" parent="." instance=ExtResource("13_contracts")]
+
+; The door: the title before a run and the pause during one. Built in code
+; like the deck, so the scene keeps only the node the room talks to.
+[node name="TitleScreen" type="CanvasLayer" parent="."]
+layer = 6
+script = ExtResource("14_title")
+
+; The Clerk on the tannoy: the guided first run. Presentation only.
+[node name="TutorialDirector" type="Node" parent="."]
+script = ExtResource("15_clerk")
+
+; The receipt: the spin's arithmetic, printed a line at a time.
+[node name="PayoutReceipt" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("16_receipt")
+
+; The statement of account at the end of a run, on the clipboard.
+[node name="RecapPanel" type="CanvasLayer" parent="."]
+layer = 3
+script = ExtResource("17_recap")
+
+; What is this? — the card the machine prints about whatever the pointer
+; is resting on.
+[node name="Inspector" type="CanvasLayer" parent="."]
+layer = 4
+script = ExtResource("18_inspect")

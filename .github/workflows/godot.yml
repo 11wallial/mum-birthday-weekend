@@ -1,0 +1,367 @@
+name: Break the Bank
+
+on:
+  push:
+    paths:
+      - "break-the-bank/**"
+      - ".github/workflows/godot.yml"
+  pull_request:
+    paths:
+      - "break-the-bank/**"
+      - ".github/workflows/godot.yml"
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.4.1"
+  GDUNIT_VERSION: "v5.0.5"
+  PROJECT_DIR: break-the-bank
+
+jobs:
+  simulate:
+    name: Headless tests and balance batch
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL "$url" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Install GdUnit4
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/MikeSchulze/gdUnit4/archive/refs/tags/${GDUNIT_VERSION}.zip" -o /tmp/gdunit.zip
+          unzip -q /tmp/gdunit.zip -d /tmp/gdunit
+          mv /tmp/gdunit/gdUnit4-*/addons/gdUnit4 "${PROJECT_DIR}/addons/gdUnit4"
+
+      # The first headless run builds the .godot/ import cache; it is expected to
+      # report missing imports, so its exit code is not the signal we check.
+      - name: Import project
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --import --quit-after 200 || true
+
+      # GdUnit4 refuses to start under --headless without this flag (exit 103).
+      # These suites never touch InputEvent, which is the only thing it guards.
+      - name: Run test suites
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode --continue -a tests
+
+      - name: Run balance batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
+            --runs=5000 --seed=1 --out=res://reports/balance_report.json
+
+      # A batch outside the bands is a content merge that has moved the game.
+      # The bands are wide on purpose: anything they catch is worth a human look
+      # before it lands, and the nightly judges the same bands at 10,000 runs.
+      - name: Gate the balance batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
+            --report=res://reports/balance_report.json
+
+      # The batch above draws from the whole content set. Nobody starts there:
+      # a new profile draws from what no unlock is holding back, and a gate
+      # added to the collection moves that pool without touching the other.
+      # Same bands, because it is the same game — only the pool differs.
+      - name: Run and gate the opening batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tools/casino_lab/run_lab.gd -- \
+            --runs=5000 --seed=1 --fresh --out=res://reports/opening_report.json
+          godot --headless --path . --script res://tools/casino_lab/gate.gd -- \
+            --report=res://reports/opening_report.json
+
+      # A new artifact with no row in the string table ships in English in
+      # every language. The table is filled by tools/text/extract.py; this is
+      # the same script asking whether anyone forgot to run it.
+      - name: Every string in the table
+        working-directory: ${{ env.PROJECT_DIR }}/tools/text
+        run: python3 extract.py --check
+
+      # The extractor can only find a string where it is written. This plays
+      # the room in a language that does not exist — every row in the table
+      # translated to itself in brackets — and fails on anything that reached
+      # the screen without brackets, which is the only check here that reads
+      # what was drawn rather than what was typed.
+      - name: Play it in a language that does not exist
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . --script res://tools/text/pseudo_check.gd -- --moves=120
+
+      # An audio asset with no licence row is a release blocker, not a warning.
+      - name: Audit audio licences
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --path . --script res://tools/audio/audit.gd -- --strict
+
+      - name: Upload balance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-report
+          path: |
+            ${{ env.PROJECT_DIR }}/reports/balance_report.json
+            ${{ env.PROJECT_DIR }}/reports/opening_report.json
+          if-no-files-found: warn
+
+  static-check:
+    name: GDScript parse check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL "$url" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # project.godot promotes untyped declarations to errors, so a clean
+      # headless boot is the strict-typing gate.
+      # A const initialised with a packed-array constructor is not a constant
+      # expression: the class fails to load, and only code that touches it
+      # notices. Check every script, not just what the main scene reaches.
+      - name: Parse every script
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          godot --headless --import --quit-after 200 || true
+          failed=0
+          while IFS= read -r script; do
+            rel="${script#./}"
+            if godot --headless --check-only --script "res://$rel" 2>&1 | grep -qE "Parse Error|Failed to load script"; then
+              echo "::error file=${PROJECT_DIR}/$rel::script fails to parse"
+              failed=1
+            fi
+          done < <(find scripts tools tests -name '*.gd')
+          exit $failed
+
+      - name: Boot the project headless
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --import --quit-after 200 || true
+          godot --headless --check-only --script scripts/simulation/sim_engine.gd
+          godot --headless --quit-after 30 2>&1 | tee boot.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" boot.log; then
+            echo "::error::script errors during headless boot"
+            exit 1
+          fi
+
+      # The save is written by the room and read back by the room; the unit
+      # suites cannot see either. This plays the real scene, closes it, opens
+      # it again, and fails if the run did not come back where it was left.
+      - name: Resume a saved run
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/playtest/resume_check.gd -- \
+            --moves=24 --settle=0.9 2>&1 | tee resume.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" resume.log; then
+            echo "::error::script errors while resuming a saved run"
+            exit 1
+          fi
+          grep -q "resume_check: PASS" resume.log
+
+      # Then a whole run through the room, to the statement on the clipboard:
+      # the end of every run was once skipped by a shadowed event arm and
+      # nothing headless noticed, because nothing headless played to the end.
+      # The House has one voice, and every string written since the last
+      # pass was written alone. This reads them all and fails on a line
+      # that shouts, apologises, names the interface or calls hardware an
+      # upgrade — see tools/text/voice.py and the bible.
+      - name: One voice
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          python3 tools/text/voice.py | tee voice.log
+          if ! grep -q "^0 of" voice.log; then
+            echo "::error::strings out of register — see the report above"
+            exit 1
+          fi
+
+      - name: Play a run through the room
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          godot --headless --path . --script res://tools/playtest/room_run_check.gd -- \
+            --moves=600 --settle=0.6 2>&1 | tee room_run.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" room_run.log; then
+            echo "::error::script errors while playing a run through the room"
+            exit 1
+          fi
+          grep -q "room_run_check: PASS" room_run.log
+
+  package:
+    name: Package playable builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/godot
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL "$url" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      # The export templates are the platform runtimes each build is wrapped
+      # around. Cached because they are a 1.2 GB download.
+      - name: Cache export templates
+        id: templates-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-templates-${{ env.GODOT_VERSION }}
+
+      - name: Install export templates
+        if: steps.templates-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -fsSL "$url" -o /tmp/templates.tpz
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          mkdir -p ~/.local/share/godot/export_templates
+          mv /tmp/templates/templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      # An APK has to be signed to install at all. Godot signs with the debug
+      # keystore, which needs the JDK and the Android SDK's build-tools.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install build-tools
+        run: sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      # An APK must be signed to install, and --export-release signs with the
+      # *release* keystore, not the debug one. There is no distribution key
+      # here, so a throwaway self-signed key is generated per run: it makes the
+      # package installable for testing and is deliberately not an identity
+      # anything should be published under.
+      - name: Generate a signing key
+        run: |
+          set -euo pipefail
+          keytool -keyalg RSA -keysize 2048 -genkeypair -alias breakthebank \
+            -keystore "$HOME/release.keystore" -storepass android -keypass android \
+            -dname "CN=Break the Bank CI,O=Break the Bank,C=GB" \
+            -validity 10000 -deststoretype pkcs12
+
+      # Godot takes the SDK path from editor settings — there is no project
+      # setting for it — so a throwaway editor profile carries it. The keystore
+      # goes through the environment instead, which is the seam Godot provides
+      # precisely so credentials never have to be written to a file.
+      - name: Point Godot at the Android SDK
+        run: |
+          set -euo pipefail
+          settings_dir="$HOME/.config/godot"
+          mkdir -p "$settings_dir"
+          cat > "$settings_dir/editor_settings-4.4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          EOF
+
+      - name: Import project
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: godot --headless --import --quit-after 200 || true
+
+      - name: Build every target
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: breakthebank
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: android
+        run: |
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$HOME/release.keystore"
+          tools/package/build.sh
+
+      # A zero-byte or missing output means the export silently failed; the
+      # build script already checks that, so this is the shape check.
+      - name: Check the builds are real
+        run: |
+          set -euo pipefail
+          cd "${PROJECT_DIR}"
+          for f in dist/linux/BreakTheBank.x86_64 dist/windows/BreakTheBank.exe \
+                   dist/android/BreakTheBank.apk dist/macos/BreakTheBank.zip \
+                   dist/web/index.wasm dist/web/index.pck; do
+            [ -s "$f" ] || { echo "::error::missing or empty: $f"; exit 1; }
+            echo "ok  $(du -h "$f" | cut -f1)  $f"
+          done
+          # Godot downgrades a failed signing to a warning and still writes the
+          # APK, so this is the step that decides whether the package installs.
+          apksigner="$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort | tail -1)"
+          "$apksigner" verify --verbose --print-certs dist/android/BreakTheBank.apk \
+            || { echo "::error::APK is unsigned or its signature is invalid"; exit 1; }
+
+      - name: Upload desktop builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakthebank-desktop
+          path: |
+            ${{ env.PROJECT_DIR }}/dist/linux/BreakTheBank.x86_64
+            ${{ env.PROJECT_DIR }}/dist/windows/BreakTheBank.exe
+            ${{ env.PROJECT_DIR }}/dist/macos/BreakTheBank.zip
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakthebank-android
+          path: ${{ env.PROJECT_DIR }}/dist/android/BreakTheBank.apk
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakthebank-web
+          path: ${{ env.PROJECT_DIR }}/dist/web

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_manager"
+display_name = "The Manager"
+intro = "He takes his share off the top, and off the top of that."
+tell = "15% off every payout, before the count takes its own."
+floor = 7
+rule = 10
+magnitude = 15.0
+symbol = &""
+pattern = -1

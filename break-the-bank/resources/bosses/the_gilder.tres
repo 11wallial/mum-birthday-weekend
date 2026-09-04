@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_gilder"
+display_name = "The Gilder"
+intro = "The wilds have been reprinted as something else."
+tell = "No Wilds on this floor."
+floor = 6
+rule = 0
+magnitude = 0.0
+symbol = &"wild"
+pattern = -1

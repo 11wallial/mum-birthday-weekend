@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"marker_note"
+display_name = "Marker Note"
+description = "The house is delighted to lend. +0.25x for every 100 you owe."
+cost = 5
+trigger = 2
+effect = 13
+magnitude = 0.15
+cap = 1.2
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"contract"])
+min_floor = 3
+module_scene_path = ""
+archetype = &"marker"

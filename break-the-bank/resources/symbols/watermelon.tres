@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"watermelon"
+display_name = "Watermelon"
+base_value = 4
+base_weight = 7
+family = &"fruit"
+is_wild = false
+is_curse = false
+glyph = "WM"
+color = Color(0.9, 0.21, 0.27, 1)
+color2 = Color(0.16, 0.5, 0.2, 1)
+chip_value = 0

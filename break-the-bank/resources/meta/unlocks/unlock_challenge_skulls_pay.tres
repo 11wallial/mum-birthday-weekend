@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_skulls_pay"
+display_name = "Skulls Pay"
+description = "A challenge run: every skull on the line pays six instead of costing you."
+kind = 3
+target_id = &"skulls_pay"
+condition = 0
+threshold = 4

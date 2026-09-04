@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_harvest_festival"
+display_name = "Harvest Festival"
+description = "The whole harvest, counted at last."
+kind = 0
+target_id = &"harvest_festival"
+condition = 8
+threshold = 36000

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DifficultyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/difficulty_def.gd" id="1_difficultydef"]
+
+[resource]
+script = ExtResource("1_difficultydef")
+id = &"the_vig_rises"
+display_name = "The Vig Rises"
+description = "The service payment is half again what it was. The debt is the same; the House is more interested in it."
+tier = 3
+ante_scale = 1.08
+debt_service_scale = 1.5

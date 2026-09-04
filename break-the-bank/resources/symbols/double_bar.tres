@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"double_bar"
+display_name = "Double Bar"
+base_value = 9
+base_weight = 8
+family = &"bar"
+is_wild = false
+is_curse = false
+glyph = "BB"
+color = Color(0.9, 0.72, 0.22, 1)
+color2 = Color(0.99, 0.92, 0.66, 1)

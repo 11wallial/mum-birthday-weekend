@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"ui_draft_hover"
+file_name = "ui/ui_draft_hover.wav"
+category = 0
+bus = &"UI"
+duration_ms = Vector2i(60, 90)
+frequency_notes = "Card edge lifting off felt. Papery 1-3 kHz, faint 200 Hz felt drag."
+pitch_jitter = Vector2(0.96, 1.04)
+volume_jitter_db = Vector2(-2.5, 1.0)
+base_volume_db = -16.3
+positional = false
+loops = false
+max_voices = 2
+priority = 2
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 2400.0

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_no_paper"
+display_name = "No Paper"
+description = "A challenge run: the back office is closed."
+kind = 3
+target_id = &"no_paper"
+condition = 7
+threshold = 2567

@@ -1,0 +1,135 @@
+[gd_scene load_steps=9 format=3]
+
+; The machine's geometry is not authored here. MachineFrame builds it in code at
+; _ready, because its character comes from a density of rivets, hoses and trims
+; that would be unmaintainable as a few hundred hand-placed nodes. What remains
+; in the scene is the handful of things the simulation drives.
+
+[ext_resource type="Script" path="res://scripts/presentation/slot_view_3d.gd" id="1_slotview"]
+
+; Coins, not slabs: a small disc with its own emissive gold, so a payout reads
+; as money in the air rather than as untextured debris.
+[sub_resource type="StandardMaterial3D" id="Mat_coin"]
+albedo_color = Color(0.98, 0.741, 0.302, 1)
+metallic = 1.0
+roughness = 0.28
+emission_enabled = true
+emission = Color(1, 0.678, 0.216, 1)
+emission_energy_multiplier = 1.8
+vertex_color_use_as_albedo = true
+
+[sub_resource type="CylinderMesh" id="Mesh_coin"]
+material = SubResource("Mat_coin")
+top_radius = 0.026
+bottom_radius = 0.026
+height = 0.006
+radial_segments = 10
+rings = 0
+
+[sub_resource type="Gradient" id="Grad_coin"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 0.87, 0.45, 1, 0.94, 0.6, 0.16, 1, 0.6, 0.24, 0.05, 0)
+
+; Sparks off the gearbox on a win worth having: hot, small, and gone quickly.
+[sub_resource type="StandardMaterial3D" id="Mat_spark"]
+shading_mode = 0
+albedo_color = Color(1, 0.82, 0.45, 1)
+emission_enabled = true
+emission = Color(1, 0.6, 0.2, 1)
+emission_energy_multiplier = 4.0
+blend_mode = 1
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="Mesh_spark"]
+material = SubResource("Mat_spark")
+size = Vector2(0.018, 0.018)
+
+; Smoke off the tube on a jackpot: slow, grey, rising.
+[sub_resource type="StandardMaterial3D" id="Mat_smoke"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.55, 0.52, 0.48, 0.16)
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="Mesh_smoke"]
+material = SubResource("Mat_smoke")
+size = Vector2(0.12, 0.12)
+
+[node name="SlotMachine3D" type="Node3D"]
+script = ExtResource("1_slotview")
+
+[node name="ModuleAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.24, 1.62, 0.12)
+
+[node name="PayoutParticles" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.08, 0.5)
+emitting = false
+amount = 48
+lifetime = 1.1
+one_shot = true
+explosiveness = 0.92
+mesh = SubResource("Mesh_coin")
+direction = Vector3(0, 1, 0.5)
+spread = 22.0
+gravity = Vector3(0, -9.5, 0)
+initial_velocity_min = 1.8
+initial_velocity_max = 3.4
+angular_velocity_min = -420.0
+angular_velocity_max = 420.0
+scale_amount_min = 0.7
+scale_amount_max = 1.3
+color_ramp = SubResource("Grad_coin")
+
+; The machine's own pilot lamp, behind the bezel. It flares on a payout, and the
+; rest of the time it is what keeps the brass gearbox on the unlit flank from
+; disappearing — the key light comes from the far side and never reaches it.
+; A second, cooler fill from the front and above, aimed across the works along
+; the top of the chassis. The room's one bulb is behind and to the right of the
+; machine, so the brass gearing it drives was the least lit thing on it.
+[node name="Sparks" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.05, 1.02, 0.42)
+emitting = false
+amount = 90
+lifetime = 0.7
+one_shot = true
+explosiveness = 0.95
+mesh = SubResource("Mesh_spark")
+direction = Vector3(0.4, 1, 0.6)
+spread = 55.0
+gravity = Vector3(0, -6.0, 0)
+initial_velocity_min = 1.4
+initial_velocity_max = 3.6
+scale_amount_min = 0.5
+scale_amount_max = 1.4
+
+[node name="Smoke" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.88, 2.34, 0.06)
+emitting = false
+amount = 14
+lifetime = 2.6
+one_shot = true
+explosiveness = 0.4
+mesh = SubResource("Mesh_smoke")
+direction = Vector3(0, 1, 0)
+spread = 18.0
+gravity = Vector3(0.05, 0.35, 0)
+initial_velocity_min = 0.08
+initial_velocity_max = 0.2
+scale_amount_min = 0.8
+scale_amount_max = 2.6
+
+[node name="WorksFill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 2.05, 0.95)
+light_color = Color(1, 0.878, 0.729, 1)
+light_energy = 1.35
+light_specular = 1.0
+omni_range = 2.6
+omni_attenuation = 1.6
+
+[node name="MachineLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.12, 0.62)
+light_color = Color(1, 0.741, 0.435, 1)
+light_energy = 0.75
+light_specular = 0.8
+omni_range = 3.4
+omni_attenuation = 1.5

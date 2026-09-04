@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_graveyard_shift"
+display_name = "Graveyard Shift"
+description = "The floor never closes to you now."
+kind = 0
+target_id = &"graveyard_shift"
+condition = 8
+threshold = 17000

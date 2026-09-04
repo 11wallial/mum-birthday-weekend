@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"rabbit_run"
+display_name = "Rabbit Run"
+description = "It bolts, and the reel forgets. 12% of spins are free."
+cost = 4
+trigger = 2
+effect = 14
+magnitude = 12.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"luck", &"chaos"])
+min_floor = 3
+module_scene_path = ""
+archetype = &"clock"

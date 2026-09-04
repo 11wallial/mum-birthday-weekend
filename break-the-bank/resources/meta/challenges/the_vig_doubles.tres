@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"the_vig_doubles"
+display_name = "The Vig Doubles"
+description = "The service payment is twice what it was, every floor. The principal has not moved."
+debt_service_scale = 2.0

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"piecework"
+display_name = "Piecework"
+description = "Paid by the stop, not by the hour. Every award carries a nudge; the ante is 15% dearer."
+min_floor = 5
+boon = 8
+boon_magnitude = 1
+boon_symbol = &""
+boon_pattern = -1
+toll = 2
+toll_magnitude = 15
+toll_symbol = &""
+toll_pattern = -1

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"usurers_wheel"
+display_name = "Usurer's Wheel"
+description = "It turns on what is owed. +0.7x per bank device owned."
+cost = 16
+trigger = 2
+effect = 25
+magnitude = 0.7
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"bank", &"greed"])
+min_floor = 7
+module_scene_path = ""
+partner = &""
+tag_filter = &"bank"
+archetype = &"marker"

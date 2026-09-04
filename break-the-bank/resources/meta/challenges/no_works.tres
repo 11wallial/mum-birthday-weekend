@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"no_works"
+display_name = "No Works"
+description = "The engine room is closed. Three reels and one row, for the whole run."
+locked_systems = Array[StringName]([&"expansion"])

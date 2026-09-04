@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"the_bone_clause"
+display_name = "The Bone Clause"
+description = "The dead are on the payroll, and the House is hiring. Skulls pay 8; more of them are printed."
+min_floor = 6
+boon = 6
+boon_magnitude = 8
+boon_symbol = &""
+boon_pattern = -1
+toll = 9
+toll_magnitude = 6
+toll_symbol = &"skull"
+toll_pattern = -1

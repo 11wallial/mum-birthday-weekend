@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"cherry"
+display_name = "Cherry"
+base_value = 2
+base_weight = 14
+family = &"fruit"
+is_wild = false
+is_curse = false
+glyph = "CH"
+color = Color(0.88, 0.16, 0.2, 1)
+color2 = Color(0.52, 0.09, 0.14, 1)

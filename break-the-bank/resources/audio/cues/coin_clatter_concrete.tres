@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"coin_clatter_concrete"
+file_name = "mechanical/coin_clatter_concrete.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(900, 1400)
+frequency_notes = "Coins missing the tray and hitting the floor: a scatter of pings over the dead thud of concrete, for the spins that overflow."
+pitch_jitter = Vector2(0.96, 1.04)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 2
+priority = 6
+duck_music_db = 0.0
+fallback = 17
+fallback_hz = 1900.0

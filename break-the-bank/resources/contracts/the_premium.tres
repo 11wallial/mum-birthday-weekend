@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"the_premium"
+display_name = "The Premium"
+description = "Everything pays 70% more tonight. The ante is up a fifth, and it falls due either way."
+min_floor = 7
+boon = 3
+boon_magnitude = 70
+boon_symbol = &""
+boon_pattern = -1
+toll = 2
+toll_magnitude = 20
+toll_symbol = &""
+toll_pattern = -1

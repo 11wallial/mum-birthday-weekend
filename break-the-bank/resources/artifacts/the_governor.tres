@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"the_governor"
+display_name = "The Governor"
+description = "Time not spent is time paid for. +0.5x per spin still left on the floor, up to +6.0x."
+cost = 16
+trigger = 2
+effect = 26
+magnitude = 0.5
+cap = 6.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"contract"])
+min_floor = 7
+module_scene_path = ""
+archetype = &"clock"

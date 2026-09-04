@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"overdraft_clause"
+display_name = "Overdraft Clause"
+description = "A clause nobody read. Clears 25% of your debt each floor."
+cost = 8
+trigger = 3
+effect = 12
+magnitude = 25.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"contract", &"bank"])
+min_floor = 5
+module_scene_path = ""

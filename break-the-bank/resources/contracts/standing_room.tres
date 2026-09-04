@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"standing_room"
+display_name = "Standing Room"
+description = "Three more pulls at the machine. The floor is 30% dearer to leave for them."
+min_floor = 5
+boon = 1
+boon_magnitude = 3
+boon_symbol = &""
+boon_pattern = -1
+toll = 2
+toll_magnitude = 30
+toll_symbol = &""
+toll_pattern = -1

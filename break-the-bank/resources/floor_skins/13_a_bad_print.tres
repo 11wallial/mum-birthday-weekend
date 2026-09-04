@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"a_bad_print"
+display_name = "A Bad Print"
+line = "The skulls were printed twice over and nobody stopped the run. What gets past them is paid at a better rate."
+floors = Array[int]([])
+spins_delta = 0
+ante_percent = 6.0
+chips_delta = 0
+payout_scale = 1.05
+weight_shifts = {&"skull": 5}
+no_boss = false

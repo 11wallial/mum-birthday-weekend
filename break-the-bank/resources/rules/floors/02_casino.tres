@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FloorDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_def.gd" id="1_floordef"]
+
+[resource]
+script = ExtResource("1_floordef")
+index = 2
+display_name = "The Casino"
+description = "Carpet, noise, and someone selling you something."
+ante = 105
+spins = 10
+debt_interest_percent = 80.0
+shop_slots = 3
+chips = 6
+payout_scale = 1.05
+environment_id = &"casino"
+grants = Array[StringName]([&"market"])

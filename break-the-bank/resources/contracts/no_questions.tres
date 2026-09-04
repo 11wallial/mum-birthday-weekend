@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"no_questions"
+display_name = "No Questions"
+description = "Nobody asks where it came from. The interest asks for everything else."
+min_floor = 7
+boon = 3
+boon_magnitude = 55
+boon_symbol = &""
+boon_pattern = -1
+toll = 7
+toll_magnitude = 80
+toll_symbol = &""
+toll_pattern = -1

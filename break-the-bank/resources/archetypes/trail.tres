@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/archetype_def.gd" id="1_archetypedef"]
+
+[resource]
+script = ExtResource("1_archetypedef")
+id = &"trail"
+display_name = "The Trail"
+brief = "The drums are stopped where they are told to stop. Every nudge spent is a step, and the hardware pays by the step."
+counter = "A paid nudge is a spin off the floor, and a board owes three at most."

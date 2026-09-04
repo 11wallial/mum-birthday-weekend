@@ -1,0 +1,26 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+
+# export_presets.cfg IS tracked, against Godot's default. It is ignored by
+# default because it can carry keystore credentials; this one carries none —
+# CI supplies the Android debug keystore through editor settings — and the
+# packaging job cannot export without it.
+!export_presets.cfg
+
+# Build and lab output
+/build/
+/dist/
+/reports/
+*.tmp
+
+# Python's own build output. tools/text is a package now that extract.py
+# imports voice.py, so running either leaves a cache behind.
+__pycache__/
+*.pyc
+
+# GdUnit4 is installed locally / in CI, never vendored
+addons/gdUnit4/
+shots/
+reports/

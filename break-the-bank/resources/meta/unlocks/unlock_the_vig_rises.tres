@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_the_vig_rises"
+display_name = "The Vig Rises"
+description = "Audit 3 of 8. A win on the rung below opens it."
+kind = 2
+target_id = &"the_vig_rises"
+condition = 5
+threshold = 1
+condition_id = &"marked_deck"

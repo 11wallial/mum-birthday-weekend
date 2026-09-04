@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"lucky_charm"
+display_name = "Lucky Charm"
+description = "A worn rabbit's foot. Every spin pays 3 more, win or lose."
+cost = 2
+trigger = 2
+effect = 0
+magnitude = 3.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"luck"])
+min_floor = 1
+module_scene_path = ""
+archetype = &"exchange"

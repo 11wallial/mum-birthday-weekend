@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChitDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/chit_def.gd" id="1_chitdef"]
+
+[resource]
+script = ExtResource("1_chitdef")
+id = &"peek"
+display_name = "The Peek"
+description = "The next line, printed on the ledger before you spin it. Knowing is not the same as holding."
+cost = 2
+kind = 4
+magnitude = 0.0
+symbol = &""
+min_floor = 2

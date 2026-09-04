@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_engineer"
+display_name = "The Engineer"
+intro = "He needs the machine back early."
+tell = "Two fewer spins on this floor."
+floor = 6
+rule = 8
+magnitude = 2.0
+symbol = &""
+pattern = -1

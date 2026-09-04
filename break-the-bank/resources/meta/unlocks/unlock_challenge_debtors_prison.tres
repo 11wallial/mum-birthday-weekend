@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_debtors_prison"
+display_name = "Debtors' Prison"
+description = "A challenge run: you owe four times what you owe."
+kind = 3
+target_id = &"debtors_prison"
+condition = 8
+threshold = 18000

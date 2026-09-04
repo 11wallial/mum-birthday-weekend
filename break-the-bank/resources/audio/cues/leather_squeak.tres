@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"leather_squeak"
+file_name = "mechanical/leather_squeak.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(140, 220)
+frequency_notes = "The tape-wrapped grip under a hand: a short wobbling squeak at the top of the pull."
+pitch_jitter = Vector2(0.9, 1.1)
+volume_jitter_db = Vector2(-2.0, 1.0)
+base_volume_db = -14.4
+positional = true
+loops = false
+max_voices = 2
+priority = 4
+duck_music_db = 0.0
+fallback = 19
+fallback_hz = 620.0

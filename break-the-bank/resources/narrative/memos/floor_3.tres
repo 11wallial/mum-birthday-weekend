@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MemoDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/memo_def.gd" id="1_memodef"]
+
+[resource]
+script = ExtResource("1_memodef")
+id = &"floor_3"
+text = "Wager what you like.
+The ladder is yours."
+floor_min = 3
+floor_max = 3

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FloorSkinDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_skin_def.gd" id="1_skindef"]
+
+[resource]
+script = ExtResource("1_skindef")
+id = &"papered_over"
+display_name = "Papered Over"
+line = "The skulls have been struck off the strip and nobody has replaced them yet."
+floors = Array[int]([2, 3, 4, 5])
+spins_delta = 0
+ante_percent = 7.0
+chips_delta = 0
+payout_scale = 1.0
+weight_shifts = {&"skull": -4}
+no_boss = false

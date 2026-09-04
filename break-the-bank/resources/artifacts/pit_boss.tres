@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"pit_boss"
+display_name = "The Pit Boss"
+description = "He watches every symbol land, and charges for it. Each pays 12 more."
+cost = 12
+trigger = 1
+effect = 2
+magnitude = 12.0
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"greed", &"chaos"])
+min_floor = 7
+module_scene_path = ""

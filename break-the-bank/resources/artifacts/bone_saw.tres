@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"bone_saw"
+display_name = "Bone Saw"
+description = "Grinds the skulls off the reel. -5 draw weight on Skull."
+cost = 2
+trigger = 0
+effect = 6
+magnitude = -5.0
+cap = 0.0
+symbol_filter = &"skull"
+pattern_filter = -1
+tags = Array[StringName]([&"luck"])
+min_floor = 2
+module_scene_path = ""

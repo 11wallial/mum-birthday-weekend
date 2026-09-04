@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"coin_cascade_large"
+file_name = "mechanical/coin_cascade_large.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(1600, 2400)
+frequency_notes = "Sustained coin flood for jackpots. Keep the 200-500 Hz mass controlled or it masks the chime."
+pitch_jitter = Vector2(0.98, 1.02)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -6.0
+positional = true
+loops = false
+max_voices = 1
+priority = 9
+duck_music_db = 4.0
+fallback = 9
+fallback_hz = 1500.0

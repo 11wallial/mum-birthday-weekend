@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"nudge_offered"
+file_name = "logic/nudge_offered.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(260, 420)
+frequency_notes = "Two bright electromechanical clicks and a held relay hum: the trail lamps coming up. An invitation, not an alarm."
+pitch_jitter = Vector2(0.99, 1.02)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -6.0
+positional = false
+loops = false
+max_voices = 1
+priority = 6
+duck_music_db = 0.0
+fallback = 0
+fallback_hz = 900.0

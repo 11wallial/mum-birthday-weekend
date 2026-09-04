@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"second_lever"
+display_name = "Second Lever"
+description = "It only works beside the first one. +1.5x while you own the Nudge Bar."
+cost = 4
+trigger = 2
+effect = 27
+magnitude = 1.5
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical"])
+min_floor = 3
+module_scene_path = ""
+partner = &"nudge_bar"
+tag_filter = &""
+archetype = &"trail"

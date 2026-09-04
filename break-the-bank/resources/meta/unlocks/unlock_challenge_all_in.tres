@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_challenge_all_in"
+display_name = "All In"
+description = "A challenge run: a quarter more on every ante, one fewer spin, and the vig half again."
+kind = 3
+target_id = &"all_in"
+condition = 8
+threshold = 44500

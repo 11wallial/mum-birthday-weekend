@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"debt_default_alarm"
+file_name = "logic/debt_default_alarm.wav"
+category = 2
+bus = &"SFX"
+duration_ms = Vector2i(900, 1400)
+frequency_notes = "Harsh two-tone alarm, 300/450 Hz, deliberately unpleasant. A missed vig payment."
+pitch_jitter = Vector2(0.99, 1.01)
+volume_jitter_db = Vector2(-1.0, 0.5)
+base_volume_db = -13.4
+positional = false
+loops = false
+max_voices = 1
+priority = 10
+duck_music_db = 8.0
+fallback = 5
+fallback_hz = 300.0

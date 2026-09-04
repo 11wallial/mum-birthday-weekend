@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="MachineDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/machine_def.gd" id="1_machinedef"]
+
+[resource]
+script = ExtResource("1_machinedef")
+id = &"standard"
+display_name = "The Standard"
+brief = "The machine as the House keeps it. Every floor teaches, every floor charges."
+bonus_cash = 0
+bonus_debt = 0
+bonus_spins = 0
+bonus_chips = 0
+starting_artifacts = Array[StringName]([])
+weight_shifts = {}
+payout_scale = 1.0
+ante_scale = 1.0
+curse_pays = 0.0
+early_systems = Array[StringName]([])

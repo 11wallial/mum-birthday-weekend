@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_def.gd" id="1_bossdef"]
+
+[resource]
+script = ExtResource("1_bossdef")
+id = &"the_croupier"
+display_name = "The Croupier"
+intro = "The sevens are in his pocket tonight."
+tell = "No Lucky Sevens on this floor."
+floor = 2
+rule = 0
+magnitude = 0.0
+symbol = &"seven"
+pattern = -1

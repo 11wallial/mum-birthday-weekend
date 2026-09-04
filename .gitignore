@@ -1,0 +1,5 @@
+# Packaged builds. tools/package/build.sh writes these; they are release
+# output, not source, and two of them are past what GitHub will take.
+/linux/
+/macos/
+/windows/

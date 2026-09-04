@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DifficultyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/difficulty_def.gd" id="1_difficultydef"]
+
+[resource]
+script = ExtResource("1_difficultydef")
+id = &"compound_interest"
+display_name = "Compound Interest"
+description = "Every floor's interest is fifteen points higher. The debt has started to grow faster than you do."
+tier = 6
+ante_scale = 1.08
+debt_service_scale = 1.5
+interest_delta = 15.0
+debt_scale = 1.5
+price_scale = 1.2

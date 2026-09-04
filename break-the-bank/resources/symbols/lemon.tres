@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"lemon"
+display_name = "Lemon"
+base_value = 2
+base_weight = 12
+family = &"fruit"
+is_wild = false
+is_curse = false
+glyph = "LE"
+color = Color(0.88, 0.91, 0.24, 1)
+color2 = Color(0.35, 0.6, 0.2, 1)

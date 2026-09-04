@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"last_harvest"
+display_name = "Last Harvest"
+description = "Everything the Fruit Ledger ever wrote down, called in at once. +4.2x while you own the Fruit Ledger."
+cost = 16
+trigger = 2
+effect = 27
+magnitude = 4.2
+cap = 0.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"luck", &"greed"])
+min_floor = 7
+module_scene_path = ""
+partner = &"fruit_ledger"
+tag_filter = &""
+archetype = &"orchard"

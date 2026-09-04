@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SymbolDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/symbol_def.gd" id="1_symboldef"]
+
+[resource]
+script = ExtResource("1_symboldef")
+id = &"diamond"
+display_name = "Diamond"
+base_value = 20
+base_weight = 3
+family = &""
+is_wild = false
+is_curse = false
+glyph = "DIA"
+color = Color(0.55, 0.86, 0.95, 1)
+color2 = Color(0.86, 0.96, 1.0, 1)

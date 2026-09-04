@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"reel_stop_final"
+file_name = "mechanical/reel_stop_final.wav"
+category = 1
+bus = &"SFX"
+duration_ms = Vector2i(140, 200)
+frequency_notes = "Last reel: heavier detent, 90-200 Hz weight and a longer mechanical tail. Marks the line as resolved."
+pitch_jitter = Vector2(0.96, 1.04)
+volume_jitter_db = Vector2(-1.5, 1.0)
+base_volume_db = -6.9
+positional = true
+loops = false
+max_voices = 1
+priority = 9
+duck_music_db = 0.0
+fallback = 7
+fallback_hz = 260.0

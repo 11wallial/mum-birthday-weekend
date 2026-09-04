@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"cold_hands"
+display_name = "Cold Hands"
+description = "No stake and no ladder. One credit a spin, and every win is banked as it stands."
+locked_systems = Array[StringName]([&"stake", &"gamble"])

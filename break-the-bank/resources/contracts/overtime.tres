@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"overtime"
+display_name = "Overtime"
+description = "Stay on past the shift. The interest stays on with you."
+min_floor = 5
+boon = 1
+boon_magnitude = 2
+boon_symbol = &""
+boon_pattern = -1
+toll = 7
+toll_magnitude = 40
+toll_symbol = &""
+toll_pattern = -1

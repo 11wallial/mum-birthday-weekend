@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ContractDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/contract_def.gd" id="1_contractdef"]
+
+[resource]
+script = ExtResource("1_contractdef")
+id = &"loose_machine"
+display_name = "Loose Machine"
+description = "A screw comes out of the drum. Wilds fall out with it, and so does the float."
+min_floor = 5
+boon = 9
+boon_magnitude = 6
+boon_symbol = &"wild"
+boon_pattern = -1
+toll = 2
+toll_magnitude = 22
+toll_symbol = &""
+toll_pattern = -1

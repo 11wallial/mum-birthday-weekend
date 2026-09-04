@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChitDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/chit_def.gd" id="1_chitdef"]
+
+[resource]
+script = ExtResource("1_chitdef")
+id = &"the_wedge"
+display_name = "The Wedge"
+description = "Two more stops on a board that has already landed. Bigger than a shim, quieter than a crowbar."
+cost = 4
+kind = 5
+magnitude = 2.0
+symbol = &""
+min_floor = 4

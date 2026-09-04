@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnlockDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/unlock_def.gd" id="1_unlockdef"]
+
+[resource]
+script = ExtResource("1_unlockdef")
+id = &"unlock_house_contract"
+display_name = "House Contract"
+description = "They will renegotiate, once."
+kind = 0
+target_id = &"house_contract"
+condition = 7
+threshold = 400

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"three_bar_salute"
+display_name = "Three Bar Salute"
+description = "An old payout schedule, still honoured. Every Bar pays 5 more."
+cost = 2
+trigger = 2
+effect = 2
+magnitude = 5.0
+cap = 0.0
+symbol_filter = &"bar"
+pattern_filter = -1
+tags = Array[StringName]([&"greed"])
+min_floor = 1
+module_scene_path = ""
+archetype = &"exchange"

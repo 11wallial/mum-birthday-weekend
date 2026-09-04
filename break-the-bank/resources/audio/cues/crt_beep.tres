@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SoundDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sound_def.gd" id="1_sounddef"]
+
+[resource]
+script = ExtResource("1_sounddef")
+id = &"crt_beep"
+file_name = "retro/crt_beep.wav"
+category = 0
+bus = &"UI"
+duration_ms = Vector2i(90, 140)
+frequency_notes = "The ledger's prompt: a short beep, pitch-shifting with the memo, warm rather than digital."
+pitch_jitter = Vector2(0.9, 1.1)
+volume_jitter_db = Vector2(-2.0, 1.0)
+base_volume_db = -20.6
+positional = false
+loops = false
+max_voices = 2
+priority = 4
+duck_music_db = 0.0
+fallback = 1
+fallback_hz = 1180.0

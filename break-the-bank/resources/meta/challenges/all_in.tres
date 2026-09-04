@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"all_in"
+display_name = "All In"
+description = "A quarter more on every ante, one fewer spin, and the vig half again. Every rule at once."
+ante_scale = 1.25
+spins_delta = -1
+debt_service_scale = 1.5

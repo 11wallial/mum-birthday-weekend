@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FloorDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_def.gd" id="1_floordef"]
+
+[resource]
+script = ExtResource("1_floordef")
+index = 5
+display_name = "The Back Office"
+description = "Where the rules are typed up and signed."
+ante = 1730
+spins = 12
+debt_interest_percent = 80.0
+shop_slots = 4
+chips = 12
+payout_scale = 1.3
+environment_id = &"back_office"
+grants = Array[StringName]([&"contracts"])

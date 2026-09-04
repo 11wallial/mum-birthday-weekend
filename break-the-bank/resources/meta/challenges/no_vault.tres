@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChallengeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/challenge_def.gd" id="1_challengedef"]
+
+[resource]
+script = ExtResource("1_challengedef")
+id = &"no_vault"
+display_name = "No Vault"
+description = "Nothing is banked. Every credit you hold is a credit in the purse."
+locked_systems = Array[StringName]([&"vault"])

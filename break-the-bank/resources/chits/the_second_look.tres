@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChitDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/chit_def.gd" id="1_chitdef"]
+
+[resource]
+script = ExtResource("1_chitdef")
+id = &"the_second_look"
+display_name = "The Second Look"
+description = "The last drum, turned again while the decision stands. Dearer up here, and worth more."
+cost = 6
+kind = 0
+magnitude = 0.0
+symbol = &""
+min_floor = 5

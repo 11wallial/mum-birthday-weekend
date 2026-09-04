@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArtifactDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/artifact_def.gd" id="1_artifactdef"]
+
+[resource]
+script = ExtResource("1_artifactdef")
+id = &"long_fuse"
+display_name = "Long Fuse"
+description = "Seventy spins of nothing. Then +3.5x on every line, for good."
+cost = 7
+trigger = 2
+effect = 28
+magnitude = 3.5
+cap = 70.0
+symbol_filter = &""
+pattern_filter = -1
+tags = Array[StringName]([&"mechanical", &"chaos"])
+min_floor = 4
+module_scene_path = ""
+partner = &""
+tag_filter = &""
+archetype = &"clock"

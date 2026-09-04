@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FloorDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_def.gd" id="1_floordef"]
+
+[resource]
+script = ExtResource("1_floordef")
+index = 1
+display_name = "The Basement"
+description = "One machine, one bare bulb, one bad idea."
+ante = 40
+spins = 9
+debt_interest_percent = 0.0
+shop_slots = 3
+chips = 5
+payout_scale = 1.0
+environment_id = &"basement"
+grants = Array[StringName]([&"hold"])
