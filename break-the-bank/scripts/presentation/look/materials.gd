@@ -33,6 +33,10 @@ const LAMP: Color = Color(1.0, 0.831, 0.616)
 ## wall. Shadows lean cool against the warm key, and this is that blue — the
 ## fifth colour of the spine, and the only one the palette never wrote down.
 const SHADOW: Color = Color(0.125, 0.145, 0.196)
+## Stamped and engraved lettering on brass: the serial plate, the maker's
+## line. Not black — it is ink pressed into metal, and it keeps the set's
+## warm cast the way every other neutral here does.
+const INK_DARK: Color = Color(0.16, 0.13, 0.09)
 ## The accent, and the one rule about it: SCORE is reserved for scoring and
 ## state feedback — a plate lit because it paid, the payline bar on a win, a
 ## tube flaring as the total lands, the receipt's total. Nothing decorative

@@ -778,23 +778,36 @@ func _console() -> Array[Node3D]:
 		key.name = "ActionKey%d" % i
 		key.position = Vector3(x, 0.03, 0.0)
 		shelf.add_child(key)
-		Prims.box(key, Vector3(0.28, 0.02, 0.15), Vector3(0.0, -0.01, 0.0),
-				Materials.machined(Color(0.24, 0.23, 0.22), 48))
-		var cap: MeshInstance3D = Prims.box(key, Vector3(0.26, 0.026, 0.13),
-				Vector3(0.0, 0.012, 0.0), _button_lamp_material())
+		# The same illuminated pushbutton the reel row uses: a well sunk into
+		# the shelf, a brass bezel, and a cap standing proud of it. It was a
+		# 26mm slab lit from inside with its caption lying on the lit face,
+		# which is why the review read this row as flat white quads floating
+		# on the tray while the identical row above it read as hardware.
+		Prims.box(key, Vector3(0.28, 0.03, 0.16), Vector3(0.0, -0.016, 0.0),
+				Materials.cavity())
+		Prims.cylinder(key, 0.062, 0.026, Vector3(0.0, -0.004, 0.0), Vector3.ZERO,
+				Materials.brass(48), 18)
+		var cap: MeshInstance3D = Prims.cylinder(key, 0.05, 0.034,
+				Vector3(0.0, 0.012, 0.0), Vector3.ZERO, _button_lamp_material(), 18)
 		cap.name = "Lamp"
+		# On a placard at the key's foot, upright to the player. Printed on
+		# the cap it was washed out by the lamp under it and read at a
+		# grazing angle besides — the reel row learned this first.
+		Prims.box(key, Vector3(0.27, 0.05, 0.012), Vector3(0.0, -0.006, 0.105),
+				Materials.cavity())
 		var caption: Label3D = Label3D.new()
 		caption.name = "Caption"
 		caption.text = ""
-		caption.font_size = 46
+		caption.font_size = 38
 		Type.face(caption, &"display")
-		caption.pixel_size = 0.0012
-		caption.modulate = Color(0.12, 0.1, 0.08)
-		caption.outline_size = 0
+		caption.pixel_size = 0.0011
+		caption.modulate = Color(0.9, 0.86, 0.78)
+		caption.outline_size = 3
+		caption.outline_modulate = Color(0.05, 0.045, 0.04, 0.9)
 		caption.shaded = false
 		caption.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-		caption.rotation.x = -PI * 0.5
-		caption.position = Vector3(0.0, 0.027, 0.0)
+		caption.rotation.x = 0.0
+		caption.position = Vector3(0.0, -0.006, 0.113)
 		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		key.add_child(caption)
 		var pick: Area3D = Area3D.new()
@@ -1529,6 +1542,7 @@ func _wear() -> void:
 			_wear_material(ProcTextures.stain(86, Color(0.08, 0.06, 0.05))))
 	damp.rotation.x = -PI * 0.5
 	_decals(wear_root, front)
+	_touch_wear(wear_root, front)
 	_concentrated_wear(wear_root)
 
 
@@ -1560,6 +1574,40 @@ func _concentrated_wear(parent: Node3D) -> void:
 	sill.rotation.x = -PI * 0.5
 
 
+## Wear where the hands go.
+##
+## The set already carries weeps under the seams, dust on the tops and stains
+## on the sills — grime that settles. What it had none of is grime that is
+## *rubbed off*: the review asked for worn brass at touch points, and the
+## difference between the two is the difference between a machine that has
+## stood somewhere and a machine that has been used.
+##
+## So the paint is polished through where a hand actually lands — around the
+## lever's mount, along the front lip of the button shelf where the heel of
+## a palm rests, and across the tray where coins are swept out. Pale, because
+## worn paint shows the metal under it, and placed rather than scattered:
+## wear that is everywhere is a texture, and wear in three places is a habit.
+func _touch_wear(parent: Node3D, front: float) -> void:
+	# Brass, drained toward the paint it is wearing through.
+	var polish: Color = Materials.BRASS.lerp(Materials.ENAMEL, 0.55)
+	# The lever's mount, where a hand grips the same spot every spin.
+	_wear_card(parent, Vector2(0.3, 0.34),
+			Vector3(CHASSIS.x - 0.02, CHASSIS_Y + 0.06, front + 0.005),
+			ProcTextures.stain(140, polish))
+	# The apron's lip under the reel buttons: the heel of the hand.
+	var lip: MeshInstance3D = Prims.quad(parent, Vector2(1.3, 0.16),
+			Vector3(0.0, CHASSIS_Y - 0.62, CHASSIS.z + 0.19),
+			_wear_material(ProcTextures.stain(141, polish)))
+	lip.rotation.x = -0.42
+	lip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# The tray the winnings are swept out of, worn brightest at its mouth.
+	var tray: MeshInstance3D = Prims.quad(parent, Vector2(0.72, 0.26),
+			Vector3(-0.05, PLINTH_TOP + 0.058, 0.52),
+			_wear_material(ProcTextures.stain(142, polish.lightened(0.12))))
+	tray.rotation.x = -PI * 0.5
+	tray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
 ## Decals: the art handover's last note on materials. Detail density high
 ## around the face and near zero elsewhere — a serial plate, an inspection
 ## sticker the House has voided, a scorch where the coil has arced onto the
@@ -1570,20 +1618,38 @@ func _decals(parent: Node3D, front: float) -> void:
 	# the way the player has an account.
 	var plate: Node3D = Node3D.new()
 	plate.name = "SerialPlate"
+	# Where it has always been, and it cannot be read from the machine
+	# framing. Three other homes were tried and measured: the plinth's face
+	# is in the shadow of a cap that overhangs it by 60mm, the cap's own
+	# front edge foreshortens to nothing at this camera, and the chassis
+	# flanks are covered by the reel window as a run buys reels. This spot
+	# is behind the button apron, which is tilted forward across exactly
+	# this band. Left here rather than moved to a fourth guess: making the
+	# plate readable needs the apron or the camera to move, which is a
+	# bigger change than a decal deserves.
 	plate.position = Vector3(0.58, CHASSIS_Y - 0.42, front + 0.006)
 	parent.add_child(plate)
 	Prims.box(plate, Vector3(0.2, 0.06, 0.006), Vector3.ZERO, Materials.brass(102))
 	for sx: float in [-1.0, 1.0]:
 		Prims.cylinder(plate, 0.005, 0.004, Vector3(sx * 0.085, 0.0, 0.004),
 				Vector3(PI * 0.5, 0.0, 0.0), Materials.machined(Materials.STEEL, 103), 8)
+	var maker: Label3D = Label3D.new()
+	maker.text = Copy.of("BUILT FOR THE HOUSE")
+	Type.face(maker, &"display")
+	maker.font_size = 22
+	maker.pixel_size = 0.0009
+	maker.modulate = Materials.INK_DARK
+	maker.shaded = false
+	maker.position = Vector3(0.0, 0.016, 0.005)
+	plate.add_child(maker)
 	var serial: Label3D = Label3D.new()
 	serial.text = Copy.of("No. 0447 · THE HOUSE")
 	Type.face(serial, &"mono")
 	serial.font_size = 26
 	serial.pixel_size = 0.0009
-	serial.modulate = Color(0.16, 0.13, 0.09)
+	serial.modulate = Materials.INK_DARK
 	serial.shaded = false
-	serial.position = Vector3(0.0, 0.0, 0.005)
+	serial.position = Vector3(0.0, -0.012, 0.005)
 	plate.add_child(serial)
 	# The inspection sticker, peeling, with the House's red across it.
 	var sticker: Node3D = Node3D.new()
