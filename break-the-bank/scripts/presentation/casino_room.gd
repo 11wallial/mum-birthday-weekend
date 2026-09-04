@@ -401,6 +401,14 @@ func _on_result_judged(result: SlotView3D.Result, payout: int, settled: bool) ->
 				_camera.push_in(0.06, 0.6)
 			SlotView3D.Result.PAID:
 				_camera.shake(0.2)
+			SlotView3D.Result.DEAD:
+				# The opposite of the lean: the room draws back a couple of
+				# centimetres and returns. A dead spin used to fall through
+				# this match entirely, so the camera — which leans in on
+				# anything that pays — sat perfectly still on the outcome
+				# the player gets most often. No shake: a shake is a thing
+				# landing, and nothing landed.
+				_camera.push_in(-0.022, 0.75)
 			_:
 				pass
 	if result >= SlotView3D.Result.HEAVY and not SlotView3D.steady:
@@ -695,6 +703,56 @@ func _settled_ending() -> void:
 		_slot_view.blackout(ENDING_SECONDS)
 	if _film != null and _film.has_method("set_strain"):
 		_film.call("set_strain", 0.0)
+
+
+## How long the House takes to close the table on a run that ended owing.
+## Shorter than the settled ending: that one is an event, this one is the
+## House getting on with its evening.
+const SEIZED_SECONDS: float = 2.0
+
+
+## The other ending, and the one most runs reach: the account is short and
+## the House keeps the table.
+##
+## Where [method _settled_ending] is a collapse — every light dying together
+## over three and a half seconds because the payout broke the House — this is
+## an eviction. The machine is cut first and all at once, the way a machine
+## is cut when the floor is done with it; the room's own lights stay up,
+## because the room is not finished, only this run is. Then the sign goes,
+## and the desk lamp is what is left to read the statement by.
+func _seized_ending() -> void:
+	if _camera != null:
+		_camera.set_view(CameraController.View.MACHINE)
+	if _slot_view != null:
+		_slot_view.blackout(SEIZED_SECONDS * 0.55)
+	if _audio != null:
+		_audio.hush(SEIZED_SECONDS)
+		_audio.set_loop_volume(&"music_bed_loop", -60.0, SEIZED_SECONDS * 0.8)
+		# The drawer, then the door. Two sounds, and the second one is late
+		# enough to be a separate thought.
+		var drawer: Tween = create_tween()
+		drawer.tween_callback(func() -> void: _audio.play_at(&"cash_thud")) \
+				.set_delay(SEIZED_SECONDS * 0.42)
+	# The machine's own lights go; the room's are dimmed, not killed.
+	for part: String in ["key", "cold", "wash", "ceiling"]:
+		var light: Light3D = _room_parts.get(part, null) as Light3D
+		if light == null:
+			continue
+		var down: Tween = create_tween()
+		down.tween_property(light, "light_energy", light.light_energy * 0.42,
+				SEIZED_SECONDS * 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var spill: Light3D = _room_parts.get("sign_spill", null) as Light3D
+	if spill != null:
+		var out: Tween = create_tween()
+		out.tween_property(spill, "light_energy", 0.0, SEIZED_SECONDS * 0.5)
+	var sign_label: Label3D = _room_parts.get("sign", null) as Label3D
+	if sign_label != null:
+		# One stutter and out. The settled ending gutters six times because
+		# the House is failing; here the floor is simply closed.
+		var gutter: Tween = create_tween()
+		gutter.tween_property(sign_label, "modulate:a", 0.2, 0.1)
+		gutter.tween_property(sign_label, "modulate:a", 0.8, 0.08)
+		gutter.tween_property(sign_label, "modulate:a", 0.0, 0.5)
 
 
 ## The surety — how much of the player the House holds — onto the column on
@@ -1505,6 +1563,21 @@ func _show_statement(score_line: String) -> void:
 				_receipt.clear()
 			if _camera != null:
 				_camera.set_view(CameraController.View.DESK)).set_delay(ENDING_SECONDS)
+		return
+	# A run that ended owed gets its own ending. It used to get none: the
+	# camera walked to the desk and the statement was simply there, while a
+	# win got three and a half seconds of the House going dark. The loss is
+	# the ending most players will actually see.
+	if state.is_over():
+		_seized_ending()
+		var settle: Tween = create_tween()
+		settle.tween_callback(func() -> void:
+			_recap.open(RunRecap.build(state, entries),
+					SeedBook.to_code(state.seed_value), score_line)
+			if _receipt != null:
+				_receipt.clear()
+			if _camera != null:
+				_camera.set_view(CameraController.View.DESK)).set_delay(SEIZED_SECONDS)
 		return
 	_recap.open(RunRecap.build(state, entries), SeedBook.to_code(state.seed_value), score_line)
 	if _receipt != null:

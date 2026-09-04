@@ -139,6 +139,9 @@ var _counter_value: Dictionary = {}
 var _last_tink: float = 0.0
 ## Where the machine's lamp rests between flares.
 const LAMP_REST: float = 1.0
+## The odds bank's wash at a multiplier of one, and how far it climbs.
+const ODDS_WASH_REST: float = 0.5
+const ODDS_WASH_REACH: float = 2.6
 
 ## How the spin was judged. The HUD listens so its readout agrees with the
 ## machine rather than restating the number in its own words.
@@ -580,6 +583,7 @@ func _turn_drives() -> void:
 func _set_odds(multiplier: float) -> void:
 	if _odds == null:
 		return
+	_fill_odds(multiplier)
 	var text: String = "%.0fx" % maxf(multiplier, 1.0) if multiplier < 100.0 \
 			else "%dx" % int(multiplier)
 	# Right-aligned into the four tubes, the way a counter fills from its low
@@ -806,7 +810,9 @@ func _drop_reel(index: int, column: Dictionary, nudges_left: int) -> void:
 ## Widens the window when the works are fitted, and dims the rows that still do
 ## not pay so the ones the player has bought are the ones that read as live.
 func _fit_works(reels: int, rows: int, aloud: bool = true) -> void:
-	if reels != _reels.size():
+	var widened: bool = reels != _reels.size()
+	var before: int = _reels.size()
+	if widened:
 		_reels.assign(MachineFrame.new().rebuild_window(self, reels))
 		# The drums were rebuilt, so whatever was standing on them is gone; the
 		# next spin repaints them.
@@ -817,7 +823,51 @@ func _fit_works(reels: int, rows: int, aloud: bool = true) -> void:
 	# Hardware refitted to a resumed run was fitted long ago; it makes no noise.
 	if _audio != null and aloud:
 		_audio.play(&"works_fitted")
+	if widened and aloud:
+		_seat_new_drums(before)
 	_light_rows(rows)
+
+
+## The new drums seating themselves in the window.
+##
+## The machine grows a whole reel — the most expensive thing a run can buy,
+## and the moment the review picked out as the best in the set — by freeing
+## the window and building a wider one inside a single frame. It arrived
+## with one sound and no motion at all, while buying an *artifact* got a
+## scale-in with a back-ease on it. The cheaper purchase had the ceremony.
+##
+## Every drum that was not there before drops in and settles, left to right,
+## on the same curve a fitted module uses, and the window lamp comes up
+## behind them once the last one is home.
+func _seat_new_drums(had: int) -> void:
+	var lamp: Light3D = get_node_or_null(^"Reels/WindowLamp") as Light3D
+	var lamp_rest: float = lamp.light_energy if lamp != null else 0.0
+	if lamp != null:
+		lamp.light_energy = lamp_rest * 0.25
+	var last: float = 0.0
+	for i: int in _reels.size():
+		if i < had:
+			continue
+		var drum: Node3D = _reels[i]
+		var home: Vector3 = drum.position
+		drum.position = home + Vector3(0.0, 0.42, 0.0)
+		drum.scale = Vector3(0.86, 0.86, 0.86)
+		var at: float = float(i - had) * 0.16
+		last = at
+		var seat: Tween = create_tween().set_parallel(true)
+		seat.tween_property(drum, "position", home, 0.44) \
+				.set_delay(at).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		seat.tween_property(drum, "scale", Vector3.ONE, 0.44) \
+				.set_delay(at).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if _audio != null:
+			var bolt: Tween = create_tween()
+			bolt.tween_callback(func() -> void:
+				_audio.play_at(&"reel_stop_final")).set_delay(at + 0.4)
+	if lamp != null:
+		var up: Tween = create_tween()
+		up.tween_interval(last + 0.42)
+		up.tween_property(lamp, "light_energy", lamp_rest, 0.5) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 ## Marks which of the three rows are paying, on the drums and on the window.
@@ -1263,20 +1313,105 @@ func _show_surety(value: float) -> void:
 			material.albedo_color = Color(0.75, 0.12, 0.1) if lit else Color(0.25, 0.06, 0.05)
 
 
-## A losing spin, given weight: the lamp flickers once and settles, one dry
-## mechanical sound with no musical content, and on a near miss the failed
-## reel held in the red for a moment.
+## A losing spin, given weight.
+##
+## The scoring director hands a dead spin no beats at all — there is nothing
+## to pay out, so there is nothing to count — which left the machine doing
+## almost nothing on the outcome the player sees most often. A win had a
+## chain, a count-up, coins, a shake and the room reacting; a loss had one
+## flicker and a dry cue, and the difference read as the game not noticing.
+##
+## So this is the deflate: the machine breathes out. The lamp sags and comes
+## back slowly rather than strobing, the drums settle in their gates, the
+## odds tubes drop what they were holding, and the column that carries the
+## player's own stake ticks up — which is the honest place for a loss to
+## land in this game, because losing is the House taking more of you.
+##
+## Deliberately short and quiet. Most spins end here, and a deflate that
+## demands attention every time becomes a tax on playing.
 func _fail(_payout: int) -> void:
 	if _light != null and not steady:
-		var flicker: Tween = create_tween()
-		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.15, 0.05)
-		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.8, 0.06)
-		flicker.tween_property(_light, "light_energy", LAMP_REST * 0.3, 0.05)
-		flicker.tween_property(_light, "light_energy", LAMP_REST, 0.25)
+		# A breath out, not a strobe: down fast, held under, and a long way
+		# back. The old shape hit 0.8 halfway through its own recovery and
+		# read as the bulb failing rather than the machine giving up.
+		var sag: Tween = create_tween()
+		sag.tween_property(_light, "light_energy", LAMP_REST * 0.22, 0.07) 				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		sag.tween_interval(0.08 if _tense else 0.03)
+		sag.tween_property(_light, "light_energy", LAMP_REST, 0.34) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# The drums drop into their gates, last one last. A win jolts a drum
+	# upward as each symbol scores; this is the same movement with nothing
+	# behind it, which is what makes it read as settling rather than paying.
+	for i: int in _reels.size():
+		var at: float = float(i) * 0.035
+		var settle: Tween = create_tween()
+		settle.tween_interval(at)
+		settle.tween_callback(_sink.bind(i))
+	# Whatever the odds bank was holding, it is not holding it now.
+	_drop_odds()
+	if _surety_lamp != null:
+		var material: StandardMaterial3D = _surety_lamp.material_override as StandardMaterial3D
+		if material != null and _surety_shown < 0.85:
+			# One pulse as the column takes its share. Above 0.85 the lamp is
+			# already lit and holding, and blinking it there would read as
+			# the level falling.
+			var pulse: Tween = create_tween()
+			pulse.tween_property(material, "emission_energy_multiplier", 0.55, 0.09)
+			pulse.tween_property(material, "emission_energy_multiplier", 0.0, 0.3)
 	if _audio != null:
 		_audio.play_at(&"score_dead")
 	if _tense and not _reels.is_empty():
 		_flare_plate(_reels.size() - 1, Materials.JACKPOT, 0.5, 0.6)
+
+
+## The odds bank's own light, driven by the multiplier it is showing.
+##
+## The bank had a wash lamp behind it burning at one energy from boot to the
+## end of the run, so a multiplier of nine looked exactly like a multiplier
+## of one and the number was the only thing that changed. A rising figure
+## should arrive with rising light — it is the one readout on the machine
+## that says how well the run is going, and it was the quietest thing on it.
+func _fill_odds(multiplier: float) -> void:
+	var wash: OmniLight3D = _odds.get_node_or_null(^"Wash") as OmniLight3D
+	if wash == null:
+		return
+	# Logarithmic: the interesting range is 1x to about 10x, and a linear
+	# ramp spends most of its travel on multipliers a run rarely reaches.
+	var climb: float = clampf(log(maxf(multiplier, 1.0)) / log(12.0), 0.0, 1.0)
+	var target: float = ODDS_WASH_REST + climb * ODDS_WASH_REACH
+	var rise: Tween = create_tween()
+	rise.tween_property(wash, "light_energy", target, 0.45) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+## A drum settling into its gate: down, then back. The mirror of [method _jolt].
+func _sink(reel: int) -> void:
+	if reel < 0 or reel >= _reels.size():
+		return
+	var drum: Node3D = _reels[reel]
+	var rest: float = drum.position.y
+	var sink: Tween = create_tween()
+	sink.tween_property(drum, "position:y", rest - 0.005, 0.05) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	sink.tween_property(drum, "position:y", rest, 0.16) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## The odds bank letting go of what it was showing: the halos fade out under
+## the digits rather than the number vanishing between frames.
+func _drop_odds() -> void:
+	if _odds == null:
+		return
+	for i: int in 4:
+		var halo: Node3D = _odds.get_node_or_null(NodePath("Halo%d" % i))
+		if halo == null:
+			continue
+		var mesh: MeshInstance3D = halo as MeshInstance3D
+		if mesh == null or not mesh.visible:
+			continue
+		var fade: Tween = create_tween()
+		fade.tween_property(mesh, "transparency", 0.75, 0.22) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		fade.tween_property(mesh, "transparency", 0.0, 0.3)
 
 
 ## The tier's package: what a spin of this size does to the machine.

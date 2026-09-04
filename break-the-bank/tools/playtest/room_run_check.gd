@@ -15,6 +15,13 @@ extends SceneTree
 
 const DEFAULT_MOVES: int = 600
 const DEFAULT_SETTLE: float = 0.7
+## How long an ending is allowed to take before the statement has to be up.
+## Both endings hold the room for a moment first — the House going dark on a
+## win, the table being closed on a loss — so a check that demanded the
+## statement in the same frame the run ended was asserting that neither
+## ceremony exists. Generous on purpose: this is here to catch a statement
+## that never arrives, not to time the one that does.
+const ENDING_BUDGET: float = 8.0
 
 var _room: Node
 var _moves: int = DEFAULT_MOVES
@@ -22,6 +29,8 @@ var _made: int = 0
 var _settle: float = DEFAULT_SETTLE
 var _wait: float = 0.0
 var _done: bool = false
+## Seconds left for the ending to finish, once the run is over.
+var _ending: float = ENDING_BUDGET
 
 
 func _initialize() -> void:
@@ -54,6 +63,11 @@ func _process(delta: float) -> bool:
 	if state.is_over():
 		var summary: Dictionary = _room.call("debug_run_summary")
 		if not bool(summary["recap_open"]):
+			# Let the ending play. It is only a failure once the budget is out.
+			_ending -= delta + _settle
+			if _ending > 0.0:
+				_wait = 0.2
+				return false
 			_finish(false, "the run ended (%s on floor %d) without the statement on the clipboard" % [
 					summary["phase"], int(summary["floor"])])
 			return true
