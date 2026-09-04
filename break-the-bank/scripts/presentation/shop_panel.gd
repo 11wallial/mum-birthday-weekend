@@ -140,8 +140,13 @@ func _redraw() -> void:
 			_state.economy.debt])
 		_title.add_theme_color_override(&"font_color", UiSkin.PAPER_STAMP)
 	_cursor = clampi(_cursor, 0, maxi(_state.shop_offers.size() - 1, 0))
-	for i: int in _state.shop_offers.size():
-		_rows.add_child(_build_row(i))
+	# The offers are cards on the desk now, not rows on the form. What stays
+	# here is the credit: taking a piece outright is done by picking it up,
+	# and putting it on the slate is done by signing for it, which is what
+	# this panel has always been for.
+	if _state.has_system(Systems.MARKET):
+		for i: int in _state.shop_offers.size():
+			_rows.add_child(_slate_row(i))
 	_draw_press()
 	_draw_pocket()
 	_draw_doorman()
@@ -415,6 +420,30 @@ func _build_row(index: int) -> Control:
 	slate.custom_minimum_size = Vector2(112.0, 58.0) * _scale
 	pair.add_child(slate)
 	return pair
+
+
+## One offer's credit line: what it is, and what signing for it will owe.
+##
+## The offer itself is a card on the desk and is bought by taking it. This
+## is the other half of the same choice — the House will let a player have
+## it now against the slate — and it belongs on paper because that is what
+## it is. One line each, not the full row the card replaced.
+func _slate_row(index: int) -> Control:
+	var artifact: ArtifactDef = _state.shop_offers[index]
+	var accent: Color = UiSkin.archetype_color(artifact.archetype)
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", int(roundf(10.0 * _scale)))
+	row.add_child(_cell(Copy.filled("%d.", [index + 1]), 15.0, UiSkin.PAPER_INK_MUTED))
+	var name_cell: Label = _cell(Copy.of(artifact.display_name), 15.0, accent)
+	name_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_cell)
+	var owed: int = _state.slate_price(index)
+	var slate: Button = _chip(Copy.filled("SLATE  %d cr owed", [owed]), true,
+			UiSkin.PAPER_DENIED,
+			func() -> void: market_requested.emit(SLATE, index))
+	slate.custom_minimum_size = Vector2(150.0, 34.0) * _scale
+	row.add_child(slate)
+	return row
 
 
 ## The icon for the symbol an artifact singles out, or null if it applies to

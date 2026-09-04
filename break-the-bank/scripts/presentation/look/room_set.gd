@@ -69,7 +69,16 @@ func build(root: Node3D) -> Dictionary:
 		"ceiling": _root.get_node_or_null(^"CeilingWash"),
 		"board": board,
 		"board_pick": board.get_node_or_null(^"Pick"),
+		"cards": _root.get_node_or_null(^"Desk/Cards"),
 	}
+
+
+## The size of one card of hardware laid out on the desk, and how they sit.
+const CARD_SIZE: Vector2 = Vector2(0.2, 0.27)
+## Three across, centred, with a finger's width between them.
+const CARD_PITCH: float = 0.268
+## Lifted when the pointer is over one, so a card answers before it is read.
+const CARD_LIFT: float = 0.022
 
 
 ## Where the paperwork happens: a steel desk against the right wall with a
@@ -80,6 +89,50 @@ func build(root: Node3D) -> Dictionary:
 ##
 ## Returns the board, whose material the room hands the form's texture, and
 ## which carries the pick area the room forwards the pointer through.
+## The draft laid out as goods rather than as a list.
+##
+## The offers used to be three rows on the clipboard, which is the shape a
+## web form takes and not the shape a thing for sale takes. They are cards
+## on the desk now — the form beside them still carries the press, the
+## market and everything the House wants signed, because that is paperwork
+## and this is stock. Each card is a quad the room draws its face into, the
+## same trick the clipboard uses, with a pick body so it can be lifted and
+## taken. Built once and hidden; the draft shows and fills them.
+func _draft_cards(desk: Node3D) -> void:
+	# Built onto the desk directly: _group() parents to the room root, so a
+	# tray made that way is a sibling of the desk and moves with nothing.
+	var tray: Node3D = Node3D.new()
+	tray.name = "Cards"
+	desk.add_child(tray)
+	# Forward of the board and just off the desktop, tipped back toward the
+	# reader: flat on the top they are read at a grazing angle and the art
+	# on them is wasted.
+	tray.position = Vector3(0.0, 0.055, 0.4)
+	tray.rotation.x = -1.06
+	for i: int in 3:
+		var card: MeshInstance3D = Prims.quad(tray, CARD_SIZE,
+				Vector3((float(i) - 1.0) * CARD_PITCH, 0.0, 0.0),
+				Materials.enamel(Materials.PAPER, 120 + i))
+		card.name = "Card%d" % i
+		# A fan, not a row: the outer two turned a few degrees off true so
+		# the three read as dealt rather than printed.
+		# A shallow fan. Steeper and the turned corners of the outer two ride
+		# under their neighbour, which reads as a misprint rather than a deal.
+		card.rotation.z = (1.0 - float(i)) * 0.035
+		card.visible = false
+		Prims.box(card, Vector3(CARD_SIZE.x + 0.012, CARD_SIZE.y + 0.012, 0.006),
+				Vector3(0.0, 0.0, -0.005), Materials.timber(123 + i))
+		var pick: Area3D = Area3D.new()
+		pick.name = "Pick"
+		var shape: CollisionShape3D = CollisionShape3D.new()
+		var box: BoxShape3D = BoxShape3D.new()
+		box.size = Vector3(CARD_SIZE.x, CARD_SIZE.y, 0.03)
+		shape.shape = box
+		pick.add_child(shape)
+		pick.set_meta(&"card", i)
+		card.add_child(pick)
+
+
 func _desk() -> MeshInstance3D:
 	var desk: Node3D = _group(&"Desk")
 	desk.position = DESK
@@ -114,9 +167,15 @@ func _desk() -> MeshInstance3D:
 	var backing: MeshInstance3D = Prims.box(board, Vector3(BOARD_SIZE.x + 0.04, BOARD_SIZE.y + 0.06, 0.012),
 			Vector3(0.0, 0.0, -0.008), Materials.timber(94))
 	backing.name = "Backing"
-	_box(board, Vector3(0.14, 0.05, 0.03), Vector3(0.0, BOARD_SIZE.y * 0.5 + 0.005, 0.01),
-			Materials.machined(Color(0.55, 0.55, 0.53), 95))
+	# The clip, in painted steel rather than machined. At metallic 1.0 with
+	# an ambient of 0.14 and nothing in the room to reflect, it rendered as a
+	# near-black rectangle standing proud of the paper's top edge, and its
+	# grime map supplied the noise — which is the "black noisy block at the
+	# top" the review found on all three mounted screens.
+	_box(board, Vector3(0.14, 0.04, 0.022), Vector3(0.0, BOARD_SIZE.y * 0.5 + 0.004, 0.008),
+			Materials.painted(Color(0.42, 0.42, 0.4), 95))
 	_box(desk, Vector3(0.5, 0.12, 0.08), Vector3(0.0, 0.08, -0.12), steel)
+	_draft_cards(desk)
 	var pick: Area3D = Area3D.new()
 	pick.name = "Pick"
 	var shape: CollisionShape3D = CollisionShape3D.new()
@@ -147,7 +206,11 @@ func _desk() -> MeshInstance3D:
 	hood.rotation.x = 0.6
 	hood.rotation.z = -0.3
 	arm.add_child(hood)
-	Prims.sphere(arm, 0.025, Vector3(-0.26, 0.6, 0.2), Materials.glowing(Materials.LAMP, 3.0))
+	# 1.25, not 3.0. The environment's glow threshold is 1.1, so at nearly
+	# three times over it this 25mm bulb bloomed into the flare that washed
+	# the right of every form read at this desk. It still reads as a lit
+	# bulb; it no longer reads as a lens.
+	Prims.sphere(arm, 0.025, Vector3(-0.26, 0.6, 0.2), Materials.glowing(Materials.LAMP, 1.25))
 	var light: OmniLight3D = OmniLight3D.new()
 	light.name = "Light"
 	light.light_color = Materials.LAMP

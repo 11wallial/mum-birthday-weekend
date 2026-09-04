@@ -1,7 +1,10 @@
 extends GdUnitTestSuite
 
-## UI-level coverage of the draft: the panel must show what the state says and
-## report intent without touching the run itself.
+## UI-level coverage of the form the draft is signed on.
+##
+## The offers themselves are cards on the desk and are covered by
+## test_draft_cards; what stays here is the panel's own life — it opens, it
+## closes, and it carries the paperwork beside the goods.
 
 const SCENE: String = "res://scenes/ui/shop_panel.tscn"
 
@@ -52,98 +55,6 @@ func _row_text(row: Node) -> String:
 func test_the_panel_starts_hidden() -> void:
 	assert_bool(_panel.visible).is_false()
 	assert_bool(_panel.is_open()).is_false()
-
-
-func test_opening_lists_one_row_per_offer() -> void:
-	_panel.open(_state)
-	assert_bool(_panel.is_open()).is_true()
-	assert_bool(_panel.visible).is_true()
-	assert_int(_rows().size()).is_equal(_state.shop_offers.size())
-
-
-func test_each_row_names_its_artifact_and_price() -> void:
-	_panel.open(_state)
-	var rows: Array[Node] = _rows()
-	for i: int in rows.size():
-		var shown: String = _row_text(rows[i])
-		assert_str(shown).contains(_state.shop_offers[i].display_name)
-		assert_str(shown).contains(str(_state.shop_prices[i]))
-		# The description is what a draft decision is actually made on — but the
-		# fixtures carry none, so asserting it unconditionally would be a claim
-		# about TestFixtures rather than about the panel.
-		if not _state.shop_offers[i].description.is_empty():
-			assert_str(shown).contains(_state.shop_offers[i].description)
-
-
-## Only the offers that single out a symbol carry its icon.
-##
-## Asserted rather than looked at: four of the shipped artifacts name a symbol,
-## so a draft that happens to roll one is rare enough that a screenshot proves
-## nothing either way.
-func test_a_row_badges_the_symbol_its_artifact_singles_out() -> void:
-	# The fixtures apply to every symbol, so one is pointed at a real one.
-	_state.shop_offers[0].symbol_filter = &"seven"
-	_panel.open(_state)
-	var rows: Array[Node] = _rows()
-	assert_int(_badges(rows[0]).size()).is_equal(1)
-	for i: int in range(1, rows.size()):
-		assert_int(_badges(rows[i]).size()).is_equal(0)
-
-
-## An artifact naming a symbol with no drawing must not leave a blank badge
-## behind — the icon is dropped and the row reads normally.
-func test_a_symbol_with_no_drawing_gets_no_badge() -> void:
-	_state.shop_offers[0].symbol_filter = &"not_a_real_symbol"
-	_panel.open(_state)
-	assert_int(_badges(_rows()[0]).size()).is_equal(0)
-
-
-func _badges(row: Node) -> Array[Node]:
-	var found: Array[Node] = []
-	var pending: Array[Node] = [row]
-	while not pending.is_empty():
-		var node: Node = pending.pop_back()
-		if node is TextureRect and (node as TextureRect).texture != null:
-			found.append(node)
-		pending.append_array(node.get_children())
-	return found
-
-
-func test_unaffordable_rows_are_shown_but_disabled() -> void:
-	_panel.open(_state)
-	var rows: Array[Node] = _rows()
-	for i: int in rows.size():
-		var button: Button = rows[i] as Button
-		# Listed either way — the point is to see what you cannot afford.
-		assert_bool(button.visible).is_true()
-		assert_bool(button.disabled).is_equal(not _state.can_buy(i))
-
-
-func test_pressing_a_row_reports_intent_without_changing_the_run() -> void:
-	_panel.open(_state)
-	var cash: int = _state.economy.cash
-	var owned: int = _state.owned.size()
-	var reported: Array[int] = []
-	_panel.buy_requested.connect(func(index: int) -> void: reported.append(index))
-	(_rows()[0] as Button).pressed.emit()
-	assert_array(reported).is_equal([0])
-	# The panel is a view: only the room may mutate the run.
-	assert_int(_state.economy.cash).is_equal(cash)
-	assert_int(_state.owned.size()).is_equal(owned)
-
-
-func test_refreshing_after_a_purchase_drops_the_bought_row() -> void:
-	_panel.open(_state)
-	var before: int = _rows().size()
-	var index: int = -1
-	for i: int in _state.shop_offers.size():
-		if _state.can_buy(i):
-			index = i
-			break
-	assert_int(index).is_greater_equal(0)
-	_engine.buy_offer(_state, index)
-	_panel.refresh()
-	assert_int(_rows().size()).is_equal(before - 1)
 
 
 func test_closing_hides_it_again() -> void:

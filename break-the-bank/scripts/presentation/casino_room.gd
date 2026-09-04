@@ -50,6 +50,8 @@ var _recap: RecapPanel
 var _film: Node
 ## The card that answers "what is this?" about anything on the machine.
 var _inspector: Inspector
+## The draft's hardware, laid out on the desk beside the form.
+var _draft_cards: DraftCards
 ## The clipboard's viewport: the draft and the back office are drawn into it
 ## and the paper in the room wears it.
 var _board_viewport: SubViewport
@@ -151,6 +153,16 @@ func _ready() -> void:
 		_shop.press_requested.connect(_on_press_requested)
 		_shop.doorman_requested.connect(_on_doorman_requested)
 		_shop.chit_requested.connect(_on_chit_requested)
+	# The cards are a second view onto the same three offers the panel used
+	# to draw as rows. They emit the same intent, so both reach the engine
+	# by the one path the headless shop policy also takes.
+	_draft_cards = DraftCards.new()
+	_draft_cards.name = "DraftCards"
+	add_child(_draft_cards)
+	_draft_cards.card_pressed.connect(_on_buy_requested)
+	# After the room has been built, not with it: the props are the room's
+	# and this runs later in _ready than the build does.
+	_draft_cards.attach(_room_parts.get("cards", null) as Node3D)
 	if _deck != null:
 		_deck.action_requested.connect(_on_deck_action)
 		# The machine's physical buttons render the deck's model and their
@@ -294,6 +306,8 @@ func _bind_viewers(bus: EffectBus, run_seed: int) -> void:
 		_receipt.bind(bus)
 	if _shop != null:
 		_shop.close()
+	if _draft_cards != null:
+		_draft_cards.clear()
 	if _contracts != null:
 		_contracts.close()
 	_ante_pending = false
@@ -794,6 +808,7 @@ func _open_door(resumed: bool) -> void:
 	_show_overlay(false)
 	if _camera != null:
 		_camera.desk_board = _clipboard
+		_camera.desk_cards = _room_parts.get("cards", null) as Node3D
 		if not _camera.view_changed.is_connected(_on_view_changed):
 			_camera.view_changed.connect(_on_view_changed)
 		_camera.set_view(CameraController.View.DOOR, true)
@@ -1082,6 +1097,8 @@ func debug_jump_to_floor(floor_index: int, cash: int = 4000) -> void:
 	_forget_save()
 	if _shop != null:
 		_shop.close()
+	if _draft_cards != null:
+		_draft_cards.clear()
 	if _contracts != null:
 		_contracts.close()
 	if _title != null:
@@ -1358,6 +1375,11 @@ func _on_buy_requested(index: int) -> void:
 		_recorder.record_purchase(state, artifact, price)
 	if _shop != null:
 		_shop.refresh()
+	# A purchase moves the prices and what the rest of the draft can afford,
+	# so the cards are dealt again rather than left showing the state the
+	# player bought out of.
+	if _draft_cards != null and state.phase == RunState.Phase.SHOPPING:
+		_draft_cards.deal(state)
 
 
 func _on_leave_requested() -> void:
@@ -1367,6 +1389,8 @@ func _on_leave_requested() -> void:
 		_recorder.record_leave_shop(state)
 	if _shop != null:
 		_shop.close()
+	if _draft_cards != null:
+		_draft_cards.clear()
 	# Back to the machine. Opening the draft pulls the camera out to survey the
 	# room; leaving it has to put the camera back, or the whole rest of the run
 	# is played from the far framing the draft borrowed.
@@ -1414,8 +1438,10 @@ func _on_event(kind: EffectBus.Event, payload: Dictionary) -> void:
 			_clear_prompt()
 			if _shop != null:
 				_shop.open(state)
+			if _draft_cards != null:
+				_draft_cards.deal(state)
 			if _camera != null:
-				_camera.set_view(CameraController.View.DESK)
+				_camera.set_view(CameraController.View.DRAFT)
 			_settle_surety()
 		EffectBus.Event.CONTRACTS_OFFERED:
 			_clear_prompt()

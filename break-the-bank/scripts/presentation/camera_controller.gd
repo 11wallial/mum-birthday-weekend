@@ -14,16 +14,24 @@ enum View {
 	## Behind the door: the machine idling under its lamp, framed to the right
 	## so the title has the left of the screen.
 	DOOR,
-	## Over the desk: the clipboard fills the frame. The draft and the back
-	## office are read here.
+	## Over the desk: the clipboard fills the frame. The back office and the
+	## statement are read here.
 	DESK,
+	## The whole desk: the form on the clipboard and the hardware laid out
+	## on the wood in front of it. The draft needs both, and the clipboard's
+	## own framing is tight enough that the cards fall out of the bottom.
+	DRAFT,
 }
 
 ## The clipboard, set by the room once the set is built. The desk view is
 ## computed from it: straight down its normal, close enough to read.
 var desk_board: Node3D
+## The cards laid out in front of it, for the draft's own framing.
+var desk_cards: Node3D
 ## How far the eye stands off the board, in metres.
 const DESK_DISTANCE: float = 0.78
+## And off the desk as a whole, which has to hold the board and the cards.
+const DRAFT_DISTANCE: float = 1.2
 
 const TRANSITION_TIME: float = 0.7
 
@@ -167,7 +175,16 @@ func set_view(view: View, immediate: bool = false) -> void:
 	var eye: Vector3
 	var target: Vector3
 	var fov: float
-	if view == View.DESK and desk_board != null:
+	if view == View.DRAFT and desk_board != null and desk_cards != null:
+		# Between the form and the goods, far enough back for both. Aimed
+		# down the board's normal like the desk view, because the cards are
+		# tipped to face the same way the board does.
+		var normal: Vector3 = desk_board.global_transform.basis.z.normalized()
+		target = desk_board.global_position.lerp(desk_cards.global_position, 0.52)
+		eye = target + normal * DRAFT_DISTANCE
+		fov = machine_fov
+		eye += normal * 0.5 * _portrait
+	elif view == View.DESK and desk_board != null:
 		var normal: Vector3 = desk_board.global_transform.basis.z.normalized()
 		target = desk_board.global_position
 		eye = target + normal * DESK_DISTANCE
@@ -207,7 +224,7 @@ func set_view(view: View, immediate: bool = false) -> void:
 		fov -= portrait_fov_narrowing * _portrait
 	_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target, Vector3.UP)
 	# The board's own up, so the form is not read on a tilt.
-	if view == View.DESK and desk_board != null:
+	if (view == View.DESK or view == View.DRAFT) and desk_board != null:
 		_rest = Transform3D(Basis.IDENTITY, eye).looking_at(target,
 				desk_board.global_transform.basis.y)
 	if immediate:
