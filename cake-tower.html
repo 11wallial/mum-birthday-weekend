@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cake Tower</title>
+<meta name="description" content="A one-tap stacking game: drop each cake layer dead centre and see how high the tower gets before it runs out of cake.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;900&family=Inter:wght@400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #fff4e8;
+  --dim: #b9a9a0;
+  --panel: rgba(22, 14, 24, 0.86);
+  --line: rgba(255, 255, 255, 0.13);
+  --hot: #ffb1c8;
+}
+
+html, body { height: 100%; overflow: hidden; background: #150f1c; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ink);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game { position: fixed; inset: 0; display: block; }
+
+/* ---------- hud ---------- */
+
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 4;
+  padding: max(14px, env(safe-area-inset-top)) 18px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  pointer-events: none;
+  opacity: 0; transition: opacity .35s ease;
+}
+#hud.on { opacity: 1; }
+
+#hud .score { display: flex; align-items: baseline; gap: 7px; }
+#hud .score b {
+  font-family: 'Playfair Display', serif;
+  font-size: 44px; font-weight: 900; line-height: 1;
+  text-shadow: 0 3px 24px rgba(0,0,0,.55);
+}
+#hud .score span {
+  font-size: 10px; letter-spacing: 2.6px; text-transform: uppercase; color: var(--dim);
+}
+
+#hud .right { display: flex; align-items: center; gap: 12px; }
+#hud .best {
+  font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--dim);
+  padding-top: 6px;
+}
+#hud .best b { color: var(--ink); font-weight: 600; }
+
+#mute {
+  pointer-events: auto;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); background: rgba(0,0,0,.3);
+  color: var(--ink); font-size: 14px; cursor: pointer;
+  display: grid; place-items: center;
+  transition: opacity .2s ease, border-color .2s ease;
+}
+#mute:hover { border-color: rgba(255,255,255,.3); }
+#mute.off { opacity: .4; }
+
+#combo {
+  position: fixed; left: 0; right: 0; top: 24%; z-index: 4;
+  text-align: center; pointer-events: none;
+  font-family: 'Playfair Display', serif;
+  font-size: 30px; font-weight: 600; font-style: italic;
+  color: var(--hot);
+  text-shadow: 0 2px 22px rgba(0,0,0,.6);
+  opacity: 0;
+}
+#combo.pop { animation: pop 900ms cubic-bezier(.2,.9,.3,1) forwards; }
+@keyframes pop {
+  0%   { opacity: 0; transform: translateY(14px) scale(.85); }
+  22%  { opacity: 1; transform: translateY(0) scale(1.06); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-26px) scale(1); }
+}
+
+/* ---------- screens ---------- */
+
+.screen {
+  position: fixed; inset: 0; z-index: 6;
+  display: none; align-items: center; justify-content: center;
+  padding: 26px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(10,6,14,.55), rgba(10,6,14,.85));
+  backdrop-filter: blur(3px);
+}
+.screen.on { display: flex; animation: fade .45s ease both; }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+
+.panel {
+  width: 100%; max-width: 440px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 28px 26px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55);
+}
+
+.kicker {
+  font-size: 10px; letter-spacing: 3.4px; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 14px;
+}
+
+.panel h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(38px, 11vw, 54px); font-weight: 900; line-height: .95;
+  letter-spacing: -1px;
+}
+.panel h1 span { display: block; color: var(--hot); }
+
+.panel h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 9vw, 44px); font-weight: 900; line-height: 1;
+}
+
+.panel p {
+  margin-top: 16px;
+  font-size: 15px; line-height: 1.55; color: var(--dim);
+}
+.panel p b { color: var(--ink); font-weight: 600; }
+.panel p.hint { font-size: 13.5px; margin-top: 10px; }
+
+.btn {
+  margin-top: 24px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  color: #1b1016; background: var(--hot);
+  border: 0; border-radius: 999px;
+  padding: 14px 32px; cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease;
+  box-shadow: 0 10px 30px rgba(255,177,200,.22);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(255,177,200,.3); }
+.btn:active { transform: translateY(0); }
+
+.keys {
+  margin-top: 14px;
+  font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen.on, #combo.pop { animation-duration: .01ms; }
+  #combo.pop { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="score"><b id="score">0</b><span>layers</span></div>
+  <div class="right">
+    <div class="best">best <b id="best">0</b></div>
+    <button id="mute" title="sound on/off">&#9835;</button>
+  </div>
+</div>
+
+<div id="combo"></div>
+
+<div class="screen on" id="scr-start">
+  <div class="panel">
+    <div class="kicker">one tap, one tower</div>
+    <h1>Cake<span>Tower</span></h1>
+    <p>A layer slides back and forth. Tap to drop it. Whatever hangs over the edge gets sliced off &mdash; so the tower narrows fast.</p>
+    <p class="hint">Land one dead centre for a <b>perfect</b>: the layer keeps its full width, and a streak starts growing it back.</p>
+    <button class="btn" id="btn-start">Start stacking</button>
+    <div class="keys">tap &middot; click &middot; space</div>
+  </div>
+</div>
+
+<div class="screen" id="scr-over">
+  <div class="panel">
+    <div class="kicker" id="over-kicker">the tower falls</div>
+    <h2 id="over-score">0 layers</h2>
+    <p id="over-msg"></p>
+    <button class="btn" id="btn-again">Stack another</button>
+    <div class="keys">or press space</div>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+var cvs = document.getElementById('game');
+var ctx = cvs.getContext('2d');
+var $ = function (id) { return document.getElementById(id); };
+var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- metrics ---------- */
+
+var W = 0, H = 0, DPR = 1;
+var LH = 30, DEPTH = 13, BASE_Y = 400, START_W = 280;
+
+function metrics() {
+  var s = Math.min(W, H * 0.8);
+  LH = Math.max(20, Math.round(s * 0.08));
+  DEPTH = Math.round(LH * 0.46);
+  START_W = Math.round(Math.min(W * 0.58, 330));
+}
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  cvs.width = Math.floor(W * DPR);
+  cvs.height = Math.floor(H * DPR);
+  cvs.style.width = W + 'px';
+  cvs.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  BASE_Y = Math.round(H * 0.86);
+  if (state !== 'play') metrics();
+  if (state === 'menu') menuScene();
+  makeStars();
+}
+
+/* ---------- state ---------- */
+
+var state = 'menu';          // menu | play | over
+var stack = [];              // { x, w }
+var moving = null;           // { x, w, vx }
+var slices = [];             // falling offcuts
+var sparks = [];             // sprinkle particles
+var stars = [];
+var combo = 0;
+var cam = 0, shake = 0;
+var best = 0;
+try { best = parseInt(localStorage.getItem('cakeTowerBest') || '0', 10) || 0; } catch (e) {}
+$('best').textContent = best;
+
+var muted = false;
+try { muted = localStorage.getItem('cakeTowerMuted') === '1'; } catch (e) {}
+if (muted) $('mute').classList.add('off');
+
+/* ---------- sound ---------- */
+
+var ac = null;
+function blip(freq, dur, type, vol) {
+  if (muted) return;
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.07, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.1));
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + (dur || 0.1) + 0.02);
+  } catch (e) {}
+}
+function fallTone() {
+  if (muted) return;
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(360, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.55);
+    g.gain.setValueAtTime(0.09, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + 0.62);
+  } catch (e) {}
+}
+
+/* ---------- helpers ---------- */
+
+function hueFor(i) { return (i * 11 + 338) % 360; }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function mix(a, b, t) {
+  return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' +
+                  Math.round(a[1] + (b[1] - a[1]) * t) + ',' +
+                  Math.round(a[2] + (b[2] - a[2]) * t) + ')';
+}
+
+function makeStars() {
+  stars = [];
+  var n = reduced ? 30 : 70;
+  for (var i = 0; i < n; i++) {
+    stars.push({ x: Math.random() * W, y: Math.random() * H * 0.8, r: rand(0.5, 1.6), p: Math.random() * 6.3 });
+  }
+}
+makeStars();
+
+/* ---------- run ---------- */
+
+function menuScene() {
+  stack = [];
+  slices = [];
+  sparks = [];
+  moving = null;
+  cam = 0;
+  var w = Math.round(START_W * 0.92);
+  var x = Math.round((W - w) / 2);
+  var offs = [13, -9, 17, -8, 11];
+  for (var i = 0; i < offs.length; i++) {
+    var o = offs[i];
+    if (o > 0) x += o;
+    w -= Math.abs(o);
+    stack.push({ x: x, w: w });
+  }
+}
+
+function startGame() {
+  metrics();
+  stack = [];
+  slices = [];
+  sparks = [];
+  combo = 0;
+  cam = 0;
+  shake = 0;
+  stack.push({ x: Math.round((W - START_W) / 2), w: START_W });
+  spawn();
+  state = 'play';
+  $('score').textContent = '0';
+  $('hud').classList.add('on');
+  $('scr-start').classList.remove('on');
+  $('scr-over').classList.remove('on');
+}
+
+function spawn() {
+  var top = stack[stack.length - 1];
+  var n = stack.length;
+  var sc = clamp(W / 420, 0.75, 1.5);
+  var sp = Math.min(150 + n * 10, 540) * sc;
+  var dir = n % 2 === 0 ? 1 : -1;
+  var minX = 8;
+  var maxX = Math.max(minX, W - 8 - top.w);
+  moving = { x: dir > 0 ? minX : maxX, w: top.w, vx: dir * sp, minX: minX, maxX: maxX };
+}
+
+function movingY() { return BASE_Y - (stack.length + 1) * LH; }
+
+function place(x, w, perfect) {
+  stack.push({ x: x, w: w });
+  $('score').textContent = String(stack.length - 1);
+  shake = perfect ? 7 : 4;
+  var y = BASE_Y - stack.length * LH;
+  var hue = hueFor(stack.length - 1);
+  var n = reduced ? 6 : (perfect ? 26 : 12);
+  for (var i = 0; i < n; i++) {
+    sparks.push({
+      x: x + Math.random() * w, y: y + rand(-2, LH * 0.4),
+      vx: rand(-110, 110), vy: rand(-230, -40),
+      life: rand(0.5, 1.1), age: 0,
+      hue: perfect ? hueFor(stack.length + i * 3) : hue,
+      r: rand(1.6, 3.6)
+    });
+  }
+  if (perfect) {
+    blip(520 * Math.pow(1.055, Math.min(combo, 14)), 0.14, 'sine', 0.08);
+    blip(780 * Math.pow(1.055, Math.min(combo, 14)), 0.1, 'sine', 0.04);
+    var c = $('combo');
+    c.textContent = combo > 1 ? 'perfect ×' + combo : 'perfect';
+    c.classList.remove('pop');
+    void c.offsetWidth;
+    c.classList.add('pop');
+  } else {
+    blip(200, 0.09, 'triangle', 0.06);
+  }
+  spawn();
+}
+
+function drop() {
+  if (state !== 'play' || !moving) return;
+  var top = stack[stack.length - 1];
+  var d = moving.x - top.x;
+  var ad = Math.abs(d);
+  var tol = Math.max(3, top.w * 0.04);
+  var y = movingY();
+
+  if (ad <= tol) {
+    combo++;
+    var w = top.w;
+    if (combo >= 2) w = Math.min(START_W, w + Math.min(14, START_W * 0.035));
+    place(top.x, w, true);
+    return;
+  }
+
+  var over = top.w - ad;
+  if (over <= 6) {
+    slices.push(makeSlice(moving.x, y, moving.w, d > 0 ? 1 : -1));
+    moving = null;
+    gameOver();
+    return;
+  }
+
+  var sx = d > 0 ? top.x + top.w : moving.x;
+  slices.push(makeSlice(sx, y, ad, d > 0 ? 1 : -1));
+  combo = 0;
+  place(d > 0 ? moving.x : top.x, over, false);
+}
+
+function makeSlice(x, y, w, dir) {
+  return {
+    x: x, y: y, w: w, h: LH,
+    vx: dir * rand(40, 110), vy: rand(-90, -20),
+    rot: 0, vr: dir * rand(1.4, 3.2),
+    hue: hueFor(stack.length)
+  };
+}
+
+function gameOver() {
+  state = 'over';
+  shake = 12;
+  fallTone();
+  var score = stack.length - 1;
+  var isBest = score > best;
+  if (isBest) {
+    best = score;
+    $('best').textContent = best;
+    try { localStorage.setItem('cakeTowerBest', String(best)); } catch (e) {}
+    for (var i = 0; i < (reduced ? 20 : 90); i++) {
+      sparks.push({
+        x: rand(0, W), y: rand(-40, H * 0.4),
+        vx: rand(-60, 60), vy: rand(20, 160),
+        life: rand(1.2, 2.4), age: 0, hue: hueFor(i * 5), r: rand(2, 4.5)
+      });
+    }
+  }
+  var msg;
+  if (score <= 3) msg = 'The oven is barely warm. Try landing the first few slowly.';
+  else if (score <= 8) msg = 'A respectable sponge. The trick is the tap <b>before</b> it looks lined up.';
+  else if (score <= 14) msg = 'Now that is a cake. Perfect drops widen it again &mdash; chase the streak.';
+  else if (score <= 24) msg = 'Structural engineering, frankly.';
+  else msg = 'Someone get a taller table.';
+  $('over-kicker').textContent = isBest ? 'a new personal best' : 'the tower falls';
+  $('over-score').textContent = score + (score === 1 ? ' layer' : ' layers');
+  $('over-msg').innerHTML = msg;
+  setTimeout(function () {
+    if (state === 'over') $('scr-over').classList.add('on');
+  }, 620);
+}
+
+/* ---------- drawing ---------- */
+
+function slab(x, y, w, h, hue, alpha) {
+  var d = DEPTH;
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+
+  ctx.fillStyle = 'hsl(' + hue + ', 46%, 38%)';
+  ctx.beginPath();
+  ctx.moveTo(x + w, y);
+  ctx.lineTo(x + w + d, y - d);
+  ctx.lineTo(x + w + d, y - d + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'hsl(' + hue + ', 70%, 73%)';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w + d, y - d);
+  ctx.lineTo(x + d, y - d);
+  ctx.closePath();
+  ctx.fill();
+
+  var g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, 'hsl(' + hue + ', 64%, 62%)');
+  g.addColorStop(1, 'hsl(' + hue + ', 56%, 45%)');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.fillStyle = 'hsla(' + hue + ', 85%, 88%, .85)';
+  ctx.fillRect(x, y, w, Math.max(2, h * 0.16));
+
+  ctx.globalAlpha = 1;
+}
+
+function candle(cx, y, t) {
+  var cw = Math.max(4, LH * 0.16);
+  var ch = LH * 0.9;
+  ctx.fillStyle = '#fff1f4';
+  ctx.fillRect(cx - cw / 2, y - ch, cw, ch);
+  ctx.fillStyle = 'rgba(255,140,170,.75)';
+  ctx.fillRect(cx - cw / 2, y - ch * 0.66, cw, Math.max(2, cw * 0.4));
+
+  var f = reduced ? 1 : 1 + Math.sin(t * 0.012) * 0.18 + Math.sin(t * 0.031) * 0.1;
+  var fy = y - ch - cw * 0.3;
+  var grd = ctx.createRadialGradient(cx, fy - cw * 0.4, 0, cx, fy - cw * 0.4, cw * 4.5 * f);
+  grd.addColorStop(0, 'rgba(255,225,150,.55)');
+  grd.addColorStop(1, 'rgba(255,190,90,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(cx, fy - cw * 0.4, cw * 4.5 * f, 0, 6.2832);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffd47a';
+  ctx.beginPath();
+  ctx.ellipse(cx, fy - cw * 0.5, cw * 0.44, cw * 0.95 * f, 0, 0, 6.2832);
+  ctx.fill();
+  ctx.fillStyle = '#fff6d8';
+  ctx.beginPath();
+  ctx.ellipse(cx, fy - cw * 0.35, cw * 0.2, cw * 0.5 * f, 0, 0, 6.2832);
+  ctx.fill();
+}
+
+var DUSK_A = [64, 32, 54], DUSK_B = [26, 15, 32];
+var NITE_A = [16, 20, 58], NITE_B = [6, 7, 20];
+
+function draw(t) {
+  var climb = clamp((stack.length - 1) / 34, 0, 1);
+
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, mix(DUSK_A, NITE_A, climb));
+  g.addColorStop(1, mix(DUSK_B, NITE_B, climb));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  if (climb > 0.05) {
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = reduced ? 1 : 0.6 + Math.sin(t * 0.002 + s.p) * 0.4;
+      ctx.globalAlpha = climb * tw * 0.85;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(s.x, (s.y + cam * 0.12) % (H * 0.9), s.r, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.save();
+  if (shake > 0.2 && !reduced) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+
+  // the table the whole thing stands on
+  var tableY = BASE_Y + cam;
+  if (tableY < H + 40) {
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.fillRect(0, tableY, W, H - tableY + 40);
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    ctx.fillRect(0, tableY, W, 2);
+  }
+
+  // tower, bottom up so upper layers cover the faces below
+  for (var k = 0; k < stack.length; k++) {
+    var y = BASE_Y - (k + 1) * LH + cam;
+    if (y > H + LH * 2 || y < -LH * 3) continue;
+    slab(stack[k].x, y, stack[k].w, LH, hueFor(k));
+  }
+
+  // offcuts tumbling away
+  for (var j = 0; j < slices.length; j++) {
+    var sl = slices[j];
+    ctx.save();
+    ctx.translate(sl.x + sl.w / 2, sl.y + cam + sl.h / 2);
+    ctx.rotate(sl.rot);
+    slab(-sl.w / 2, -sl.h / 2, sl.w, sl.h, sl.hue, 0.92);
+    ctx.restore();
+  }
+
+  // the live layer, candle riding on top
+  if (moving) {
+    var my = movingY() + cam;
+    slab(moving.x, my, moving.w, LH, hueFor(stack.length));
+    candle(moving.x + moving.w / 2 + DEPTH / 2, my - DEPTH, t);
+  } else if (stack.length > 1) {
+    var ty = BASE_Y - stack.length * LH + cam;
+    var top = stack[stack.length - 1];
+    candle(top.x + top.w / 2 + DEPTH / 2, ty - DEPTH, t);
+  }
+
+  // sprinkles
+  for (var p = 0; p < sparks.length; p++) {
+    var sp = sparks[p];
+    ctx.globalAlpha = clamp(1 - sp.age / sp.life, 0, 1);
+    ctx.fillStyle = 'hsl(' + sp.hue + ', 85%, 72%)';
+    ctx.beginPath();
+    ctx.arc(sp.x, sp.y + cam, sp.r, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+/* ---------- loop ---------- */
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+
+  if (state === 'play' && moving) {
+    moving.x += moving.vx * dt;
+    if (moving.x < moving.minX) { moving.x = moving.minX; moving.vx = Math.abs(moving.vx); }
+    if (moving.x > moving.maxX) { moving.x = moving.maxX; moving.vx = -Math.abs(moving.vx); }
+  }
+
+  var target = state === 'menu' ? 0 : Math.max(0, H * 0.58 - (BASE_Y - stack.length * LH));
+  cam += (target - cam) * Math.min(1, dt * 6);
+
+  for (var i = slices.length - 1; i >= 0; i--) {
+    var sl = slices[i];
+    sl.vy += 1400 * dt;
+    sl.x += sl.vx * dt;
+    sl.y += sl.vy * dt;
+    sl.rot += sl.vr * dt;
+    if (sl.y + cam > H + 200) slices.splice(i, 1);
+  }
+
+  for (var j = sparks.length - 1; j >= 0; j--) {
+    var sp = sparks[j];
+    sp.age += dt;
+    sp.vy += 620 * dt;
+    sp.x += sp.vx * dt;
+    sp.y += sp.vy * dt;
+    if (sp.age > sp.life) sparks.splice(j, 1);
+  }
+
+  if (shake > 0) shake = Math.max(0, shake - dt * 34);
+
+  draw(now);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- input ---------- */
+
+function primary() {
+  if (state === 'play') drop();
+  else if (state === 'over' && $('scr-over').classList.contains('on')) startGame();
+  else if (state === 'menu') startGame();
+}
+
+window.addEventListener('pointerdown', function (e) {
+  if (e.target.closest('.panel') || e.target.closest('#hud')) return;
+  primary();
+});
+
+window.addEventListener('keydown', function (e) {
+  if (e.code === 'Space' || e.code === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    primary();
+  }
+});
+
+$('btn-start').addEventListener('click', startGame);
+$('btn-again').addEventListener('click', startGame);
+
+$('mute').addEventListener('click', function () {
+  muted = !muted;
+  $('mute').classList.toggle('off', muted);
+  try { localStorage.setItem('cakeTowerMuted', muted ? '1' : '0'); } catch (e) {}
+  if (!muted) blip(660, 0.09, 'sine', 0.06);
+});
+
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+
+resize();
+requestAnimationFrame(function (t) { last = t; frame(t); });
+
+})();
+</script>
+</body>
+</html>
