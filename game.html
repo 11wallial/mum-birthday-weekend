@@ -95,6 +95,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;margin-right:2px;border-
         background:radial-gradient(ellipse at 50% 40%,rgba(8,10,18,.55),rgba(3,4,8,.93));
         transition:opacity .55s ease;text-align:center;padding:24px}
 .screen.hide{opacity:0;pointer-events:none}
+/* children re-enable pointer events, so switch them off explicitly while hidden,
+   otherwise an invisible button keeps eating clicks meant for the game */
+.screen.hide .btn,.screen.hide .opt,.screen.hide .opts,.screen.hide *{pointer-events:none}
 .screen h1{font-size:clamp(46px,9vw,104px);font-weight:900;letter-spacing:-.03em;line-height:.92;
            background:linear-gradient(180deg,#fff 20%,#ffb86b 65%,#ff7a45 100%);
            -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -733,8 +736,8 @@ vec3 shade(vec3 wp, vec3 N, vec3 albedo, float rough, float ao, float shadow, fl
   /* player torch: warm point light */
   vec3 tl = uTorch.xyz - wp;
   float td = length(tl);
-  float att = uTorch.w / (1.0 + td * td * 0.035);
-  col += albedo * vec3(1.0, 0.62, 0.28) * att * max(dot(N, tl / max(td, 0.001)), 0.0);
+  float att = uTorch.w / (1.0 + td * td * 0.22);
+  col += albedo * vec3(1.0, 0.58, 0.24) * att * max(dot(N, tl / max(td, 0.001)), 0.0);
   return col;
 }
 `;
@@ -783,12 +786,20 @@ void main(){
   float g1 = fbm2(vPos.xz * 0.035);
   float g2 = fbm3(vPos.xz * 0.31);
   float macro = fbm2(vPos.xz * 0.006);
+  /* fine grain, also used to bump the surface normal so open ground is not glassy */
+  float d0 = fbm3(vPos.xz * 1.6);
+  float dx = fbm3((vPos.xz + vec2(0.35, 0.0)) * 1.6) - d0;
+  float dz = fbm3((vPos.xz + vec2(0.0, 0.35)) * 1.6) - d0;
+  N = normalize(N + vec3(-dx, 0.0, -dz) * 2.2 * smoothstep(0.75, 0.2, slope));
 
-  vec3 sand  = mix(vec3(0.70,0.62,0.45), vec3(0.80,0.73,0.55), g2);
-  vec3 grass = mix(vec3(0.16,0.30,0.12), vec3(0.33,0.46,0.17), g1 * 0.8 + g2 * 0.35);
-  grass = mix(grass, vec3(0.42,0.44,0.20), smoothstep(0.45, 0.85, macro));
-  vec3 rock  = mix(vec3(0.27,0.26,0.27), vec3(0.42,0.40,0.38), g2 * 0.7 + g1 * 0.4);
-  vec3 snow  = mix(vec3(0.82,0.86,0.94), vec3(0.96,0.97,1.00), g2);
+  vec3 sand  = mix(vec3(0.62,0.55,0.40), vec3(0.76,0.69,0.52), g2);
+  vec3 grass = mix(vec3(0.085,0.165,0.065), vec3(0.235,0.325,0.105), g1 * 0.85 + g2 * 0.3);
+  grass = mix(grass, vec3(0.34,0.33,0.145), smoothstep(0.44, 0.86, macro));
+  grass = mix(grass, vec3(0.20,0.175,0.105), smoothstep(0.56, 0.88, d0) * 0.40);
+  grass *= 0.80 + 0.40 * g2;
+  vec3 rock  = mix(vec3(0.235,0.225,0.225), vec3(0.40,0.38,0.355), g2 * 0.7 + g1 * 0.4);
+  rock *= 0.85 + 0.30 * d0;
+  vec3 snow  = mix(vec3(0.80,0.845,0.93), vec3(0.96,0.97,1.00), g2);
 
   vec3 albedo = mix(sand, grass, smoothstep(0.7, 3.4, h + g2 * 1.6));
   albedo = mix(albedo, rock, smoothstep(0.34, 0.60, slope + g2 * 0.12 - 0.02));
@@ -1242,10 +1253,10 @@ function buildMeshes() {
 
   /* grass tuft: three crossed blades */
   const grass = emptyMesh();
-  for (let i = 0; i < 3; i++) {
-    const a = i / 3 * PI;
+  for (let i = 0; i < 4; i++) {
+    const a = i / 4 * PI;
     const blade = { pos: [], nrm: [], idx: [] };
-    const w = 0.055, h = 0.55;
+    const w = 0.075, h = 0.5;
     blade.pos.push(-w, 0, 0, w, 0, 0, w * 0.35, h, 0.06, -w * 0.35, h, 0.06);
     for (let k = 0; k < 4; k++) blade.nrm.push(0, 0.55, 0.83);
     blade.idx.push(0, 1, 2, 0, 2, 3);
@@ -1412,8 +1423,8 @@ const S = {
 };
 const QUALITY = [
   { name: 'Low', shadow: 1024, scale: 0.72, bloom: 1, grass: 0, drawDist: 210, maxParts: 500 },
-  { name: 'Medium', shadow: 2048, scale: 1.0, bloom: 2, grass: 2600, drawDist: 300, maxParts: 1100 },
-  { name: 'High', shadow: 2048, scale: 1.25, bloom: 3, grass: 6200, drawDist: 380, maxParts: 1800 }
+  { name: 'Medium', shadow: 2048, scale: 1.0, bloom: 2, grass: 4200, drawDist: 300, maxParts: 1100 },
+  { name: 'High', shadow: 2048, scale: 1.25, bloom: 3, grass: 8500, drawDist: 380, maxParts: 1800 }
 ];
 const Q = () => QUALITY[S.quality];
 
@@ -2455,7 +2466,7 @@ function buildPlayer() {
   mul(outM, tmpA, partM); pushInstance(M.box, outM, 0.74, 0.78, 0.86, 0.05, 0, 0, 0);
   compose(partM, 0, 0.24, 0, 0, 0, 0, 0.035, 0.98, 0.055);
   mul(outM, tmpA, partM);
-  const blaze = P.attack >= 0 ? 1.0 : 0.25;
+  const blaze = P.attack >= 0 ? 2.1 : 0.45;
   pushInstance(M.box, outM, 1.0, 0.62, 0.25, blaze, 0, 0, 0);
   /* torch */
   if (P.torch > 0.1) {
@@ -2536,7 +2547,7 @@ function rebuildGrass() {
   mesh.n = 0;
   const count = Q().grass;
   if (!count) { syncInstances(mesh, 0); return; }
-  const R = 38;
+  const R = 27;
   const rng = mulberry32(((P.x * 0.5) | 0) * 73856093 ^ ((P.z * 0.5) | 0) * 19349663);
   for (let i = 0; i < count * 2 && mesh.n < count; i++) {
     const a = rng() * TAU, r = Math.sqrt(rng()) * R;
@@ -2546,11 +2557,13 @@ function rebuildGrass() {
     if (slopeAt(x, z) > 0.34) continue;
     const f = fbm(x * 0.0042 + 12, z * 0.0042 - 5, 4, SEED + 404);
     if (f < 0.30 || rng() > 0.35 + f) continue;
-    const s = 0.7 + rng() * 1.1;
+    /* shrink toward the edge of the patch so tufts grow in instead of popping */
+    const fade = 1 - smoothstep(R * 0.68, R, r);
     const t = rng();
-    compose(TMP_M, x, h - 0.05, z, 0, rng() * TAU, 0, s, s * (0.8 + t * 0.7), s);
-    const g = 0.20 + t * 0.20;
-    pushInstance(mesh, TMP_M, g * 0.55, g, g * 0.30, 0, 0.055, t, 0);
+    const s = 0.5 + rng() * 0.45;
+    compose(TMP_M, x, h - 0.06, z, 0, rng() * TAU, 0, s, s * (0.55 + t * 0.55) * fade, s);
+    const g = 0.12 + t * 0.13;
+    pushInstance(mesh, TMP_M, g * 0.62, g, g * 0.34, 0, 0.05, t, 0);
   }
   syncInstances(mesh);
   grassCenter = [P.x, P.z];
@@ -2594,7 +2607,7 @@ function buildDynamic() {
   }
   syncInstances(M.box); syncInstances(M.sphere); syncInstances(M.shard);
   syncInstances(M.crystal); syncInstances(M.obelisk);
-  if (Math.hypot(P.x - grassCenter[0], P.z - grassCenter[1]) > 6) rebuildGrass();
+  if (Math.hypot(P.x - grassCenter[0], P.z - grassCenter[1]) > 4) rebuildGrass();
 }
 
 /* ------------------------------------------------------------ draw passes */
@@ -2614,7 +2627,7 @@ function setSceneUniforms(pr) {
   gl.uniform1i(pr.u('uShadow'), 0);
   gl.uniform4fv(pr.u('uCorrupt'), corruptData);
   gl.uniform1i(pr.u('uCorruptN'), obelisks.length);
-  gl.uniform4f(pr.u('uTorch'), P.x, P.y + 1.6, P.z, P.torch * 2.6);
+  gl.uniform4f(pr.u('uTorch'), P.x, P.y + 1.6, P.z, P.torch * 1.15);
 }
 function renderShadow() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFBO);
