@@ -1,0 +1,156 @@
+{
+ "national": {
+  "applicants": 6236,
+  "places": 1133,
+  "success_pct": 18,
+  "applications": 22641
+ },
+ "nhs": {
+  "Bangor - North Wales": {
+   "applications": 279,
+   "places": 16
+  },
+  "Bath": {
+   "applications": 913,
+   "places": 28
+  },
+  "Birmingham": {
+   "applications": 748,
+   "places": 35
+  },
+  "Coventry and Warwick": {
+   "applications": 497,
+   "places": 0
+  },
+  "East Anglia": {
+   "applications": 591,
+   "places": 54
+  },
+  "East London": {
+   "applications": 1083,
+   "places": 49
+  },
+  "Edinburgh": {
+   "applications": 857,
+   "places": 45
+  },
+  "Essex": {
+   "applications": 486,
+   "places": 31
+  },
+  "Exeter": {
+   "applications": 550,
+   "places": 30
+  },
+  "Glasgow": {
+   "applications": 696,
+   "places": 39
+  },
+  "Hertfordshire": {
+   "applications": 858,
+   "places": 40
+  },
+  "Institute of Psychiatry, Psychology and Neuroscience - KCL": {
+   "applications": 1340,
+   "places": 41
+  },
+  "Lancaster full-time": {
+   "applications": 814,
+   "places": 35
+  },
+  "Lancaster part-time": {
+   "applications": 65,
+   "places": 5
+  },
+  "Leeds": {
+   "applications": 901,
+   "places": 30
+  },
+  "Leicester": {
+   "applications": 422,
+   "places": 30
+  },
+  "Liverpool": {
+   "applications": 935,
+   "places": 40
+  },
+  "Manchester": {
+   "applications": 910,
+   "places": 40
+  },
+  "Newcastle": {
+   "applications": 472,
+   "places": 30
+  },
+  "Oxford": {
+   "applications": 577,
+   "places": 52
+  },
+  "Plymouth": {
+   "applications": 382,
+   "places": 24
+  },
+  "Royal Holloway": {
+   "applications": 1642,
+   "places": 60
+  },
+  "Salomons - CCCU": {
+   "applications": 666,
+   "places": 56
+  },
+  "Sheffield": {
+   "applications": 471,
+   "places": 35
+  },
+  "Southampton": {
+   "applications": 653,
+   "places": 30
+  },
+  "South Wales": {
+   "applications": 542,
+   "places": 28
+  },
+  "Staffordshire": {
+   "applications": 615,
+   "places": 25
+  },
+  "Surrey": {
+   "applications": 1101,
+   "places": 54
+  },
+  "Teesside": {
+   "applications": 530,
+   "places": 30
+  },
+  "Trent - Lincoln and Nottingham": {
+   "applications": 556,
+   "places": 36
+  },
+  "University College London": {
+   "applications": 1489,
+   "places": 85
+  }
+ },
+ "self": {
+  "Bath - self-funded": {
+   "applications": 213,
+   "places": 2
+  },
+  "East Anglia - self-funded": {
+   "applications": 175,
+   "places": 2
+  },
+  "Exeter - self-funded": {
+   "applications": 198,
+   "places": 4
+  },
+  "Manchester - self-funded": {
+   "applications": 194,
+   "places": 2
+  },
+  "University College London - self-funded": {
+   "applications": 255,
+   "places": 7
+  }
+ }
+}
